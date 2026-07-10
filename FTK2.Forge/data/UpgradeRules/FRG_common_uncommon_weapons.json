@@ -1,0 +1,52 @@
+{
+  "RuleId": "FRG_RULE_COMMON_UNCOMMON_WEAPONS",
+  "Enabled": true,
+  "Selector": {
+    "Classes": ["BLADE", "KATANA", "DAGGER", "RAPIER", "AXE", "BLUNT", "SPEAR", "WHIP", "WAND",
+                "LONGSTAFF", "BOW", "RIFLE", "GUN", "SHOTGUN", "HANDBOW", "CANNON", "BOOMERANG"],
+    "Rarities": ["COMMON", "UNCOMMON"],
+    "Tags": {
+      "AllOf": [],
+      "AnyOf": [],
+      "NoneOf": ["FRG_NO_UPGRADE", "FRG_UPGRADED"]
+    },
+    "IdPatterns": [],
+    "ExplicitIncludes": [],
+    "ExplicitExcludes": ["BLADE_MILITIA_LIGHT_01"]
+  },
+  "Levels": 5,
+  "OrbCost": {
+    "OrbItemId": "FRG_ORB_WHETSTONE",
+    "BaseAmount": 1,
+    "AmountPerLevel": {
+      "Mode": "FLAT_STEP",
+      "StepEveryLevels": 1,
+      "StepAmount": 1
+    },
+    "RarityMultiplier": {
+      "COMMON": 1.0,
+      "UNCOMMON": 1.5
+    }
+  },
+  "StatGrowth": [
+    { "Stat": "ATK", "Mode": "PERCENT_PER_LEVEL", "Value": 0.08, "Rounding": "ROUND_NEAREST" },
+    { "Stat": "CRT", "Mode": "FLAT_EVERY_N_LEVELS", "Value": 1, "EveryNLevels": 2 }
+  ],
+  "ValueScaling": { "Mode": "PERCENT_PER_LEVEL", "Value": 0.15, "Rounding": "ROUND_UP" },
+  "NameDecoration": { "Style": "SUFFIX_PLUS_N", "Format": "{BaseName} +{Level}" },
+  "PerClassOverrides": {
+    "BOW": {
+      "StatGrowth": [
+        { "Stat": "ATK", "Mode": "PERCENT_PER_LEVEL", "Value": 0.06, "Rounding": "ROUND_NEAREST" },
+        { "Stat": "ACC", "Mode": "FLAT_EVERY_N_LEVELS", "Value": 1, "EveryNLevels": 3 }
+      ]
+    },
+    "HANDBOW": {
+      "StatGrowth": [
+        { "Stat": "ATK", "Mode": "PERCENT_PER_LEVEL", "Value": 0.06, "Rounding": "ROUND_NEAREST" },
+        { "Stat": "ACC", "Mode": "FLAT_EVERY_N_LEVELS", "Value": 1, "EveryNLevels": 3 }
+      ]
+    }
+  },
+  "Salvage": { "Enabled": true, "Mode": "DOWNGRADE" }
+}

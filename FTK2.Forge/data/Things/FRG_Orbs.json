@@ -1,0 +1,20 @@
+{
+  "FRG_ORB_WHETSTONE": {
+    "ConsumableType": "NONE",
+    "Value": 25,
+    "Class": "MATERIAL",
+    "Rarity": "COMMON",
+    "Hidden": false,
+    "Stacks": true,
+    "Tags": ["DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "MATERIAL", "FRG_ORB", "FRG_ORB_WEAPON"]
+  },
+  "FRG_ORB_PLATING": {
+    "ConsumableType": "NONE",
+    "Value": 25,
+    "Class": "MATERIAL",
+    "Rarity": "COMMON",
+    "Hidden": false,
+    "Stacks": true,
+    "Tags": ["DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "MATERIAL", "FRG_ORB", "FRG_ORB_ARMOR"]
+  }
+}

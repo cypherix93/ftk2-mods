@@ -1,0 +1,70 @@
+{
+  "CF_WARLOCK_HEXBLADE": {
+    "Stats": {
+      "ACC": 4, "ATK": 5, "AWR": 3, "CRT": 3, "DEF": 2, "EVD": 3, "FOC": 6, "HP": 28, "HRG": 1,
+      "INT": 6, "LCK": 2, "PA": 1, "SA": 1, "PRW": 2, "RES": 4, "SPD": 3, "STR": 3, "TAL": 4,
+      "THRN": 1, "VIT": 3
+    },
+    "Things": { "CF_ITEM_PACT_BLADE": 1 },
+    "Passives": ["SKILL_CF_HEXBLADE_BARGAIN"],
+    "LootID": "",
+    "LocKey": "CF_WARLOCK_HEXBLADE",
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "HUMAN",
+    "Tags": ["PLAYER", "CF_PACK_BALDURS"],
+    "Expansion": ""
+  },
+  "CF_BATTLEMASTER": {
+    "Stats": {
+      "ACC": 5, "ATK": 6, "AWR": 4, "CRT": 3, "DEF": 4, "EVD": 2, "FOC": 3, "HP": 34, "HRG": 2,
+      "INT": 1, "LCK": 2, "PA": 1, "SA": 1, "PRW": 6, "RES": 3, "SPD": 3, "STR": 6, "TAL": 3,
+      "THRN": 2, "VIT": 5
+    },
+    "Things": { "CF_ITEM_COMMANDERS_LONGSWORD": 1 },
+    "Passives": [],
+    "LootID": "",
+    "LocKey": "CF_BATTLEMASTER",
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "HUMAN",
+    "Tags": ["PLAYER", "CF_PACK_BALDURS"],
+    "Expansion": ""
+  },
+  "CF_NECROMANCER": {
+    "Stats": {
+      "ACC": 3, "ATK": 2, "AWR": 3, "CRT": 2, "DEF": 1, "EVD": 2, "FOC": 7, "HP": 24, "HRG": 1,
+      "INT": 7, "LCK": 2, "PA": 1, "SA": 1, "PRW": 1, "RES": 5, "SPD": 2, "STR": 1, "TAL": 5,
+      "THRN": 1, "VIT": 2
+    },
+    "Things": { "CF_ITEM_NECROTIC_STAFF": 1 },
+    "Passives": ["SKILL_CF_NECRO_RAISE_ON_KILL"],
+    "LootID": "",
+    "LocKey": "CF_NECROMANCER",
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "HUMAN",
+    "Tags": ["PLAYER", "CF_PACK_BALDURS"],
+    "Expansion": ""
+  },
+  "CF_SKELETON_WARRIOR": {
+    "Stats": {
+      "ACC": 3, "ATK": 4, "AWR": 1, "CRT": 1, "DEF": 2, "EVD": 1, "FOC": 0, "HP": 12, "HRG": 0,
+      "INT": 0, "LCK": 0, "PA": 1, "SA": 0, "PRW": 2, "RES": 1, "SPD": 2, "STR": 3, "TAL": 0,
+      "THRN": 0, "VIT": 1
+    },
+    "Things": { "CF_ITEM_BONE_CLAWS": 1 },
+    "Passives": [],
+    "LootID": "",
+    "LocKey": "CF_SKELETON_WARRIOR",
+    "Rarity": "COMMON",
+    "Level": 1,
+    "Threat": 3,
+    "BaseType": "SKELETON",
+    "Tags": ["CF_PACK_BALDURS", "CF_SUMMON"],
+    "Expansion": ""
+  }
+}

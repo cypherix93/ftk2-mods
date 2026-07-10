@@ -1,0 +1,48 @@
+{
+  "SMN_TRAINER": "Trainer",
+  "SMN_TRAINER_DESCRIPTION": "Raises elemental creatures from a hatchling to a force of nature. Summon them to fight beside you, or bond with them as permanent companions.",
+
+  "SMN_CHAIN_SALAMANDER_NAME": "Salamander Line",
+  "SMN_CHAIN_TURTLE_NAME": "Turtle Line",
+  "SMN_CHAIN_SPROUT_NAME": "Sprout Line",
+
+  "SMN_SALAMANDER_1": "Ember Pup",
+  "SMN_SALAMANDER_1_DESCRIPTION": "A palm-sized salamander whose tail smolders when it's excited.",
+  "SMN_SALAMANDER_2": "Cinder Salamander",
+  "SMN_SALAMANDER_2_DESCRIPTION": "Its hide has hardened into cracked embers; every bite leaves a scorch mark.",
+  "SMN_SALAMANDER_3": "Blaze Elemental",
+  "SMN_SALAMANDER_3_DESCRIPTION": "No longer merely fire-touched - it has become fire, given a fighting shape.",
+
+  "SMN_TURTLE_1": "Tide Hatchling",
+  "SMN_TURTLE_1_DESCRIPTION": "A small shelled creature that hums with restless current.",
+  "SMN_TURTLE_2": "Riptide Guardian",
+  "SMN_TURTLE_2_DESCRIPTION": "Its shell channels the tide itself; it soaks foes before it strikes.",
+  "SMN_TURTLE_3": "Tsunami Elemental",
+  "SMN_TURTLE_3_DESCRIPTION": "Water elemental in truth now - the shell was only ever a starting shape.",
+
+  "SMN_SPROUT_1": "Thorn Sprout",
+  "SMN_SPROUT_1_DESCRIPTION": "A single vine with a stubborn will and stubbier thorns.",
+  "SMN_SPROUT_2": "Bramble Ward",
+  "SMN_SPROUT_2_DESCRIPTION": "Grown thick and defensive; its thorns carry a lingering venom now.",
+  "SMN_SPROUT_3": "Bloom Colossus",
+  "SMN_SPROUT_3_DESCRIPTION": "A towering bloom of thorn and root that remembers every ally it's lost - and brings them back.",
+
+  "SMN_STONE_FIRE": "Ember Stone",
+  "SMN_STONE_FIRE_DESCRIPTION": "A warm, glassy stone that never cools. Consumed to complete an advanced fire evolution.",
+  "SMN_STONE_WATER": "Tide Stone",
+  "SMN_STONE_WATER_DESCRIPTION": "Always faintly damp to the touch. Consumed to complete an advanced water evolution.",
+  "SMN_STONE_PLANT": "Bloom Stone",
+  "SMN_STONE_PLANT_DESCRIPTION": "Smells faintly of rain. Consumed to complete an advanced plant evolution.",
+
+  "SMN_FOL_SALAMANDER_SUBTITLE": "A loyal ember, always warm to the touch.",
+  "SMN_FOL_SALAMANDER_JOIN": "The salamander curls up on your shoulder, radiating warmth.",
+  "SMN_FOL_SALAMANDER_LEAVE": "The salamander slips away into the underbrush.",
+
+  "SMN_FOL_TURTLE_SUBTITLE": "Slow to anger, slower to forget a kindness.",
+  "SMN_FOL_TURTLE_JOIN": "The turtle plants itself firmly at your side.",
+  "SMN_FOL_TURTLE_LEAVE": "The turtle wanders back toward the nearest water.",
+
+  "SMN_FOL_SPROUT_SUBTITLE": "Puts down roots wherever it's welcome.",
+  "SMN_FOL_SPROUT_JOIN": "The sprout wraps a tendril gently around your wrist.",
+  "SMN_FOL_SPROUT_LEAVE": "The sprout unroots itself and returns to the wild."
+}

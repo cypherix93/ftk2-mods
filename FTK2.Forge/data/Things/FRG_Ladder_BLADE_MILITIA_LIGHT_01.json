@@ -1,0 +1,44 @@
+{
+  "BLADE_MILITIA_LIGHT_01_PLUS1": {
+    "ConsumableType": "NONE",
+    "Value": 172,
+    "Class": "BLADE",
+    "Rarity": "COMMON",
+    "Hidden": false,
+    "Stacks": false,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": { "ATK": 13, "CRT": 5 },
+      "Passives": []
+    },
+    "Tags": ["DROPPABLE", "TOWN_MARKET", "MELEE", "LIGHT", "PHYSICAL", "MILITIA", "FRG_UPGRADED", "FRG_TIER_1"]
+  },
+  "BLADE_MILITIA_LIGHT_01_PLUS2": {
+    "ConsumableType": "NONE",
+    "Value": 195,
+    "Class": "BLADE",
+    "Rarity": "COMMON",
+    "Hidden": false,
+    "Stacks": false,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": { "ATK": 14, "CRT": 6 },
+      "Passives": []
+    },
+    "Tags": ["DROPPABLE", "TOWN_MARKET", "MELEE", "LIGHT", "PHYSICAL", "MILITIA", "FRG_UPGRADED", "FRG_TIER_2"]
+  },
+  "BLADE_MILITIA_LIGHT_01_PLUS3": {
+    "ConsumableType": "NONE",
+    "Value": 217,
+    "Class": "BLADE",
+    "Rarity": "COMMON",
+    "Hidden": false,
+    "Stacks": false,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": { "ATK": 15, "CRT": 6 },
+      "Passives": []
+    },
+    "Tags": ["DROPPABLE", "TOWN_MARKET", "MELEE", "LIGHT", "PHYSICAL", "MILITIA", "FRG_UPGRADED", "FRG_TIER_3"]
+  }
+}

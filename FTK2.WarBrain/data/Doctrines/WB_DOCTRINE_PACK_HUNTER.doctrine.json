@@ -1,0 +1,14 @@
+{
+  "Id": "WB_DOCTRINE_PACK_HUNTER",
+  "Description": "Squad dog-piles a single target per fight instead of spreading damage. Layer on WB_BRAIN_BRUTE or WB_BRAIN_TACTICIAN.",
+  "ConsiderationWeightDeltas": {
+    "WB_CONSIDER_FOCUS_FIRE": 0.6,
+    "WB_CONSIDER_KILL_SECURE": 0.3
+  },
+  "ConsiderationOverrides": [],
+  "AbilityCategoryBiasDeltas": {
+    "ATTACK": 0.2
+  },
+  "TemperatureDelta": -0.05,
+  "ReactionRefs": []
+}

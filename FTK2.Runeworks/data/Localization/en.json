@@ -1,0 +1,25 @@
+{
+  "RW_GEM_RUBY_1": "Ruby Chip",
+  "RW_GEM_RUBY_1_DESCRIPTION": "A rough-cut ruby. Socket into a weapon for +2 ATK.",
+
+  "RW_GEM_RUBY_2": "Polished Ruby",
+  "RW_GEM_RUBY_2_DESCRIPTION": "A flawless ruby. Socket into a weapon for +4 ATK and a chance to set enemies ablaze on hit.",
+
+  "RW_GEM_SAPPHIRE_1": "Sapphire Chip",
+  "RW_GEM_SAPPHIRE_1_DESCRIPTION": "A rough-cut sapphire. Socket into armor for +2 DEF.",
+
+  "RW_GEM_SAPPHIRE_2": "Polished Sapphire",
+  "RW_GEM_SAPPHIRE_2_DESCRIPTION": "A flawless sapphire. Socket into armor for +3 DEF, +2 RES, and immunity to water damage.",
+
+  "RW_GEM_ONYX": "Shadowed Onyx",
+  "RW_GEM_ONYX_DESCRIPTION": "A stone that drinks light. Socket into any weapon or armor for +3 CRT and the elite ambusher's instincts.",
+
+  "RW_GEM_STARSTONE": "Starstone",
+  "RW_GEM_STARSTONE_DESCRIPTION": "A sliver of fallen sky. Socket into a trinket for +3 LCK. Combines with any other Runeworks gem in the party for a luck bonus.",
+
+  "RW_CONTEXTMENU_SOCKET_GEM": "Socket Gem...",
+  "RW_CONTEXTMENU_REMOVE_GEM": "Remove Gem...",
+  "RW_TOOLTIP_SOCKET_EMPTY": "Empty Socket",
+  "RW_TOOLTIP_SETBONUS_ACTIVE": "Set Bonus Active",
+  "RW_TOOLTIP_SETBONUS_PROGRESS": "Set Bonus Progress"
+}

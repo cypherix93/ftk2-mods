@@ -1,0 +1,72 @@
+{
+  "Id": "WB_BRAIN_COWARD",
+  "Description": "Self-preservation dominates once hurt: flees, skips, or turtles instead of pressing an attack; avoids the toughest target even at full HP.",
+  "Considerations": [
+    {
+      "Id": "WB_CONSIDER_SELF_PRESERVATION",
+      "Weight": 2.5,
+      "Curve": { "Type": "LOGISTIC", "Midpoint": 0.5, "Steepness": 10.0 }
+    },
+    {
+      "Id": "WB_CONSIDER_EXPECTED_DAMAGE",
+      "Weight": -0.6,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_KILL_SECURE",
+      "Weight": 1.0,
+      "Curve": { "Type": "STEP", "Threshold": 0.999 }
+    },
+    {
+      "Id": "WB_CONSIDER_THREAT",
+      "Weight": -0.8,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_RANGE_SAFETY",
+      "Weight": 1.2,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_ROW_POSITION_VALUE",
+      "Weight": 0.9,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_ACTION_ECONOMY",
+      "Weight": 0.2,
+      "Curve": { "Type": "LINEAR" }
+    }
+  ],
+  "TargetFilters": [
+    {
+      "Tags": { "AnyOf": [], "NoneOf": [] },
+      "BaseType": { "AnyOf": [], "NoneOf": [] },
+      "HpPercentBelow": 1.0,
+      "HpPercentAbove": 0.0,
+      "RowPosition": "ANY"
+    }
+  ],
+  "AbilityCategoryBias": {
+    "ATTACK": 0.6,
+    "DEBUFF": 0.7,
+    "SUPPORT_SELF": 1.3,
+    "SUPPORT_ALLY": 0.8,
+    "SUPPORT_GROUP": 0.8,
+    "TAUNT": 0.2,
+    "USE_ITEM": 1.1,
+    "MOVE": 1.4,
+    "MOVE_ENEMY": 0.8,
+    "SUMMON": 0.7,
+    "FLEE": 2.0,
+    "SKIP_TURN": 1.2,
+    "REVIVE_ALLY": 0.7,
+    "REPAIR_VEHICLE": 0.5
+  },
+  "Temperature": 0.25,
+  "DifficultyScaling": {
+    "IntelligenceMultiplier": 1.0,
+    "TemperatureMultiplier": 1.1,
+    "MistakeChance": 0.05
+  }
+}

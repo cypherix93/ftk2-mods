@@ -1,0 +1,49 @@
+{
+  "_note": "Example/testing assignment set. BOSS_NECROMANCER_00 is illustrative only - not verified against a shipped Characters.json id list (see SPEC.md section 11 open questions). Replace with confirmed ids before relying on this in a real playthrough.",
+  "Rules": [
+    {
+      "Priority": 1000,
+      "Match": { "CharacterId": "BOSS_NECROMANCER_00" },
+      "ProfileId": "WB_BRAIN_TACTICIAN",
+      "DoctrineId": "WB_DOCTRINE_GUARDIAN"
+    },
+    {
+      "Priority": 500,
+      "Match": { "Tags": { "AnyOf": ["GOBLIN"] } },
+      "ProfileId": "WB_BRAIN_BRUTE",
+      "DoctrineId": "WB_DOCTRINE_SWARM"
+    },
+    {
+      "Priority": 500,
+      "Match": { "Tags": { "AnyOf": ["CULTIST"] } },
+      "ProfileId": "WB_BRAIN_TACTICIAN",
+      "DoctrineId": "WB_DOCTRINE_PACK_HUNTER"
+    },
+    {
+      "Priority": 300,
+      "Match": { "BaseType": { "AnyOf": ["SKELETON"] } },
+      "ProfileId": "WB_BRAIN_BRUTE"
+    },
+    {
+      "Priority": 300,
+      "Match": { "BaseType": { "AnyOf": ["BIRD"] } },
+      "ProfileId": "WB_BRAIN_COWARD"
+    },
+    {
+      "Priority": 100,
+      "Match": { "AiBehaviour": "SUPPORT" },
+      "ProfileId": "WB_BRAIN_SUPPORT"
+    },
+    {
+      "Priority": 100,
+      "Match": { "AiBehaviour": "TANK" },
+      "ProfileId": "WB_BRAIN_BRUTE",
+      "DoctrineId": "WB_DOCTRINE_GUARDIAN"
+    },
+    {
+      "Priority": 0,
+      "Match": { "Default": true },
+      "ProfileId": "WB_BRAIN_BRUTE"
+    }
+  ]
+}

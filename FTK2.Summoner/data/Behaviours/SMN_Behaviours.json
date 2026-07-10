@@ -1,0 +1,16 @@
+{
+  "SMN_BEHAVIOR_SALAMANDER": [
+    { "Category": "ATTACK", "Weight": 8 },
+    { "Category": "SUPPORT_SELF", "Weight": 1 }
+  ],
+  "SMN_BEHAVIOR_TURTLE": [
+    { "Category": "ATTACK", "Weight": 4 },
+    { "Category": "TAUNT", "Weight": 5 },
+    { "Category": "SUPPORT_ALLY", "Weight": 1 }
+  ],
+  "SMN_BEHAVIOR_SPROUT": [
+    { "Category": "ATTACK", "Weight": 3 },
+    { "Category": "DEBUFF", "Weight": 6 },
+    { "Category": "SUPPORT_ALLY", "Weight": 1 }
+  ]
+}

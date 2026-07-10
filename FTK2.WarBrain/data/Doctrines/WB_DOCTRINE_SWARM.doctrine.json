@@ -1,0 +1,17 @@
+{
+  "Id": "WB_DOCTRINE_SWARM",
+  "Description": "Surround and spread: rewards not stacking into the same tile/column, gets extra spread-out pressure once the party is seen using an AoE. Meant for GOBLIN-tagged trash mobs.",
+  "ConsiderationWeightDeltas": {
+    "WB_CONSIDER_ROW_POSITION_VALUE": 0.5,
+    "WB_CONSIDER_ACTION_ECONOMY": 0.1
+  },
+  "ConsiderationOverrides": [],
+  "AbilityCategoryBiasDeltas": {
+    "MOVE": 0.3,
+    "ATTACK": 0.1
+  },
+  "TemperatureDelta": 0.05,
+  "ReactionRefs": [
+    "WB_REACT_SAW_AOE"
+  ]
+}

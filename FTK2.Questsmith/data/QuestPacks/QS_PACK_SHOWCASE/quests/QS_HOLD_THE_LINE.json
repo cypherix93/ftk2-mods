@@ -1,0 +1,84 @@
+{
+  "QS_HOLD_THE_LINE_START": {
+    "Objectives": [
+      ["ACTIVATE_ENTITY", "QS_CARAVAN_CONVOY"],
+      ["REMOVE_ENCOUNTER", "QS_HOLD_THE_LINE_ASSAULT"]
+    ],
+    "CompleteObjectives": "ALL",
+    "PreDialogueID": "QS_HOLD_THE_LINE_START_PRE",
+    "PostDialogueID": "",
+    "QuestStartWorldTriggers": [ ["DIALOGUE", "QS_HOLD_THE_LINE_INTRO"] ],
+    "QuestEndWorldTriggers": [],
+    "ObjectiveEngageWorldTriggers": [ ["DIALOGUE", "QS_HOLD_THE_LINE_ESCORT_ENGAGE"] ],
+    "ObjectiveCompleteWorldTriggers": [],
+    "ObjectiveCameraActions": [ "ZONE" ],
+    "NextQuests": [ "QS_HOLD_THE_LINE_WIN" ],
+    "CombatQuests": [ "QS_HOLD_THE_LINE_FINALE" ],
+    "Requirements": [],
+    "Conflicts": [],
+    "DontRemoveObjectivesOnConflict": false,
+    "RoundsToExpire": -1,
+    "Hidden": false,
+    "DisplayOrder": 20,
+    "AdventureEndTrigger": false,
+    "ChoiceRewards": false,
+    "ChoiceRewardsTake": false,
+    "_comment": "Both objectives required: escort QS_CARAVAN_CONVOY (towerdefenseunits.json) to its destination (fires ACTIVATE_ENTITY via the convoy's ReachTargetTriggers -- exact wiring TBD, see SPEC open question #5) AND clear the raider assault spawner QS_HOLD_THE_LINE_ASSAULT (spawners.json). CombatQuests chains into the finale once both are done."
+  },
+
+  "QS_HOLD_THE_LINE_FINALE": {
+    "Objectives": [ ["ASSASSINATE_ENTITY", "QS_HOLD_THE_LINE_RAIDER_CHIEF"] ],
+    "_objectives_m2": [
+      ["QS_SURVIVE_ROUNDS", "QS_HOLD_THE_LINE_SURVIVE_PARAMS"],
+      ["QS_PROTECT_ENTITY_HP", "QS_HOLD_THE_LINE_PROTECT_PARAMS"]
+    ],
+    "CompleteObjectives": "ALL",
+    "PreDialogueID": "QS_HOLD_THE_LINE_FINALE_PRE",
+    "PostDialogueID": "QS_HOLD_THE_LINE_FINALE_POST",
+    "QuestStartWorldTriggers": [ ["DIALOGUE", "QS_HOLD_THE_LINE_FINALE_INTRO"] ],
+    "_questStartWorldTriggers_m2": [
+      ["QS_GIVE_STATUS_PARTY", "QS_HOLD_THE_LINE_BATTLEPREP_PARAMS"],
+      ["QS_START_MAP_SPAWNER", "QS_HOLD_THE_LINE_REINFORCEMENTS_PARAMS"]
+    ],
+    "QuestEndWorldTriggers": [],
+    "ObjectiveEngageWorldTriggers": [],
+    "ObjectiveCompleteWorldTriggers": [ ["GIVE_THING", "QS_HOLD_THE_LINE_VICTORY_BANNER"] ],
+    "ObjectiveCameraActions": [ "ENCOUNTER" ],
+    "NextQuests": [],
+    "CombatQuests": [],
+    "Requirements": [],
+    "Conflicts": [],
+    "DontRemoveObjectivesOnConflict": false,
+    "RoundsToExpire": -1,
+    "Hidden": true,
+    "DisplayOrder": 21,
+    "AdventureEndTrigger": false,
+    "ChoiceRewards": false,
+    "ChoiceRewardsTake": false,
+    "_comment": "M1 fallback: kill the raider chief directly. M2: swap Objectives for _objectives_m2 (survive 3 rounds of the finale combat with the convoy above 50% HP) and QuestStartWorldTriggers for _questStartWorldTriggers_m2 (battle-prep buff + reinforcement wave), see verbs-config.json."
+  },
+
+  "QS_HOLD_THE_LINE_WIN": {
+    "Objectives": [ ["DUMMY", "0"] ],
+    "CompleteObjectives": "ALL",
+    "PreDialogueID": "",
+    "PostDialogueID": "QS_HOLD_THE_LINE_WIN_POST",
+    "QuestStartWorldTriggers": [ ["GIVE_THING", "QS_HOLD_THE_LINE_REWARD_CHEST"] ],
+    "QuestEndWorldTriggers": [],
+    "ObjectiveEngageWorldTriggers": [],
+    "ObjectiveCompleteWorldTriggers": [],
+    "ObjectiveCameraActions": [],
+    "NextQuests": [],
+    "CombatQuests": [],
+    "Requirements": [],
+    "Conflicts": [],
+    "DontRemoveObjectivesOnConflict": false,
+    "RoundsToExpire": -1,
+    "Hidden": true,
+    "DisplayOrder": 22,
+    "AdventureEndTrigger": false,
+    "ChoiceRewards": false,
+    "ChoiceRewardsTake": false,
+    "_comment": "Closer/reward quest once the finale is won."
+  }
+}

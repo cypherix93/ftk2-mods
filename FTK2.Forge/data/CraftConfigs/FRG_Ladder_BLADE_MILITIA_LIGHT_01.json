@@ -1,0 +1,35 @@
+{
+  "BLADE_MILITIA_LIGHT_01_PLUS1": {
+    "Recipes": [
+      {
+        "Catalyst": "FRG_ORB_WHETSTONE",
+        "CatalystAmount": 1,
+        "Ingredients": { "BLADE_MILITIA_LIGHT_01": 1 }
+      },
+      {
+        "Ingredients": { "BLADE_MILITIA_LIGHT_01_PLUS2": 1 }
+      }
+    ]
+  },
+  "BLADE_MILITIA_LIGHT_01_PLUS2": {
+    "Recipes": [
+      {
+        "Catalyst": "FRG_ORB_WHETSTONE",
+        "CatalystAmount": 2,
+        "Ingredients": { "BLADE_MILITIA_LIGHT_01_PLUS1": 1 }
+      },
+      {
+        "Ingredients": { "BLADE_MILITIA_LIGHT_01_PLUS3": 1 }
+      }
+    ]
+  },
+  "BLADE_MILITIA_LIGHT_01_PLUS3": {
+    "Recipes": [
+      {
+        "Catalyst": "FRG_ORB_WHETSTONE",
+        "CatalystAmount": 3,
+        "Ingredients": { "BLADE_MILITIA_LIGHT_01_PLUS2": 1 }
+      }
+    ]
+  }
+}

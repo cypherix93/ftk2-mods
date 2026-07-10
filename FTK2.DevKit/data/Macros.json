@@ -1,0 +1,29 @@
+{
+  "forge-test": {
+    "Description": "Give the FTK2.Forge upgrade orb + a disposable test blade to party slot 1, for orb-consumption testing.",
+    "RequiresMods": ["ftk2mods.forge"],
+    "Commands": [
+      "dk_give_item PARTY1 FRG_ORB_WHETSTONE 10",
+      "dk_give_item PARTY1 BLADE_IRON 1"
+    ]
+  },
+  "warbrain-arena": {
+    "Description": "Spawn a small mixed encounter (melee + caster + support) to exercise WarBrain's tactical scoring across ability categories.",
+    "RequiresMods": ["ftk2mods.warbrain"],
+    "Commands": [
+      "dk_spawn_encounter GOBLIN_GRUNT,GOBLIN_ARCHER,GOBLIN_SHAMAN"
+    ]
+  },
+  "summoner-farm": {
+    "Description": "Repeatedly spawn and win a trivial encounter, to farm the FTK2.Summoner kill counter for evolution-threshold testing.",
+    "RequiresMods": ["ftk2mods.summoner"],
+    "Commands": [
+      "dk_spawn_encounter GOBLIN_GRUNT",
+      "dk_win_combat",
+      "dk_spawn_encounter GOBLIN_GRUNT",
+      "dk_win_combat",
+      "dk_spawn_encounter GOBLIN_GRUNT",
+      "dk_win_combat"
+    ]
+  }
+}

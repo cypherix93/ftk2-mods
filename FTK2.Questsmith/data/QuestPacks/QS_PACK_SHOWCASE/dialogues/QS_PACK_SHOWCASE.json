@@ -1,0 +1,19 @@
+{
+  "_comment": "PLACEHOLDER SCHEMA -- Dialogues\\*.json is not documented in docs/research/data-schemas.md (mentioned only by filename in docs/feasibility.md). This id -> single-line-text shape is a best-effort guess, not decompile-verified (SPEC.md open question #3). Every PreDialogueID/PostDialogueID/QuestStartWorldTriggers DIALOGUE/EngageDialogue/ReachTargetTriggers DIALOGUE id referenced anywhere in this pack has an entry here so the pack is self-contained even if the real schema differs -- worst case these ids fall back to plain localization-key text (M1 does not depend on rich dialogue trees).",
+
+  "QS_RIVAL_COMPANY_INTRO": { "Text": "QS_RIVAL_COMPANY_INTRO_TEXT" },
+  "QS_RIVAL_COMPANY_PLAYER_WINS_DIALOGUE": { "Text": "QS_RIVAL_COMPANY_PLAYER_WINS_DIALOGUE_TEXT" },
+  "QS_RIVAL_COMPANY_RIVAL_WINS_DIALOGUE": { "Text": "QS_RIVAL_COMPANY_RIVAL_WINS_DIALOGUE_TEXT" },
+  "QS_RIVAL_PARTY_ENGAGE_DIALOGUE": { "Text": "QS_RIVAL_PARTY_ENGAGE_DIALOGUE_TEXT" },
+
+  "QS_HOLD_THE_LINE_INTRO": { "Text": "QS_HOLD_THE_LINE_INTRO_TEXT" },
+  "QS_HOLD_THE_LINE_ESCORT_ENGAGE": { "Text": "QS_HOLD_THE_LINE_ESCORT_ENGAGE_TEXT" },
+  "QS_HOLD_THE_LINE_WAVE_DIALOGUE": { "Text": "QS_HOLD_THE_LINE_WAVE_DIALOGUE_TEXT" },
+  "QS_HOLD_THE_LINE_RAIDER_REACHED_DIALOGUE": { "Text": "QS_HOLD_THE_LINE_RAIDER_REACHED_DIALOGUE_TEXT" },
+  "QS_HOLD_THE_LINE_CONVOY_ARRIVED_DIALOGUE": { "Text": "QS_HOLD_THE_LINE_CONVOY_ARRIVED_DIALOGUE_TEXT" },
+  "QS_HOLD_THE_LINE_CONVOY_DAMAGED_DIALOGUE": { "Text": "QS_HOLD_THE_LINE_CONVOY_DAMAGED_DIALOGUE_TEXT" },
+  "QS_HOLD_THE_LINE_CONVOY_LOST_DIALOGUE": { "Text": "QS_HOLD_THE_LINE_CONVOY_LOST_DIALOGUE_TEXT" },
+  "QS_HOLD_THE_LINE_FINALE_INTRO": { "Text": "QS_HOLD_THE_LINE_FINALE_INTRO_TEXT" },
+
+  "QS_QUIET_JOB_INTRO": { "Text": "QS_QUIET_JOB_INTRO_TEXT" }
+}

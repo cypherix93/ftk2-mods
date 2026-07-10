@@ -1,0 +1,74 @@
+{
+  "CF_TRAIT_HEXBLADE_CURSE": {
+    "ConsumableType": "NONE",
+    "Value": 0,
+    "MinTier": 1,
+    "MaxTier": 1,
+    "Class": "TRAIT",
+    "Rarity": "COMMON",
+    "Hidden": true,
+    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_CURSED_STRIKES"], "MaxCharges": 0 },
+    "Tags": ["TRAIT", "CF_PACK_BALDURS"],
+    "Expansion": ""
+  },
+  "CF_TRAIT_PACT_BOON": {
+    "ConsumableType": "NONE",
+    "Value": 0,
+    "MinTier": 1,
+    "MaxTier": 1,
+    "Class": "TRAIT",
+    "Rarity": "COMMON",
+    "Hidden": true,
+    "Equippable": { "Slots": [], "Stats": { "FOC": 2, "INT": 1 }, "Passives": [], "MaxCharges": 0 },
+    "Tags": ["TRAIT", "CF_PACK_BALDURS"],
+    "Expansion": ""
+  },
+  "CF_TRAIT_COMBAT_SUPERIORITY": {
+    "ConsumableType": "NONE",
+    "Value": 0,
+    "MinTier": 1,
+    "MaxTier": 1,
+    "Class": "TRAIT",
+    "Rarity": "COMMON",
+    "Hidden": true,
+    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_BM_RELENTLESS"], "MaxCharges": 0 },
+    "Tags": ["TRAIT", "CF_PACK_BALDURS"],
+    "Expansion": ""
+  },
+  "CF_TRAIT_TACTICAL_MIND": {
+    "ConsumableType": "NONE",
+    "Value": 0,
+    "MinTier": 1,
+    "MaxTier": 1,
+    "Class": "TRAIT",
+    "Rarity": "COMMON",
+    "Hidden": true,
+    "Equippable": { "Slots": [], "Stats": { "AWR": 2, "PRW": 1 }, "Passives": [], "MaxCharges": 0 },
+    "Tags": ["TRAIT", "CF_PACK_BALDURS"],
+    "Expansion": ""
+  },
+  "CF_TRAIT_UNDEAD_LEGION": {
+    "ConsumableType": "NONE",
+    "Value": 0,
+    "MinTier": 1,
+    "MaxTier": 1,
+    "Class": "TRAIT",
+    "Rarity": "COMMON",
+    "Hidden": true,
+    "Equippable": { "Slots": [], "Stats": { "HP": 4, "DEF": 1 }, "Passives": [], "MaxCharges": 0 },
+    "Tags": ["TRAIT", "CF_PACK_BALDURS"],
+    "Expansion": ""
+  },
+  "CF_TRAIT_DEATHS_DESIGN": {
+    "ConsumableType": "NONE",
+    "Value": 0,
+    "MinTier": 1,
+    "MaxTier": 1,
+    "Class": "TRAIT",
+    "Rarity": "COMMON",
+    "Hidden": true,
+    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_NECRO_SOUL_SIPHON"], "MaxCharges": 0 },
+    "Tags": ["TRAIT", "CF_PACK_BALDURS"],
+    "Expansion": ""
+  }
+}

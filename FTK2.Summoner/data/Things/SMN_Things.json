@@ -1,0 +1,153 @@
+{
+  "SMN_ITM_STARTER_BLADE": {
+    "ConsumableType": "NONE",
+    "Class": "BLADE",
+    "Rarity": "COMMON",
+    "Equippable": { "Slots": ["MAIN_HAND"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": { "SMN_ABILITY_SATCHEL_BONK": { "MinValue": 2, "MaxValue": 4, "ACC": 75, "Stat": "STR", "Rolls": 1, "Ammo": -1 } },
+      "AbilityBag": ["SMN_ABILITY_SATCHEL_BONK"]
+    },
+    "Tags": ["MELEE", "DROPPABLE"]
+  },
+
+  "SMN_ITM_TRAINERS_SATCHEL": {
+    "ConsumableType": "NONE",
+    "Class": "ARMOR_TRINKET",
+    "Rarity": "COMMON",
+    "Equippable": { "Slots": ["TRINKET"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": {
+        "SMN_ABILITY_SUMMON_SALAMANDER": { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "TAL", "Rolls": 1, "Ammo": 1 },
+        "SMN_ABILITY_SUMMON_TURTLE":     { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "TAL", "Rolls": 1, "Ammo": 1 },
+        "SMN_ABILITY_SUMMON_SPROUT":     { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "TAL", "Rolls": 1, "Ammo": 1 }
+      },
+      "AbilityBag": ["SMN_ABILITY_SUMMON_SALAMANDER", "SMN_ABILITY_SUMMON_TURTLE", "SMN_ABILITY_SUMMON_SPROUT"]
+    },
+    "Tags": ["SMN_SIGNATURE_ITEM"]
+  },
+
+  "SMN_ITM_EMBER_CLAWS_T1": {
+    "ConsumableType": "NONE",
+    "Class": "BLADE",
+    "Rarity": "COMMON",
+    "Equippable": { "Slots": ["MAIN_HAND"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": { "SMN_ABILITY_EMBER_BITE_T1": { "MinValue": 3, "MaxValue": 5, "ACC": 72, "Stat": "STR", "Rolls": 1, "Ammo": -1 } },
+      "AbilityBag": ["SMN_ABILITY_EMBER_BITE_T1"]
+    },
+    "Tags": ["SMN_NATURAL_WEAPON", "MELEE", "FIRE"]
+  },
+  "SMN_ITM_EMBER_CLAWS_T2": {
+    "ConsumableType": "NONE",
+    "Class": "BLADE",
+    "Rarity": "UNCOMMON",
+    "Equippable": { "Slots": ["MAIN_HAND"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": { "SMN_ABILITY_EMBER_BITE_T2": { "MinValue": 5, "MaxValue": 8, "ACC": 75, "Stat": "STR", "Rolls": 1, "Ammo": -1 } },
+      "AbilityBag": ["SMN_ABILITY_EMBER_BITE_T2"]
+    },
+    "Tags": ["SMN_NATURAL_WEAPON", "MELEE", "FIRE"]
+  },
+  "SMN_ITM_EMBER_CLAWS_T3": {
+    "ConsumableType": "NONE",
+    "Class": "BLADE",
+    "Rarity": "RARE",
+    "Equippable": { "Slots": ["MAIN_HAND"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": { "SMN_ABILITY_EMBER_BITE_T3": { "MinValue": 8, "MaxValue": 13, "ACC": 78, "Stat": "STR", "Rolls": 1, "Ammo": -1 } },
+      "AbilityBag": ["SMN_ABILITY_EMBER_BITE_T3"]
+    },
+    "Tags": ["SMN_NATURAL_WEAPON", "MELEE", "FIRE"]
+  },
+
+  "SMN_ITM_TIDE_CLAWS_T1": {
+    "ConsumableType": "NONE",
+    "Class": "BLUNT",
+    "Rarity": "COMMON",
+    "Equippable": { "Slots": ["MAIN_HAND"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": { "SMN_ABILITY_TIDE_SLAM_T1": { "MinValue": 2, "MaxValue": 4, "ACC": 65, "Stat": "STR", "Rolls": 1, "Ammo": -1 } },
+      "AbilityBag": ["SMN_ABILITY_TIDE_SLAM_T1"]
+    },
+    "Tags": ["SMN_NATURAL_WEAPON", "MELEE"]
+  },
+  "SMN_ITM_TIDE_CLAWS_T2": {
+    "ConsumableType": "NONE",
+    "Class": "BLUNT",
+    "Rarity": "UNCOMMON",
+    "Equippable": { "Slots": ["MAIN_HAND"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": { "SMN_ABILITY_TIDE_SLAM_T2": { "MinValue": 4, "MaxValue": 7, "ACC": 68, "Stat": "STR", "Rolls": 1, "Ammo": -1 } },
+      "AbilityBag": ["SMN_ABILITY_TIDE_SLAM_T2"]
+    },
+    "Tags": ["SMN_NATURAL_WEAPON", "MELEE"]
+  },
+  "SMN_ITM_TIDE_CLAWS_T3": {
+    "ConsumableType": "NONE",
+    "Class": "BLUNT",
+    "Rarity": "RARE",
+    "Equippable": { "Slots": ["MAIN_HAND"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": { "SMN_ABILITY_TIDE_SLAM_T3": { "MinValue": 7, "MaxValue": 11, "ACC": 70, "Stat": "STR", "Rolls": 1, "Ammo": -1 } },
+      "AbilityBag": ["SMN_ABILITY_TIDE_SLAM_T3"]
+    },
+    "Tags": ["SMN_NATURAL_WEAPON", "MELEE"]
+  },
+
+  "SMN_ITM_THORN_VINE_T1": {
+    "ConsumableType": "NONE",
+    "Class": "WHIP",
+    "Rarity": "COMMON",
+    "Equippable": { "Slots": ["MAIN_HAND"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": { "SMN_ABILITY_VINE_WHIP_T1": { "MinValue": 3, "MaxValue": 5, "ACC": 70, "Stat": "STR", "Rolls": 1, "Ammo": -1 } },
+      "AbilityBag": ["SMN_ABILITY_VINE_WHIP_T1"]
+    },
+    "Tags": ["SMN_NATURAL_WEAPON", "MELEE"]
+  },
+  "SMN_ITM_THORN_VINE_T2": {
+    "ConsumableType": "NONE",
+    "Class": "WHIP",
+    "Rarity": "UNCOMMON",
+    "Equippable": { "Slots": ["MAIN_HAND"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": { "SMN_ABILITY_VINE_WHIP_T2": { "MinValue": 5, "MaxValue": 8, "ACC": 72, "Stat": "STR", "Rolls": 1, "Ammo": -1 } },
+      "AbilityBag": ["SMN_ABILITY_VINE_WHIP_T2"]
+    },
+    "Tags": ["SMN_NATURAL_WEAPON", "MELEE"]
+  },
+  "SMN_ITM_THORN_VINE_T3": {
+    "ConsumableType": "NONE",
+    "Class": "WHIP",
+    "Rarity": "RARE",
+    "Equippable": { "Slots": ["MAIN_HAND"], "Stats": {}, "Passives": [] },
+    "Interactable": {
+      "Abilities": { "SMN_ABILITY_VINE_WHIP_T3": { "MinValue": 8, "MaxValue": 13, "ACC": 75, "Stat": "STR", "Rolls": 1, "Ammo": -1 } },
+      "AbilityBag": ["SMN_ABILITY_VINE_WHIP_T3"]
+    },
+    "Tags": ["SMN_NATURAL_WEAPON", "MELEE"]
+  },
+
+  "SMN_STONE_FIRE": {
+    "ConsumableType": "NONE",
+    "Class": null,
+    "Rarity": "RARE",
+    "Stacks": true,
+    "Tags": ["SMN_EVOLUTION_STONE", "DUNGEON_MARKET"]
+  },
+  "SMN_STONE_WATER": {
+    "ConsumableType": "NONE",
+    "Class": null,
+    "Rarity": "RARE",
+    "Stacks": true,
+    "Tags": ["SMN_EVOLUTION_STONE", "DUNGEON_MARKET"]
+  },
+  "SMN_STONE_PLANT": {
+    "ConsumableType": "NONE",
+    "Class": null,
+    "Rarity": "RARE",
+    "Stacks": true,
+    "Tags": ["SMN_EVOLUTION_STONE", "DUNGEON_MARKET"]
+  }
+}

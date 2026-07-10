@@ -1,0 +1,19 @@
+{
+  "Id": "RW_GEM_SAPPHIRE_2",
+  "Tier": 2,
+  "SocketType": "ARMOR",
+
+  "DisplayName": "RW_GEM_SAPPHIRE_2",
+  "Rarity": "UNCOMMON",
+  "Value": 75,
+  "Stacks": true,
+  "Tags": ["DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET"],
+
+  "Effects": {
+    "Stats": { "DEF": 3, "RES": 2 },
+    "Passives": ["STATUS_IMMUNITY_WATER"],
+    "GrantedAbilities": [],
+    "OnHitProc": null,
+    "SetBonus": null
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "Id": "RW_GEM_STARSTONE",
+  "Tier": 1,
+  "SocketType": "TRINKET",
+
+  "DisplayName": "RW_GEM_STARSTONE",
+  "Rarity": "RARE",
+  "Value": 150,
+  "Stacks": true,
+  "Tags": ["DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "NIGHT_MARKET"],
+
+  "Effects": {
+    "Stats": { "LCK": 3 },
+    "Passives": [],
+    "GrantedAbilities": [],
+    "OnHitProc": null,
+    "SetBonus": {
+      "Family": "RW_ANY",
+      "MinCount": 2,
+      "Stats": { "LCK": 2 },
+      "Passives": []
+    }
+  }
+}

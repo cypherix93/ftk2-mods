@@ -1,0 +1,56 @@
+{
+  "Reactions": [
+    {
+      "Id": "WB_REACT_SAW_AOE",
+      "Description": "Party used an AoE/row/column ability this battle (or run, if MemoryScope=PerRun) - start spreading out on the grid.",
+      "Trigger": {
+        "Fact": "WB_FACT_ABILITY_SEEN",
+        "TargetAreaAnyOf": ["AOE", "ROW", "COLUMN", "SPLASH", "SPLASH_WAVE", "ALL_GROUP"]
+      },
+      "Scope": "FACTION",
+      "Effect": {
+        "ConsiderationWeightDelta": { "WB_CONSIDER_ROW_POSITION_VALUE": 0.4 }
+      },
+      "Decay": { "Mode": "PER_BATTLE" }
+    },
+    {
+      "Id": "WB_REACT_HEALER_IDENTIFIED",
+      "Description": "Identified the party's healer (they cast a positive HP change or a REGEN-type status on an ally) - bias targeting toward that specific character.",
+      "Trigger": {
+        "Fact": "WB_FACT_HEALER_IDENTIFIED"
+      },
+      "Scope": "FACTION",
+      "Effect": {
+        "TargetPriorityDelta": 6.0
+      },
+      "Decay": { "Mode": "PER_RUN", "DecayBattles": 3 }
+    },
+    {
+      "Id": "WB_REACT_HEAVY_ELEMENTAL_DAMAGE",
+      "Description": "Took repeated FIRE or SHOCK damage this battle - get cautious, lean on self-support abilities a bit more.",
+      "Trigger": {
+        "Fact": "WB_FACT_DAMAGE_TAKEN_BY_TYPE",
+        "DamageTypeAnyOf": ["FIRE", "SHOCK"],
+        "MinOccurrences": 2
+      },
+      "Scope": "FACTION",
+      "Effect": {
+        "AbilityCategoryBiasDelta": { "SUPPORT_SELF": 0.3 }
+      },
+      "Decay": { "Mode": "PER_BATTLE" }
+    },
+    {
+      "Id": "WB_REACT_SAW_DEBUFF",
+      "Description": "Party leans on debuffs - value removing/purifying statuses a little more, and value applying counter-debuffs a little less (already-debuffed enemies are less useful debuff targets).",
+      "Trigger": {
+        "Fact": "WB_FACT_STATUS_INFLICTED",
+        "MinOccurrences": 1
+      },
+      "Scope": "FACTION",
+      "Effect": {
+        "AbilityCategoryBiasDelta": { "SUPPORT_SELF": 0.1, "DEBUFF": -0.1 }
+      },
+      "Decay": { "Mode": "PER_BATTLE" }
+    }
+  ]
+}

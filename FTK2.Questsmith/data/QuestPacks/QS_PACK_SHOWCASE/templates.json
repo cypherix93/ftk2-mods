@@ -1,0 +1,55 @@
+{
+  "QS_TPL_RIVAL_COMPANY": {
+    "QuestID": "QS_RIVAL_COMPANY_START",
+    "Type": "BOUNTY",
+    "Args": [],
+    "Description": "QS_TPL_RIVAL_COMPANY_DESC",
+    "Rarity": "RARE",
+    "IsCamp": false,
+    "ThreatLevel": 3,
+    "ObjectiveArgs": [],
+    "RewardType": "GOLD",
+    "RewardsTagQuery": "",
+    "RewardItemsCount": 0,
+    "LootScale": 1.0,
+    "AdventureQuest": false,
+    "MysteryReward": false,
+    "Tags": [ "QS_SHOWCASE" ]
+  },
+
+  "QS_TPL_HOLD_THE_LINE": {
+    "QuestID": "QS_HOLD_THE_LINE_START",
+    "Type": "PURGE",
+    "Args": [],
+    "Description": "QS_TPL_HOLD_THE_LINE_DESC",
+    "Rarity": "RARE",
+    "IsCamp": false,
+    "ThreatLevel": 5,
+    "ObjectiveArgs": [],
+    "RewardType": "ITEM",
+    "RewardsTagQuery": "",
+    "RewardItemsCount": 1,
+    "LootScale": 1.25,
+    "AdventureQuest": false,
+    "MysteryReward": false,
+    "Tags": [ "QS_SHOWCASE" ]
+  },
+
+  "QS_TPL_QUIET_JOB": {
+    "QuestID": "QS_QUIET_JOB_START",
+    "Type": "MYSTERY",
+    "Args": [],
+    "Description": "QS_TPL_QUIET_JOB_DESC",
+    "Rarity": "COMMON",
+    "IsCamp": true,
+    "ThreatLevel": 2,
+    "ObjectiveArgs": [],
+    "RewardType": "NONE",
+    "RewardsTagQuery": "",
+    "RewardItemsCount": 0,
+    "LootScale": 1.0,
+    "AdventureQuest": false,
+    "MysteryReward": true,
+    "Tags": [ "QS_SHOWCASE" ]
+  }
+}

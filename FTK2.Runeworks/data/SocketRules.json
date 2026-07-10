@@ -1,0 +1,36 @@
+{
+  "Enabled": true,
+  "Default": 0,
+
+  "ByRarity": {
+    "COMMON": 1,
+    "UNCOMMON": 1,
+    "RARE": 2,
+    "EPIC": 2,
+    "LEGENDARY": 3
+  },
+
+  "ByClass": {
+    "ARMOR_TRINKET": 1
+  },
+
+  "ByTag": {},
+
+  "EligibleClasses": [
+    "BLADE", "KATANA", "DAGGER", "RAPIER", "AXE", "BLUNT", "SPEAR", "WHIP", "WAND", "LONGSTAFF",
+    "BOW", "RIFLE", "GUN", "SHOTGUN", "HANDBOW", "CANNON", "BOOMERANG", "BOMB",
+    "SHIELD", "ARMOR_BODY", "ARMOR_HEAD", "ARMOR_HANDS", "ARMOR_FEET", "ARMOR_TRINKET"
+  ],
+
+  "SocketTypeGroups": {
+    "WEAPON": [
+      "BLADE", "KATANA", "DAGGER", "RAPIER", "AXE", "BLUNT", "SPEAR", "WHIP", "WAND", "LONGSTAFF",
+      "BOW", "RIFLE", "GUN", "SHOTGUN", "HANDBOW", "CANNON", "BOOMERANG", "BOMB"
+    ],
+    "ARMOR": ["SHIELD", "ARMOR_BODY", "ARMOR_HEAD", "ARMOR_HANDS", "ARMOR_FEET"],
+    "TRINKET": ["ARMOR_TRINKET"]
+  },
+
+  "UnsocketPolicy": "DESTROY_GEM",
+  "UnsocketGoldCost": 100
+}

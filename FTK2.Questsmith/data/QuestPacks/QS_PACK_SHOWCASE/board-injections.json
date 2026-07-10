@@ -1,0 +1,12 @@
+{
+  "_comment": "BoardID keys below are placeholders -- real QuestBoards.json board ids must be confirmed from the shipped game file before release (SPEC.md open question #4). Weight is only meaningful relative to other entries injected into the same board; scaled globally by the [Questsmith] BoardInjectionWeightScale knob.",
+
+  "TOWN_BOARD_DEFAULT": [
+    { "TemplateID": "QS_TPL_RIVAL_COMPANY", "Weight": 4 },
+    { "TemplateID": "QS_TPL_HOLD_THE_LINE", "Weight": 3 }
+  ],
+
+  "TOWN_BOARD_CAMP": [
+    { "TemplateID": "QS_TPL_QUIET_JOB", "Weight": 6 }
+  ]
+}

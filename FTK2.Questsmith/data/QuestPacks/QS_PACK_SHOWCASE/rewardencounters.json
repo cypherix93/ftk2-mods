@@ -1,0 +1,20 @@
+{
+  "QS_RIVAL_PARTY": {
+    "EncounterType": "ENEMY",
+    "TypeArgs": [ "QS_RIVAL_MERC" ],
+    "DisplayName": "QS_RIVAL_PARTY_DISPLAYNAME",
+    "MapPropName": "QS_RivalPartyProp",
+    "Guid": "QS_RIVAL_PARTY_GUID",
+    "TurnsToDecay": 6,
+    "ProgressionType": "STATIC",
+    "ChanceToSpawn": 1.0,
+    "SpawnConditions": [ "MAX_INSTANCE:1" ],
+    "DecayConditions": [ "HAS_USER_STAT:QS_RIVAL_COMPANY_START_COMPLETE" ],
+    "RequiresItemKey": "",
+    "StartQuest": "QS_RIVAL_COMPANY_RIVAL_WINS",
+    "Rewards": [],
+    "EngageDialogue": "QS_RIVAL_PARTY_ENGAGE_DIALOGUE",
+    "TimeOfDayAvailability": [],
+    "_comment": "Race-clock encounter for The Rival Company. TurnsToDecay mirrors QS_RIVAL_COMPANY_START's RoundsToExpire: if the player has not completed the bounty (DecayConditions' HAS_USER_STAT flag) before it decays, StartQuest fires QS_RIVAL_COMPANY_RIVAL_WINS, which Conflicts-closes the player's quest. SpawnConditions MAX_INSTANCE:1 keeps only one rival party active per run."
+  }
+}

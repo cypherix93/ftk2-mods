@@ -1,0 +1,57 @@
+{
+  "SchemaVersion": 1,
+  "Id": "AP_COSTMODEL_DEFAULT",
+  "Description": "FTK2.ActionPoints default cost model. Roughly preserves vanilla combat pacing: a turn buys one big swing (major) plus a follow-up (minor), same as 1 PA + 1 SA today.",
+
+  "APPerTurn": {
+    "Base": 4,
+    "SpdBonus": {
+      "SpdPerPoint": 5,
+      "MaxBonus": 2,
+      "_comment": "bonus = min(MaxBonus, floor(SPD / SpdPerPoint)), added to Base at grant time"
+    },
+    "MaxPool": 8,
+    "CarryoverCap": 2
+  },
+
+  "Costs": {
+    "DefaultMajorActionCost": 3,
+    "DefaultMinorActionCost": 1,
+    "DefaultItemUseCost": 1,
+    "DefaultMovementCost": 1,
+
+    "FocusUsedModifier": {
+      "Mode": "Add",
+      "Value": 1,
+      "_comment": "Applied to the resolved base cost when CombatDecisionData.FocusUsed is true. Mode: Add | Multiply."
+    },
+
+    "PerCategoryOverrides": {
+      "_comment": "Keys are eAbilityCategories values (verified 14-value enum). Overrides beat the Major/Minor default, lose to PerAbilityOverrides.",
+      "MOVE": 1,
+      "MOVE_ENEMY": 1,
+      "USE_ITEM": 1,
+      "SUMMON": 4,
+      "SKIP_TURN": 0,
+      "FLEE": 0,
+      "TAUNT": 1
+    },
+
+    "PerAbilityOverrides": {
+      "_comment": "Keys are real Abilities.json ability ids (NOT skill ids). No verified concrete ability id was available in docs/research at spec time -- replace this placeholder with real ids from Abilities.json before shipping. Highest precedence: beats category and major/minor defaults.",
+      "REPLACE_WITH_REAL_ABILITY_ID": 2
+    }
+  },
+
+  "LegacyStatConversion": {
+    "_comment": "How raw CHANGE_STAT deltas against the legacy Stat=PA/SA (haste/slow, tactics-style passives, scripted phase events) get reinterpreted as AP pool deltas instead of literal int increments. delta_AP = delta_PA * PAPointValue + delta_SA * SAPointValue.",
+    "PAPointValue": 3,
+    "SAPointValue": 1
+  },
+
+  "EnemyAP": {
+    "Mode": "Symmetric",
+    "_comment": "Symmetric = enemies use the fields above unmodified. Asymmetric = enemies use the Overrides block below (any omitted field falls back to the player-side value above).",
+    "Overrides": null
+  }
+}

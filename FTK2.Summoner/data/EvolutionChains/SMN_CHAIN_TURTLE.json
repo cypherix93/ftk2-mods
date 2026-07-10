@@ -1,0 +1,36 @@
+{
+  "SMN_CHAIN_TURTLE": {
+    "Element": "WATER",
+    "DisplayName": "SMN_CHAIN_TURTLE_NAME",
+    "FollowerId": "SMN_FOL_TURTLE",
+    "EvolutionMoment": "BETWEEN_COMBAT",
+    "Stages": [
+      {
+        "Stage": 1,
+        "CharacterConfigId": "SMN_TURTLE_1",
+        "VisualFallbackId": "SMN_TURTLE_1",
+        "PortraitPath": "Portraits/smn_turtle_1.png",
+        "AdvanceConditions": []
+      },
+      {
+        "Stage": 2,
+        "CharacterConfigId": "SMN_TURTLE_2",
+        "VisualFallbackId": "SMN_TURTLE_2",
+        "PortraitPath": "Portraits/smn_turtle_2.png",
+        "AdvanceConditions": [
+          { "Type": "KILLS_BY_SUMMON", "Count": 5 }
+        ]
+      },
+      {
+        "Stage": 3,
+        "CharacterConfigId": "SMN_TURTLE_3",
+        "VisualFallbackId": "SMN_TURTLE_3",
+        "PortraitPath": "Portraits/smn_turtle_3.png",
+        "AdvanceConditions": [
+          { "Type": "KILLS_BY_SUMMON", "Count": 12 },
+          { "Type": "ITEM_CATALYST", "ItemId": "SMN_STONE_WATER" }
+        ]
+      }
+    ]
+  }
+}

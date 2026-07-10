@@ -1,0 +1,15 @@
+{
+  "Id": "WB_DOCTRINE_GUARDIAN",
+  "Description": "Protects a designated leader/caster in the squad: raises taunt/protection behavior and ally-in-danger sensitivity. Pair with a squad that includes a WB_TAG_LEADER-tagged member (naming convention only; tag itself is defined per-encounter in the assignment/character data, not by this engine).",
+  "ConsiderationWeightDeltas": {
+    "WB_CONSIDER_ALLY_IN_DANGER": 0.4,
+    "WB_CONSIDER_THREAT": 0.2
+  },
+  "ConsiderationOverrides": [],
+  "AbilityCategoryBiasDeltas": {
+    "TAUNT": 0.8,
+    "SUPPORT_ALLY": 0.3
+  },
+  "TemperatureDelta": -0.05,
+  "ReactionRefs": []
+}

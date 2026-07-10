@@ -1,0 +1,57 @@
+{
+  "QS_HOLD_THE_LINE_ASSAULT": {
+    "Loop": false,
+    "Prewarm": false,
+    "Health": 0,
+    "Waves": [
+      {
+        "SPAWN_TRIGGER": "ROUND_START",
+        "SPAWN_FREQUENCY": 2,
+        "SPAWN_PER_TRIGGER": 2,
+        "SPAWN_MAX_TRIGGERS": 4,
+        "SPAWN_MAX_UNITS": 8,
+        "SPAWN_METHOD": "RANDOM",
+        "SPAWN_MOVE_RULE": "LAND_AVOID",
+        "SPAWN_DISTANCE_MIN": 2,
+        "SPAWN_DISTANCE_MAX": 5,
+        "SPAWN_UNIT": "QS_RAIDER",
+        "SPAWN_ENEMY_SET": "",
+        "SPAWN_DESTINATION": "QS_CARAVAN_CONVOY",
+        "SPAWN_DIALOGUE": "QS_HOLD_THE_LINE_WAVE_DIALOGUE",
+        "REACH_DIALOGUE": "QS_HOLD_THE_LINE_RAIDER_REACHED_DIALOGUE",
+        "QUEST_PARENT": "QS_HOLD_THE_LINE_START",
+        "REWARDS_DESTROY": true,
+        "DAMAGE_ON_REACH": 10
+      }
+    ],
+    "_comment": "Raider waves march on QS_CARAVAN_CONVOY (towerdefenseunits.json); the assault is cleared (REMOVE_ENCOUNTER) once SPAWN_MAX_TRIGGERS have fired and all spawned QS_RAIDER units are dead. QUEST_PARENT ties the spawner's lifecycle to QS_HOLD_THE_LINE_START."
+  },
+
+  "QS_HOLD_THE_LINE_REINFORCEMENT_WAVE": {
+    "Loop": false,
+    "Prewarm": false,
+    "Health": 0,
+    "Waves": [
+      {
+        "SPAWN_TRIGGER": "NONE",
+        "SPAWN_FREQUENCY": 1,
+        "SPAWN_PER_TRIGGER": 3,
+        "SPAWN_MAX_TRIGGERS": 1,
+        "SPAWN_MAX_UNITS": 3,
+        "SPAWN_METHOD": "RANDOM",
+        "SPAWN_MOVE_RULE": "LAND_AVOID",
+        "SPAWN_DISTANCE_MIN": 1,
+        "SPAWN_DISTANCE_MAX": 3,
+        "SPAWN_UNIT": "QS_RAIDER",
+        "SPAWN_ENEMY_SET": "",
+        "SPAWN_DESTINATION": "",
+        "SPAWN_DIALOGUE": "",
+        "REACH_DIALOGUE": "",
+        "QUEST_PARENT": "QS_HOLD_THE_LINE_FINALE",
+        "REWARDS_DESTROY": true,
+        "DAMAGE_ON_REACH": 0
+      }
+    ],
+    "_comment": "M2 only: SPAWN_TRIGGER:NONE means this spawner never fires on its own -- it is activated on demand by the QS_START_MAP_SPAWNER trigger action (QS_HOLD_THE_LINE_REINFORCEMENTS_PARAMS in verbs-config.json) when the finale combat starts. Exact runtime activation call is unverified (SPEC.md open question #7)."
+  }
+}

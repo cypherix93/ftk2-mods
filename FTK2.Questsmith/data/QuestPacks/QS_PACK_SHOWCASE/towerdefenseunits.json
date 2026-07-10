@@ -1,0 +1,33 @@
+{
+  "QS_RAIDER": {
+    "PropName": "QS_RaiderProp",
+    "SpawnType": "HORDE_DEFENSE",
+    "MaxHealth": 40,
+    "Movement": 2,
+    "CameraFollow": false,
+    "ReachTargetTriggers": [ ["DIALOGUE", "QS_HOLD_THE_LINE_RAIDER_REACHED_DIALOGUE"] ],
+    "CollideTriggers": [ "DAMAGE", "COMBAT" ],
+    "LootDropArgs": [],
+    "Properties": [ "HUNT_PLAYER_NEAREST" ],
+    "DialogueOnCollide": "",
+    "DialogueOnDamage": "",
+    "DialogueOnDeath": "",
+    "_comment": "Enemy wave unit spawned by spawners.json QS_HOLD_THE_LINE_ASSAULT. Hunts the player party and the convoy; colliding with the convoy fires DAMAGE (see spawners.json Waves[].DAMAGE_ON_REACH), colliding with the party triggers COMBAT."
+  },
+
+  "QS_CARAVAN_CONVOY": {
+    "PropName": "QS_CaravanConvoyProp",
+    "SpawnType": "TOWER_DEFENSE",
+    "MaxHealth": 60,
+    "Movement": 1,
+    "CameraFollow": true,
+    "ReachTargetTriggers": [ ["DIALOGUE", "QS_HOLD_THE_LINE_CONVOY_ARRIVED_DIALOGUE"] ],
+    "CollideTriggers": [ "DEATH" ],
+    "LootDropArgs": [],
+    "Properties": [ "BLOCK_PATH" ],
+    "DialogueOnCollide": "",
+    "DialogueOnDamage": "QS_HOLD_THE_LINE_CONVOY_DAMAGED_DIALOGUE",
+    "DialogueOnDeath": "QS_HOLD_THE_LINE_CONVOY_LOST_DIALOGUE",
+    "_comment": "The escorted target. SpawnType TOWER_DEFENSE is a provisional choice -- the three documented SpawnType values (TOWER_DEFENSE/HORDE_DEFENSE/HUNT_NEAREST) all read as hostile/aggressive-unit flavors and none is confirmed to support a neutral, player-friendly, pathing-to-safety unit (SPEC.md open question #5). Reaching its destination fires ReachTargetTriggers, which QS_HOLD_THE_LINE_START's ACTIVATE_ENTITY objective is wired against; CollideTriggers:DEATH means the convoy being destroyed en route should fail the quest, not just damage it."
+  }
+}

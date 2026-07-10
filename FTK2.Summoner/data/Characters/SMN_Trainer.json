@@ -1,0 +1,30 @@
+{
+  "SMN_TRAINER": {
+    "Stats": {
+      "HP": 30,
+      "PA": 1,
+      "SA": 1,
+      "ACC": 75,
+      "EVD": 8,
+      "DEF": 3,
+      "RES": 3,
+      "SPD": 6,
+      "FOC": 3,
+      "LCK": 5,
+      "CRT": 5
+    },
+    "Things": {
+      "SMN_ITM_STARTER_BLADE": 1,
+      "SMN_ITM_TRAINERS_SATCHEL": 1
+    },
+    "Passives": [],
+    "LootID": "",
+    "LocKey": "SMN_TRAINER",
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "HUMAN",
+    "Tags": ["PLAYER"],
+    "Expansion": "BASE"
+  }
+}

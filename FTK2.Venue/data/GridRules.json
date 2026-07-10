@@ -1,0 +1,38 @@
+{
+  "// Comment": "FTK2.Venue grid-selection rule list. See FTK2.Venue/SPEC.md section 4.1 for the full schema.",
+  "Enabled": true,
+
+  "Rules": [
+    {
+      "Id": "VNU_RULE_BIG_ENCOUNTER",
+      "Comment": "5+ enemies: give the room.",
+      "Grid": "Extended",
+      "Conditions": {
+        "MinEnemyCount": 5
+      }
+    },
+    {
+      "Id": "VNU_RULE_TWOBYTWO_CROWD",
+      "Comment": "A 2x2 enemy (boss-sized footprint) plus at least 3 others needs Extended so the 2x2 doesn't eat half the row.",
+      "Grid": "Extended",
+      "Conditions": {
+        "HasTwoByTwoEnemy": true,
+        "MinEnemyCount": 4
+      }
+    },
+    {
+      "Id": "VNU_RULE_SUMMON_SYNERGY",
+      "Comment": "Summoner/Necromancer-type parties: party size + summon-capable allies >= 5 crowds Standard fast.",
+      "Grid": "Extended",
+      "Conditions": {
+        "MinPartyPlusSummons": 5
+      }
+    },
+    {
+      "Id": "VNU_RULE_DEFAULT",
+      "Comment": "Fallback: everything else stays Standard (vanilla behavior). Keep this rule last.",
+      "Grid": "Standard",
+      "Conditions": {}
+    }
+  ]
+}

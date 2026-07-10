@@ -1,0 +1,46 @@
+{
+  "_comment": "EOR-style ID / ID_DESCRIPTION localization keys (see CONVENTIONS.md Naming). GIVE_THING targets referenced by the showcase quests (QS_RIVAL_LOOT_CACHE, QS_RIVAL_SPLIT_SHARE, QS_HOLD_THE_LINE_VICTORY_BANNER, QS_HOLD_THE_LINE_REWARD_CHEST, QS_STOLEN_GOODS_CACHE, QS_REFUSAL_TOKEN) are illustrative Things.json ids -- this pack does not itself define the items (out of Questsmith's scope; an item-content mod such as FTK2.Forge would supply them in a full build).",
+
+  "QS_TPL_RIVAL_COMPANY_DESC": "A bounty has gone up on a dangerous mark -- but word is a rival adventuring company is already on the road.",
+  "QS_TPL_HOLD_THE_LINE_DESC": "A merchant convoy needs an armed escort through raider country.",
+  "QS_TPL_QUIET_JOB_DESC": "A discreet contact has a job that pays well, if you don't ask too many questions.",
+
+  "QS_RIVAL_PARTY_DISPLAYNAME": "The Rival Company",
+
+  "QS_RIVAL_COMPANY_START_PRE": "A bounty poster names a target worth a small fortune. You are not the only ones who have seen it -- another company is already moving.",
+  "QS_RIVAL_COMPANY_START_POST": "The mark is down. For now, the bounty is yours.",
+  "QS_RIVAL_COMPANY_CHOICE_PRE": "The rival company's captain stands over the same mark, weapons still sheathed. What now?",
+  "QS_RIVAL_COMPANY_CONFRONT_PRE": "Take it all. They will not give up the bounty without a fight.",
+  "QS_RIVAL_COMPANY_CONFRONT_POST": "The rival company scatters. The bounty, and their gear, are yours.",
+  "QS_RIVAL_COMPANY_ALLY_PRE": "Split it evenly. No blood, less gold, one less enemy on the road.",
+  "QS_RIVAL_COMPANY_ALLY_POST": "A fair split, and a company that owes you a favor.",
+
+  "QS_RIVAL_COMPANY_INTRO_TEXT": "Word travels fast in bounty country -- and so does the competition.",
+  "QS_RIVAL_COMPANY_PLAYER_WINS_DIALOGUE_TEXT": "You reach the mark first. The rival company arrives moments too late.",
+  "QS_RIVAL_COMPANY_RIVAL_WINS_DIALOGUE_TEXT": "The rival company beat you to it. The bounty poster is already gone from the board.",
+  "QS_RIVAL_PARTY_ENGAGE_DIALOGUE_TEXT": "The rival company's captain sizes up your party.",
+
+  "QS_HOLD_THE_LINE_START_PRE": "The convoy master needs the caravan through the pass before the raiders regroup.",
+  "QS_HOLD_THE_LINE_FINALE_PRE": "The raiders' main force crests the ridge. This is the last push.",
+  "QS_HOLD_THE_LINE_FINALE_POST": "The pass is clear. The convoy is safe.",
+  "QS_HOLD_THE_LINE_WIN_POST": "The convoy master pays in full, plus a little extra for the trouble.",
+
+  "QS_HOLD_THE_LINE_INTRO_TEXT": "Raider country. Keep the convoy moving.",
+  "QS_HOLD_THE_LINE_ESCORT_ENGAGE_TEXT": "The convoy creaks forward. Stay close.",
+  "QS_HOLD_THE_LINE_WAVE_DIALOGUE_TEXT": "Raiders, closing fast!",
+  "QS_HOLD_THE_LINE_RAIDER_REACHED_DIALOGUE_TEXT": "A raider breaks through the line!",
+  "QS_HOLD_THE_LINE_CONVOY_ARRIVED_DIALOGUE_TEXT": "The convoy reaches safe ground.",
+  "QS_HOLD_THE_LINE_CONVOY_DAMAGED_DIALOGUE_TEXT": "A wagon splinters under the assault!",
+  "QS_HOLD_THE_LINE_CONVOY_LOST_DIALOGUE_TEXT": "The convoy is overrun.",
+  "QS_HOLD_THE_LINE_FINALE_INTRO_TEXT": "Hold the line -- this is where it ends, one way or another.",
+
+  "QS_QUIET_JOB_START_PRE": "Your contact slides a map across the table. No names, no questions.",
+  "QS_QUIET_JOB_START_POST": "In and out, no one the wiser.",
+  "QS_QUIET_JOB_CHOICE_PRE": "The vault is open. The gold is real. So is the guilt.",
+  "QS_QUIET_JOB_TAKE_GOLD_PRE": "Take the gold. It spends the same either way.",
+  "QS_QUIET_JOB_TAKE_GOLD_POST": "The coin is heavy in your pack. The road feels a little darker.",
+  "QS_QUIET_JOB_REFUSE_PRE": "Leave it. Some jobs are not worth the coin.",
+  "QS_QUIET_JOB_REFUSE_POST": "You walk away empty-handed, and somehow lighter for it.",
+
+  "QS_QUIET_JOB_INTRO_TEXT": "Quiet feet, quiet job."
+}

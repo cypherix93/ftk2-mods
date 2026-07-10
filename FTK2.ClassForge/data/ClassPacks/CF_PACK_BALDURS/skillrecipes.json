@@ -1,0 +1,69 @@
+{
+  "SKILL_CF_HEXBLADE_BARGAIN": {
+    "DisplayName": "Eldritch Bargain",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ABILITY_TAG", "Value": "CF_BARGAIN" }
+    ],
+    "Effects": [
+      { "Type": "STAT_CHANGE", "Target": "CASTER", "Stat": "HP", "StatChangeType": "MAGICAL", "FlatValue": -4, "Blockable": false },
+      { "Type": "STAT_CHANGE", "Target": "CASTER", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValue": 3, "Blockable": false }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "Cooldown": 0,
+    "VerboseLogTag": "Hexblade Bargain"
+  },
+  "SKILL_CF_CURSED_STRIKES": {
+    "DisplayName": "Cursed Strikes",
+    "Trigger": "ON_CRIT",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "CURSE" }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "Cooldown": 0,
+    "VerboseLogTag": "Cursed Strikes"
+  },
+  "SKILL_CF_BM_RELENTLESS": {
+    "DisplayName": "Relentless",
+    "Trigger": "ON_KILL",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "STAT_CHANGE", "Target": "CASTER", "Stat": "SA", "StatChangeType": "PHYSICAL", "FlatValue": 1, "Blockable": false }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "Cooldown": 1,
+    "VerboseLogTag": "Relentless"
+  },
+  "SKILL_CF_NECRO_RAISE_ON_KILL": {
+    "DisplayName": "Grim Resurrection",
+    "Trigger": "ON_KILL",
+    "Conditions": [
+      { "Type": "TARGET_BASE_TYPE_NOT", "Value": "SKELETON" }
+    ],
+    "Effects": [
+      { "Type": "SUMMON", "Target": "TRIGGER_TARGET_POSITION", "CharacterConfig": "CF_SKELETON_WARRIOR", "Count": 1 }
+    ],
+    "ProcChance": 35,
+    "AiProcChance": 0,
+    "Cooldown": 0,
+    "VerboseLogTag": "Grim Resurrection"
+  },
+  "SKILL_CF_NECRO_SOUL_SIPHON": {
+    "DisplayName": "Soul Siphon",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ABILITY_TAG", "Value": "CF_DRAIN" }
+    ],
+    "Effects": [
+      { "Type": "STAT_CHANGE", "Target": "CASTER", "Stat": "HP", "StatChangeType": "REGEN", "FlatValue": 3, "Blockable": false }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "Cooldown": 0,
+    "VerboseLogTag": "Soul Siphon"
+  }
+}

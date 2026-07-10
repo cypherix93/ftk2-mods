@@ -1,0 +1,20 @@
+{
+  "RingBufferSize": 500,
+  "PersistToDisk": false,
+  "LogFolderPath": "logs",
+  "DumpLastNCount": 200,
+  "Categories": {
+    "DK_CORE": "Info",
+    "DK_CONSOLE": "Info",
+    "DK_HOTRELOAD": "Info",
+    "DK_HEALTHCHECK": "Info",
+    "WARBRAIN_DECISION": "Debug",
+    "ACTIONPOINTS_SPEND": "Debug",
+    "CLASSFORGE_MERGE": "Info",
+    "FORGE_MERGE": "Info",
+    "RUNEWORKS_SOCKET": "Info",
+    "SUMMONER_EVOLUTION": "Info",
+    "QUESTSMITH_TRIGGER": "Info",
+    "VENUE_GRID": "Info"
+  }
+}

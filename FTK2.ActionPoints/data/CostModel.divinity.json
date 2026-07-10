@@ -1,0 +1,61 @@
+{
+  "SchemaVersion": 1,
+  "Id": "AP_COSTMODEL_DIVINITY",
+  "Description": "Bigger-spread alternate preset (Divinity/BG3-style pacing): larger pool, wider cost spread between minor utility plays and big swings, higher carryover, and an example of the Asymmetric enemy-AP knob. Point this mod's [General] CostModelFile knob at this file to swap presets with zero recompile.",
+
+  "APPerTurn": {
+    "Base": 6,
+    "SpdBonus": {
+      "SpdPerPoint": 4,
+      "MaxBonus": 3
+    },
+    "MaxPool": 12,
+    "CarryoverCap": 3
+  },
+
+  "Costs": {
+    "DefaultMajorActionCost": 4,
+    "DefaultMinorActionCost": 2,
+    "DefaultItemUseCost": 1,
+    "DefaultMovementCost": 1,
+
+    "FocusUsedModifier": {
+      "Mode": "Multiply",
+      "Value": 1.5,
+      "_comment": "Non-integer result is rounded up (ceiling) at resolve time -- see SPEC.md 4."
+    },
+
+    "PerCategoryOverrides": {
+      "MOVE": 1,
+      "MOVE_ENEMY": 1,
+      "USE_ITEM": 1,
+      "SUMMON": 6,
+      "SKIP_TURN": 0,
+      "FLEE": 0,
+      "TAUNT": 2,
+      "REVIVE_ALLY": 5
+    },
+
+    "PerAbilityOverrides": {
+      "REPLACE_WITH_REAL_ABILITY_ID": 3
+    }
+  },
+
+  "LegacyStatConversion": {
+    "PAPointValue": 4,
+    "SAPointValue": 2
+  },
+
+  "EnemyAP": {
+    "Mode": "Asymmetric",
+    "_comment": "Demonstrates the asymmetric knob: enemies get a flatter, non-scaling pool with no carryover, so boss/elite difficulty is tuned separately from the player-facing spread above.",
+    "Overrides": {
+      "APPerTurn": {
+        "Base": 8,
+        "SpdBonus": { "SpdPerPoint": 0, "MaxBonus": 0 },
+        "MaxPool": 10,
+        "CarryoverCap": 0
+      }
+    }
+  }
+}

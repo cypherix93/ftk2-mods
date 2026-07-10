@@ -1,0 +1,36 @@
+{
+  "SMN_CHAIN_SALAMANDER": {
+    "Element": "FIRE",
+    "DisplayName": "SMN_CHAIN_SALAMANDER_NAME",
+    "FollowerId": "SMN_FOL_SALAMANDER",
+    "EvolutionMoment": "BETWEEN_COMBAT",
+    "Stages": [
+      {
+        "Stage": 1,
+        "CharacterConfigId": "SMN_SALAMANDER_1",
+        "VisualFallbackId": "SMN_SALAMANDER_1",
+        "PortraitPath": "Portraits/smn_salamander_1.png",
+        "AdvanceConditions": []
+      },
+      {
+        "Stage": 2,
+        "CharacterConfigId": "SMN_SALAMANDER_2",
+        "VisualFallbackId": "SMN_SALAMANDER_2",
+        "PortraitPath": "Portraits/smn_salamander_2.png",
+        "AdvanceConditions": [
+          { "Type": "KILLS_BY_SUMMON", "Count": 5 }
+        ]
+      },
+      {
+        "Stage": 3,
+        "CharacterConfigId": "SMN_SALAMANDER_3",
+        "VisualFallbackId": "SMN_SALAMANDER_3",
+        "PortraitPath": "Portraits/smn_salamander_3.png",
+        "AdvanceConditions": [
+          { "Type": "KILLS_BY_SUMMON", "Count": 12 },
+          { "Type": "ITEM_CATALYST", "ItemId": "SMN_STONE_FIRE" }
+        ]
+      }
+    ]
+  }
+}

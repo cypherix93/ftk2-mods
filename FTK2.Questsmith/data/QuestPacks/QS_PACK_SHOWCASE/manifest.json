@@ -1,0 +1,10 @@
+{
+  "PackId": "QS_PACK_SHOWCASE",
+  "DisplayName": "Questsmith Showcase Pack",
+  "Version": "1.0.0",
+  "LoadOrder": 100,
+  "Dependencies": [],
+  "Enabled": true,
+  "Author": "FTK2.Questsmith",
+  "Description": "Reference quest pack demonstrating vanilla quest-vocabulary depth (Requirements/Conflicts/ChoiceRewards/RewardEncounters racing) and the QS_* verb engine launch set (SURVIVE_ROUNDS, PROTECT_ENTITY_HP, STEALTH_REACH, KILL_WITH_TAG, TIMED_CHAIN objective verbs; GIVE_STATUS_PARTY, START_MAP_SPAWNER, SET_WORLD_MODIFIER trigger actions)."
+}

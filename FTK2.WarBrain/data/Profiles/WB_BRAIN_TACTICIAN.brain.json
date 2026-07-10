@@ -1,0 +1,82 @@
+{
+  "Id": "WB_BRAIN_TACTICIAN",
+  "Description": "Focus-fire and target selection: hits whoever the party already hurt, prefers squishy backline targets, still moderately unpredictable.",
+  "Considerations": [
+    {
+      "Id": "WB_CONSIDER_EXPECTED_DAMAGE",
+      "Weight": 0.8,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_KILL_SECURE",
+      "Weight": 2.2,
+      "Curve": { "Type": "STEP", "Threshold": 0.999 }
+    },
+    {
+      "Id": "WB_CONSIDER_FOCUS_FIRE",
+      "Weight": 1.6,
+      "Curve": { "Type": "LOGISTIC", "Midpoint": 0.3, "Steepness": 6.0 }
+    },
+    {
+      "Id": "WB_CONSIDER_TARGET_SQUISHINESS",
+      "Weight": 1.1,
+      "Curve": { "Type": "QUADRATIC", "Exponent": 1.5 }
+    },
+    {
+      "Id": "WB_CONSIDER_THREAT",
+      "Weight": 0.5,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_ROW_POSITION_VALUE",
+      "Weight": 0.7,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_STATUS_VALUE",
+      "Weight": 0.6,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_TENDENCY_MATCH",
+      "Weight": 0.4,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_SELF_PRESERVATION",
+      "Weight": 0.3,
+      "Curve": { "Type": "QUADRATIC", "Exponent": 2.0 }
+    }
+  ],
+  "TargetFilters": [
+    {
+      "Tags": { "AnyOf": [], "NoneOf": [] },
+      "BaseType": { "AnyOf": [], "NoneOf": [] },
+      "HpPercentBelow": 1.0,
+      "HpPercentAbove": 0.0,
+      "RowPosition": "ANY"
+    }
+  ],
+  "AbilityCategoryBias": {
+    "ATTACK": 1.1,
+    "DEBUFF": 1.2,
+    "SUPPORT_SELF": 0.7,
+    "SUPPORT_ALLY": 0.6,
+    "SUPPORT_GROUP": 0.6,
+    "TAUNT": 0.5,
+    "USE_ITEM": 0.8,
+    "MOVE": 0.9,
+    "MOVE_ENEMY": 0.8,
+    "SUMMON": 0.7,
+    "FLEE": 0.3,
+    "SKIP_TURN": 0.1,
+    "REVIVE_ALLY": 0.5,
+    "REPAIR_VEHICLE": 0.5
+  },
+  "Temperature": 0.3,
+  "DifficultyScaling": {
+    "IntelligenceMultiplier": 1.0,
+    "TemperatureMultiplier": 1.0,
+    "MistakeChance": 0.02
+  }
+}

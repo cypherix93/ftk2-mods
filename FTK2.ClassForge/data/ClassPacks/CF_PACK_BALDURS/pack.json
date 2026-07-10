@@ -1,0 +1,10 @@
+{
+  "id": "CF_PACK_BALDURS",
+  "name": "Baldur's Gate Companions",
+  "version": "1.0.0",
+  "author": "ftk2mods",
+  "description": "Three FTK II x Baldur's Gate 3 crossover classes: Hexblade Warlock, Battle Master, and Necromancer.",
+  "loadOrder": 100,
+  "dependencies": [],
+  "enabled": true
+}

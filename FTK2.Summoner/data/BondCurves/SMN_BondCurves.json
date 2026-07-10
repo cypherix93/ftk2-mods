@@ -1,0 +1,35 @@
+{
+  "SMN_BOND_SALAMANDER": {
+    "FollowerId": "SMN_FOL_SALAMANDER",
+    "PointsPerCombatSurvived": 2,
+    "PointsPerKill": 1,
+    "Thresholds": [
+      { "BondPoints": 10, "GrantStatus": "SMN_STATUS_BOND_MINOR" },
+      { "BondPoints": 30, "GrantStatus": "SMN_STATUS_BOND_MAJOR" }
+    ]
+  },
+  "SMN_BOND_TURTLE": {
+    "FollowerId": "SMN_FOL_TURTLE",
+    "PointsPerCombatSurvived": 2,
+    "PointsPerKill": 1,
+    "Thresholds": [
+      { "BondPoints": 10, "GrantStatus": "SMN_STATUS_BOND_MINOR" },
+      { "BondPoints": 30, "GrantStatus": "SMN_STATUS_BOND_MAJOR" }
+    ]
+  },
+  "SMN_BOND_SPROUT": {
+    "FollowerId": "SMN_FOL_SPROUT",
+    "PointsPerCombatSurvived": 2,
+    "PointsPerKill": 1,
+    "Thresholds": [
+      { "BondPoints": 10, "GrantStatus": "SMN_STATUS_BOND_MINOR" },
+      { "BondPoints": 30, "GrantStatus": "SMN_STATUS_BOND_MAJOR" },
+      {
+        "BondPoints": 60,
+        "GrantTrait": "SMN_TRAIT_BONDED_PLANT",
+        "GrantTraitPassives": ["SKILL_SUMMONREVENGE"],
+        "Note": "SMN_TRAIT_BONDED_PLANT is a new hidden Class:TRAIT Thing; new trait ids require eTraits enum injection (EOR precedent) - scheduled M2/M3, see SPEC.md Open Questions."
+      }
+    ]
+  }
+}

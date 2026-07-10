@@ -1,0 +1,24 @@
+{
+  "Id": "RW_GEM_RUBY_1",
+  "Tier": 1,
+  "SocketType": "WEAPON",
+
+  "DisplayName": "RW_GEM_RUBY_1",
+  "Rarity": "COMMON",
+  "Value": 30,
+  "Stacks": true,
+  "Tags": ["DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET"],
+
+  "Effects": {
+    "Stats": { "ATK": 2 },
+    "Passives": [],
+    "GrantedAbilities": [],
+    "OnHitProc": null,
+    "SetBonus": {
+      "Family": "RUBY",
+      "MinCount": 2,
+      "Stats": { "ATK": 2 },
+      "Passives": []
+    }
+  }
+}

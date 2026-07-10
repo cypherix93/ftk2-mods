@@ -1,0 +1,46 @@
+{
+  "_comment": "Engine-owned schema (Questsmith's own C# contract, not a vanilla shape). Quest objective/trigger arrays reference these entries by paramsId as their second element, e.g. [\"QS_SURVIVE_ROUNDS\", \"QS_HOLD_THE_LINE_SURVIVE_PARAMS\"]. All parameters here are data -- the verb handlers in C# read them at dispatch time, they never hardcode a number. M2 feature (SPEC.md milestone M2); referenced from the _objectives_m2 / _questStartWorldTriggers_m2 / _questEndWorldTriggers_m2 fields in quests/*.json.",
+
+  "ObjectiveParams": {
+    "QS_HOLD_THE_LINE_SURVIVE_PARAMS": {
+      "Verb": "SURVIVE_ROUNDS",
+      "CombatTag": "QS_HOLD_THE_LINE_FINALE_COMBAT",
+      "RoundsRequired": 3
+    },
+    "QS_HOLD_THE_LINE_PROTECT_PARAMS": {
+      "Verb": "PROTECT_ENTITY_HP",
+      "EntityTag": "QS_CARAVAN_CONVOY",
+      "MinHpPercent": 50
+    },
+    "QS_QUIET_JOB_STEALTH_PARAMS": {
+      "Verb": "STEALTH_REACH",
+      "HexId": "QS_QUIET_JOB_VAULT_HEX",
+      "AllowFlee": true
+    },
+    "QS_RIVAL_COMPANY_CONFRONT_KILL_PARAMS": {
+      "Verb": "KILL_WITH_TAG",
+      "EnemyTag": "QS_RIVAL_MERC",
+      "Count": 2,
+      "WeaponClass": "BLADE",
+      "DamageType": null
+    }
+  },
+
+  "TriggerParams": {
+    "QS_HOLD_THE_LINE_BATTLEPREP_PARAMS": {
+      "Verb": "GIVE_STATUS_PARTY",
+      "StatusId": "STATUS_GUARD",
+      "Duration": 3,
+      "_comment": "StatusId is a placeholder StatusEffects.json id (STATUS_GUARD is used elsewhere in this repo's docs as an example status name pattern; confirm the exact shipped id before release) -- swap for whatever 'battle prep' status the pack author wants."
+    },
+    "QS_HOLD_THE_LINE_REINFORCEMENTS_PARAMS": {
+      "Verb": "START_MAP_SPAWNER",
+      "SpawnerId": "QS_HOLD_THE_LINE_REINFORCEMENT_WAVE"
+    },
+    "QS_QUIET_JOB_REFUSE_LIFEPOOL_PARAMS": {
+      "Verb": "SET_WORLD_MODIFIER",
+      "ModifierId": "LIFE_POOL_MAX",
+      "Value": 5
+    }
+  }
+}

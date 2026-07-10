@@ -1,0 +1,47 @@
+{
+  "SMN_STATUS_SMOLDER": {
+    "Type": "FIRE",
+    "Duration": 2,
+    "TickFrequency": 1,
+    "TickOverworld": false,
+    "TickCombat": true,
+    "TickExpire": true,
+    "Stats": { "HP": -2 }
+  },
+  "SMN_STATUS_SOAKED": {
+    "Type": "WATER",
+    "Duration": 2,
+    "TickFrequency": 1,
+    "TickOverworld": false,
+    "TickCombat": true,
+    "TickExpire": true,
+    "Stats": { "SPD": -1 }
+  },
+  "SMN_STATUS_THORNED": {
+    "Type": "POISON",
+    "Duration": 3,
+    "TickFrequency": 1,
+    "TickOverworld": false,
+    "TickCombat": true,
+    "TickExpire": true,
+    "Stats": { "HP": -2 }
+  },
+  "SMN_STATUS_BOND_MINOR": {
+    "Type": "BUFF",
+    "Duration": -1,
+    "TickFrequency": 0,
+    "TickOverworld": true,
+    "TickCombat": true,
+    "TickExpire": false,
+    "Stats": { "DEF": 1, "HP": 5 }
+  },
+  "SMN_STATUS_BOND_MAJOR": {
+    "Type": "BUFF",
+    "Duration": -1,
+    "TickFrequency": 0,
+    "TickOverworld": true,
+    "TickCombat": true,
+    "TickExpire": false,
+    "Stats": { "STR": 2, "HP": 10 }
+  }
+}

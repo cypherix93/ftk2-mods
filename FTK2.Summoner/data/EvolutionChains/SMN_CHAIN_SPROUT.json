@@ -1,0 +1,36 @@
+{
+  "SMN_CHAIN_SPROUT": {
+    "Element": "PLANT",
+    "DisplayName": "SMN_CHAIN_SPROUT_NAME",
+    "FollowerId": "SMN_FOL_SPROUT",
+    "EvolutionMoment": "BETWEEN_COMBAT",
+    "Stages": [
+      {
+        "Stage": 1,
+        "CharacterConfigId": "SMN_SPROUT_1",
+        "VisualFallbackId": "SMN_SPROUT_1",
+        "PortraitPath": "Portraits/smn_sprout_1.png",
+        "AdvanceConditions": []
+      },
+      {
+        "Stage": 2,
+        "CharacterConfigId": "SMN_SPROUT_2",
+        "VisualFallbackId": "SMN_SPROUT_2",
+        "PortraitPath": "Portraits/smn_sprout_2.png",
+        "AdvanceConditions": [
+          { "Type": "KILLS_BY_SUMMON", "Count": 5 }
+        ]
+      },
+      {
+        "Stage": 3,
+        "CharacterConfigId": "SMN_SPROUT_3",
+        "VisualFallbackId": "SMN_SPROUT_3",
+        "PortraitPath": "Portraits/smn_sprout_3.png",
+        "AdvanceConditions": [
+          { "Type": "KILLS_BY_SUMMON", "Count": 12 },
+          { "Type": "ITEM_CATALYST", "ItemId": "SMN_STONE_PLANT" }
+        ]
+      }
+    ]
+  }
+}

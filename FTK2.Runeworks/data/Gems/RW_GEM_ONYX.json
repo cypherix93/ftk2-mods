@@ -1,0 +1,19 @@
+{
+  "Id": "RW_GEM_ONYX",
+  "Tier": 1,
+  "SocketType": "ANY",
+
+  "DisplayName": "RW_GEM_ONYX",
+  "Rarity": "RARE",
+  "Value": 120,
+  "Stacks": true,
+  "Tags": ["DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "NIGHT_MARKET"],
+
+  "Effects": {
+    "Stats": { "CRT": 3 },
+    "Passives": ["SKILL_ELITEAMBUSH"],
+    "GrantedAbilities": [],
+    "OnHitProc": null,
+    "SetBonus": null
+  }
+}

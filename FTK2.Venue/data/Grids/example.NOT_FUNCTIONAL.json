@@ -1,0 +1,35 @@
+{
+  "// WARNING": "M3 RESEARCH SKETCH ONLY. NOT FUNCTIONAL YET.",
+  "// Why": "VenueHelper's grid layouts (VenueMap1 / ExtendedVenueMap1 / KrakenMap1) are static C# fields, not data-loaded, and the diorama's visual anchors (Diorama.LoadVenueGrid / GetVenueGridRoot / dDiorama.VenueGrid) are a separate visual problem. No engine code in FTK2.Venue reads this file. See SPEC.md sections 4.2, 7, and 11 for the honest investigation plan.",
+
+  "NOT_FUNCTIONAL_YET": true,
+  "Id": "VNU_GRID_EXAMPLE",
+
+  "// TileCount": "Total number of combat tiles this custom grid would define, mirroring DEFAULT_VENUE_TILE_AMOUNT / EXTENDED_VENUE_TILE_AMOUNT / KRAKEN_VENUE_TILE_AMOUNT constants on VenueHelper.",
+  "TileCount": 12,
+
+  "// Rows": "One entry per row. RowPositionsType mirrors VenueTileComponent.RowPositionsType (FRONT/BACK, per eLoadVenueGridRules' FRONT_ROW/BACK_ROW vocabulary).",
+  "Rows": [
+    { "RowIndex": 0, "RowPositionsType": "FRONT", "TileCount": 4 },
+    { "RowIndex": 1, "RowPositionsType": "BACK",  "TileCount": 4 },
+    { "RowIndex": 2, "RowPositionsType": "BACK",  "TileCount": 4 }
+  ],
+
+  "// Tiles": "One entry per tile, mirroring VenueTileComponent { GroupIndex, RowPositionsType }. GroupIndex's exact semantics (visual grouping? targeting grouping?) are unverified - see SPEC.md open questions.",
+  "Tiles": [
+    { "Index": 0,  "GroupIndex": 0, "RowPositionsType": "FRONT" },
+    { "Index": 1,  "GroupIndex": 0, "RowPositionsType": "FRONT" },
+    { "Index": 2,  "GroupIndex": 1, "RowPositionsType": "FRONT" },
+    { "Index": 3,  "GroupIndex": 1, "RowPositionsType": "FRONT" },
+    { "Index": 4,  "GroupIndex": 0, "RowPositionsType": "BACK" },
+    { "Index": 5,  "GroupIndex": 0, "RowPositionsType": "BACK" },
+    { "Index": 6,  "GroupIndex": 1, "RowPositionsType": "BACK" },
+    { "Index": 7,  "GroupIndex": 1, "RowPositionsType": "BACK" },
+    { "Index": 8,  "GroupIndex": 0, "RowPositionsType": "BACK" },
+    { "Index": 9,  "GroupIndex": 0, "RowPositionsType": "BACK" },
+    { "Index": 10, "GroupIndex": 1, "RowPositionsType": "BACK" },
+    { "Index": 11, "GroupIndex": 1, "RowPositionsType": "BACK" }
+  ],
+
+  "// OpenQuestions": "See SPEC.md section 11: (a) whether Configs.VenueGrids is a real data-loadable registry rather than static maps, (b) whether VenueMap1/ExtendedVenueMap1/KrakenMap1 can be swapped/extended at runtime via patch, (c) whether Diorama.LoadVenueGrid can be repointed at a non-hardcoded tile layout without breaking visual anchor placement."
+}

@@ -1,0 +1,72 @@
+{
+  "Id": "WB_BRAIN_SUPPORT",
+  "Description": "Babies low-HP allies, prioritizes heals/buffs/revives over attacking.",
+  "Considerations": [
+    {
+      "Id": "WB_CONSIDER_ALLY_IN_DANGER",
+      "Weight": 2.2,
+      "Curve": { "Type": "LOGISTIC", "Midpoint": 0.4, "Steepness": 8.0 }
+    },
+    {
+      "Id": "WB_CONSIDER_STATUS_VALUE",
+      "Weight": 1.5,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_EXPECTED_DAMAGE",
+      "Weight": 0.4,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_KILL_SECURE",
+      "Weight": 0.8,
+      "Curve": { "Type": "STEP", "Threshold": 0.999 }
+    },
+    {
+      "Id": "WB_CONSIDER_SELF_PRESERVATION",
+      "Weight": 0.6,
+      "Curve": { "Type": "QUADRATIC", "Exponent": 2.0 }
+    },
+    {
+      "Id": "WB_CONSIDER_ACTION_ECONOMY",
+      "Weight": 0.4,
+      "Curve": { "Type": "LINEAR" }
+    },
+    {
+      "Id": "WB_CONSIDER_ROW_POSITION_VALUE",
+      "Weight": 0.5,
+      "Curve": { "Type": "LINEAR" }
+    }
+  ],
+  "TargetFilters": [
+    {
+      "Tags": { "AnyOf": [], "NoneOf": [] },
+      "BaseType": { "AnyOf": [], "NoneOf": [] },
+      "HpPercentBelow": 1.0,
+      "HpPercentAbove": 0.0,
+      "RowPosition": "ANY"
+    }
+  ],
+  "AbilityCategoryBias": {
+    "ATTACK": 0.5,
+    "DEBUFF": 0.6,
+    "SUPPORT_SELF": 1.2,
+    "SUPPORT_ALLY": 1.7,
+    "SUPPORT_GROUP": 1.8,
+    "TAUNT": 0.7,
+    "USE_ITEM": 1.0,
+    "MOVE": 0.6,
+    "MOVE_ENEMY": 0.5,
+    "SUMMON": 0.9,
+    "FLEE": 0.4,
+    "SKIP_TURN": 0.1,
+    "REVIVE_ALLY": 1.9,
+    "REPAIR_VEHICLE": 0.6
+  },
+  "Temperature": 0.2,
+  "DifficultyScaling": {
+    "IntelligenceMultiplier": 1.0,
+    "TemperatureMultiplier": 1.0,
+    "MistakeChance": 0.02
+  }
+}

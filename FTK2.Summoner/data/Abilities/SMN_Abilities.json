@@ -1,0 +1,187 @@
+{
+  "SMN_ABILITY_SATCHEL_BONK": {
+    "TargetArea": "SINGLE",
+    "Target": "ENEMY",
+    "TileOccupancy": "ANY",
+    "OriginRowPosition": "ANY",
+    "TargetRowPosition": "ANY",
+    "IsMajorAction": true,
+    "RequiresSkillRoll": true,
+    "RequiresFocus": 0,
+    "IsFocusable": false,
+    "IsRanged": false,
+    "Kamikaze": false,
+    "Chargeable": false,
+    "Tendency": "NONE",
+    "Actions": [
+      { "Item1": "CHANGE_STAT", "Item2": { "Stat": "HP", "Type": "PHYSICAL", "IsBlockable": true, "FlatValue": -4 } }
+    ],
+    "Tags": []
+  },
+
+  "SMN_ABILITY_SUMMON_SALAMANDER": {
+    "TargetArea": "SELF",
+    "Target": "SELF",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "NONE",
+    "Actions": [
+      { "Item1": "ADD_CHARACTER", "Item2": { "Type": "ALLY", "Value": "SMN_SALAMANDER_1" } }
+    ],
+    "Tags": ["SMN_SUMMON_ABILITY"]
+  },
+  "SMN_ABILITY_SUMMON_TURTLE": {
+    "TargetArea": "SELF",
+    "Target": "SELF",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "NONE",
+    "Actions": [
+      { "Item1": "ADD_CHARACTER", "Item2": { "Type": "ALLY", "Value": "SMN_TURTLE_1" } }
+    ],
+    "Tags": ["SMN_SUMMON_ABILITY"]
+  },
+  "SMN_ABILITY_SUMMON_SPROUT": {
+    "TargetArea": "SELF",
+    "Target": "SELF",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "NONE",
+    "Actions": [
+      { "Item1": "ADD_CHARACTER", "Item2": { "Type": "ALLY", "Value": "SMN_SPROUT_1" } }
+    ],
+    "Tags": ["SMN_SUMMON_ABILITY"]
+  },
+
+  "SMN_ABILITY_EMBER_BITE_T1": {
+    "TargetArea": "SINGLE",
+    "Target": "ENEMY",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "LEASTHEALTH",
+    "Actions": [
+      { "Item1": "CHANGE_STAT", "Item2": { "Stat": "HP", "Type": "FIRE", "IsBlockable": true, "FlatValue": -4 } }
+    ],
+    "Tags": []
+  },
+  "SMN_ABILITY_EMBER_BITE_T2": {
+    "TargetArea": "SINGLE",
+    "Target": "ENEMY",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "LEASTHEALTH",
+    "Actions": [
+      { "Item1": "CHANGE_STAT", "Item2": { "Stat": "HP", "Type": "FIRE", "IsBlockable": true, "FlatValue": -7 } },
+      { "Item1": "ADD_STATUS", "Item2": "SMN_STATUS_SMOLDER" }
+    ],
+    "Tags": []
+  },
+  "SMN_ABILITY_EMBER_BITE_T3": {
+    "TargetArea": "SINGLE",
+    "Target": "ENEMY",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "LEASTHEALTH",
+    "Actions": [
+      { "Item1": "CHANGE_STAT", "Item2": { "Stat": "HP", "Type": "FIRE", "IsBlockable": true, "FlatValue": -11 } },
+      { "Item1": "ADD_STATUS", "Item2": "SMN_STATUS_SMOLDER" }
+    ],
+    "Tags": []
+  },
+
+  "SMN_ABILITY_TIDE_SLAM_T1": {
+    "TargetArea": "SINGLE",
+    "Target": "ENEMY",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "FRONTROW",
+    "Actions": [
+      { "Item1": "CHANGE_STAT", "Item2": { "Stat": "HP", "Type": "MAGICAL", "IsBlockable": true, "FlatValue": -4 } }
+    ],
+    "Tags": []
+  },
+  "SMN_ABILITY_TIDE_SLAM_T2": {
+    "TargetArea": "SINGLE",
+    "Target": "ENEMY",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "FRONTROW",
+    "Actions": [
+      { "Item1": "CHANGE_STAT", "Item2": { "Stat": "HP", "Type": "MAGICAL", "IsBlockable": true, "FlatValue": -7 } },
+      { "Item1": "ADD_STATUS", "Item2": "SMN_STATUS_SOAKED" }
+    ],
+    "Tags": []
+  },
+  "SMN_ABILITY_TIDE_SLAM_T3": {
+    "TargetArea": "SINGLE",
+    "Target": "ENEMY",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "FRONTROW",
+    "Actions": [
+      { "Item1": "CHANGE_STAT", "Item2": { "Stat": "HP", "Type": "MAGICAL", "IsBlockable": true, "FlatValue": -11 } },
+      { "Item1": "ADD_STATUS", "Item2": "SMN_STATUS_SOAKED" }
+    ],
+    "Tags": []
+  },
+
+  "SMN_ABILITY_VINE_WHIP_T1": {
+    "TargetArea": "SINGLE",
+    "Target": "ENEMY",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "NOTHASPOISON",
+    "Actions": [
+      { "Item1": "CHANGE_STAT", "Item2": { "Stat": "HP", "Type": "POISON", "IsBlockable": true, "FlatValue": -4 } }
+    ],
+    "Tags": []
+  },
+  "SMN_ABILITY_VINE_WHIP_T2": {
+    "TargetArea": "SINGLE",
+    "Target": "ENEMY",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "NOTHASPOISON",
+    "Actions": [
+      { "Item1": "CHANGE_STAT", "Item2": { "Stat": "HP", "Type": "POISON", "IsBlockable": true, "FlatValue": -7 } },
+      { "Item1": "ADD_STATUS", "Item2": "SMN_STATUS_THORNED" }
+    ],
+    "Tags": []
+  },
+  "SMN_ABILITY_VINE_WHIP_T3": {
+    "TargetArea": "SINGLE",
+    "Target": "ENEMY",
+    "TileOccupancy": "ANY",
+    "IsMajorAction": true,
+    "RequiresFocus": 0,
+    "Chargeable": false,
+    "Tendency": "NOTHASPOISON",
+    "Actions": [
+      { "Item1": "CHANGE_STAT", "Item2": { "Stat": "HP", "Type": "POISON", "IsBlockable": true, "FlatValue": -11 } },
+      { "Item1": "ADD_STATUS", "Item2": "SMN_STATUS_THORNED" }
+    ],
+    "Tags": []
+  }
+}
