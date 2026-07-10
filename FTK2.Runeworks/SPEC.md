@@ -37,8 +37,8 @@ runtime hook).
 - A socketed item shows a **"Remove Gem…"** entry. Depending on the `UnsocketPolicy` knob, removing
   a gem either destroys it, refunds it, or costs gold (default: destroy).
 - Gems and socketed items behave like normal items for every other purpose the player cares about:
-  they can be dropped, sold, traded between party members, and (subject to §9 MP posture) used in
-  multiplayer.
+  they can be dropped, sold, traded between party members, and used in multiplayer exactly as in
+  single-player whenever every peer's Runeworks install and data match (parity-gated; see §9).
 
 ## 3. Architecture
 
@@ -61,8 +61,10 @@ All tuning numbers (stat deltas, proc chances, socket counts, set-bonus threshol
 Two candidates were asked for; both are specified here, with a recommendation.
 
 **(a) EOR-style item-variant wrapper.** Socketing a gem into an item generates a new `ThingConfig`
-id deterministically from `(BaseItemId, sorted GemIds[])` — e.g.
-`WEAPON_LONGSWORD@RW_GEM_RUBY_1+RW_GEM_RUBY_2` — whose `Equippable.Stats`/`Passives` are the base
+id deterministically from `(BaseItemId, sorted GemIds[])`, following the id shape
+`docs/MULTIPLAYER.md` R2 mandates for any mod-generated content id — `RW_VAR_<BaseItemId>_<gemhash>`
+(e.g. `RW_VAR_WEAPON_LONGSWORD_4f2a91c7`, where `gemhash` is a stable hash over the sorted
+`GemIds[]`, never insertion order or a runtime GUID) — whose `Equippable.Stats`/`Passives` are the base
 item's plus every socketed gem's `Effects.Stats`/`Effects.Passives` merged in, and whose
 `Interactable.AbilityBag` gets any `GrantedAbilities`. That generated config is registered into the
 game's live `Configs.Things` registry (mirrors how EOR's `CustomItems` packs and the pets/mercs JSON
@@ -85,15 +87,22 @@ per-run-state piggyback). All stat/passive/ability contributions are computed li
 | Trade / drop | Works for free — it's a normal item as far as inventory/trade/drop code is concerned | Works for free on the item side, but the *sidecar record* must travel with the item (to another party member's slot, to the ground, to a trade) or the gems are silently orphaned — requires patching every inventory-move path, not just stat display |
 | Stat/tooltip patches needed | **None** for stats/passives/abilities — they're baked into the generated config the game already understands; only the context-menu and tooltip-annotation patches are needed | Required on `CharacterHelper.GetStat` *and* `UIHelper.GetBreakdownStats` *and* every other stat consumer we haven't enumerated — larger patch surface, more places to miss |
 | Save persistence | Generated configs are in-memory only — must be regenerated (replayed) from a small persisted "socket formula" list on load, *before* anything reads the item | Sidecar map persists directly on `GameRunData`; no replay step, but still needs the item-instance-move problem above solved |
-| MP sync | Sync the small formula record `{BaseItemId, GemIds[]}`; every peer derives the *same* variant id deterministically and registers it locally — cheap, and divergence is self-evident (different item stats on different screens) | Sync the sidecar map itself; same shape of problem, plus the instance-identity question below |
+| MP sync (co-op is a **hard requirement**, `docs/MULTIPLAYER.md`) | **Free, by construction.** Once registered, the variant *is* a real `ThingConfig` — R1's parity hash covers it the same way it covers every other config, so the only thing that needs to cross the wire is the small formula record `{BaseItemId, GemIds[]}` (§9.4); every peer derives the byte-identical `RW_VAR_<baseId>_<gemhash>` id per R2 and registers it locally. Divergence is self-evident (different item stats on different screens) and is exactly what ParityService is built to catch. | Would need a **bespoke** sync channel for the sidecar map itself, *and* a bespoke parity check for it — R1's Configs-hash coverage never reaches a plugin-private dictionary — on top of the instance-identity question below. This is strictly more custom-sync surface than (a) needs, for a feature class (`docs/MULTIPLAYER.md`'s "practical guidance") that says to prefer config-shaped content precisely so it doesn't have to be built. |
 
-**Recommendation: (a), the item-variant wrapper.** It needs far fewer patches (no
-`GetStat`/`GetBreakdownStats` postfixes at all for the stats/passives/abilities path — those ride on
-config data the game already reads), it makes stacking *correct by construction* instead of a risk to
-mitigate, and it matches the repo's own stated precedent ("save/MP-safe like Forge ladders"). Its
-costs are: (1) needing a runtime config-registration hook (open question, §11) and (2) needing to
-replay the "socket formula" list on load before any UI touches the item (§9). Both are one-time
-plumbing costs, not recurring patch-surface costs like (b)'s.
+**Recommendation: (a), the item-variant wrapper — and multiplayer is now the deciding factor, not
+just a tiebreaker.** Before co-op was a hard requirement this recommendation rested on patch-surface
+and stacking-correctness arguments alone; both still hold (no `GetStat`/`GetBreakdownStats` postfixes
+needed, stacking is correct by construction). But `docs/MULTIPLAYER.md` changes the calculus directly:
+a real, parity-hashed `ThingConfig` on every peer is the textbook case R1 and R2 were written for
+("config-shaped content over runtime state... syncs for free"), whereas (b)'s sidecar dictionary is
+exactly the kind of plugin-private state that R1's Configs-hash doesn't see and that would need its
+own custom sync + its own parity story from scratch — effectively rebuilding, by hand, what (a) gets
+from the game's existing config pipeline. Given MP is no longer optional, that difference alone would
+be enough to pick (a) even if the patch-surface/stacking arguments were a wash. Its costs are: (1)
+needing a runtime config-registration hook (open question, §11) and (2) needing to replay the "socket
+formula" list on load before any UI touches the item (§9). Both are one-time plumbing costs, not
+recurring patch-surface costs like (b)'s, and (2) is unchanged by the MP requirement since it's a
+per-peer, save-load-time concern, not a cross-peer one.
 
 **Cross-cutting open question that affects both architectures:** neither `game-code-reference.md`
 nor `data-schemas.md` documents how a specific *inventory item instance* (as opposed to its
@@ -106,10 +115,11 @@ decompile before implementation starts.
 1. Player picks "Socket Gem…" on an eligible item → picks a gem from inventory.
 2. Engine validates: item has ≥1 empty socket (per `SocketRules.json`), gem's `SocketType` matches
    the item's class group (`WEAPON`/`ARMOR`/`TRINKET`/`ANY`).
-3. Engine computes `VariantId = f(BaseItemId, sorted currently-socketed GemIds + new GemId)`,
-   merges `Effects.Stats`/`Effects.Passives`/`GrantedAbilities` from every socketed `GemDefinition`
-   on top of the base `ThingConfig`, and registers the resulting config (if not already registered
-   this session).
+3. Engine computes `VariantId = RW_VAR_<BaseItemId>_<gemhash(sorted currently-socketed GemIds + new
+   GemId)>` — a pure function per MULTIPLAYER.md R2 (sorted iteration, invariant-culture, stable hash,
+   no wall-clock/GUID/insertion-order inputs) — merges `Effects.Stats`/`Effects.Passives`/
+   `GrantedAbilities` from every socketed `GemDefinition` on top of the base `ThingConfig`, and
+   registers the resulting config (if not already registered this session).
 4. Engine swaps the item instance's config-id reference to `VariantId`, consumes the gem, and appends
    a `SocketRecord {VariantId, BaseItemId, GemIds[]}` to the `RW_SocketRecords` list piggybacked on
    `GameRunData`.
@@ -268,8 +278,17 @@ patch adds. See shipped file for the full list.
 - `EnableSetBonuses` (bool, `true`) — if `false`, `SetBonus` blocks in gem definitions are parsed but
   never applied (stats/passives from individually socketed gems still work).
 
-`[MultiPlayer]`
-- `AllowInMultiplayer` (bool, `false`) — default MP-safe per CONVENTIONS.md; see §9.
+`[Multiplayer]`
+- Socketing has no separate on/off switch for MP: it is **enabled by default** whenever
+  ParityService (`docs/MULTIPLAYER.md` R1) confirms every peer runs the same Runeworks version and
+  data. This replaces the previous `AllowInMultiplayer` opt-in-and-default-off knob — co-op is the
+  target, not an escape hatch (see §9).
+- `OnParityMismatch` (string enum `Block`/`WarnAndSafeMode`/`WarnOnly`, default `Block`) — overrides
+  the repo-wide default (`WarnAndSafeMode`) for this mod specifically. Recommended and defaulted to
+  `Block` because socketed items are shared, tradeable inventory state (§9.5): a peer that can't
+  reconstruct a variant config isn't just missing a feature, it's holding an item the game can't
+  resolve for it. `WarnAndSafeMode`/`WarnOnly` remain available for anyone who wants the repo-wide
+  default instead.
 
 ## 6. Patch targets & integration points
 
@@ -299,9 +318,17 @@ piece of §3's flow.
 - **`GameRunData`** (piggyback field, proven per-run-state pattern) — carries `RW_SocketRecords`
   (the persisted socket-formula list, §3.3 step 6). M1.
 - **`AdventureDirector._handleNetworkAction`** (proven custom-network-action piggyback) — custom
-  `RW_SYNC_SOCKET` / `RW_SYNC_UNSOCKET` actions broadcasting `{BaseItemId, GemIds[]}` so every peer
-  derives and registers the identical deterministic variant id. Only wired up when
-  `AllowInMultiplayer=true`. M3.
+  `RW_SOCKET_V1` action: a non-host peer's "Socket Gem…" sends `{ItemInstanceId, BaseItemId,
+  GemIds[]}` to the host as a request; the host validates and performs the socket op (§9.4), then
+  re-broadcasts the confirmed record to every peer (including itself) so each independently derives
+  and registers the identical `RW_VAR_...` variant id/config before/at the same time the vanilla
+  item-reference swap lands. `RW_UNSOCKET_V1` mirrors it for gem removal. Always wired up (no
+  MP on/off knob — see §5/§9); the socket/unsocket op always executes host-side, never locally by a
+  non-host peer, so two peers can't race to fill the same socket. M1.
+- **ParityService** (FTK2.DevKit, reflection-based registration, `docs/MULTIPLAYER.md` R1) —
+  Runeworks registers `(guid=ftk2mods.runeworks, version, dataHash-over-data/Gems/*.json+
+  SocketRules.json, enabledFeatures=[Sockets, SetBonus])` at boot; drives the `OnParityMismatch`
+  knob (§5) and the SafeMode/Block behavior in §9.5. M1.
 
 ## 7. Example starting dataset
 
@@ -363,56 +390,194 @@ Executable in <15 minutes with the shipped example data, per CONVENTIONS.md. Run
     (c) Try socketing a 3rd gem into a 2-socket item → rejected. (d) Set
     `SocketCountOverride=3` → previously-2-socket items now show a 3rd empty socket without touching
     already-socketed data.
-11. **MP posture.** With default `AllowInMultiplayer=false`, join/host a multiplayer session and
-    confirm "Socket Gem…" is hidden or a no-op with a logged reason. (Full MP verification is a
-    manual/opt-in step — see §9; not required to pass the <15 minute solo loop.)
+11. **MP smoke test** (manual/opt-in, host + 1 client, both on matching Runeworks version+data — not
+    required to pass the <15 minute solo loop; full detail in §9.6).
+    a. Boot both peers, confirm the `FTK2MODS_PARITY_V1` handshake logs a match for `ftk2mods.runeworks`.
+    b. **Client sockets a gem:** on the non-host peer, socket `RW_GEM_RUBY_1` into an eligible weapon.
+       Confirm the client's own view updates (item shows `+2 ATK`, one socket filled). On the **host**,
+       open the same item (inventory view or a DevKit dump-compare of `Configs.Things[VariantId]`) and
+       confirm it shows the identical `RW_VAR_...` id and `+2 ATK` — not just "some socketed item."
+    c. **Unsocket:** from either peer, remove the gem. Confirm both peers agree the item reverted to
+       base stats and the gem was destroyed/refunded/gold-charged identically per `UnsocketPolicy`.
+    d. **Mismatch test:** restart the client with a locally-edited `RW_GEM_RUBY_1.json` (different
+       `ATK` value) so its `dataHash` diverges, then attempt to join. Confirm ParityService reports the
+       mismatch naming Runeworks + "data," and — per the `OnParityMismatch=Block` default (§5) — the
+       join is refused rather than silently entering SafeMode.
 
 ## 9. Save & multiplayer considerations
 
-**Persistence.** Only `RW_SocketRecords` (`{VariantId, BaseItemId, GemIds[]}` per socketed item) is
-persisted, piggybacked on `GameRunData` per the repo's proven per-run-state pattern. Everything else
-(generated `Configs.Things` variant entries, cached set-bonus state) is derived and rebuilt: on load,
-before any UI/inventory code can read a socketed item, the engine replays every `SocketRecord` to
-regenerate its variant config deterministically.
+Co-op is a **hard requirement** for this repo (`docs/MULTIPLAYER.md`). This section follows that
+doc's mandated §9 structure; the "why" for each answer is that Runeworks mutates a shared, tradeable
+inventory item — the exact class of feature `docs/MULTIPLAYER.md` calls out as needing all peers on
+the same mod+data.
 
-**Multiplayer posture: explicit, default-off.** Socketing mutates a shared, tradeable inventory item
-— exactly the class of feature CONVENTIONS.md calls out as requiring all peers to run the mod. Default
-posture:
+**Persistence** (unaffected by the MP requirement — this is per-peer save state, not cross-peer sync).
+Only `RW_SocketRecords` (`{VariantId, BaseItemId, GemIds[]}` per socketed item) is persisted,
+piggybacked on `GameRunData` per the repo's proven per-run-state pattern. Everything else (generated
+`Configs.Things` variant entries, cached set-bonus state) is derived and rebuilt: on load, before any
+UI/inventory code can read a socketed item, the engine replays every `SocketRecord` to regenerate its
+variant config deterministically, on each peer, from that peer's own save.
 
-- `AllowInMultiplayer=false` (default). In an MP session, the "Socket Gem…"/"Remove Gem…" context
-  entries are hidden and any lingering socketed items from a save made in SP still display and
-  function correctly for read-only purposes (stats/passives are just config data), but no new
-  socketing/unsocketing is permitted — this avoids any peer without the mod seeing a plain vanilla
-  item while another peer sees the socketed variant.
-- `AllowInMultiplayer=true` (opt-in, all-peers-required). Every socket/unsocket action is broadcast
-  via a custom `RW_SYNC_SOCKET`/`RW_SYNC_UNSOCKET` network action (piggybacked on
-  `AdventureDirector._handleNetworkAction`, mirroring EOR's `EOR_SYNC_*` convention) carrying
-  `{BaseItemId, GemIds[]}`. Every peer derives the same `VariantId` via the same pure deterministic
-  function and registers it locally — no peer is authoritative over *content*, only over the
-  sequence of socket/unsocket *events*, which the host should arbitrate to avoid two peers racing to
-  fill the same socket. **Desync risk:** if variant-id generation is anything other than a pure
-  function of `(BaseItemId, sorted GemIds[])` (e.g. accidentally including a timestamp, or ordering
-  gems by insertion instead of a canonical sort), different peers can register different configs for
-  what should be the same item, producing client-divergent tooltips/stats. This is the single riskiest
-  correctness property of architecture (a) and should get its own targeted test.
-- No mod-sync handshake (EOR's `EOR_VER`/`EOR_CFG` hash) is implemented in M1–M3; whether Runeworks
-  needs its own or can piggyback on EOR's if present is an open question (§11.9).
+### 9.1 Parity class: `ALL_PEERS`
+
+Both gem definitions and generated variant configs merge into `Configs.Things` — the game simulates
+stats/passives/abilities straight out of that registry. A peer missing Runeworks, or running
+different `data/Gems/*.json`/`SocketRules.json`, cannot resolve a socketed item another peer created,
+so every peer must run the same mod at the same version with the same data. There is no `HOST_ONLY`
+or `LOCAL` fallback mode for this mod's core loop.
+
+### 9.2 Feature table
+
+| Feature | Sync class | Authority |
+|---|---|---|
+| Gem registry / `SocketRules.json` load | `[SYNCED]` (data, via ParityService dataHash) | all peers, identical data required |
+| Socket / Unsocket player action | `[SYNCED]` | **host** — always executes host-side (§9.4), regardless of which peer initiated it |
+| Variant `ThingConfig` generation + registration | `[SYNCED]` (effect) | all peers — each independently runs the same deterministic function on receipt of the confirmed socket record |
+| Inventory item config-id swap + gem consumption | `[SYNCED]` via vanilla inventory/equipment pipeline (assumption — unverified by decompile, see §11.4) | host performs it; effect replicates |
+| Set-bonus party-wide aggregation (`CharacterHelper.InitializePartyStats`) | `[SYNCED]` (effect, derived) | all peers — recomputed identically from each peer's own already-synced party/inventory state, no separate wire format needed |
+| `OnHitProc` chance roll (`CombatHelper.ApplyAction` postfix) | `[SYNCED]` | must use the game's deterministic `GameRandom` (R2) or be decided host-side and synced — **not** a local `System.Random` roll (flagged fix, §11) |
+| Tooltip / context-menu presentation | `[LOCAL]` | each peer's own UI (R4, parity-exempt) |
+| `VerboseLogging` | `[LOCAL]` | each peer (R4) |
+
+### 9.3 Determinism inventory
+
+- **Variant id + effect merge** (the mod's one piece of generated content, R2): pure function of
+  `(BaseItemId, sorted GemIds[])` → `RW_VAR_<BaseItemId>_<gemhash>`, sorted iteration, invariant
+  culture, stable hash — never insertion order, wall-clock, or a runtime GUID. This was already
+  flagged as "the single riskiest correctness property of architecture (a)"; it now also gets an M1
+  test (§8.11.b/c) rather than being a documentation-only warning.
+- **Set-bonus aggregation**: pure function of current party equip/socket state; no RNG, no ordering
+  sensitivity — recomputed identically on every peer by construction.
+- **`OnHitProc` roll**: currently unspecified in §6 as anything other than "roll `Chance`" — that must
+  be nailed down to the shared deterministic `GameRandom` (EOR `EOR_SHARED_RNG` pattern) before M2
+  ships `RW_GEM_RUBY_2`, or the fire-proc will visibly desync between peers watching the same hit.
+- **`RW_SocketRecords` replay-on-load**: deterministic replay of already-persisted formulas; no
+  cross-peer concern since it's per-peer, from that peer's own save file.
+
+### 9.4 Sync surface — the socketing operation itself
+
+The open question the MP requirement surfaces that didn't exist under a single-player-only reading of
+this spec: when a client sockets a gem, where does the inventory mutation (consume gem, swap the
+item's config-id reference to the variant) actually execute, and how does it replicate?
+
+**Option (a) — host-routed custom action (recommended).** The acting peer's "Socket Gem…"/"Remove
+Gem…" sends a `RW_SOCKET_V1` / `RW_UNSOCKET_V1` request (`{ItemInstanceId, BaseItemId, GemIds[]}`) to
+the host via `AdventureDirector._handleNetworkAction`. The host validates (socket empty, gem held,
+`SocketType` match) and performs the exact same engine flow as single-player (§3.3) — this is the one
+and only place the mutation executes. The host then re-broadcasts the confirmed record to *every*
+peer, including itself, so each independently derives and registers the identical `RW_VAR_...` config
+before/at the same moment the vanilla item-reference swap and gem consumption replicate. No peer is
+authoritative over *content* (the deterministic function guarantees that); the host is authoritative
+over the *sequence* of socket/unsocket events, which rules out two peers racing to fill the same
+socket.
+
+**Option (b) — each peer executes locally in lockstep.** Every peer runs the socket op independently
+when it observes the player's input, relying on all peers reaching the same result because the
+generation function is deterministic. **Risky and rejected:** it requires the *input* to socketing
+(which item, which gem, in what order) to already be perfectly synced before either peer acts, which
+is precisely the ordering problem R3 exists to avoid ("host authority for decisions; vanilla pipeline
+for effects"). A network hiccup or a race between two players trying to use the last gem in a shared
+stash produces divergent inventory state with no single authority to arbitrate it. Rejected in favor
+of (a).
+
+**Recommendation: (a).** It matches R3 directly (host decides, vanilla-shaped effects replicate) and
+keeps the deterministic-generation guarantee (R2) as the only thing peers have to agree on, rather
+than also needing to agree on event ordering.
+
+**Corollary: the variant config must already exist on all peers before/when the replicated item
+reference lands.** Two ways to guarantee that:
+
+- **Pre-generate all combinations at load.** Rejected — combinatorial explosion. Combos-with-repetition
+  of `g` gem types across `k` sockets is `C(g+k-1, k)`; with the six shipped example gems (`g=6`) that's
+  6 (`k=1`) + 21 (`k=2`) + 56 (`k=3`) = **83** reachable variant states per fully-3-socketed base item.
+  Weapons + Attires total ~1,615 `ThingConfig`s (data-schemas.md §Things: 1,020 + 595); even a
+  conservative illustrative split — roughly 1,000 items eligible for 1 socket only, ~450 for 2
+  (RARE/EPIC), ~160 for 3 (LEGENDARY) — puts pre-generation at roughly `1,000×6 + 450×27 + 160×83 ≈
+  6,000 + 12,150 + 13,280 ≈ 31,000` variant configs, **from the six example gems alone**, before the
+  mod ever ships a bigger gem roster. Growth is combinatorial in gem count (`C(g+k-1,k)`), so a modest
+  30-gem roster pushes `k=2`/`k=3` combo counts into the thousands per item and total pre-generated
+  configs into the high hundreds of thousands to millions. Pre-generation at load is a non-starter past
+  toy datasets.
+- **Generate-on-demand + generate-on-receipt (recommended).** Each peer keeps a small
+  `VariantId → registered?` cache. On receiving a confirmed `RW_SOCKET_V1`/`RW_UNSOCKET_V1` record
+  (including the host, for its own action), a peer checks the cache; if absent, it runs the same
+  one-item deterministic merge (§3.3 step 3) and registers it — a single cheap computation per socket
+  event, not a batch job. This is **still fully deterministic** (R2 doesn't require content to exist
+  ahead of time, only that its derivation be a pure function of shared data), so it carries none of
+  option (a)-pre-generate's blow-up while giving every peer the config it needs at the moment it needs
+  it.
+
+### 9.5 SafeMode definition
+
+On parity mismatch, SafeMode means: the "Socket Gem…"/"Remove Gem…" context entries are hidden (no new
+socket/unsocket events fire this session); any item already socketed **continues to work** *only if*
+that peer's own local data reproduces the same variant config on replay — which is exactly the
+condition parity mismatch calls into question. Mismatch scenarios, worst-to-best:
+
+1. **Peer missing Runeworks entirely.** When a replicated item reference arrives pointing at
+   `RW_VAR_...`, that peer has no code path to decode it — likely a null-config lookup (crash or
+   vanilla "unknown item" fallback), not a graceful degradation. This is the scenario `ALL_PEERS` (§9.1)
+   exists to rule out before it happens, not to recover from gracefully after.
+2. **Peer running different `Gems.json`/`SocketRules.json` data (dataHash mismatch).** Even for items
+   already socketed before the mismatch was detected, that peer's own `RW_SocketRecords` replay-on-load
+   uses *its own* (divergent) gem data — producing different stats on that peer's own screen than on
+   everyone else's, for what both peers believe is "the same item." SafeMode's premise ("existing
+   variants keep working") only holds if the peer's data still matches; under a dataHash mismatch it
+   explicitly doesn't, which is the scenario that motivates Block over WarnAndSafeMode below.
+3. **Matching data, matching version, session-only mismatch** (e.g. one peer force-reloaded data
+   mid-session without the R5-mandated re-handshake). Transient; resolved once the re-handshake
+   confirms parity again.
+
+**Default policy: `Block`, not the repo-wide `WarnAndSafeMode` default — recommended, like
+ClassForge's "treat mismatched packs as unsupported."** ClassForge's reasoning is that a pack-mismatch
+peer sees pack-class characters "desync/resolve to nothing"; Runeworks' variant items have the same
+failure shape — they live in shared, tradeable inventories, visible to and actionable by every peer,
+so a SafeMode that merely disables *future* socketing does nothing about *already-existing* variant
+items a mismatched peer can't correctly reconstruct (scenario 2 above). Refusing the join outright is
+safer than letting a player enter a session where their own screen silently disagrees with everyone
+else's about what an item does.
+
+### 9.6 MP test plan
+
+Host + 1 client, both running the same Runeworks version+data unless the test says otherwise (full
+step-by-step script lives in §8.11; summarized here per the mandated structure):
+
+1. Confirm the `FTK2MODS_PARITY_V1` handshake passes for `ftk2mods.runeworks` at session start.
+2. **Client sockets a gem** on a non-host peer; **host verifies** the same item (inventory view or a
+   DevKit dump-compare of `Configs.Things[VariantId]`) shows the identical `RW_VAR_...` id and stats —
+   not just "some socketed item."
+3. **Unsocket** from either peer; confirm both peers agree on the reverted base stats and the
+   `UnsocketPolicy` outcome (gem destroyed/refunded/gold-charged) identically.
+4. **Mismatch test**: diverge one peer's `RW_GEM_RUBY_1.json` data, attempt to join, and confirm
+   ParityService names Runeworks + "data" as the mismatch and the join is refused per
+   `OnParityMismatch=Block` — not silently downgraded to SafeMode.
 
 ## 10. Milestones
 
-- **M1 — stats-only gems, variant architecture.** `RW_GEM_RUBY_1` and `RW_GEM_SAPPHIRE_1` only
-  (pure `Stats` deltas, no passives/procs/set bonuses). Ships: gem registry loader, `SocketRules.json`
-  loader, context-menu Socket/Unsocket actions, variant generation + registration, `GameRunData`
-  persistence + replay-on-load, tooltip patch showing socketed gems. No MP.
+- **M1 — stats-only gems, variant architecture, MP foundation.** `RW_GEM_RUBY_1` and
+  `RW_GEM_SAPPHIRE_1` only (pure `Stats` deltas, no passives/procs/set bonuses). Ships: gem registry
+  loader, `SocketRules.json` loader, context-menu Socket/Unsocket actions, deterministic
+  `RW_VAR_<baseId>_<gemhash>` variant generation + registration (R2), `GameRunData` persistence +
+  replay-on-load, tooltip patch showing socketed gems, **ParityService registration (R1)**, and the
+  **`RW_SOCKET_V1`/`RW_UNSOCKET_V1` host-routed sync path (§9.4)**. Co-op works for stats-only gems
+  from M1 — multiplayer is not deferred to a later milestone.
 - **M2 — passives, granted abilities, on-hit procs.** Adds `RW_GEM_RUBY_2` (`FIRE` proc),
   `RW_GEM_SAPPHIRE_2` (`STATUS_IMMUNITY_WATER` passive), `RW_GEM_ONYX` (`SKILL_ELITEAMBUSH` passive +
-  `CRT`). Ships: `CombatHelper.ApplyAction` proc-roll patch, `GrantedAbilities` merge support (even
-  though no example gem populates it — see §11.10), passive merge into generated variant configs.
-- **M3 — set bonuses, UI polish, multiplayer.** Adds `RW_GEM_STARSTONE` + the `RUBY` family set
+  `CRT`). Ships: `CombatHelper.ApplyAction` proc-roll patch — using the shared deterministic
+  `GameRandom` per R2/§9.3, not a local `System.Random` — `GrantedAbilities` merge support (even
+  though no example gem populates it — see §11.10), passive merge into generated variant configs. No
+  new sync surface: passives/procs ride the same M1 `RW_SOCKET_V1` variant-generation path.
+- **M3 — set bonuses, UI polish, MP hardening.** Adds `RW_GEM_STARSTONE` + the `RUBY` family set
   bonus. Ships: `CharacterHelper.InitializePartyStats` set-bonus aggregation patch, tooltip set-bonus
-  progress text, `AllowInMultiplayer` sync path.
+  progress text, and the finalized `OnParityMismatch=Block` SafeMode/Block behavior (§9.5) plus the
+  full MP smoke test (§9.6/§8.11) as a repeatable regression check.
 
 ## 11. Open questions
+
+MP-specific unknowns tracked repo-wide (not per-spec) live in `docs/MULTIPLAYER.md`'s numbered list;
+items 2 (does `GameRunData` custom state replicate natively?) and 5 (payload shape/size limits of
+`_handleNetworkAction`) are the two most relevant to §9.4's `RW_SOCKET_V1` design and are referenced
+inline below rather than duplicated.
 
 1. **EOR's exact variant/persistence technique** (`AffixDefinition`/`AffixedItemVariant`) is
    referenced by name in `game-code-reference.md` but not documented beyond that name — decompiling
@@ -432,7 +597,11 @@ posture:
 4. **Item-instance identity.** Neither reference doc describes how a specific inventory item
    *instance* (as opposed to its `ThingConfig` id) is addressed at runtime. Both candidate
    architectures need this (§3.2) — resolving which config-id reference to swap, or what to key a
-   sidecar map by. Blocks implementation of either architecture, not just (b).
+   sidecar map by. Blocks implementation of either architecture, not just (b). **MP angle (§9.2/§9.4):**
+   this also decides whether an item instance's config-id swap replicates via whatever vanilla
+   mechanism already syncs inventory/equipment state, or whether Runeworks must carry the
+   `ItemInstanceId` itself in the `RW_SOCKET_V1` payload for the host to resolve unambiguously — needs
+   the same decompile pass as `docs/MULTIPLAYER.md` open question 2 (`GameRunData` replication).
 5. **Whether `SkillConfigs.json` Properties are read generically.** `data-schemas.md` states new
    `SKILL_*` ids "do nothing without a C# handler," which this spec takes at face value (hence
    patching `CombatHelper.ApplyAction` directly for on-hit procs rather than authoring a new skill via
@@ -450,9 +619,13 @@ posture:
    access (supporting post-boot registration working everywhere immediately) or whether some UI/data
    paths cache a snapshot at scene load (which would require re-registering variants on every scene
    transition) is unverified.
-9. **MP mod-sync handshake.** Whether Runeworks should implement its own config+data hash handshake
-   (EOR's `EOR_VER`/`EOR_CFG`/... convention) or can/should piggyback on EOR's if EOR is present in the
-   same modlist, is undecided — deferred past M3.
+9. **MP mod-sync handshake — resolved at the repo level, one API question remains.** Runeworks does
+   not roll its own config+data hash handshake; it registers with the shared **ParityService**
+   (`docs/MULTIPLAYER.md` R1, FTK2.DevKit) at boot (§6, §9.1), which is an M1 requirement, not deferred
+   past M3. The remaining open question is purely mechanical: whether ParityService's registration API
+   exists yet in FTK2.DevKit at the time Runeworks M1 starts, or whether Runeworks needs a temporary
+   local stub (its own minimal version/dataHash check) until DevKit ships it, later swapped for the
+   real registration call.
 10. **`GrantedAbilities` example.** The schema supports adding `Abilities.json` ids to a socketed
     item's `AbilityBag`, but `Abilities.json`'s 972 entries aren't enumerated in our reference docs, so
     no example gem populates this field (inventing a plausible-looking ability id would violate the

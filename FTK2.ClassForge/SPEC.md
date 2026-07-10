@@ -78,7 +78,11 @@ BepInEx Awake
   └─ ClassForgePlugin.Load()
        ├─ scan <plugin folder>\ClassPacks\*\ + any [Packs] AdditionalRoots
        ├─ for each folder with a pack.json: parse manifest
-       ├─ topologically sort by loadOrder + dependencies (cycle/missing-dep → log loudly, skip pack)
+       ├─ sort discovered pack ids alphabetically (deterministic discovery — never trust filesystem/OS
+       │    directory-listing order, which is not guaranteed identical across peers)
+       ├─ topologically sort by loadOrder + dependencies (cycle/missing-dep → log loudly, skip pack;
+       │    ties broken alphabetically by id, §4.1 — this is what makes merge order, and therefore the
+       │    ParityService dataHash below, a pure function of which packs are enabled, per MP R2)
        ├─ for each pack, in resolved order:
        │    ├─ merge classes.json  → Configs.Characters   (id collision: last pack wins, both pack ids logged)
        │    ├─ merge traits.json   → Configs.Things        (Class:"TRAIT" entries also register with the trait bridge)
@@ -91,8 +95,10 @@ BepInEx Awake
        │    │    Lang.__t/SetLanguage patch per the EOR precedent)
        │    └─ index icons/*.png, portraits/*.png by filename for the AssetLoader.GetImage/GetRender patch
        ├─ patch CharacterCustomizationViewHelper.RenderClassList (if [UI] EnableClassSelectInjection)
-       └─ register the generic skill-recipe dispatcher against its hook points (§6)
+       ├─ register the generic skill-recipe dispatcher against its hook points (§6)
+       └─ register (guid, version, dataHash, enabledFeatures) with FTK2.DevKit's ParityService (§9.6)
 DevKit / ConfigsHelper.ReloadConfigs hot-reload (future) → re-run the merge idempotently (open question §11.8)
+  and re-register with ParityService so a hot-reloaded dataHash is re-checked
 ```
 
 ### State lifecycle
@@ -106,6 +112,27 @@ DevKit / ConfigsHelper.ReloadConfigs hot-reload (future) → re-run the merge id
   on combat end — the CONVENTIONS.md default, and consistent with the native `PROC_COOLDOWN`/`SKILL_COOLDOWN`
   vocabulary already being battle-scoped tuning knobs in `SkillConfigs.json`.
 - **Pack registry itself (manifest, load order, id→pack-origin map):** rebuilt on every load; not persisted.
+
+### Multiplayer parity registration
+
+Per `docs/MULTIPLAYER.md` R1, `ClassForgePlugin.Load()` registers with `FTK2.DevKit`'s **ParityService**
+(reflection-based call, no hard build dependency) once the pack-merge pass completes:
+
+- `guid` = `ftk2mods.classforge`; `version` = the plugin's assembly version.
+- `dataHash` = SHA-256 over every file under each *enabled* pack's `ClassPacks/<PackName>/` tree, **excluding
+  `localization/**`** (R1: localization files are parity-exempt — text-only, no gameplay-state effect), computed
+  over sorted pack ids then sorted file paths within each pack, normalized line endings, invariant culture — the
+  same determinism discipline the merge pipeline itself uses (below).
+- `enabledFeatures` = the sorted list of active (post-per-pack `[Packs] <PackId>.Enabled`-filtered) pack ids —
+  e.g. `["CF_PACK_BALDURS"]` — a *pack*, not an individual content id, is the parity-relevant unit.
+
+This feeds the `FTK2MODS_PARITY_V1` handshake on session join/host; see §9.5/§9.6 for what happens on mismatch.
+
+**Why the merge pipeline is deterministic (R2), and therefore why `dataHash` is stable across peers:** pack
+*discovery* sorts discovered pack ids alphabetically before any further step (never trusts filesystem/OS
+directory-listing order), and the topological sort by `loadOrder` + `dependencies` breaks ties alphabetically by
+pack id (§4.1). Given the same set of enabled packs at the same versions, every peer computes the same merge
+order and the same `dataHash` — no network coordination is needed to *agree* on the hash, only to *compare* it.
 
 ## 4. Data file formats
 
@@ -128,6 +155,11 @@ files under `data/` are strict JSON.
   "enabled": true                    // optional per-pack default; the [Packs] knob (§5) can override at runtime
 }
 ```
+
+`loadOrder` ties are broken **alphabetically by pack id**, never by insertion/filesystem-discovery order. This
+is not a style preference — it is what keeps the merge (and the ParityService `dataHash`, §3) a deterministic
+function of *which packs are enabled*, satisfying MP rule R2, so that every peer with the same pack set computes
+the same merge result without any network coordination.
 
 ### 4.2 `classes.json` — Characters.json-shaped
 
@@ -375,6 +407,14 @@ folders).
   in the normal class-select screen.
 - `[UI] EnableIconFallback` (bool, `true`) — toggles the `AssetLoader.GetImage`/`GetRender` icon/portrait
   fallback patch; off = packs render with the game's default missing-icon placeholder.
+- `[Multiplayer] OnParityMismatch` (enum: `Block` / `WarnAndSafeMode` / `WarnOnly`, default **`Block`**) —
+  **overrides** `docs/MULTIPLAYER.md` R1's repo-wide default (`WarnAndSafeMode`) specifically for this mod.
+  Rationale (full reasoning in §9.5): ClassForge cannot hot-disable a pack class mid-run the way a
+  SafeMode-compatible mod sheds a feature — a mismatched pack-class character has no valid degraded state, it
+  either resolves against `Configs` or it doesn't. Defaulting to `Block` refuses a mismatched peer's session
+  join *before* any pack-class character can be created, instead of letting the party discover the failure
+  mid-combat. Only set this to `WarnAndSafeMode`/`WarnOnly` if you understand and accept that a mismatched peer
+  may desync or crash the moment a pack-class character takes its first action.
 
 ## 6. Patch targets & integration points
 
@@ -394,6 +434,7 @@ All verbatim from `docs/research/game-code-reference.md`.
 | `InteractableHelper.CalculateFinalDamage` | Postfix (conditional on §11.2) | Candidate source for an `ON_CRIT` signal, if one is IL-verified to exist on the return value. |
 | `AssetLoader.GetImage` / `GetRender` | Prefix (return true/false to skip vanilla lookup) | Serve pack icons/portraits by id before falling back to vanilla. EOR already patches these — proven hook. |
 | `Lang.__t` / `Lang.SetLanguage` | Postfix, or pre-populate the backing dictionary before first call | Merge pack localization strings. EOR already patches these — proven hook. |
+| `FTK2.DevKit.ParityService.Register` | Reflection call (not a Harmony patch; no compile-time dependency) | Called at the end of `Load()` (and again after a hot-reload merge, §11.8) with `(guid, version, dataHash, enabledFeatures)` — see §3 "Multiplayer parity registration". Backs the `OnParityMismatch = Block` behavior in §9.5. |
 
 ## 7. Example starting dataset
 
@@ -469,22 +510,132 @@ Executable by a human in well under 15 minutes with the shipped `CF_PACK_BALDURS
    loader-order pack wins); a pack with an unresolved `dependencies` entry (pack skipped, logged, other packs
    still load); `Enabled = false` master knob (zero packs scanned, vanilla untouched); disabling one pack via its
    per-pack knob while others remain enabled.
+8. **MP smoke test — matching packs (see §9.6).** Both peers install `ftk2mods.classforge` +
+   `CF_PACK_BALDURS` at the same version. Host creates a `CF_WARLOCK_HEXBLADE` character, client creates a
+   `CF_NECROMANCER` character; both join the same run and fight one combat together, each casting at least one
+   ability and triggering one skill recipe. Verify: both peers show identical HP/status/summon state after each
+   action (no visible divergence between screens); the Necromancer's raised skeleton appears and acts
+   identically on both peers; with `SkillRecipeVerboseLogging` on, both peers' logs show the same recipe
+   fire/skip decisions for the same triggers.
+9. **MP mismatch test — blocked join (see §9.5).** Host has `CF_PACK_BALDURS` enabled; client either lacks the
+   pack, has it at a different version, or has a different `[Packs] <PackId>.Enabled` set. Client attempts to
+   join the host's session. Verify: the join is **refused**, not merely warned, before the client reaches
+   character selection, and the displayed message names `ftk2mods.classforge` and the specific mismatch kind
+   (missing pack / version / feature-set difference).
 
-## 9. Save & multiplayer considerations
+## 9. Multiplayer
 
-- **Persistence:** no new save schema. A pack character's class/trait/gear identity persists exactly how vanilla
-  already persists any character's config id, `Things`, and `Passives`. Skill-recipe cooldown counters are
-  per-battle plugin state only, never saved (consistent with CONVENTIONS.md's per-battle default).
-- **Single-player-first.** This spec assumes single-player as the primary target, per CONVENTIONS.md default.
-- **Multiplayer posture:** every peer must have the same set of packs enabled, at the same versions, or a
-  pack-class character will desync/resolve to nothing on a peer missing that pack's data — the same failure mode
-  EOR's config+data hash handshake (`EOR_CFG`/`EOR_DAT`/`EOR_SIG`) exists to catch. ClassForge does not ship a
-  sync handshake in M1–M3; this spec explicitly defers "verify all peers have matching packs" to a future
-  milestone and, until then, treats mismatched packs across peers as **unsupported** (gate behind a knob-visible
-  warning at session start, don't silently allow it).
-- **Host authority:** enemy AI use of a pack class's abilities (if ever put on an enemy) runs host-side, per
-  CONVENTIONS.md's AI-side default — not exercised by this spec's example pack (all `CF_PACK_BALDURS` content is
-  player-facing), but noted for any future pack that reuses these classes as bosses/mercs.
+ClassForge is **MP-first**, per `docs/MULTIPLAYER.md` (the repo-wide MP architecture) — this section follows
+that doc's mandated §9 structure. *(Persistence note, unaffected by MP: no new save schema. A pack character's
+class/trait/gear identity persists exactly how vanilla already persists any character's config id, `Things`, and
+`Passives`. Skill-recipe cooldown counters are per-battle plugin state only, never saved.)*
+
+### 9.1 Parity class: `ALL_PEERS` — no exceptions
+
+ClassForge is `ALL_PEERS`. Every peer in a session must have the same packs enabled at the same versions with
+matching data. There is no safe subset install (unlike a `HOST_ONLY` mod such as an AI-only brain): classes,
+traits, abilities, and items merge directly into `Configs.Characters/Things/Abilities` (§3) *before* any
+character exists, and the game simulates combat from those `Configs` entries on every peer that must resolve
+that character. A peer missing the pack resolves the class's config id to nothing (§3 State lifecycle) — not a
+cosmetic gap, but an unresolvable character the instant it needs to render or act. A party member playing a
+class the other peer doesn't have is a **guaranteed desync or crash**, not a degraded experience. This is also
+why ClassForge's SafeMode posture (§9.5) departs from the repo default.
+
+### 9.2 Feature table
+
+| Feature | Class | Authority |
+|---|---|---|
+| Pack-merged `Configs.Characters/Things/Abilities` entries | `[SYNCED]` | All peers — correctness comes from parity (R1), not runtime replication; there is nothing to transmit because the data is loaded identically before any character exists |
+| Class-select UI injection | `[LOCAL]` | Local peer; renders shared `Configs` data, doesn't transmit the render |
+| Trait bridge (grant/remove non-`eTraits` ids) | `[SYNCED]` | Whichever peer's action triggers the grant; must replicate exactly like a native trait grant (mechanism unconfirmed — §11.1) |
+| Icon/portrait fallback | `[LOCAL]` | Local peer, presentation only (R4) |
+| Localization merge | `[LOCAL]` | Local peer, parity-exempt (R4); also excluded from the `dataHash` (§9.6) |
+| Skill-recipe proc evaluation (`ProcChance`/`AiProcChance` roll) | `[SYNCED]` | Host, under the favored design (§9.3b) — **unconfirmed, open question** |
+| Skill-recipe effect application (`CHANGE_STAT`/`ADD_STATUS`/`ADD_CHARACTER`) | `[SYNCED]` | Rides the vanilla action-pipeline replication used by any ability's `Actions[]` |
+| Skill-recipe cooldown counters | `[LOCAL]` | Per dispatcher instance, per-battle; derived from a `[SYNCED]` trigger, never itself transmitted |
+
+### 9.3 Determinism inventory
+
+**a) Pack merge order (R2).** The merge pipeline (§3 Runtime flow) is a pure function of which packs are
+enabled: discovery sorts pack ids alphabetically (never trusts filesystem/OS enumeration order), and the
+`loadOrder` topological sort breaks ties alphabetically by pack id (§4.1). Given the same enabled pack set at the
+same versions, every peer computes the same merge order — hence the same "last pack wins" collision resolution
+(§8 edge cases) and the same ParityService `dataHash` (§9.6) — with zero network coordination required to reach
+agreement, only to detect disagreement.
+
+**b) Skill-recipe `ProcChance`/`AiProcChance` rolls (R2 + R3) — open question, both designs sketched.**
+Every recipe fire (§4.6) includes a percentage roll whose outcome peers must agree on. The spec does not yet say
+which peer(s) evaluate it or what RNG backs it; resolving this blocks M3 (skill-recipe execution) shipping as
+MP-safe:
+
+- **Design A — host-simulated, vanilla-replicated (favored).** Consistent with R3 and `docs/MULTIPLAYER.md`'s
+  strong prior that combat resolution is host-authoritative (mirrors its open question #1 on AI decisions). The
+  dispatcher's hook points (`CombatHelper.ApplyAction`/`.PerformAbility`/`._onCombatSkillProc`,
+  `InteractableHelper.ApplyStatChange`/`CalculateFinalDamage`, §6) only *decide* outcomes host-side, drawing from
+  the game's deterministic `GameRandom` (EOR `EOR_SHARED_RNG` pattern). The resulting effect is applied through
+  the same native `eCombatActions`/status verbs a vanilla ability would use, so it replicates to clients for free
+  via the vanilla action pipeline — no bespoke `_SYNC_` action needed. Depends on confirming that clients observe
+  a replicated result on these hooks rather than re-running local decision logic — unconfirmed.
+- **Design B — evaluated per-peer, must converge independently.** If each peer's client instead re-executes
+  `CombatHelper`/`InteractableHelper` locally (driven by synced inputs rather than synced results), the
+  dispatcher's Harmony hooks fire independently on every peer, and each peer's roll must independently land on
+  the *same* outcome. Only possible if every roll consumes the shared deterministic `GameRandom` advanced
+  identically (same call count, same order, for the same triggers) on every peer — a local `System.Random` per
+  peer desyncs the instant two peers' rolls diverge (e.g. one peer's Necromancer raises a skeleton, the other's
+  doesn't). This design would additionally need every peer to evaluate the same set of triggers, which already
+  presumes R1 parity holds (§9.1) — a missing pack means a peer never fires the trigger at all, not merely rolls
+  differently.
+
+**Until confirmed, ClassForge's M3 implementation must draw every `ProcChance`/`AiProcChance` roll from the
+shared deterministic `GameRandom`, never a local `System.Random`** — the only choice safe under both designs.
+Tracked as an open question in §11 alongside `docs/MULTIPLAYER.md`'s combat-authority unknowns.
+
+### 9.4 Sync surface
+
+- **Config-shaped content — no bespoke sync.** Per `docs/MULTIPLAYER.md`'s "prefer config-shaped content"
+  guidance, ClassForge's entire persistent surface (classes/traits/abilities/items) merges into `Configs` before
+  any character exists; there is nothing to transmit at runtime. Correctness is a parity property (R1, §9.6),
+  not a replication property.
+- **Skill-recipe effects ride the vanilla action pipeline.** `CHANGE_STAT`/`ADD_STATUS`/`REMOVE_STATUS`/
+  `ADD_CHARACTER` (via `SUMMON`, §4.6) are native `eCombatActions`/status verbs; whatever mechanism already
+  replicates a vanilla ability's actions replicates a recipe's effects identically under Design A (§9.3b).
+- **No custom `_SYNC_` action defined for M1–M3.** Everything ClassForge needs rides either the vanilla
+  `Configs` load (content) or the vanilla action pipeline (effects). If Design B (§9.3b) turns out to be reality
+  and per-peer convergence via shared `GameRandom` alone proves insufficient, the designed-for fallback is
+  `CF_SYNC_RECIPE_PROC_V1` (host → clients, `{recipeId, casterId, targetId, rngDraw}`, idempotent to apply) — a
+  last resort per `docs/MULTIPLAYER.md`'s guidance, named here so it isn't a scope surprise later.
+
+### 9.5 SafeMode definition: `OnParityMismatch = Block` (ClassForge's override of the repo default)
+
+`docs/MULTIPLAYER.md` R1's repo-wide default is `WarnAndSafeMode`, where SafeMode means "disable state-mutating
+features, keep presentation-only features." **ClassForge overrides this to `Block`** (§5), because SafeMode's
+premise doesn't hold for a class-pack mod:
+
+- SafeMode assumes a mod can hot-disable its mutating features mid-session while the party keeps playing.
+  ClassForge cannot: a pack class is not a feature layered onto a character that can be toggled off, it *is* the
+  character. Once a run starts with a `CF_WARLOCK_HEXBLADE` party member, there is no "disable ClassForge's
+  mutations" state that leaves that character valid on a peer missing the pack — its `Configs.Characters` entry,
+  `Things`, and `Passives` simply don't resolve there (§3 State lifecycle), mid-run, after the party has already
+  committed to that roster.
+- `WarnOnly` is worse than useless here: the failure isn't a visual glitch, it's an unresolvable character
+  reference the first time the mismatched peer's client needs to render or simulate that character — exactly the
+  "guaranteed desync/crash" of §9.1, just delayed until it's expensive to unwind.
+- **Therefore: on session join, if ParityService reports a `ftk2mods.classforge` mismatch (version, `dataHash`,
+  or `enabledFeatures` difference — §9.6), the joining peer is refused entry *before* any pack-class character
+  can be created or played**, with a message naming the mod, the mismatch kind, and — if `enabledFeatures`
+  differ — which pack ids are missing/extra on which side (§8 step 9). This is a stronger-than-default posture
+  applied because ClassForge's failure mode is uniquely unrecoverable mid-run; it is not proposed as a new
+  repo-wide default.
+
+### 9.6 MP test plan
+
+See §8 steps 8–9 for the executable checklist. Summary: (1) both peers install the same pack at the same
+version, each plays a pack class, fight one combat together, verify identical HP/status/summon state and
+identical recipe fire/skip decisions on both peers' logs; (2) a peer with a mismatched pack set/version attempts
+to join and is **blocked** before character selection, with a message naming the mod and the mismatch kind. The
+registration that backs this is `ClassForgePlugin.Load()` calling `FTK2.DevKit.ParityService.Register(guid,
+version, dataHash, enabledFeatures)` — `dataHash` over all enabled packs' files excluding `localization/**`,
+`enabledFeatures` = sorted active pack ids — detailed in §3 "Multiplayer parity registration."
 
 ## 10. Milestones
 
@@ -492,7 +643,10 @@ Executable by a human in well under 15 minutes with the shipped `CF_PACK_BALDURS
   Characters/Things/Abilities` merge, localization merge, per-pack enable knob, minimal class-select injection
   (enough to pick and play a pack class in a real fight). Traits merge into `Configs.Things` as inert data (not
   yet grantable in-game — that's M2). No skill recipes execute yet; innate class `Passives[]` referencing
-  `SKILL_*` ids that don't have a recipe registered are simply no-ops (fail-safe, not a crash).
+  `SKILL_*` ids that don't have a recipe registered are simply no-ops (fail-safe, not a crash). **Also in M1:**
+  `FTK2.DevKit.ParityService` registration (guid/version/dataHash/enabledFeatures, §3, §9.6) and the
+  `[Multiplayer] OnParityMismatch = Block` default (§5, §9.5) go live from the first shippable milestone — MP
+  parity enforcement is not deferred to a later milestone, since `ALL_PEERS` content exists starting at M1.
 - **M2 — Trait injection + UI polish.** Solve the `eTraits` enum bridge (§11.1) so pack traits are actually
   grantable/removable via the normal trait-pick flow; full `RenderCustomizationContainer`/`RenderStatsContainer`
   parity for pack classes; icon/portrait fallback patch live.
@@ -541,3 +695,11 @@ gear/abilities; M2 adds trait depth; M3 adds the signature procs.
    own `CF_SKELETON_WARRIOR` is unverified in the two ground-truth docs — grep a real `Characters.json` for
    `BaseType:"SKELETON"` entries before deciding; not a blocker since `CF_SKELETON_WARRIOR` is fully
    self-contained.
+10. **Multiplayer combat-authority model for skill-recipe procs (blocks M3 shipping as MP-safe).** Whether
+    `CombatHelper`/`InteractableHelper` combat resolution — and therefore skill-recipe `ProcChance`/
+    `AiProcChance` rolls — runs host-simulated-and-replicated (§9.3b Design A) or independently per-peer (§9.3b
+    Design B) is unresolved; it determines whether the shared deterministic `GameRandom` is best-practice or
+    load-bearing for correctness. Confirm via decompile before M3 ships. All other repo-wide MP unknowns (is AI
+    decision-making host-only? does `GameRunData` custom state replicate? does `CombatState.GridType` sync
+    natively? `_handleNetworkAction` payload limits; etc.) are tracked centrally in `docs/MULTIPLAYER.md`'s
+    numbered open-questions list — not duplicated here.

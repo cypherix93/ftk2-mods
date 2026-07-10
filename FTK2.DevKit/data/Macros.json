@@ -25,5 +25,11 @@
       "dk_spawn_encounter GOBLIN_GRUNT",
       "dk_win_combat"
     ]
+  },
+  "parity-check": {
+    "Description": "Print every currently-registered mod's ParityService registration (guid, version, dataHash, enabledFeatures) and the most recent mismatch result, for MP desync triage.",
+    "Commands": [
+      "dk_dump_parity"
+    ]
   }
 }

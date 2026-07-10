@@ -336,6 +336,16 @@ All under a single BepInEx config file, `ftk2mods.forge.cfg`.
   each rule's own setting.
 - `[Salvage] EnableSalvage (bool, true)` — master switch; if false, no `Salvage`-derived recipes
   are generated even if a rule requests them.
+- `[Multiplayer] OnParityMismatch (string, "Block")` — **overrides the repo-wide default**
+  (`WarnAndSafeMode`, per `docs/MULTIPLAYER.md` R1) for this mod specifically. See §9.5 for why:
+  Forge's generated items become real persisted inventory content the instant a craft happens, so
+  "disable the generator and keep playing" is not safe once any generated id could already be
+  load-bearing in a save. Alternatives (`WarnAndSafeMode`, `WarnOnly`) remain available for groups
+  that accept the risk.
+- `[Multiplayer] ForceDryRunOffInMP (bool, true)` — when the session is detected as multiplayer,
+  `DryRun` is forced off regardless of `[General] DryRun`'s file value, closing off the single most
+  avoidable self-inflicted parity mismatch (a `DryRun` peer never merges generated content at all,
+  §9.5) before ParityService even needs to catch it.
 
 ## 6. Patch targets & integration points
 
@@ -426,32 +436,169 @@ below, per `docs/feasibility.md` Tier 0). Executable in under 15 minutes.
    JSON); confirm Forge logs loudly and leaves vanilla `Configs.Things`/`Configs.CraftConfigs`
    untouched (per `CONVENTIONS.md`'s "fails safe" rule), rather than crashing config load for
    every other mod.
+10. **MP smoke test — parity happy path** (§9.6): two peers, identical Forge install + identical
+    `UpgradeRules/FRG_common_uncommon_weapons.json`. Host starts the session, client joins.
+    Either peer crafts a selected base item up to +1 using orbs. Confirm the *other* peer's view
+    of the shared inventory/party shows the same generated id, name, tooltip, and stats — with no
+    additional patch needed, because it's vanilla-replicated (§9.4). Confirm ParityService's
+    registration handshake reports a match (log line, no mismatch banner).
+11. **MP mismatch test** (§9.5/§9.6): repeat with one peer's `UpgradeRules/
+    FRG_common_uncommon_weapons.json` edited (different `Levels` or a `StatGrowth.Value`) or a
+    different `[General] MaxLevelCap` in that peer's `ftk2mods.forge.cfg`. Confirm ParityService
+    detects the `dataHash`/`enabledFeatures` divergence, names Forge specifically in the warning,
+    and — per the shipped `[Multiplayer] OnParityMismatch = Block` default — the session refuses
+    to proceed rather than silently entering SafeMode. Repeat once more with only `[General]
+    DryRun` differing between peers to confirm that alone also trips the mismatch (§9.5).
 
-## 9. Save & multiplayer considerations
+## 9. Multiplayer (MP-first, per `docs/MULTIPLAYER.md`)
 
-- **Save**: no custom serialization anywhere. A "+2 Militia Sword" in a save file is stored
-  exactly like any vanilla item (id + quantity) because it *is* a normal `ThingConfig` entry by
-  the time the save system sees it (§3.4). Nothing breaks if the mod is removed later beyond the
-  item id no longer resolving (same failure mode as removing any other content mod).
-- **Multiplayer**: single-player-first, as with every mod in this repo, but this one has a sharp
-  MP requirement: `Configs.Things`/`Configs.CraftConfigs` must be **identical** across host and
-  all peers, or a generated id that resolves on one machine won't resolve on another (missing-
-  item/desync risk). This means:
-  - Every peer must run the same version of Forge with the same `UpgradeRules/*.json` (and the
-    same hand-authored M1 data, if merged via Path A).
-  - `DryRun` is local/dev-only by design — it must never be enabled differently between peers in
-    the same session (a dry-run peer never merges the generated content at all).
-  - Recommend piggybacking on EOR's existing mod-sync hash handshake pattern
-    (`EOR_VER/EOR_CFG/EOR_DAT/EOR_SYS/EOR_DEF/EOR_SIG`, `docs/research/game-code-reference.md`
-    §7) if it exposes any extension point for third-party mods; otherwise Forge needs its own
-    equivalent hash-and-refuse-to-join check via a custom `AdventureDirector._handleNetworkAction`
-    action, gated behind a knob that defaults to "on" per `CONVENTIONS.md`'s MP-safe-by-default
-    rule. Left as an implementation detail for M2 rather than specified further here (Open
-    Question #6/#7 territory — depends on what EOR's handshake actually exposes).
-  - The crafting action itself (`CraftingHelper.CraftItem`) is vanilla and presumably already
-    MP-safe the same way base-game candy crafting is; Forge adds no new network action for the
-    craft/salvage/downgrade flows themselves, only (potentially) for the config-hash handshake
-    above.
+Forge's whole architecture is the poster child for `docs/MULTIPLAYER.md`'s "prefer config-shaped
+content over runtime state" guidance: every generated tier is a complete, ordinary `ThingConfig`/
+`CraftRecipe` merged into `Configs.Things`/`Configs.CraftConfigs` (§3.4), and crafting flows
+entirely through the vanilla, already-replicated `CraftingHelper.CraftItem` pipeline. There is no
+per-instance state, no sidecar dictionary, and (post-M1) no custom sync action for gameplay
+effects — real config ids sync for free. The one genuinely hard MP problem this mod has is
+**determinism of the ladder generator** (§9.3): every peer must compute byte-identical generated
+content independently, because nothing replicates it for us.
+
+### 9.1 Parity class: `ALL_PEERS`
+
+Forge's generated content is real config data the simulation reads from, exactly the case
+`docs/MULTIPLAYER.md` R1 calls the #1 desync source. `ALL_PEERS` applies uniformly across all
+three milestones:
+
+- **M2/M3 (plugin installed)**: every peer must run the same Forge plugin version with
+  byte-identical `UpgradeRules/*.json` (and the same hand-authored M1 data, whichever delivery
+  path is used). This is enforced by ParityService (§9.5).
+- **M1 (zero-code, pure `StreamingAssets` data, no plugin)**: still `ALL_PEERS` in effect — a
+  `_PLUS1` id that resolves on one peer's `Configs.Things` and not another's is an immediate
+  desync, identical failure mode to the M2 case — but there is **no enforcement**. ParityService
+  registration is a plugin-side mechanism; a pure-data M1 install has no plugin loaded to hash
+  anything, so a raw-`StreamingAssets`-edit divergence between peers is invisible to the parity
+  handshake entirely. Two options, both worth stating explicitly rather than leaving M1 players to
+  discover this the hard way:
+  - Recommended: **install the (tiny) Forge plugin even for an M1-only setup**, purely so
+    ParityService has something to hash and compare (`[General] Enabled = false` is not
+    required — the plugin can register its `dataHash` over the M1 JSON files without running the
+    generator at all). This costs nothing functionally and buys parity coverage.
+  - Fallback: **manual file-copy discipline** — peers who genuinely want zero-code/no-DLL M1 must
+    ensure their `data/Things/*.json` + `data/CraftConfigs/*.json` are byte-identical copies (same
+    files, not just "the same ladder logically"), verified out-of-band (diff the files before a
+    session). This is a documentation/process mitigation, not a technical one; call it out in
+    player-facing install notes.
+
+### 9.2 Feature table
+
+| Feature | Milestone | Label | Authority |
+|---|---|---|---|
+| Ladder generator (item variants + recipes into `Configs.Things`/`CraftConfigs`) | M2 | `[SYNCED]` | ALL_PEERS — each peer generates independently; required to be byte-identical (R2, §9.3) |
+| Upgrade craft (base + orbs → `_PLUS1..N`) | M1/M2 | `[SYNCED]` | vanilla `CraftingHelper` — replicated the same way base-game crafting already is |
+| Downgrade / salvage craft | M1/M3 | `[SYNCED]` | vanilla `CraftingHelper` |
+| Context-menu "Upgrade" shortcut | M3 | `[LOCAL]` | per-peer UI convenience; flags eligibility only, no state mutation |
+| Orb combat-loot drop chance | M3 | `[SYNCED]` | roll outcome peers must agree on — must ride the game's deterministic `GameRandom` (see §9.3), not `System.Random` |
+| `DryRun` dump | M2 dev tool | `[LOCAL]` | presentation/debug only — doubles as the parity-debug tool (R4, §9.6) |
+| `VerboseLogging` | all | `[LOCAL]` | presentation only |
+
+### 9.3 Determinism inventory (R2)
+
+The ladder generator (§3.3) is the mod's one determinism-critical component and must be a **pure
+function** of `(Configs.Things snapshot, UpgradeRules/*.json content)`:
+
+- **Selector evaluation order** (§3.3 step 1) must iterate candidates in a stable sorted order
+  (e.g. sort by id before filtering/matching) — never raw `Dictionary<string,T>` enumeration
+  order, which .NET does not guarantee stable across processes/machines/framework versions.
+- **Id scheme is content-derived, not insertion/GUID-derived**: the existing scheme,
+  `{BaseId}_PLUS{Level}` (§3.3 step 2, §4.1) — equivalently described as the stable
+  `FRG_<BaseId>_PLUS<N>`-shaped convention this mod's tags/logs already use elsewhere
+  (`FRG_UPGRADED`, `FRG_TIER_{level}`) — reproduces identically given the same base id and level,
+  satisfying R2's "generated ids must be reproducible" requirement out of the box. This SPEC now
+  makes that an explicit invariant rather than an implementation accident.
+- **Growth/cost curves** (`StatGrowth`, `ValueScaling`, `OrbCost`, §4.2) are evaluated purely from
+  rule-file constants via documented `Mode` enums — no wall-clock, no per-run seed, no I/O timing
+  dependence.
+- **Invariant culture** required for every numeric→string step in the generator path (rounding,
+  `NameDecoration.Format` substitution, any log/dry-run serialization) — a peer running under a
+  non-`en-US` OS locale must not format `1.5` as `1,5`, which would silently break both generated
+  content (if it ever leaked into an id or stored value) and, just as importantly, dry-run-diff
+  parity debugging (§9.6).
+- **No unseeded `System.Random` anywhere in the generator path.** §3.3 has none today by
+  construction (it's arithmetic over rule-file constants); this SPEC makes that a hard invariant
+  going forward, not a happy accident of the current implementation.
+- **The one true roll**: the M3 orb combat-loot drop chance (`LootDropHelper.GetLootDropsFromEnemies`
+  postfix, §6) is *not* part of the generator, but it is still "an outcome peers must agree on" per
+  R2 (a peer that rolls a bonus orb and a peer that doesn't, on the same encounter, is a desync
+  exactly like any other loot divergence). It must route through the game's deterministic
+  `GameRandom` facility (`docs/MULTIPLAYER.md`'s evidence on EOR's `EOR_SHARED_RNG` pattern) rather
+  than `System.Random`. Whether/how that facility is exposed to third-party Harmony patches is
+  unresolved — folded into Open Questions (§11) rather than duplicating `docs/MULTIPLAYER.md`'s
+  own tracking of it.
+
+Given the above, the generator's output for a given `(Things snapshot, rules)` pair is guaranteed
+byte-identical across peers — which is exactly what makes `DryRun` double as a **parity-debug
+tool**: dump on two peers and diff the output files; any difference is a determinism bug in the
+generator (or a data-file divergence R1 should have already caught), not something to shrug off as
+"MP is fuzzy." See §9.6/§8 for the concrete test.
+
+### 9.4 Sync surface
+
+Forge adds **zero custom `_SYNC_` network actions of its own** for gameplay effects — the direct
+payoff of building on config-shaped content (§3.4, and the "config-shaped content over runtime
+state" guidance in `docs/MULTIPLAYER.md`'s Practical guidance section). An upgraded item a client
+crafts is, from the host's point of view, just an ordinary owned item id flowing through the
+vanilla `CraftingHelper.CraftItem`/inventory replication path — no bespoke snapshot, no
+idempotency concern, nothing to version. The only sync surface Forge participates in is the
+shared **ParityService** registration handshake (R1, §9.5), which is DevKit-owned infrastructure
+(`FTK2MODS_PARITY_V1` over `_handleNetworkAction`), not a Forge-specific action.
+
+### 9.5 ParityService registration & SafeMode
+
+Forge registers `(guid, version, dataHash, enabledFeatures)` with DevKit's ParityService at plugin
+load (M2+; see the M1 note in §9.1 for the no-plugin case):
+
+- **`dataHash`** = SHA-256 over `UpgradeRules/*.json` + Forge's own `data/Things/*.json` +
+  `data/CraftConfigs/*.json` content, sorted file order, normalized line endings, invariant
+  culture — per R1's hash recipe. **Localization excluded** (`data/Localization/en.json`), per
+  R1's precedent that text-only files don't affect gameplay state.
+- **`enabledFeatures`** snapshots the knobs that change generated output or agreed-upon rolls:
+  `[General] Enabled`, `MaxLevelCap`, `GlobalStatGrowthMultiplier`, `DryRun` (a `DryRun=true` peer
+  never merges generated content at all, so a `DryRun` mismatch *must* trip parity — it is
+  deliberately not excluded), `[Salvage] EnableSalvage`, and `[Orbs] EnableOrbDrops` +
+  `DropChance*` (a knob mismatch produces silently different loot outcomes even with an identical
+  `dataHash`).
+- **SafeMode definition**: DevKit's repo-wide default policy is `[Multiplayer] OnParityMismatch =
+  WarnAndSafeMode`, where SafeMode means "the ladder generator does not run/merge for the rest of
+  the session." That default has a sharp edge here: if the mismatch is detected **mid-session**
+  (a hot-reload drifted `UpgradeRules` content, or a peer joined with a different version) rather
+  than at session start, SafeMode disabling the generator does nothing to un-craft a "+2 Militia
+  Sword" a player already has in inventory — that item's id keeps existing on the peer that
+  crafted it and may not exist at all on the peer that just entered SafeMode. This is the same
+  category of problem any config-generating mod in this repo faces once its generated ids are
+  load-bearing in a live save (e.g. ClassForge's skill-recipe generator mutates `Configs` with ids
+  that may already be referenced by live characters by the time a mismatch is caught) —
+  "disable the generator" is a clean answer for content nobody has touched yet, and a non-answer
+  for content that's already in someone's inventory.
+  - **Recommendation: Forge overrides the repo default and ships `[Multiplayer]
+    OnParityMismatch = Block`**, not `WarnAndSafeMode`. Reasoning: Forge's generated items become
+    real, persisted inventory content the instant a single craft happens, and SafeMode's "keep
+    running with the feature off" is only actually safe for mismatches caught *before* any
+    generated item exists anywhere in the session. Because the generator runs at every
+    `LoadConfigs`/`ReloadConfigs` — i.e. before any player action is possible — mismatches should
+    in practice always be caught pre-craft, but `Block` (refuse to start/continue the session)
+    removes the risk category entirely rather than depending on that ordering guarantee holding in
+    every future code path. The knob remains a knob (`CONVENTIONS.md`'s no-hardcoded-tuning rule,
+    §5) — a group that wants `WarnAndSafeMode` back can set it — but Forge's *shipped default*
+    is `Block`, matching the same recommendation for ClassForge's analogous problem.
+
+### 9.6 MP test plan
+
+See §8 steps 10–11 (added): a host+client smoke test — both peers install identical Forge +
+`UpgradeRules`; host or client crafts a base item up to +1 with orbs; verify the *other* peer's
+view of the shared inventory/party shows the same generated id, tooltip, and stats with no extra
+patch required (§9.4's payoff). Then a deliberate-mismatch test — diverge one peer's
+`UpgradeRules` content or `MaxLevelCap` — confirms ParityService names Forge specifically and that
+the shipped `Block` default (§9.5) refuses to proceed rather than silently entering SafeMode. The
+`DryRun` dump doubles as the parity-debug tool for this: dump on both peers, diff the files
+(§9.3) — any difference localizes the bug to the generator rather than the network layer.
 
 ## 10. Milestones
 
@@ -463,7 +610,13 @@ below, per `docs/feasibility.md` Tier 0). Executable in under 15 minutes.
 - **M2 — the generator**: the plugin, `UpgradeRules/*.json`, the `ConfigsHelper.LoadConfigs`/
   `ReloadConfigs` postfixes, `DryRun`, `MaxLevelCap`, `GlobalStatGrowthMultiplier`. Ships
   `data/UpgradeRules/FRG_common_uncommon_weapons.json` as the proof rule. Independently shippable
-  on top of M1 — M1's hand-authored ladder keeps working unchanged.
+  on top of M1 — M1's hand-authored ladder keeps working unchanged. **M2 is also the earliest
+  milestone with a plugin at all**, so it is where ParityService registration lands: `(guid,
+  version, dataHash, enabledFeatures)` registration at plugin load (§9.5), the `[Multiplayer]`
+  knobs (§5), and `ForceDryRunOffInMP` — none of this is deferrable to M3, since M2 is the first
+  point Forge has any parity surface to enforce (M1's zero-code install has none; see §9.1's M1
+  parity note for the manual-discipline fallback that remains the only option for pure-M1 users
+  who skip installing even a hash-only plugin).
 - **M3 — QoL**: context-menu shortcut (`InventoryViewHelper.ShowContextMenu`), orb drop-rate
   injection (`LootDropHelper.GetLootDropsFromEnemies`), `Salvage` recipe generation
   (`DOWNGRADE`/`REFUND_ORBS`/`BOTH`). Independently shippable on top of M2 — none of it is
@@ -514,3 +667,12 @@ below, per `docs/feasibility.md` Tier 0). Executable in under 15 minutes.
 12. Whether `ThingConfig.Expansion` is safely omittable for non-DLC content, or expects an
     explicit value (e.g. `"NONE"`/`"BASE"`) — omitted in the shipped example on the assumption
     it's optional, consistent with how the field is described for `CharacterConfig`.
+13. **MP open questions** — Forge's design in §9 depends on two questions tracked centrally in
+    `docs/MULTIPLAYER.md` rather than duplicated here (its "Open questions to resolve in the
+    decompile pass" list, items 1–5): most relevant to Forge are **#5** (exact payload
+    shape/size limits of `_handleNetworkAction`, which bounds what ParityService's
+    `FTK2MODS_PARITY_V1` registration payload can carry) and the evidence section's open call
+    surface for the game's deterministic `GameRandom` facility (needed so the M3 orb-drop-chance
+    roll, §9.3, agrees across peers per R2 — same facility EOR's `EOR_SHARED_RNG` pattern uses).
+    Neither blocks M1/M2; both should be resolved before M3's orb-drop feature ships as
+    `[SYNCED]` rather than as a known-risky roll.

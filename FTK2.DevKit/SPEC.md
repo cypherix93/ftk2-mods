@@ -6,13 +6,22 @@ Plugin GUID: `ftk2mods.devkit` · Content id prefix: `DK_` · Priority: **P0-dev
 
 ## 1. Purpose & scope
 
-FTK2.DevKit is modder tooling, not a gameplay mod. It exists to make every other mod in this repo faster to
+FTK2.DevKit is modder tooling, not a gameplay mod — **with one exception that is now load-bearing for the
+whole repo.** Per `docs/MULTIPLAYER.md` (co-op multiplayer is a hard requirement, project decision
+2026-07-10), DevKit hosts the **ParityService**: the shared implementation of MULTIPLAYER.md's R1 ("all
+peers run the same mods + the same data"). Every other `ftk2mods.*` mod registers with it and depends on it
+to detect desync-causing divergence before it corrupts a session. This makes DevKit's build order and
+correctness a hard blocker for every sibling mod's MP posture, not just a nice-to-have dev convenience.
+
+Aside from that, DevKit remains modder tooling: it exists to make every other mod in this repo faster to
 build and safer to verify. It provides: JSON hot-reload (so the edit→observe loop in `docs/CONVENTIONS.md`
 doesn't require a game restart), dump commands that snapshot the *post-merge* `Configs` registry and live
 combat/venue/AI state to disk, a small in-game command console with data-driven macros for sibling mods'
 test plans, a shared structured-logging service other mods' engines (WarBrain's decisions, ActionPoints'
-spend events, ClassForge/Forge/Questsmith's merge results) can log into, and a startup health check that
-verifies every Harmony patch target registered across all `ftk2mods.*` plugins actually resolved.
+spend events, ClassForge/Forge/Questsmith's merge results) can log into, a startup health check that
+verifies every Harmony patch target registered across all `ftk2mods.*` plugins actually resolved, and (new,
+repo-critical) the **ParityService** that every `ftk2mods.*` mod registers with for cross-peer mod+data
+parity verification.
 
 **Deliberately out of scope:** no gameplay balance changes, no content (no new abilities/items/statuses),
 no UI beyond a minimal on-screen console/table, no telemetry/phone-home (contrast with EOR's GitHub-issue
@@ -41,6 +50,16 @@ auto-filer — DevKit never talks to the network). DevKit has no save-file footp
 - In multiplayer, all *mutating* commands (give/spawn/set-stat/win/flee/xp/gold/quest-start/reload-that-
   changes-shared-config) are hard-disabled by default with an on-screen "disabled in MP" message; read-only
   dumps and the health check remain available (see §9).
+- **Multiplayer parity, silent when healthy.** On session host/join, every registered `ftk2mods.*` mod's
+  `(guid, version, dataHash, enabledFeatures)` is exchanged automatically — no player action required, no
+  UI shown if everything matches. On mismatch, a prominent on-screen banner names the exact mod and which
+  part diverged (version / data / enabled features), and the affected mod's own features enter SafeMode (or
+  the session is blocked, or it's a warn-only note — see `[Multiplayer] OnParityMismatch` in §5). A joining
+  client that connects mid-session automatically re-requests a fresh parity snapshot rather than trusting
+  stale state.
+- Run `dk_dump_parity` (or fire the `parity-check` macro) → prints/writes every currently-registered mod's
+  guid/version/dataHash/enabledFeatures and the most recent mismatch result, for MP desync triage — the
+  in-game analogue of EOR's "Print Sync-Relevant Data Hash" debug command.
 
 ## 3. Architecture
 
@@ -79,6 +98,13 @@ granularity (only reload the JSON source that actually changed, via `ConfigsHelp
 `ProcessJsonFile`) is a stretch goal for M3 gated on confirming those methods don't leave `Configs` in a
 half-updated state on a parse error (§11).
 
+**MP interaction.** A successful reload (DevKit's own, or any sibling mod's) changes that mod's `dataHash`.
+In a detected MP session, every successful reload automatically triggers a fresh ParityService
+`FTK2MODS_PARITY_V1` handshake (see "ParityService" below) immediately after it completes. If every peer
+applied the identical change, the re-handshake is silent; if not, the mismatch flow fires and the diverged
+mod's SafeMode engages until all peers reload the same content — hot-reload in MP is therefore a
+coordinate-with-your-peers action, not a solo one (per R5, `docs/MULTIPLAYER.md`).
+
 **State lifecycle.**
 - Per-battle: the `InCombat` flag and the AI-decision capture buffer (from the `AIHelper` Postfixes) reset
   on `_endCombatAsync`.
@@ -105,6 +131,64 @@ be preferable).
 patches (the exact same "Target found: X" log line convention from `docs/CONVENTIONS.md`, just also mirrored
 into a table DevKit can render). DevKit aggregates by plugin GUID and prints one PASS/FAIL row per target on
 the health-check trigger. Same reflection-based soft-dependency calling convention as the logging service.
+
+**ParityService (R1 implementation — repo-critical, `docs/MULTIPLAYER.md`).** A static class (e.g.
+`FTK2Mods.DevKit.ParityService`) that is the shared enforcement point for MULTIPLAYER.md's R1 ("all peers
+run the same mods + the same data"). Every `ftk2mods.*` plugin — including DevKit's own gameplay-adjacent
+siblings, not DevKit's dev-tooling itself — registers with it at `Awake()`.
+
+- **Registration API.**
+  `Register(string pluginGuid, string version, string dataHash, string[] enabledFeatures, Action<ParityMismatch> onParityFailed = null)`.
+  Same reflection-based soft-dependency calling convention as `DevKitLog`/`PatchRegistry` (§3 above): callers
+  resolve `Type.GetType("FTK2Mods.DevKit.ParityService, ftk2mods.devkit")` via reflection and no-op if DevKit
+  isn't loaded, rather than taking a compile-time reference. This is deliberate — R1 must not become a hard
+  build dependency for sibling mods, mirroring the existing `PatchRegistry`/`DevKitLog` soft-dependency
+  approach (see open question in §11 about a shared contracts DLL, which now also covers this API).
+  `onParityFailed` is the mod's `ParityFailed` callback (see "Mismatch flow" below); a mod that omits it still
+  gets the on-screen warning and the policy-driven session effect (SafeMode/Block) but has no chance to react
+  itself (e.g. to also disable a feature DevKit doesn't know about by name).
+- **`dataHash` computation.** DevKit exposes a helper,
+  `ParityService.ComputeDataHash(IEnumerable<string> filePaths, Func<string,bool> excludePredicate = null)`,
+  so every mod computes its hash the same way (a per-mod-invented hashing scheme would itself be a parity
+  risk). Rule: **SHA-256** over the mod's own data files, with:
+  - files enumerated in **sorted order** (ordinal string sort on the path relative to the mod's own folder)
+    so peer disk/filesystem ordering can never affect the hash;
+  - each file's bytes read as UTF-8 and **line endings normalized** (`\r\n` → `\n`) before hashing, so a
+    Windows-vs-non-Windows checkout of the same content still hashes identically;
+  - all string comparisons **invariant-culture**;
+  - **localization files excluded** by default (matched by a configurable filename/path pattern, e.g.
+    `*.lang.json`, `Localization/**`) — text-only files don't affect gameplay state (EOR precedent,
+    `docs/MULTIPLAYER.md` R1).
+  The resulting hash is a single hex string (`sha256:<64 hex chars>`) the mod passes to `Register`.
+- **Transport: `FTK2MODS_PARITY_V1` over `AdventureDirector._handleNetworkAction`.** This is the same
+  verified transport EOR's own `EOR_VER/EOR_CFG/EOR_DAT/EOR_SYS/EOR_DEF/EOR_SIG` handshake piggybacks
+  (`docs/research/game-code-reference.md` §7). On session host/join, ParityService gathers every mod's
+  current registration on the local peer and sends one `FTK2MODS_PARITY_V1` action containing the full list;
+  the host aggregates every peer's list and diffs by `pluginGuid` (payload sketch in §4).
+- **Mismatch flow.** For each `pluginGuid` present on more than one peer with a differing `version`,
+  `dataHash`, or `enabledFeatures` set, ParityService:
+  1. Shows a prominent on-screen warning naming the exact mod (by guid, resolved to a display name if the
+     mod registered one) and which part diverged (`Version` / `Data` / `Features`).
+  2. Invokes that mod's `ParityFailed(ParityMismatch info)` callback, if one was registered, with the kind of
+     divergence and the local vs. remote values.
+  3. Applies the configured policy (`[Multiplayer] OnParityMismatch`, §5): `WarnOnly` (banner only, session
+     continues unmodified), `WarnAndSafeMode` (**default** — banner + the affected mod's SafeMode is engaged,
+     per that mod's own §9 SafeMode definition, disabling state-mutating features while keeping
+     presentation-only ones per R4), or `Block` (the session refuses to start/continue at all).
+- **Late-join re-query: `FTK2MODS_PARITY_REQUEST_V1`.** A client joining an already-running session sends
+  this action once connected; the host responds with a fresh `FTK2MODS_PARITY_V1` snapshot of every peer's
+  *current* registrations, mirroring EOR's town-snapshot request/response pattern
+  (`docs/research/game-code-reference.md` §7) — a late joiner never has to trust stale or assumed state.
+- **Hot-reload interaction (R5).** If DevKit's own hot-reload (or any sibling mod's config reload) fires
+  while in an MP session, the reloading mod's `dataHash` changes; ParityService automatically re-runs the
+  `FTK2MODS_PARITY_V1` handshake immediately afterward. If every peer reloaded the identical change, hashes
+  still match and nothing is shown. If they didn't (e.g. only the host had the hotkey pressed), the mismatch
+  flow above fires normally — in practice this means an uncoordinated hot-reload in MP almost always lands
+  the reloading mod in SafeMode until every peer catches up.
+- **Versioning.** The action key is suffixed `_V1`; per `docs/MULTIPLAYER.md`'s guidance, peers on different
+  mod *versions* already fail R1 on their own, but the versioned payload keeps the failure diagnosable rather
+  than silent. A future breaking payload change ships as `_V2` with `_V1` support carried for one version
+  window if feasible.
 
 ## 4. Data file formats
 
@@ -204,6 +288,53 @@ Field notes:
   `Debug` while general DevKit chatter stays at `Info`, exactly mirroring the `VerboseLogging` knob pattern
   in `docs/CONVENTIONS.md`.
 
+### ParityService wire payloads (not a data file — the `_handleNetworkAction` payload shape)
+
+Unlike `Macros.json`/`LogConfig.json`, these are not loaded from disk; they're the JSON payloads
+ParityService sends/receives over `AdventureDirector._handleNetworkAction` (§3, §6). Documented here because
+they're still a "data format" sibling mods' authors need to reason about, per this section's remit.
+
+`FTK2MODS_PARITY_V1` (host↔client, sent on session start/join, and again after any hot-reload in MP):
+
+```json
+{
+  "Action": "FTK2MODS_PARITY_V1",
+  "SenderPeerId": "host",
+  "Registrations": [
+    {
+      "Guid": "ftk2mods.warbrain",
+      "Version": "1.0.0",
+      "DataHash": "sha256:9f2c...a3",
+      "EnabledFeatures": ["AIDecisionLogging", "TacticalScoring"]
+    },
+    {
+      "Guid": "ftk2mods.devkit",
+      "Version": "1.0.0",
+      "DataHash": "sha256:1b7e...c0",
+      "EnabledFeatures": []
+    }
+  ]
+}
+```
+
+`FTK2MODS_PARITY_REQUEST_V1` (client → host, sent once on connect for a mid-session/late join):
+
+```json
+{ "Action": "FTK2MODS_PARITY_REQUEST_V1", "RequestingPeerId": "client-2" }
+```
+
+Field notes:
+- `Registrations` is every mod currently registered with ParityService **on the sending peer** — DevKit's
+  own registration is always included (with an empty `EnabledFeatures` unless DevKit itself grows
+  parity-relevant features).
+- `DataHash` is always the `sha256:` prefix + 64 lowercase hex chars from `ParityService.ComputeDataHash`
+  (§3's hash rules: sorted files, normalized line endings, invariant culture, localization excluded).
+- `EnabledFeatures` is caller-defined free-form strings (a mod's own feature-flag names); ParityService
+  only compares the set for equality, it doesn't interpret the names.
+- On receipt of `FTK2MODS_PARITY_REQUEST_V1`, the host responds with a fresh `FTK2MODS_PARITY_V1` reflecting
+  every currently-registered peer's latest state (EOR town-snapshot request/response precedent,
+  `docs/research/game-code-reference.md` §7) — never a cached copy from the original session start.
+
 ## 5. Knobs
 
 `[General]`
@@ -239,11 +370,26 @@ Field notes:
 - `Hotkey` (KeyboardShortcut, `F12`) — re-run on demand.
 - `AlsoWriteDumpFile` (bool, `true`) — additionally write the PASS/FAIL table to the dump folder.
 
-`[MultiplayerGuard]`
-- `DisableMutationsInMP` (bool, `true`) — hard default per §9; cannot be bypassed by `UnsafeCommandsEnabled`
+`[Multiplayer]` (renamed from `[MultiplayerGuard]` — now covers both the R5 mutation guard and R1
+ParityService policy)
+- `DisableMutationsInMP` (bool, `true`) — hard default per §9/R5; cannot be bypassed by `UnsafeCommandsEnabled`
   alone.
 - `ForceAllowInMP` (bool, `false`) — explicit, loudly-logged escape hatch for a coordinated dev session where
-  every peer runs DevKit and accepts desync risk. Requires `UnsafeCommandsEnabled = true` as well.
+  every peer runs DevKit and accepts desync risk. Requires `UnsafeCommandsEnabled = true` as well. Even when
+  set, unlocked mutating commands execute **host-only** (a client-side `ForceAllowInMP` has no mutation
+  effect, only suppresses the local "disabled in MP" toast) and every use logs a **session-visible** warning
+  broadcast to all peers, not just DevKit's local log — per R5, the friction is deliberate and shared.
+- `OnParityMismatch` (enum: `WarnAndSafeMode` | `WarnOnly` | `Block`, default `WarnAndSafeMode`) — policy
+  ParityService applies when the `FTK2MODS_PARITY_V1` handshake finds a divergent mod (§3, §4). Mirrors
+  `docs/MULTIPLAYER.md` R1 verbatim: `WarnOnly` shows the banner only; `WarnAndSafeMode` also engages the
+  diverged mod's SafeMode; `Block` refuses to start/continue the session.
+- `RehandshakeOnHotReload` (bool, `true`) — after any successful hot-reload while in a detected MP session,
+  automatically re-run the `FTK2MODS_PARITY_V1` handshake (§3 "MP interaction"/"ParityService"). Turning this
+  off is not recommended — it exists only to isolate a suspected handshake bug during DevKit's own
+  development.
+- `ParityRequestTimeoutMs` (int, `5000`) — how long a late-joining client waits for the host's
+  `FTK2MODS_PARITY_V1` reply to its `FTK2MODS_PARITY_REQUEST_V1` before logging a timeout warning and
+  retrying once.
 
 ## 6. Patch targets & integration points
 
@@ -265,6 +411,12 @@ just calling the game's own machinery) and **Harmony patches** (actual intercept
 | `InteractableHelper.ApplyStatChange` | Direct call | `dk_set_stat` — synthesizes a `CHANGE_STAT`-shaped mutation using the game's own applier rather than writing to `CharacterConfig.Stats` directly (M1). |
 | `CharacterHelper.GetStat` | Direct call | Read-back/confirmation after `dk_set_stat`, and general stat inspection for dumps (M1). |
 | `AppConfigManager.Initialize` **or** `RouterMono.Update` (first tick) | Postfix (candidate) | Timing hook for "run health check once all sibling plugins have registered." Exact choice depends on BepInEx plugin load-order guarantees (§11); `RouterMono.Update`'s first tick is the safer bet since all plugins' `Awake()` calls precede any `Update()` call (M3). |
+| `AdventureDirector._handleNetworkAction` | Prefix (receive) + direct call (send) | ParityService transport (M1, R1): sends/receives `FTK2MODS_PARITY_V1` on session host/join and after any hot-reload in MP, and `FTK2MODS_PARITY_REQUEST_V1` for a late-joining client's re-query. Verified precedented hook — this is exactly where EOR's own `EOR_VER/EOR_CFG/EOR_DAT/EOR_SYS/EOR_DEF/EOR_SIG` handshake and `EOR_SYNC_TOWN_SNAPSHOT_V1` piggyback (`docs/research/game-code-reference.md` §7). |
+| `AdventureDirector.Initialize` | Postfix (candidate) | Candidate "session started/joined" trigger point to kick off the initial ParityService handshake; exact trigger and host-vs-client detection is an open question shared with §11 item 8 (M1). |
+
+Same reflection-based soft-dependency calling convention as `DevKitLog`/`PatchRegistry` (§3) applies to
+`ParityService.Register` — sibling mods resolve it via `Type.GetType(...)` and no-op if DevKit isn't loaded,
+so R1 enforcement never becomes a hard build dependency.
 
 **Investigated but blocked on decompile** (do not block the rest of M1 — ship these commands as documented
 stubs until resolved, see §11):
@@ -278,11 +430,15 @@ stubs until resolved, see §11):
 
 ## 7. Example starting dataset
 
-`data/Macros.json` — three illustrative macros (`forge-test`, `warbrain-arena`, `summoner-farm`) exercising
-`dk_give_item`, `dk_spawn_encounter`, and `dk_win_combat` respectively, each declaring its `RequiresMods`
-dependency so `dk_list_macros` can warn if the target mod isn't loaded. Demonstrates the macro schema and
-gives sibling-mod authors a copy-paste starting point for their own test plans. Placeholder ids are called
-out in §4 — swap for real ids as sibling mods ship their own SPECs/data.
+`data/Macros.json` — four illustrative macros. Three exercise sibling-mod test flows (`forge-test`,
+`warbrain-arena`, `summoner-farm` — `dk_give_item`, `dk_spawn_encounter`, and `dk_win_combat` respectively),
+each declaring its `RequiresMods` dependency so `dk_list_macros` can warn if the target mod isn't loaded.
+The fourth, **`parity-check`**, is DevKit-native (no `RequiresMods` — ParityService is core, not a sibling
+dependency): it runs `dk_dump_parity`, printing/writing every currently-registered mod's
+guid/version/dataHash/enabledFeatures plus the most recent mismatch result, the in-game analogue of EOR's
+"Print Sync-Relevant Data Hash" debug command (§2, §3) — the fastest way to triage an MP desync report.
+Demonstrates the macro schema and gives sibling-mod authors a copy-paste starting point for their own test
+plans. Placeholder ids are called out in §4 — swap for real ids as sibling mods ship their own SPECs/data.
 
 `data/LogConfig.json` — a starting category table covering DevKit's own categories plus one placeholder
 category per sibling mod (`WARBRAIN_DECISION`, `ACTIONPOINTS_SPEND`, `CLASSFORGE_MERGE`, `FORGE_MERGE`,
@@ -311,11 +467,13 @@ Each command exercised (target: all of the below in under 15 minutes with the sh
    and confirm per-entity `CombatComponent`/`StatusEffectComponent`/`VenueComponent`/`AIComponent` fields are
    populated and not all-default/zero.
 6. **Console commands.** Exercise each shipped `dk_` command at least once: `reload_configs`, `dump_configs`,
-   `dump_combat`, `dump_venue`, `dump_ai`, `set_stat`, `start_quest`, `list_macros`, `run_macro`. For each of
-   the four blocked commands (§6 table), confirm the stub responds with a clear "not yet implemented — see
-   SPEC §11" message rather than silently failing.
-7. **Macros.** Run each shipped macro; confirm the `RequiresMods` warning appears when the referenced mod
-   isn't installed, and that the macro still attempts (and logs) each command.
+   `dump_combat`, `dump_venue`, `dump_ai`, `dump_parity`, `set_stat`, `start_quest`, `list_macros`,
+   `run_macro`. For each of the four blocked commands (§6 table), confirm the stub responds with a clear
+   "not yet implemented — see SPEC §11" message rather than silently failing.
+7. **Macros.** Run each shipped macro, including `parity-check`; confirm the `RequiresMods` warning appears
+   when the referenced mod isn't installed (for the three sibling-mod macros), that the macro still attempts
+   (and logs) each command, and that `parity-check` runs with no sibling mods installed at all (ParityService
+   is core, not a sibling dependency).
 8. **Logging service.** From a throwaway test call (or once a sibling mod exists), log entries at a level
    below and at/above a category's configured `LogConfig.json` level; confirm only the latter appear in the
    F-key dump. Confirm the dump file is valid JSONL and the entry count matches `DumpLastNCount` (or fewer if
@@ -327,41 +485,105 @@ Each command exercised (target: all of the below in under 15 minutes with the sh
     confirm every mutating command is refused by default, and that `dk_dump_*`/health-check remain available.
     Confirm `ForceAllowInMP` + `UnsafeCommandsEnabled` together, and only together, unlock mutations, with a
     loud warning banner logged.
+11. **MP parity smoke test (two real instances).** Launch two game instances, one hosting, one joining, both
+    with the identical mod set — establish a baseline session with **no** warning shown (`dk_dump_parity` on
+    each peer shows matching hashes for every mod). Then, with the session still running, deliberately break
+    parity on the client only: edit one shipped JSON that feeds a registered mod's `dataHash` (or, if no
+    sibling mod ships data yet, temporarily hand-edit `data/Macros.json` and re-register a synthetic test
+    hash) and trigger a re-handshake (hot-reload on the client only, or restart the client's registration).
+    Confirm: (a) the on-screen banner appears on both peers naming the correct mod and divergence kind
+    (`Data`), (b) with `OnParityMismatch = WarnAndSafeMode` (default) the diverged mod's SafeMode engages —
+    confirm via `dk_dump_parity`'s mismatch record and (once a sibling mod exists) its own SafeMode-gated
+    behavior, (c) switching to `WarnOnly` shows the banner with no SafeMode effect, and `Block` prevents the
+    session from continuing, (d) a third instance joining *after* the mismatch was introduced receives the
+    *current* (mismatched) state via `FTK2MODS_PARITY_REQUEST_V1` — not a stale pre-mismatch snapshot.
 
 Edge cases to cover explicitly: malformed JSON on reload, missing dump-folder-path (auto-create it), a
 console command with an unknown id argument (graceful error, no crash), a macro referencing a missing mod's
 id (graceful skip + warning, per above), a health-check target that a sibling plugin never registers because
-it loaded after DevKit's check ran (documents the load-order open question in practice).
+it loaded after DevKit's check ran (documents the load-order open question in practice), a ParityService
+registration with a `null`/empty `dataHash` (treat as a guaranteed mismatch rather than a silent pass), and
+two peers with the same mod set but out-of-order `EnabledFeatures` arrays (must compare as sets, not
+sequences, or ordering alone would false-positive a mismatch).
 
 ## 9. Save & multiplayer considerations
 
 **Persistence.** DevKit writes nothing to the save file and does not touch `GameRunData`. Its only on-disk
 footprint is BepInEx config, `data/Macros.json`, `data/LogConfig.json`, the dump folder, and (optionally) a
-rolling log file. Uninstalling DevKit has zero save-compat risk.
+rolling log file. Uninstalling DevKit has zero save-compat risk. This is unchanged by MP — DevKit still owns
+no save-file state — but DevKit's *runtime* MP posture is now split in two, per `docs/MULTIPLAYER.md`, and
+the six points below answer that doc's mandated §9 structure.
 
-**Multiplayer posture: mutations hard-disabled by default.** Every command that mutates shared/synced state
-(`give_item`, `spawn_encounter`, `win_combat`, `flee_combat`, `set_stat`, `grant_xp`, `grant_gold`,
-`start_quest`, and any config reload that changes data referenced by an in-progress shared combat/run) is
-refused outright in a detected multiplayer session, regardless of `UnsafeCommandsEnabled`, unless
-`ForceAllowInMP` is also explicitly set (§5) — the double-gate is deliberate friction. Read-only commands
-(`dump_configs`, `dump_combat`, `dump_venue`, `dump_ai`, health check) remain available in MP, since they
-only read and serialize local state; note a dump taken on a non-host peer may only reflect that peer's
-locally-replicated view, not full authoritative state.
+1. **Parity class.** DevKit is dual-natured and both halves matter for MP:
+   - DevKit's own dev-tooling (hot-reload, console commands, dumps, logging, health check) is **`LOCAL`** —
+     it is pure presentation/tooling for whoever is running it and carries no parity requirement of its own
+     (R4). A peer without DevKit installed loses nothing but tooling convenience.
+   - The **ParityService it hosts is `ALL_PEERS`**: R1 only works if every peer that has any `ftk2mods.*` mod
+     installed also has DevKit installed, because sibling mods' `Register` calls no-op silently if DevKit
+     isn't present (§3) — meaning a peer without DevKit is invisible to the parity handshake entirely, not
+     merely "assumed fine." Practically: DevKit is a soft *build* dependency for every sibling mod but a hard
+     *install* dependency for R1 enforcement to mean anything in a session. This is called out explicitly
+     because it's easy to under-read "soft dependency" as "optional in practice."
+2. **Feature table.**
 
-Exact MP-session detection is an **open question** (§11) — no networking/session-state flag was identified
-in `docs/research/game-code-reference.md`. Safe default until resolved: if MP status cannot be reliably
-determined at runtime, treat the ambiguous case as MP (mutations blocked) rather than assuming single-player.
+   | Feature | Label | Authority |
+   |---|---|---|
+   | Hot-reload (manual/auto-watch) | `[LOCAL]` | Whichever peer presses the hotkey/has the watcher; R5 governs whether it's allowed in MP at all |
+   | Console (`dk_` commands, macros) | `[LOCAL]`, mutating subset R5-gated | Local peer issuing the command; mutating commands are host-only when `ForceAllowInMP` |
+   | Dumps (`dump_configs`/`dump_combat`/`dump_venue`/`dump_ai`/`dump_parity`) | `[LOCAL]` | Local peer; reflects only that peer's local/replicated view |
+   | Structured logging (`DevKitLog`) | `[LOCAL]` | Local peer; ring buffer is per-instance, not shared |
+   | Patch-health check (`PatchRegistry`) | `[LOCAL]` | Local peer; each peer verifies its own patch resolution |
+   | **ParityService** — registration, `FTK2MODS_PARITY_V1`/`REQUEST_V1` handshake, mismatch detection/policy | **`[SYNCED]`** | Host aggregates and decides; all peers register and exchange |
+3. **Determinism inventory.** DevKit itself generates and rolls nothing gameplay-relevant (no content, no
+   RNG-consuming decisions — see §1 scope). The one place R2 still binds DevKit is indirect but load-bearing:
+   `ParityService.ComputeDataHash` **must itself be a deterministic pure function** of a mod's data-file
+   bytes (§3's hash rules — sorted file order, normalized line endings, invariant-culture comparisons,
+   localization excluded). If the hash function were non-deterministic across peers (e.g. depended on
+   filesystem enumeration order, culture-sensitive string ops, or wall-clock/OS-specific line endings), every
+   `ftk2mods.*` mod's R1 guarantee would be built on a false positive/negative generator. This is why hashing
+   is centralized in DevKit rather than left to each mod to reimplement.
+4. **Sync surface.** All ParityService traffic rides `AdventureDirector._handleNetworkAction` (verified
+   EOR-precedented transport, `docs/research/game-code-reference.md` §7):
+   - `FTK2MODS_PARITY_V1` — host↔client, full registration list, payload sketch in §4; fired on session
+     host/join and again after any hot-reload in a detected MP session (§3 "MP interaction"). Idempotent:
+     receiving it just replaces the sender's last-known registration set, no cumulative state.
+   - `FTK2MODS_PARITY_REQUEST_V1` — client→host, fired once on a late/mid-session join; host replies with a
+     fresh (not cached) `FTK2MODS_PARITY_V1`. Idempotent for the same reason.
+   No other DevKit feature has a sync surface — everything else is `[LOCAL]` per the table above.
+5. **SafeMode definition.** DevKit's own SafeMode set is trivial because its mutating commands are *already*
+   hard-gated off in MP by default regardless of parity status (R5, §5 `[Multiplayer]`) — there is nothing
+   further for DevKit itself to disable on a parity mismatch. What ParityService *does* on mismatch, exactly:
+   invoke the diverged mod's own `ParityFailed` callback (§3) and apply the configured
+   `[Multiplayer] OnParityMismatch` policy (`WarnOnly` / `WarnAndSafeMode` / `Block`). The actual SafeMode
+   feature set for any given sibling mod is that mod's own responsibility to define in its own SPEC §9 point
+   5 — DevKit only delivers the signal and enforces the policy, it does not know which of a sibling mod's
+   features are state-mutating.
+6. **MP test plan.** §8 item 11 (two real instances, deliberate `dataHash` mismatch introduced mid-session):
+   confirm the banner names the correct mod + divergence kind on both peers, confirm SafeMode/WarnOnly/Block
+   policy behavior, and confirm a late joiner receives current (not stale) parity state via
+   `FTK2MODS_PARITY_REQUEST_V1`. §8 item 10 covers the R5 mutation-guard smoke test independently.
 
 ## 10. Milestones
 
-- **M1 — hot-reload + dumps + basic commands.** Manual hotkey reload with the combat-state gate; `Configs`
-  registry dump (all/single table) via reflection; combat/venue/AI state dumps; direct-call commands that
-  don't depend on an open question (`reload_configs`, `set_stat`, `start_quest`, `dump_*`); the four
+- **M1 — hot-reload + dumps + basic commands + ParityService.** ParityService moved into M1 (was M2/M3-
+  adjacent tooling before MP became a hard requirement): the `Register`/`ComputeDataHash` reflection API,
+  the `FTK2MODS_PARITY_V1`/`FTK2MODS_PARITY_REQUEST_V1` handshake over `AdventureDirector._handleNetworkAction`,
+  mismatch detection + on-screen warning + `ParityFailed` callback dispatch, and the
+  `[Multiplayer] OnParityMismatch` policy knob (`WarnAndSafeMode`/`WarnOnly`/`Block`) all ship in M1 — **every
+  sibling mod needs this from day one** to register at all, and a sibling mod that ships gameplay content
+  before ParityService exists has no way to satisfy R1. Alongside it: manual hotkey reload with the
+  combat-state gate (now also triggering the M1 re-handshake per `RehandshakeOnHotReload`); `Configs`
+  registry dump (all/single table) via reflection; combat/venue/AI/parity state dumps; direct-call commands
+  that don't depend on an open question (`reload_configs`, `set_stat`, `start_quest`, `dump_*`); the four
   decompile-blocked commands ship as clearly-labeled stubs (§6, §8).
-- **M2 — console/macros + logging service.** Full `dk_` console parser wired through
-  `CommandLineHelper.ExecuteCommand`; `Macros.json` loading + `run_macro`/`list_macros`; the shared
-  `DevKitLog` ring-buffer API with per-category levels from `LogConfig.json` and the F-key last-N dump;
-  `UnsafeCommandsEnabled` and MP-guard gating fully wired for every mutating command.
+- **M2 — console/macros + logging service + ParityService refinement.** Full `dk_` console parser wired
+  through `CommandLineHelper.ExecuteCommand`; `Macros.json` loading + `run_macro`/`list_macros` (including
+  the M1-shipped `parity-check` macro); the shared `DevKitLog` ring-buffer API with per-category levels from
+  `LogConfig.json` and the F-key last-N dump; `UnsafeCommandsEnabled` and R5 mutation-guard gating fully
+  wired for every mutating command (host-only + session-visible warning under `ForceAllowInMP`); ParityService
+  refinements that aren't correctness-blocking for M1 — configurable localization-exclusion patterns for
+  `ComputeDataHash`, `ParityRequestTimeoutMs` retry/backoff tuning, and a friendlier mod-guid → display-name
+  resolution for the mismatch banner.
 - **M3 — health check + watcher.** `PatchRegistry` registration API + startup/`F12` PASS/FAIL table (plus
   optional dump-to-file); `FileSystemWatcher` auto-reload mode with debounce; per-source reload via
   `ConfigsHelper.ProcessDirectory`/`ProcessJsonFile` if §11's safety questions resolve favorably; the two
@@ -395,12 +617,21 @@ determined at runtime, treat the ambiguous case as MP (mutations blocked) rather
    `CombatPhase._processCombatResults` isn't confirmed safely re-triggerable on demand — blocks
    `dk_flee_combat`/`dk_win_combat` (a zero-enemy-HP workaround is proposed for win in §6, unverified).
 8. **MP-session detection.** No networking/session-state flag was identified for "is this session
-   multiplayer" / "am I the host" — blocks a real implementation of the MP guard (§9); currently spec'd to
-   fail closed (treat unknown as MP) until an API is found.
-9. **Contracts DLL vs reflection.** Should the `DevKitLog`/`PatchRegistry` shared APIs be a tiny compile-time
-   "contracts" assembly referenced by every `ftk2mods.*` plugin (type-safe, but adds a build dependency to
-   every mod in the repo), or stay reflection-based soft dependencies (zero build coupling, slower/uglier
-   call sites, silent no-op if DevKit is missing or renamed)? Decide before sibling mods start integrating.
+   multiplayer" / "am I the host" — blocks a real implementation of the MP guard (§9) *and* now also blocks
+   ParityService's own handshake trigger (§3, §6: what fires "session started/joined" to kick off the
+   initial `FTK2MODS_PARITY_V1` exchange, and how a peer knows whether it's host or client for aggregation
+   purposes). Currently spec'd to fail closed (treat unknown as MP) until an API is found. This is the same
+   open problem as `docs/MULTIPLAYER.md`'s repo-wide open-question list items 1–5 (host-only AI decisions,
+   `GameRunData` replication scope, `CombatState.GridType` sync, party-rebuild propagation, and
+   `_handleNetworkAction` payload shape/size limits) — see that doc rather than duplicating the list here;
+   item 5 in particular (payload size limits) directly bounds how many mods' registrations can fit in one
+   `FTK2MODS_PARITY_V1` message before ParityService needs to chunk it.
+9. **Contracts DLL vs reflection.** Should the `DevKitLog`/`PatchRegistry`/**`ParityService`** shared APIs be
+   a tiny compile-time "contracts" assembly referenced by every `ftk2mods.*` plugin (type-safe, but adds a
+   build dependency to every mod in the repo), or stay reflection-based soft dependencies (zero build
+   coupling, slower/uglier call sites, silent no-op if DevKit is missing or renamed)? Decide before sibling
+   mods start integrating — now higher-stakes than before, since a silent `ParityService.Register` no-op
+   means that peer's mod is invisible to R1 enforcement, not just missing a logging convenience.
 10. **BepInEx load-order guarantee.** Does `RouterMono`'s first `Update()` tick reliably fall after every
     `ftk2mods.*` plugin's `Awake()` has run and registered its patch targets, or does DevKit need an explicit
     `[BepInDependency]`/soft-dependency ordering convention across the repo to guarantee the health check
@@ -408,3 +639,9 @@ determined at runtime, treat the ambiguous case as MP (mutations blocked) rather
 11. **FileSystemWatcher reliability.** Editor save behavior (atomic replace vs. in-place write, multiple
     write events per save) varies by tool; `AutoWatchDebounceMs`'s default (750ms) is a guess and needs
     empirical tuning against whatever editor sibling-mod authors actually use.
+12. **ParityFailed callback contract.** Should `ParityFailed` be a delegate passed at `Register` time (as
+    currently spec'd in §3), or should DevKit instead look up a well-known static method name
+    (`FTK2Mods.<Mod>.OnParityFailed`) by reflection the same way `DevKitLog`/`PatchRegistry` are resolved?
+    The delegate approach is simpler for the registering mod but means DevKit holds a live reference across
+    an assembly boundary for the session's duration — worth confirming this doesn't complicate BepInEx
+    plugin unload/hot-swap scenarios before M1 ships.

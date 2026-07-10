@@ -28,10 +28,15 @@ Nothing is implemented yet — these are design docs for you to approve/redline.
 9. **FTK2.Venue** (315) — smallest scope: rules-driven grid selection; custom grid sizes honestly
    parked as an M3 research milestone.
 
-## Cross-cutting decisions to make
+## Cross-cutting decisions
 
-- **MP posture**: every spec defaults single-player-safe, but confirm: is multiplayer a requirement
-  for any of these? (Changes AP economy and Runeworks architecture priorities.)
+- **MP posture — DECIDED (2026-07-10): co-op is a hard requirement.** All specs are now MP-first per
+  `docs/MULTIPLAYER.md` (repo-wide architecture: parity handshake hosted by DevKit, determinism rules
+  for generated content, host authority for decisions, dev-command lockout). Every spec's §9 declares
+  its parity class: WarBrain is likely HOST_ONLY (host-only install works); Venue is HOST_ONLY or
+  ALL_PEERS pending a probe test; everything that merges content into game Configs (ClassForge, Forge,
+  Runeworks, Summoner, Questsmith, ActionPoints) is ALL_PEERS with Block-on-mismatch defaults.
+  MULTIPLAYER.md tracks the 5 netcode open questions the decompile pass must resolve first.
 - **Standalone vs EOR-coupled**: all specs assume standalone plugins coexisting with EOR. Several
   open questions (eTraits injection, runtime Things merge, affix variant persistence) are answered
   fastest by decompiling `EnhancedOverhaulRemix.dll` — that decompile session is the single highest-value

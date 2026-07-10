@@ -72,10 +72,11 @@ FTK2.<ModName>/
 
 ## Save & multiplayer defaults
 
-- Assume single-player-first; every spec states its MP posture explicitly.
-- AI-side mods: host-authoritative (AI runs on host) — safe if host runs the mod.
-- Anything that mutates shared combat state (AP economy, sockets) requires all peers to run the mod;
-  gate risky features behind knobs that default MP-safe.
+- **Co-op multiplayer is a hard requirement** (owner decision 2026-07-10). Every mod is designed
+  MP-first per `docs/MULTIPLAYER.md` — parity handshake (R1), determinism of generated content (R2),
+  host authority for decisions (R3), presentation exemption (R4), dev-mutation lockout (R5).
+- Every SPEC §9 declares: parity class (`ALL_PEERS`/`HOST_ONLY`/`LOCAL`), a `[SYNCED]`/`[LOCAL]`
+  feature table, determinism inventory, sync surface, SafeMode definition, and an MP smoke test.
 
 ## Testing
 

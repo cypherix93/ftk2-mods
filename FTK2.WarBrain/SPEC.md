@@ -379,6 +379,21 @@ explicitly tagged).
   it `false` in a debug build to make scoring exceptions loud/crashing instead of silently
   deferring to vanilla.
 
+`[Multiplayer]`
+- `OnParityMismatch` (enum: `Inherit`, `WarnAndSafeMode`, `WarnOnly`, `Block`; default
+  `Inherit`) — `Inherit` defers to the repo-wide ParityService default set in
+  `docs/MULTIPLAYER.md` R1; set explicitly here to override just for WarBrain (e.g. a server
+  running mixed-version clients that wants `WarnOnly` instead of the repo default).
+- **Host-effective knobs.** Because WarBrain's parity class is likely `HOST_ONLY` (§9.1), every
+  knob in `[Difficulty]`, `[Memory]`, `[Assignments]`, and `[Subsystems]` only has an effect on
+  the peer that actually computes decisions — normally the host. A client's `WarBrainConfig.cfg`
+  values for those sections are inert: tuning `GlobalIntelligenceScalar` or `MemoryScope` on a
+  client machine changes nothing about how enemies behave for anyone in the session. Only
+  `[General].Enabled` and `[General].VerboseLogging`/`LogDecisionBreakdown` remain meaningful
+  client-side, and only as local logging toggles (R4, presentation-only — they don't change
+  behavior, just what a given peer's console prints). If open question #1 resolves to
+  `ALL_PEERS`, this host-effective distinction disappears for entities that peer owns.
+
 ## 6. Patch targets & integration points
 
 All from `docs/research/game-code-reference.md` verbatim class/method names. Manual
@@ -500,34 +515,145 @@ Executable in under 15 minutes with the shipped data. Turn on `VerboseLogging=tr
     log lines appear and behavior reverts to profile+doctrine only. Repeat with `PerRun` across
     two consecutive battles in the same run: confirm a reaction triggered in battle 1 is still
     active at the start of battle 2 (until its `DecayBattles` limit, if any, expires).
+12. **MP smoke test.** Host+client session, both with WarBrain installed and identical data;
+    run the same fight to completion on both and dump-compare (DevKit) final HP, ability/target/
+    position sequence, and status effects — must be byte-identical. Then repeat with the client's
+    WarBrain uninstalled entirely and confirm combat is still identical, proving the `HOST_ONLY`
+    parity claim. Full procedure and the `ALL_PEERS`-branch variant: §9.6.
 
 ## 9. Save & multiplayer considerations
 
-- **MP posture: host-authoritative.** Per repo convention, AI-side mods run their decision
-  logic only where the host computes it; WarBrain's prefixes are only meaningful on the
-  instance that actually executes `AIHelper.BehaviourAiDecision`/`StandardAiDecision` for a
-  given entity's turn. If the game's netcode already restricts these calls to the host (as is
-  typical for authoritative turn resolution), no extra gating is needed — but this must be
-  confirmed before shipping (§11). If it is *not* host-restricted, WarBrain needs an
-  `IsHost`-style guard so non-host peers don't independently compute divergent decisions.
-- **Data files are not per-save.** Profiles/doctrines/reactions/assignments are static mod
-  content; every peer in an MP session needs the same files loaded for AI behavior to look
-  consistent to all observers (screen-only divergence risk if peers run different WarBrain
-  data — no state corruption, since only the host's decision is authoritative either way).
-- **Per-battle memory** is ephemeral runtime state, not saved.
-- **Per-run memory** (`MemoryScope=PerRun`) piggybacks `GameRunData`, so it saves/loads with the
-  run exactly like the EOR Nemesis pattern it's modeled on — verify the exact `GameRunData`
-  field used as the piggyback key does not collide with EOR's own usage (§11).
-- No new network messages are introduced; WarBrain produces the same `CombatDecisionData`
-  contract vanilla AI would have produced, so it rides existing combat-result networking as-is.
+Structure and rules (R1–R5) per `docs/MULTIPLAYER.md`, the repo-wide MP architecture. This
+section is WarBrain's binding of that architecture.
+
+### 9.1 Parity class
+
+**`HOST_ONLY`** (likely), contingent on `docs/MULTIPLAYER.md` open question #1 — *is enemy AI
+decision-making (`AIHelper.BehaviourAiDecision`/`StandardAiDecision`) host-only in vanilla?*
+Strong prior: yes. This spec ships on that assumption but specs both branches, since flipping
+the answer flips the parity class:
+
+- **If AI decisions are host-only (expected → `HOST_ONLY`):** only the host needs WarBrain
+  installed with its data loaded. WarBrain's data (brain profiles, doctrines, reactions,
+  assignments) is **mod-internal** — it is read by `WarBrainDecisionEngine` to produce a
+  `CombatDecisionData` and never merges into `Configs`. Clients never need to read WarBrain data
+  because they only ever observe *effects* (ability/target/position chosen) via the vanilla
+  replicated combat-action pipeline (§3 runtime flow, step g/h) — the same pipeline carries a
+  WarBrain-driven decision or a vanilla one indistinguishably. A client with no WarBrain
+  installed at all sees correct, fully-consistent enemy behavior.
+- **If AI decisions are *not* host-only (each peer independently evaluates the decision call for
+  entities it controls, or clients run a parallel copy for prediction/spectator purposes):**
+  class escalates to **`ALL_PEERS`**. Every peer must then hold identical profile/doctrine/
+  reaction/assignment data (R1 parity hash) — a resolved-brain divergence would desync the
+  *decision*, not just its display, since a client could compute and act on a different
+  candidate than the host would have chosen for the same entity. In this branch WarBrain must
+  add an explicit `IsHost`-style guard to the `AIHelper.BehaviourAiDecision`/`StandardAiDecision`
+  prefixes so non-host peers don't independently compute divergent decisions for entities they
+  don't own.
+
+Data formats, hashing, and parity registration (below) are unchanged across both branches; only
+the *install requirement* (host-only vs. every peer) and the *host-gating patch* differ.
+
+### 9.2 Feature table
+
+| Feature | `[SYNCED]`/`[LOCAL]` | Authority |
+|---|---|---|
+| Brain profile / doctrine / reaction / assignment data load | `[SYNCED]`\* | Host feeds host-side decisions only; \*all peers if the `ALL_PEERS` branch above is confirmed |
+| Candidate scoring (§3 runtime flow, steps a–f) | `[LOCAL]` | Host-only always — even under `ALL_PEERS` each peer scores only the entities it owns, never a shared computation |
+| `CombatDecisionData` output (ability/target/position/focus) | `[SYNCED]` | Vanilla combat-action pipeline — host decides, effect replicates |
+| Per-battle memory facts (`WB_FACT_*`) | `[LOCAL]` | Host-side only; not displayed to clients in v1 (see 9.3) |
+| Per-run memory (`GameRunData` piggyback) | `[SYNCED]` | Rides whatever save/run replication `GameRunData` already has; no bespoke WarBrain sync action |
+| Reaction application (weight/bias/target-priority deltas) | `[LOCAL]` | Host — scoring input only, never displayed |
+| Softmax sampling / `MistakeChance` roll | `[LOCAL]` | Host-side RNG only — see 9.3 |
+| `VerboseLogging` / `LogDecisionBreakdown` console output | `[LOCAL]` | Any peer running WarBrain; presentation-only, parity-exempt per R4 |
+| `[Difficulty]`/`[Memory]`/`[Assignments]`/`[Subsystems]` knobs | `[LOCAL]`, host-effective | Host's config values drive decisions; a client's values are inert under `HOST_ONLY` (see §5 `[Multiplayer]`) |
+
+### 9.3 Determinism inventory (R2)
+
+WarBrain generates no config-shaped content — no new `ThingConfig`s, no runtime-minted ids —
+its only "generation" is the decision itself:
+
+- Candidate enumeration, scoring, and curve math are pure functions of `(entity, battleState,
+  memory, resolved profile+doctrine)`. Deterministic given the same inputs, but under
+  `HOST_ONLY` those inputs are host-side state, so cross-peer reproducibility is not required.
+- The softmax sample and the `MistakeChance` substitution are WarBrain's only "rolls." **This is
+  the one place the mod looks like it should need R2's shared deterministic `GameRandom` and
+  doesn't** — noted explicitly against R2: the roll happens once, host-side, and only its
+  *result* (the chosen `CombatDecisionData`) ever crosses the network via the vanilla pipeline.
+  No peer ever needs to reproduce or agree on the roll itself, which is exactly R2's
+  "decided host-side and synced" escape clause, not the shared-RNG clause. WarBrain's sampler
+  therefore uses an ordinary host-local RNG (not `GameRandom`) by design — this is correct, not
+  an oversight.
+- Memory state (facts, decayed reaction deltas) is host-side per R3 and is never itself rolled
+  or generated; it's an accumulation of recorded facts, replayed deterministically host-side.
+- If the `ALL_PEERS` branch is confirmed, each peer would roll independently only for entities it
+  exclusively owns — decision *ownership* per entity stays single-peer either way, so WarBrain
+  still never needs shared RNG, only clean ownership partitioning (a host/client AI-execution
+  concern, not a WarBrain one).
+
+### 9.4 Sync surface
+
+- **No custom `_SYNC_` actions in v1.** WarBrain introduces zero new network messages; its sole
+  output, `CombatDecisionData`, rides the existing vanilla combat-action replication that any
+  `AIHelper`-produced decision would use — a WarBrain-driven turn is indistinguishable on the
+  wire from a vanilla one.
+- Per-run memory rides whatever save/replication `GameRunData` already provides.
+- **Future work marker:** any future "enemy intent telegraph" UI (e.g. showing a threat/target
+  icon derived from memory before the enemy acts) would require a `WB_SYNC_MEMORY_V1`-style
+  host→client snapshot per R3 ("custom state that clients must display... syncs as versioned
+  snapshot actions"), because memory itself stays host-side and is otherwise invisible to
+  clients. No such UI exists in this spec (§1 scope) — this is a forward note only.
+- **Parity registration:** WarBrain still registers `(guid, version, dataHash, enabledFeatures)`
+  with the shared ParityService per R1, even under the likely `HOST_ONLY` class — this lets
+  `OnParityMismatch` fire a warning if a client happens to carry stale/divergent WarBrain data
+  (harmless today, but diagnosable), and is the exact mechanism that would enforce real parity if
+  the `ALL_PEERS` branch is confirmed instead.
+
+### 9.5 SafeMode definition
+
+SafeMode triggers on `ParityFailed`, `[General].Enabled=false`, or any internal exception (§3
+step 2g's existing fail-safe boundary). In every case: the `AIHelper.BehaviourAiDecision`/
+`StandardAiDecision` prefixes return `true` unconditionally — **SafeMode is functionally
+identical to WarBrain being disabled**: vanilla `AIHelper` decides every affected turn. There is
+no partial SafeMode (e.g. "keep memory, drop doctrines") — a given entity's turn is either fully
+WarBrain-controlled or fully deferred to vanilla. `VerboseLogging`/`LogDecisionBreakdown` (R4,
+presentation-only) keep running in SafeMode so a tester can see the fallback taking effect.
+
+### 9.6 MP test plan
+
+Host+client smoke test, in addition to §8's single-peer plan (leverage DevKit's dump-compare /
+EOR's "Print Sync-Relevant Data Hash" precedent per `docs/MULTIPLAYER.md`):
+
+1. Launch host + one client, both with WarBrain installed and identical shipped data (§7).
+2. Run the same fight to completion on both (fixed seed/encounter if the harness allows).
+3. On both peers, dump: final HP of every combatant, the ability/target/position sequence for
+   every enemy turn, and any status effects applied. Diff the two dumps — combat outcomes and
+   turn-by-turn ability choices must be byte-identical, since the client only ever observes
+   replicated actions and never independently computes a decision.
+4. Repeat with the client's WarBrain *uninstalled* entirely (no data, no plugin). Confirm combat
+   is still identical to the peer-1 run — this is the regression test proving the `HOST_ONLY`
+   claim (a client doesn't need the mod at all).
+5. If open question #1 resolves to "AI is not host-only," flip step 4's expectation: an
+   uninstalled/mismatched client must now trigger the R1 parity-mismatch path
+   (`WarnAndSafeMode`) rather than silently working, and step 3's dump-compare becomes the
+   regression test for the `ALL_PEERS` host-gating patch instead of the `HOST_ONLY` claim.
+6. Corrupt one profile JSON on the client only (mirrors §8 step 9). Under `HOST_ONLY`, confirm
+   zero effect on combat. If parity hashing is active, confirm the mismatch warning fires and
+   names WarBrain + the diverged file.
 
 ## 10. Milestones
 
-- **M1 — Takeover + hardcoded-free scoring.** Harmony prefixes on both decision methods wired
-  with fail-safe fallback; full candidate enumeration + consideration catalogue + curves +
-  target filters + ability-category bias + temperature/softmax + difficulty scalars, all driven
-  by shipped brain profiles via the assignment resolver. Verbose decision logging. No memory, no
-  doctrines (doctrine fields may be parsed but are no-ops).
+- **M1 — Takeover + hardcoded-free scoring + MP verification.** Harmony prefixes on both
+  decision methods wired with fail-safe fallback; full candidate enumeration + consideration
+  catalogue + curves + target filters + ability-category bias + temperature/softmax +
+  difficulty scalars, all driven by shipped brain profiles via the assignment resolver. Verbose
+  decision logging. No memory, no doctrines (doctrine fields may be parsed but are no-ops). MP
+  verification lands here, not deferred to a later milestone: ParityService registration
+  (`guid, version, dataHash, enabledFeatures`) wired per R1; the host/client gating question
+  (open question #1 / MULTIPLAYER.md #1) resolved and, if `ALL_PEERS`, the `IsHost` guard
+  implemented on both decision prefixes; the §9.6 MP smoke test passing (host+client dump-compare
+  identical, and client-uninstalled-WarBrain parity claim verified or the `ALL_PEERS` fallback
+  verified instead).
 - **M2 — Memory.** `CombatHelper.PerformAbility` postfix, `WB_FACT_*` recording, decay rules,
   reaction application (weight/bias/target-priority deltas), `MemoryScope` knob including
   `PerRun` `GameRunData` piggyback.
@@ -555,9 +681,10 @@ both.
 - **`GameRunData` stable key field.** No `GameRunData` fields are enumerated in the docs. Need a
   stable per-run identifier (seed/guid) to key the per-run memory side-store, and to confirm it
   doesn't collide with EOR's own `GameRunData.Create` patch if EOR is also installed.
-- **Host/client gating.** Need to confirm whether `AIHelper.BehaviourAiDecision`/
-  `StandardAiDecision` are already only invoked on the host in MP, or whether WarBrain needs an
-  explicit host check before engaging the takeover prefix.
+- **Host/client gating.** Tracked as `docs/MULTIPLAYER.md` open question #1 (repo-wide, not
+  duplicated here): is `AIHelper.BehaviourAiDecision`/`StandardAiDecision` host-only in vanilla?
+  WarBrain's parity class (§9.1: `HOST_ONLY` vs. `ALL_PEERS`) is directly downstream of the
+  answer — resolve there first, then apply the answer here.
 - **Illustrative ids.** `BOSS_NECROMANCER_00` (used in the example assignment file) and the
   `CULTIST`/`GOBLIN` tag values are not literally enumerated in `docs/research/data-schemas.md`
   (that doc confirms `BOSS_*` as a 393-entry prefix and `GOBLIN`/`CULTIST` as faction tag values

@@ -421,6 +421,12 @@ EnableCompanionMode (bool, true) — registers the SMN_FOL_* Followers.json entr
 
 [Bond]
 BondGainRate (float, 1.0) — global multiplier on PointsPerCombatSurvived/PointsPerKill from BondCurves.
+
+[Multiplayer]
+OnParityMismatch (string enum: WarnAndSafeMode | WarnOnly | Block, default Block) — overrides
+  ParityService's session-wide default (see MULTIPLAYER.md R1) for this mod specifically. Block is the
+  Summoner-recommended choice (§9.5): a desynced creature config breaks entity resolution outright rather
+  than merely going stale, so the softer WarnAndSafeMode is not safe enough here.
 ```
 
 ## 6. Patch targets & integration points
@@ -526,6 +532,22 @@ Executable in under 15 minutes with the shipped example data, per CONVENTIONS.md
 11. **(M3) In-combat evolution.** With `AllowInCombatEvolution` on, trigger a mid-battle evolution moment;
     confirm the transformed creature keeps acting in the same battle without desyncing its turn/action
     state.
+12. **MP smoke test — client-as-Trainer.** Host a session; the client picks the Trainer (ClassForge
+    present on both peers, or the manual fallback per §11). The client summons a starter and fights two
+    combats, farming it to at least stage 2. Confirm: (a) the summoned creature renders at the correct
+    evolved stage on both the client's and the host's screens; (b) the host's UI — which never summoned
+    anything itself — shows the correct `CurrentStage`/`KillsBySummon`/`CombatsSurvived`/bond display for
+    the client's Trainer's chain, delivered via `SMN_SYNC_EVOLUTION_V1` (§9.4); (c) no log errors about
+    unresolved config ids on either peer.
+13. **MP late-join test.** With the session from step 12 still in progress (or a fresh one), have a third
+    peer join mid-run. Confirm it sends `SMN_SYNC_EVOLUTION_REQUEST_V1` on join, receives a full
+    `SMN_SYNC_EVOLUTION_V1` snapshot covering every chain/companion already in play, and that its UI
+    matches the host's without having simulated any prior combat.
+14. **Parity mismatch test.** Join with a client missing `ftk2mods.summoner` (or on a mismatched
+    version/data). Confirm ParityService flags it by name and — per the §9.5/§5 `Block` default — the
+    session is blocked rather than silently allowed to drift. Repeat with `OnParityMismatch` overridden to
+    `WarnAndSafeMode` and confirm the SafeMode behavior described in §9.5 (existing creatures keep
+    working, no new summons/evolutions).
 
 Edge cases to explicitly hit: a summon that dies before its combat ends (should still count
 `KillsBySummon` earned before death, should NOT count `CombatsSurvived`); a companion recruited mid-run
@@ -534,42 +556,165 @@ is shared across summon-mode and companion-mode for the same chain — flagged i
 multiple starters of the same chain summoned simultaneously if `MaxSimultaneousSummons` > 1 (kill
 attribution must be per-entity, not per-chain-aggregate, until they're reconciled at combat end).
 
-## 9. Save & multiplayer considerations
+## 9. Multiplayer
 
-- **Persistence strategy:** all per-run progress (`EvolutionState`, `BondState`) piggybacks
-  `GameRunData`, per the proven Nemesis pattern (`game-code-reference.md` §7); it round-trips through the
-  game's own save serialization with no separate save file.
-- **MP posture:** single-player-first, stated explicitly per CONVENTIONS.md. Combat-summon AI runs
-  through the native `AIHelper`/`Behaviours.json` pipeline (host-authoritative already, by the game's own
-  design) — safe as-is. `CombatHelper.TryCreateSummon`'s config-id substitution and
-  `_rebuildCharactertAsNewConfigType` calls mutate shared combat/roster state; per CONVENTIONS.md's MP
-  default, **all peers must run FTK2.Summoner with matching `data/` files**, or evolution stages will
-  desync (one peer sees stage 1, another stage 3, for the same creature). `AllowInCombatEvolution` (M3)
-  defaults **off** specifically because a mid-battle transform is the highest-desync-risk feature; it
-  should only be enabled once a config/data hash-sync handshake (EOR's `EOR_CFG/EOR_DAT/EOR_SIG` pattern,
-  referenced in `game-code-reference.md` §7) is implemented or the group is single-player.
-- **ClassForge dependency risk:** if the injected Trainer class isn't visible to a peer who lacks
-  FTK2.ClassForge (or lacks this mod), that peer cannot field a Trainer, but existing Trainer-summoned
-  creatures on other peers' screens should render fine via native `Characters.json`/`Followers.json`
-  data replication (no Summoner-specific netcode needed for that part).
+Co-op is a hard requirement (project decision, 2026-07-10); this section applies `docs/MULTIPLAYER.md`'s
+repo-wide rules R1–R5 to Summoner specifically and is authoritative over any older single-player-first
+framing in this document.
+
+### 9.1 Parity class: `ALL_PEERS`
+
+Creature `Characters.json`/`Abilities.json`/`Things.json`/`StatusEffects.json`/`Behaviours.json` entries,
+plus the engine-defined `EvolutionChains/*.json`, `BondCurves/*.json`, and `VisualFallbacks.json`, all
+merge into the shared `Configs` the game simulates from (MULTIPLAYER.md R1: "the game simulates from
+`Configs`"). A peer without the same Summoner version and `data/` files cannot resolve `SMN_SALAMANDER_2`,
+`SMN_STATUS_BOND_MAJOR`, a rebuilt companion's config id, etc., once another peer's session references
+them. Every peer **must** run `ftk2mods.summoner` at a matching version with matching data — there is no
+`HOST_ONLY` or `LOCAL` reduction available for this mod.
+
+Note: the Trainer class itself is only reachable via FTK2.ClassForge's injection (§1, §3); that's a
+parity concern one layer up the dependency chain, not Summoner's own data — see §11 for how ClassForge's
+recommended mismatch policy should align with §9.5 below.
+
+### 9.2 Feature table
+
+| Feature | Label | Authority | Mechanism |
+|---|---|---|---|
+| Creature/Trainer/status/behaviour static data | `[SYNCED]` | all peers (config-shaped, no runtime sync) | merges into vanilla `Configs`; identical on every peer once ParityService confirms a match — "syncs for free" (MULTIPLAYER.md Practical guidance) |
+| Evolution counters (`KillsBySummon`, `CombatsSurvived`) | `[SYNCED]` | host | tallied host-side from host-simulated combat events (`ApplyAction`/`TryEndTurnSummons` postfixes, §6); pushed to clients in `SMN_SYNC_EVOLUTION_V1` |
+| Evolution stage decision (threshold crossed → advance `CurrentStage`) | `[SYNCED]` | host | evaluated host-side at combat end against `AdvanceConditions`; included in the same snapshot |
+| Stage substitution at summon time (`TryCreateSummon` prefix) | `[SYNCED]` | host | the config-id rewrite runs wherever `TryCreateSummon` actually executes the entity-creation side of the vanilla combat-action pipeline — host, under the same host-authoritative-action assumption MULTIPLAYER.md open question #1 makes for AI actions (unverified until the shared decompile pass, not re-litigated per mod). The resulting spawn is a vanilla `ADD_CHARACTER` effect that replicates to clients as-is; clients never independently re-resolve the stage during combat |
+| Out-of-combat stage/progress display, for any peer's UI (not just the owner) | `[SYNCED]` | host | no live entity exists between combats for combat-summon mode, so display state must come from a pushed snapshot rather than local re-derivation: `SMN_SYNC_EVOLUTION_V1` |
+| Companion rebuild (`_rebuildCharactertAsNewConfigType`) | `[SYNCED]` | host call site, client mirroring branch-dependent | see §9.4 — gated by MULTIPLAYER.md open question #4 |
+| Bond points / threshold grants | `[SYNCED]` | host | tallied host-side (`PointsPerCombatSurvived`/`PointsPerKill` × `BondGainRate`); status/trait grant applied host-side (`InteractableHelper.ApplyStatus`/`CharacterHelper.GiveTrait`); synced in the same `SMN_SYNC_EVOLUTION_V1` envelope |
+| `MaxSimultaneousSummons` cap enforcement | `[SYNCED]` | host | folds into `TryCheckForSummonAvailability`, gating the same host-executed action pipeline as stage substitution — blocked actions are never broadcast, so no separate sync is needed |
+| Evolution-stone catalyst check/consume | `[SYNCED]` | host | `InventoryHelper.Consume`/`HasInteractable` against the Trainer's inventory, itself host-authoritative party state |
+| `VerboseLogging`, `EvolutionNotificationStyle` (toast/dialogue text) | `[LOCAL]` | per-peer | R4 — cosmetic; one peer may run `LOG_ONLY` while another runs `DIALOGUE` with no desync |
+
+### 9.3 Determinism inventory (R2)
+
+- Evolution thresholds (`AdvanceConditions[].Count`/`Level`), bond curves
+  (`PointsPerCombatSurvived`/`PointsPerKill`/`Thresholds[].BondPoints`), and the
+  `EvolutionTriggerMultiplier`/`BondGainRate` knobs are all **data or config**, never runtime rolls —
+  every peer with matching data/knobs evaluates the identical threshold the identical way. `data/` falls
+  under R1's `dataHash`; the two knobs above affect gameplay outcome and should be included in
+  ParityService's `enabledFeatures`/config comparison, not just treated as cosmetic knobs.
+- Kill/combat/level/quest-flag/item-catalyst conditions are all *counted* from host-simulated events
+  (§9.2) — there is no dice roll anywhere in the evolution or bond path as specified; it is pure counting
+  against data-defined thresholds.
+- **Audit result: no RNG exists in this spec's mechanics today.** Nothing to remove or reroute. Flagging
+  the rule now so it isn't missed on a future revision: if anything probabilistic is ever added (a
+  "chance to evolve early," a bond-point crit, a randomized stage-3 stat roll), it must go through the
+  game's deterministic `GameRandom` (EOR `EOR_SHARED_RNG` pattern), evaluated host-side and synced —
+  never a local, unseeded `System.Random`.
+
+### 9.4 Sync surface
+
+**ParityService registration (R1):** `ftk2mods.summoner` registers `(guid, version, dataHash,
+enabledFeatures)` at plugin load, where `enabledFeatures` includes at minimum
+`EnableCompanionMode`/`AllowInCombatEvolution`/`EvolutionTriggerMultiplier`/`BondGainRate` (§9.3) and
+`dataHash` covers every file under `data/` per R1's sorted/normalized hashing rule.
+
+Vanilla mechanisms already carrying Summoner's effects, no bespoke sync needed:
+- Creature/Trainer/status/behaviour **data** — merges into `Configs`, identical on all peers (R1), zero
+  runtime sync.
+- Combat-summon entity creation/actions/death — vanilla `ADD_CHARACTER`/combat-action replication
+  (`CombatComponent` serialization, per MULTIPLAYER.md's verified/precedented list).
+- Evolution-stone consumption — vanilla inventory state.
+- Bond-reward stat buffs/traits — vanilla `StatusEffectConfig`/trait application on a real character,
+  replicates like any other status/trait.
+
+Custom `_SYNC_` action, host → clients:
+
+**`SMN_SYNC_EVOLUTION_V1`** — versioned, idempotent (clients overwrite local `EvolutionState`/`BondState`
+wholesale per key; re-applying the same snapshot twice is a no-op, EOR town-snapshot precedent).
+- Payload: array of entries, one per `(OwnerId, ChainId)`: `{ OwnerId, ChainId, Mode:
+  COMBAT_SUMMON|COMPANION, CurrentStage, CharacterConfigId, KillsBySummon, CombatsSurvived,
+  EvolutionStoneConsumed[], BondPoints, BondThresholdsGranted[] }`.
+- Fired: after combat-end evolution evaluation, after a companion rebuild, after a bond-threshold grant,
+  and whenever the host's `EvolutionState`/`BondState` changes for any tracked chain/companion.
+- Purpose: lets **every** peer's UI show accurate stage/progress/bond state for **any** Trainer's chains,
+  without each peer independently owning or re-deriving the counters (the "out-of-combat display" row in
+  §9.2).
+
+**`SMN_SYNC_EVOLUTION_REQUEST_V1`** — empty/peer-id payload, client → host, sent on session join/rejoin.
+Host responds with a full `SMN_SYNC_EVOLUTION_V1` covering every chain/companion in the current run (EOR
+town-snapshot request pattern, MULTIPLAYER.md Practical guidance — "every `_SYNC_` snapshot must be
+requestable").
+
+**Companion rebuild propagation — both branches specced (MULTIPLAYER.md open question #4):**
+- **Branch A — native propagation confirmed.** If `_rebuildCharactertAsNewConfigType`'s config-swap on a
+  roster character replicates the same way ordinary character-config changes do, the host's single call
+  is sufficient; vanilla character-state replication carries the new config to every peer's view of that
+  companion for free. `SMN_SYNC_EVOLUTION_V1` is still sent (peers still need the counters for
+  progress-bar/next-threshold display), but its `CharacterConfigId` field is redundant with what clients
+  already have.
+- **Branch B — native propagation not confirmed / disproven.** If the rebuild is a local-roster-only
+  mutation that doesn't marshal across the network (plausible — it's described in `game-code-reference.md`
+  §5 as a "config-name rebuild primitive," not a networked action), the host's call only updates the
+  host's own view. Here `SMN_SYNC_EVOLUTION_V1`'s `CharacterConfigId`/`CurrentStage` field is load-bearing,
+  and each client must call `_rebuildCharactertAsNewConfigType` **locally** against its own copy of that
+  companion instance on receipt — "host-triggers + `SMN_SYNC` action," not "host mutates, clients watch."
+- **Implementation default until the decompile pass resolves open question #4: build Branch B.** Always
+  include `CharacterConfigId`/`CurrentStage` in the snapshot and always issue the local rebuild call on
+  every peer (host included, as a harmless same-value no-op). This degrades gracefully into Branch A's
+  behavior for free if native propagation turns out to already cover it, and never leaves a client peer
+  showing a stale companion.
+
+### 9.5 SafeMode definition & recommended default
+
+If `ftk2mods.summoner` enters SafeMode (parity mismatch): no new combat summons (summon abilities become
+inert/log-only), no evolution advancement, no companion recruitment, no bond gain. Creatures/companions
+that were **already resolved before the mismatch was detected** keep working — their `Configs` entries
+were already merged at load time, so an existing stage-2 companion doesn't disappear, it just stops
+progressing for the rest of the session.
+
+That guarantee is narrower than it sounds, so **Summoner recommends overriding the repo-wide
+`[Multiplayer] OnParityMismatch` default (`WarnAndSafeMode`) to `Block`** for this mod specifically.
+Rationale: a companion's persisted `CharacterConfigId` (which can already be at stage 2/3 from a prior
+session — creature configs live in party state, not in a Summoner-owned sidecar) is only resolvable on a
+peer that has the matching `data/Characters/*.json` entries. A peer joining or reconnecting *without* that
+match cannot resolve the companion at all — not staleness, a broken/null character reference — and a live
+combat-summon entity mid-fight on a divergent peer fails the same hard way. WarnAndSafeMode's "existing
+state keeps working" guarantee only covers state resolved *before* divergence was detected; it does not
+protect a late-joining or newly-mismatched peer. `Block` is the safer default here.
+
+### 9.6 MP test plan
+
+Summary — full steps in §8 items 12–14: host + one client, the client picks the Trainer and summons +
+evolves a starter across two combats while the host (who never summoned anything) verifies correct stage
+substitution on-screen and correct `CurrentStage`/counters/bond display via `SMN_SYNC_EVOLUTION_V1`; then
+a late-joining third peer sends `SMN_SYNC_EVOLUTION_REQUEST_V1` and must display matching state without
+having simulated any prior combat; then a parity-mismatch run confirms the `Block` default (§9.5) actually
+blocks the session rather than silently drifting.
 
 ## 10. Milestones
 
-- **M1 — Summon content + between-combat evolution (MVP).** Trainer class data (pending ClassForge
-  injection, or a documented manual-slot fallback for testing), all 9 creature stages, summon +
+- **M1 — Summon content + between-combat evolution (MVP), MP sync included.** Trainer class data (pending
+  ClassForge injection, or a documented manual-slot fallback for testing), all 9 creature stages, summon +
   attack abilities, `TryCreateSummon` config-id substitution, `GameRunData`-backed
   `KillsBySummon`/`CombatsSurvived` counters, between-combat stage advancement, evolution-stone
-  catalyst check, `MaxSimultaneousSummons` enforcement, `VerboseLogging`. Independently shippable:
-  summon-only trainer gameplay with growing creatures, no companion mode yet.
+  catalyst check, `MaxSimultaneousSummons` enforcement, `VerboseLogging`. **Plus, not deferred:**
+  ParityService registration (§9.4) at plugin load, and the `SMN_SYNC_EVOLUTION_V1`/`_REQUEST_V1`
+  snapshot (host → clients, with late-join request support, §9.4/§9.6) — MP sync ships with the evolution
+  counters it describes, per the project's MP-first requirement (`docs/MULTIPLAYER.md`). Independently
+  shippable: summon-only trainer gameplay with growing creatures, correctly synced in co-op, no companion
+  mode yet.
 - **M2 — Companion Mode + bond.** `Followers.json` registration, `Behaviours.json` profiles wired to
   companions, `BondCurves` engine (points, thresholds, `SMN_STATUS_BOND_*` application), companion
   evolution via `_rebuildCharactertAsNewConfigType`, the `SKILL_SUMMONREVENGE` bond-trait path (requires
-  `eTraits` enum injection patch), `EnableCompanionMode`/`BondGainRate` knobs. Independently shippable:
-  companions can be recruited, bonded with, and evolved entirely outside combat-summon mode.
+  `eTraits` enum injection patch), `EnableCompanionMode`/`BondGainRate` knobs. **Plus:** the companion-
+  rebuild sync branch (§9.4) — `SMN_SYNC_EVOLUTION_V1` entries for companions carry
+  `CharacterConfigId`/`CurrentStage`, and each peer applies `_rebuildCharactertAsNewConfigType` locally
+  (Branch B default) until MULTIPLAYER.md open question #4 is resolved. Independently shippable:
+  companions can be recruited, bonded with, and evolved entirely outside combat-summon mode, in sync
+  across peers.
 - **M3 — In-combat evolution + polish.** Mid-battle transform (`AllowInCombatEvolution`), full
   `EvolutionNotificationStyle` options (toast/dialogue/silent), `EvolutionTriggerMultiplier` balancing
-  knob, real portrait/model art pass replacing `TBD_VERIFY_*` placeholders, MP hash-sync hardening
-  groundwork.
+  knob, real portrait/model art pass replacing `TBD_VERIFY_*` placeholders. `AllowInCombatEvolution`
+  remains off by default even with MP sync in place from M1 — a mid-battle transform is still the
+  highest-desync-risk feature and needs its own §9-style analysis once `_mimicTransformAndStartCombat`'s
+  generality is confirmed (Open Questions #5).
 
 ## 11. Open questions
 
@@ -612,7 +757,12 @@ attribution must be per-entity, not per-chain-aggregate, until they're reconcile
     it's registered + shown in class-select," mirroring EOR's proven `UseExternalJsonCustomClasses`
     pattern. Reconcile once FTK2.ClassForge's SPEC is written; until then, M1 testing can use a manual
     fallback (temporarily overwriting an existing class slot, or a dev-console-driven class swap) to
-    exercise the Trainer without waiting on ClassForge.
+    exercise the Trainer without waiting on ClassForge. **MP alignment:** per `docs/MULTIPLAYER.md` R1, a
+    class that silently fails to appear for one peer is a worse desync than a warning — ClassForge's own
+    `[Multiplayer] OnParityMismatch` should default to `Block`, not the repo-wide `WarnAndSafeMode`, the
+    same reasoning as Summoner's own §9.5/§5 `Block` recommendation. Reconcile the two SPECs on this once
+    ClassForge's own MP §9 is written, so a Trainer-class mismatch and a creature-config mismatch fail the
+    session the same way.
 12. **Ammo reset cadence for the signature satchel's summon abilities is unconfirmed** (per-combat vs.
     per-rest) — affects whether `MaxSimultaneousSummons` alone is sufficient to prevent summon-spam
     within a single fight, or whether `Ammo` needs an explicit per-combat reset patch too.
@@ -620,3 +770,11 @@ attribution must be per-entity, not per-chain-aggregate, until they're reconcile
     an undecided design choice (see §8 edge cases) — needs a decision before M2 implementation: does
     farming kills with the *combat-summoned* salamander also advance the *companion* salamander's
     evolution (and vice versa), or are `EvolutionState` entries scoped per mode?
+14. **MP open questions inherited from `docs/MULTIPLAYER.md`** (tracked centrally there, not re-litigated
+    per mod, but §9's design depends on their resolution): open question #1 (is combat-action/AI execution
+    host-only? confirms the `TryCreateSummon` prefix's assumed host location, §9.2); open question #4
+    (does `_rebuildCharactertAsNewConfigType` propagate natively? decides whether §9.4's Branch A or
+    Branch B is actually load-bearing — Branch B is implemented defensively regardless); open question #5
+    (payload size limits on `_handleNetworkAction`? relevant if `SMN_SYNC_EVOLUTION_V1` grows large with
+    many chains/companions across a long run — may require chunking or per-chain delta payloads instead
+    of one array).

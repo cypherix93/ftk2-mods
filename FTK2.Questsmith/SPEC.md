@@ -262,6 +262,10 @@ back to plain localization-key text if no dialogue tree is found, which is why M
 - `[Questsmith.Packs] <PackId>_Enabled` (bool, `true`) — one dynamically-registered entry per pack discovered
   at startup (BepInEx supports adding config entries at runtime); AND'd with the pack's own manifest
   `Enabled` default and the master switch.
+- `[Multiplayer] OnParityMismatch` (enum: `Inherit`, `WarnAndSafeMode`, `WarnOnly`, `Block`; default
+  `Block`) — overrides the repo-wide ParityService default (`docs/MULTIPLAYER.md` R1) because Questsmith's
+  in-flight quest state can reference config ids that don't exist on a diverging peer (§9.5). `Inherit`
+  is available for operators who want the repo-wide default instead.
 
 ## 6. Patch targets & integration points
 
@@ -366,42 +370,215 @@ observe in-game. Concrete steps (all executable in well under 15 minutes with th
    `DamageType` matching the status's `Type`, `WeaponClass` simply never matches non-weapon kills).
 7. Log everything above at `LogLevel.Debug` behind `VerboseLogging`/`VerbVerboseLogging`; a passing test run
    should be fully reconstructable from the log alone.
+8. **MP smoke test.** Host+client session, both with `QS_PACK_SHOWCASE` installed and identical data;
+   play a showcase quest through a branch choice (`QS_RIVAL_COMPANY_CHOICE`) and dump-compare quest-instance
+   state — must be identical on both peers. Then verify a mid-session client join against an in-progress
+   quest, and a parity-mismatch join (`Block` must engage). Full procedure: §9.6.
 
 ## 9. Save & multiplayer considerations
 
-- Pack content (quests/templates/spawners/etc.) is `Configs` data — identical across a save, but **must be
-  identical across MP peers** (same pack files, same versions) or boards/quest content will desync, exactly
-  like EOR's config+data hash handshake (`EOR_CFG`/`EOR_DAT`) that this repo's CONVENTIONS calls out as the
-  precedent. Questsmith ships single-player-first; an MP-safe posture requires either (a) all peers run
-  identical pack sets — recommended default — or (b) host-authoritative quest/verb state with `QS_SYNC_*`
-  network actions (piggybacking the verified `AdventureDirector._handleNetworkAction`) propagating verb
-  round counters/HP snapshots/kill counts to clients, deferred to M3.
-- Verb runtime state (§3) is per-run persistent via `GameRunData` and must be evaluated host-side only in
-  MP to avoid two peers disagreeing on whether e.g. `SURVIVE_ROUNDS` completed — clients render the result,
-  they don't compute it. This mirrors the CONVENTIONS default ("AI-side mods: host-authoritative").
-  Single-player is unaffected by this distinction.
-- Board injection is deterministic given the same pack set + `BoardInjectionWeightScale`, so it does not by
-  itself introduce desync as long as the roll happens host-side and the result is transmitted like any
-  other board-roll (vanilla mechanism, unmodified).
+Structure and rules (R1–R5) per `docs/MULTIPLAYER.md`, the repo-wide MP architecture — co-op multiplayer
+is a **hard requirement**, not an opt-in posture. This section is Questsmith's binding of that architecture.
+
+### 9.1 Parity class
+
+**`ALL_PEERS`.** Unlike a host-only-computation mod, this isn't contingent on any unresolved decompile
+question: pack content (quests/templates/spawners/TowerDefenseUnits/RewardEncounters/board-injections/
+verbs-config) merges straight into `Configs` at load (§3 step 1), and R1 states the rule plainly — "the
+game simulates from `Configs`, and our mods merge into `Configs`" is exactly Questsmith's core mechanism.
+Every peer needs the same pack set, same versions, same `verbs-config.json` data, or a board could offer a
+quest that only exists on one peer, or a verb (`SURVIVE_ROUNDS`, etc.) could evaluate against parameters
+the other peer doesn't have. `Localization/*.json` and `dialogues/*.json` are excluded from the parity
+`dataHash` per R1's text-file carve-out.
+
+### 9.2 Feature table
+
+| Feature | `[SYNCED]`/`[LOCAL]` | Authority |
+|---|---|---|
+| Pack merge (quests/templates/spawners/TDU/RewardEncounters) into `Configs` | `[SYNCED]` | `ALL_PEERS` data via R1 parity — not runtime transmission |
+| `board-injections.json` weighted table | `[SYNCED]` | `ALL_PEERS` data; the roll itself is host-decided (§9.4) |
+| Board-roll weighted injection pick | `[SYNCED]` | Host-decided; effect carried by vanilla board-state replication (recommended) or `QS_SYNC_BOARD_V1` (fallback) — §9.4 |
+| Quest instance state (active/complete/objective progress) for vanilla verbs | `[SYNCED]` | Vanilla quest-completion pipeline — the backbone (§9.4) |
+| `QS_*` verb evaluation (`SURVIVE_ROUNDS`, `PROTECT_ENTITY_HP`, `STEALTH_REACH`, `KILL_WITH_TAG`, `TIMED_CHAIN`) | outcome `[SYNCED]` / computation `[LOCAL]` | Host-only computation (R3); outcome flows through the vanilla quest-completion pipeline |
+| Verb progress display text (e.g. "3/5 rounds") | `[SYNCED]` | Host, via vanilla objective-progress field (recommended) or `QS_SYNC_VERBPROGRESS_V1` (fallback) — §9.4 |
+| Trigger actions (`GIVE_STATUS_PARTY`, `START_MAP_SPAWNER`, `SET_WORLD_MODIFIER`) | `[SYNCED]` | Host-only invocation; effect is vanilla status/spawner/world-modifier state, already replicated |
+| Origin-pack provenance tag on a quest instance | `[LOCAL]` | Debug/log provenance only; parity-exempt, R4 |
+| `VerboseLogging` / `VerbVerboseLogging` | `[LOCAL]` | Any peer; presentation-only, R4 |
+| `qs_*` debug console commands | mutating | `DebugCommandsEnabled`; a dev mutation per R5 — hard-gated in MP unless `ForceAllowInMP`, host-only even then |
+
+### 9.3 Determinism inventory (R2)
+
+- **Pack merge order** (`LoadOrder` + dependency resolution, §3 step 1) is already a pure function of
+  manifest data — stable sort, no runtime randomness. Satisfies R2 for free.
+- **Board-injection weighted pick** is the one true "roll" Questsmith performs at runtime (§3 step 3).
+  This spec did not previously pin down its RNG source — closing that gap is this revision's R2
+  requirement: the pick **must** use the game's deterministic `GameRandom` (EOR `EOR_SHARED_RNG`
+  pattern), never a local `System.Random`, regardless of which sync design (§9.4) is chosen for the
+  *result*.
+- **Verb runtime state** (round counters, HP snapshots, stealth flags, kill counts) is not a roll — it's
+  a deterministic accumulation of host-observed combat events (§3, State lifecycle). No RNG is involved;
+  R2 is satisfied by host-only computation (R3), not by shared-RNG reproduction.
+- **Generated ids:** none. Questsmith mints no runtime ids — pack content ids are author-supplied and
+  fixed at config-load time.
+
+### 9.4 Sync surface
+
+**The backbone.** Vanilla quest state is config-referenced by id: which quest is active, which
+objectives are complete, chain transitions (`NextQuests`/`Conflicts`), and `ChoiceRewards` resolution are
+all part of the game's own quest-run state, which vanilla MP must already replicate for co-op questing to
+function at all. This is Questsmith's single biggest lever, and it costs zero new code: with identical
+`Configs` on every peer (R1), a `QS_`-prefixed quest is exactly as replicable as a `STORY_1_6_`-prefixed
+one — the replication layer can't tell the difference.
+
+**Contrast with EOR's precedent — stated explicitly as a design goal.** EOR's fallback for its own custom
+quest boards/legendary contracts in MP is to disable them, syncing only quest *archetypes* host→client via
+`EOR_MP_QUEST_ARCHETYPE` — proof that FTK2's netcode can carry custom quest-content identifiers, but a
+choice not to build full custom-quest MP support on top of that proof. **Questsmith's improvement:
+parity-gated enable, not MP-disable.** Once R1 parity is confirmed, QS content runs exactly as it does in
+single-player — no MP-only feature subset, no archetype-only degraded mode. `EOR_MP_QUEST_ARCHETYPE`'s
+existence is direct evidence this is achievable; Questsmith actually needs *less* machinery than EOR
+built, because config-parity-hashing (R1) does the job EOR's archetype-sync was working around.
+
+**Board injection — deterministic `GameRandom` vs. host-decides + `QS_SYNC_BOARD_V1` (analysis and
+recommendation).** Two designs satisfy R2 for the weighted pick:
+  - **(a) Shared deterministic `GameRandom`:** every peer independently computes the same board roll and
+    arrives at the identical weighted pick from identical pack data. Needs no network message, but only
+    works if every peer that needs the result actually executes the roll (i.e. board generation runs
+    per-peer, not host-only).
+  - **(b) Host-decides + syncs (`QS_SYNC_BOARD_V1`):** a host→clients snapshot, `{BoardID,
+    [TemplateID...]}`, idempotent, fired once per board roll, explicitly carrying the composed board
+    list. Needed only if the host-only roll's result does *not* already ride vanilla's own board-state
+    replication.
+
+  **Recommendation:** neither in isolation. Default to **host-side execution using `GameRandom`** for the
+  pick (closes R2 regardless of the answer below) **and rely on the backbone** — vanilla board-state
+  replication of the postfix's modified return value — **rather than adding a custom sync action**, per
+  `docs/MULTIPLAYER.md`'s stated preference ("host-decides + vanilla-replicates over custom sync; custom
+  `_SYNC_` actions are a last resort"). This is contingent on two unverified facts, both tracked in §11:
+  (i) whether `QuestHelper.GenerateSideQuestsFromQuestBoardConfig` runs host-only in vanilla MP (strong
+  prior, mirroring the analogous AI-decision open question other specs face); and (ii) whether a Harmony
+  postfix's modified return value is what the caller reads when it performs board-state replication, or
+  whether replication has already happened before the postfix runs. If either resolves unfavorably,
+  `QS_SYNC_BOARD_V1` becomes the required fallback — its shape is specified above precisely so
+  implementation isn't blocked on the decompile pass.
+
+**Verb engine display (M2).** Objective *completion* is host-computed (R3: `SURVIVE_ROUNDS` round
+counting, `PROTECT_ENTITY_HP` HP checks, and `STEALTH_REACH` detection all read host-simulated
+combat/round state) and applied through the same vanilla quest-completion call a vanilla verb's match
+would use — that call is what replicates, so clients never need a custom completion-sync action. What
+clients *display* mid-objective (e.g. "3/5 rounds", "convoy HP: 72%") is a separate question:
+  - If vanilla's quest-log UI already reads a numeric/text progress field off quest-instance state for
+    objectives that have counts, and that field rides the same replicated instance state as completion,
+    piggybacking QS verb progress onto that field is free — no new sync action, consistent with the
+    backbone. **Unverified** — needs a decompile pass on the quest-log progress-display method; tracked
+    in §11.
+  - If no such field exists (or it doesn't replicate), the fallback is `QS_SYNC_VERBPROGRESS_V1`: a small
+    host→client snapshot per active quest instance carrying a `QS_*` verb, `{QuestInstanceID, VerbID,
+    Current, Target, DisplayText}`, fired on round-tick/state-change (throttled, not every tick),
+    idempotent (clients just overwrite their local display cache), with a
+    `QS_SYNC_VERBPROGRESS_REQUEST_V1` counterpart for late-joiners (`docs/MULTIPLAYER.md`'s mid-session
+    join guidance).
+  - **Recommendation:** attempt the vanilla-field piggyback first (cheapest, matches the backbone); design
+    and ship `QS_SYNC_VERBPROGRESS_V1` as the guaranteed fallback so M2 isn't blocked on the decompile
+    answer either way.
+
+**Trigger actions** (`GIVE_STATUS_PARTY`, `START_MAP_SPAWNER`, `SET_WORLD_MODIFIER`) are host-invoked only
+(R3) and their effects are vanilla state (status effects, spawner activation, world modifiers) that
+already replicates through whatever mechanism vanilla itself uses for those systems — no QS-specific sync
+needed.
+
+**ParityService registration (R1).** Questsmith registers `(ftk2mods.questsmith, Version, dataHash,
+enabledFeatures)` with the shared ParityService (FTK2.DevKit) at startup/session join. `dataHash` =
+SHA-256 over every merged pack file (`manifest.json`, `quests/*.json`, `templates.json`,
+`board-injections.json`, `verbs-config.json`, `spawners.json`, `towerdefenseunits.json`,
+`rewardencounters.json`) across every enabled pack, sorted file order, normalized line endings, invariant
+culture — `Localization/*.json` and `dialogues/*.json` excluded per R1. `enabledFeatures` = the resolved
+per-pack enabled set (master switch AND per-pack knob AND manifest default) plus an M1/M2/M3 capability
+flag, so a host on M2 and a client still on an M1 build fail parity cleanly instead of silently falling
+back per-verb.
+
+### 9.5 SafeMode definition
+
+The repo default (`WarnAndSafeMode`) is **not** Questsmith's default — see the recommendation below. When
+SafeMode does engage (an operator explicitly loosens the policy):
+- **No new QS quest is offered.** The board-injection postfix becomes a no-op. Unconditional and safe —
+  it only prevents *future* content.
+- **In-flight QS quests are the hard case.** A quest instance already active before the mismatch was
+  detected references QS-owned config ids (the quest itself, its template, its `verbs-config` `paramsId`)
+  that may not exist — or may differ — on the diverging peer. Three options considered:
+  - *Freeze* (pause objective evaluation/timers): doesn't resolve anything — `RoundsToExpire`/round-window
+    verbs (`TIMED_CHAIN`) have no clean vanilla-supported pause, and the quest still renders UI that needs
+    the same config data.
+  - *Auto-fail* (force-close in-flight QS quests): destructive to player progress, and the quest-close
+    path itself may need to resolve the same config ids it's trying to escape — not guaranteed safe on the
+    very peer that's missing them.
+  - *Allow-completion* (let existing instances finish under pre-mismatch rules, block only new ones):
+    works when the divergence is a version/tuning difference and the content still exists on every peer —
+    but a mismatch can just as easily mean a pack is *entirely missing* on one peer, where there is
+    nothing left to finish.
+  - **Recommended default: `Block`.** In-flight quests make the failure mode player-visible and
+    potentially unrecoverable (missing config lookups, unresolvable verb `paramsId`), so Questsmith
+    overrides the repo-wide `OnParityMismatch` default and ships `[Multiplayer] OnParityMismatch = Block`
+    (§5) — refuse to start/continue an MP session on a Questsmith mismatch rather than ever entering a
+    state with unresolvable in-flight quest data. This is stricter than the repo default specifically
+    because, unlike a purely host-computed mod, Questsmith can have live per-instance state that
+    *requires* its own config data on every peer just to keep functioning.
+- Pack scanning/merge (§3 steps 1-2) still fails safe per-peer (a bad JSON file only degrades that
+  peer's own load) — but under `Block`, that peer's ParityService registration diverges and blocks the
+  session before any QS quest is ever offered, which is the point.
+
+### 9.6 MP test plan
+
+1. Launch host + one client, both with `QS_PACK_SHOWCASE` installed, identical versions,
+   `VerboseLogging`/`VerbVerboseLogging` on.
+2. On the host, `qs_force_quest QS_RIVAL_COMPANY_START`. Play to the `QS_RIVAL_COMPANY_CHOICE` branch
+   with the client observing/participating; take **Confront**. Dump quest-instance state on both peers
+   (active quest id, objective completion flags, chosen branch) — must be identical.
+3. Repeat with `QS_HOLD_THE_LINE_START` through its M2 verbs (`SURVIVE_ROUNDS` + `PROTECT_ENTITY_HP` at
+   the finale). Confirm both peers agree on the completion result (survive/fail) and, whichever display
+   design shipped (§9.4), that progress text matches at a mid-fight checkpoint (e.g. "2/3 rounds") —
+   either read directly off the vanilla-piggyback field or via the latest `QS_SYNC_VERBPROGRESS_V1`
+   snapshot.
+4. **Board-roll check.** Force a board reroll on the host containing `QS_PACK_SHOWCASE` templates;
+   confirm the client's view of that board shows the identical injected entries (same `TemplateID`s, same
+   order) — the regression test for §9.4's board-injection recommendation.
+5. **Late-join.** Start solo (host only), advance a showcase quest partway (e.g. past
+   `QS_HOLD_THE_LINE_START`'s first objective), then have a client join mid-session. Confirm the client's
+   quest log shows the correct in-progress state and that progress display populates immediately (via a
+   `QS_SYNC_VERBPROGRESS_REQUEST_V1` round-trip, or the vanilla-field read) rather than waiting for the
+   next tick.
+6. **Parity-mismatch check.** Join a client with `QS_PACK_SHOWCASE` disabled (or a stale version) while a
+   QS quest is in-flight on the host. Confirm `Block` (§9.5, §5) engages — the session refuses to proceed
+   / prominently warns naming Questsmith and which part diverged — rather than letting the client silently
+   render broken quest state.
 
 ## 10. Milestones
 
-- **M1 — Pack loader + vanilla-verb showcase.** Manifest parsing, load order/dependency resolution, merge
-  of `quests/templates/spawners/towerdefenseunits/rewardencounters/board-injections/localization`, the
-  board-injection weighted-append patch, `qs_list_packs`/`qs_reload_packs`/`qs_force_quest`/`qs_inject_pack`
-  debug commands. The three showcase quests play through both branches end-to-end using only vanilla verbs
-  (the M1 fallback objectives called out in §7) — `ASSASSINATE_ENTITY`, `REACH_HEX`, `REMOVE_ENCOUNTER`,
-  `ACTIVATE_ENTITY`, `DUMMY`, `Conflicts`, `ChoiceRewards`, `RewardEncounters` racing. Independently shippable:
-  a pack-only mod with zero new verbs is a complete, useful mod.
-- **M2 — Verb engine.** The `QS_*` objective-verb and trigger-action registry, the (currently unverified,
-  §11) dispatch interception points, and the full launch set: `SURVIVE_ROUNDS`, `PROTECT_ENTITY_HP`,
-  `STEALTH_REACH`, `KILL_WITH_TAG`, `TIMED_CHAIN` objective verbs; `GIVE_STATUS_PARTY`,
+- **M1 — Pack loader + vanilla-verb showcase + MP parity.** Manifest parsing, load order/dependency
+  resolution, merge of `quests/templates/spawners/towerdefenseunits/rewardencounters/board-injections/
+  localization`, the board-injection weighted-append patch (using `GameRandom`, §9.3), `qs_list_packs`/
+  `qs_reload_packs`/`qs_force_quest`/`qs_inject_pack` debug commands. The three showcase quests play
+  through both branches end-to-end using only vanilla verbs (the M1 fallback objectives called out in §7)
+  — `ASSASSINATE_ENTITY`, `REACH_HEX`, `REMOVE_ENCOUNTER`, `ACTIVATE_ENTITY`, `DUMMY`, `Conflicts`,
+  `ChoiceRewards`, `RewardEncounters` racing. MP parity lands here, not deferred: ParityService
+  registration (`guid, version, dataHash, enabledFeatures`) wired per R1 (§9.4); the `[Multiplayer]
+  OnParityMismatch = Block` default wired per §9.5; the §9.6 MP smoke test's board-roll and
+  parity-mismatch steps passing. Independently shippable: a pack-only mod with zero new verbs is a
+  complete, useful, MP-safe mod.
+- **M2 — Verb engine + host authority.** The `QS_*` objective-verb and trigger-action registry, the
+  (currently unverified, §11) dispatch interception points, and the full launch set: `SURVIVE_ROUNDS`,
+  `PROTECT_ENTITY_HP`, `STEALTH_REACH`, `KILL_WITH_TAG`, `TIMED_CHAIN` objective verbs; `GIVE_STATUS_PARTY`,
   `START_MAP_SPAWNER`, `SET_WORLD_MODIFIER` trigger actions. Showcase quests swap their M1 fallback
-  objectives for the M2 verbs noted in §7, wired to `verbs-config.json`.
+  objectives for the M2 verbs noted in §7, wired to `verbs-config.json`. Host-authority lands with the
+  engine, not deferred to M3: every verb handler gated host-only per R3 (§9.4); objective completion
+  applied through the vanilla quest-completion call so it replicates for free; the verb-progress display
+  design (vanilla-field piggyback, falling back to `QS_SYNC_VERBPROGRESS_V1`/`_REQUEST_V1`, §9.4) shipped;
+  §9.6's branch-choice and late-join MP smoke-test steps passing.
 - **M3 — Spawner/TD integration polish.** Verified, patched (not just referenced) runtime activation for
-  `START_MAP_SPAWNER` and mid-run `SET_WORLD_MODIFIER`; `QS_SYNC_*` MP propagation for verb state;
-  board-injection weight tuning pass against real `QuestBoards.json` ids; TDU escort polish (e.g. wave
-  intensity scaling with how long the player dawdled, echoing the Rival Company race clock).
+  `START_MAP_SPAWNER` and mid-run `SET_WORLD_MODIFIER`; `QS_SYNC_BOARD_V1` implementation if §9.4's
+  board-injection open questions resolve unfavorably for the vanilla-replication default; board-injection
+  weight tuning pass against real `QuestBoards.json` ids; TDU escort polish (e.g. wave intensity scaling
+  with how long the player dawdled, echoing the Rival Company race clock).
 
 ## 11. Open questions
 
@@ -442,6 +619,22 @@ observe in-game. Concrete steps (all executable in well under 15 minutes with th
    `QuestTemplates.RewardType` value and separately as a `Wheels.json` wedge verb, not as a `Quests\*.json`
    world-trigger action. The Quiet Job's refuse-branch works around this by using our own `SET_WORLD_MODIFIER`
    (`LIFE_POOL_MAX`) instead — confirm whether a more direct vanilla mechanism exists.
-10. **Single-player vs required-MP-parity default.** Per `docs/feasibility.md` §13, the repo-wide question
-    of how strictly MP must be supported is still open; §9 assumes single-player-first with an opt-in
-    host-authoritative MP path deferred to M3.
+10. **Does `QuestHelper.GenerateSideQuestsFromQuestBoardConfig` run host-only in vanilla MP?** §9.4's
+    board-injection recommendation (host-side `GameRandom` roll, no custom sync) assumes yes, mirroring the
+    analogous host-only-decision prior other specs in this repo rely on for AI/grid logic. If each peer
+    independently calls this method instead, the design must switch to fully shared-`GameRandom` reproduction
+    on every peer (§9.4 option (a)) or `QS_SYNC_BOARD_V1` (option (b)).
+11. **Does a Harmony postfix's modified return value on `GenerateSideQuestsFromQuestBoardConfig` reach
+    whatever caller performs board-state replication, or has replication already happened before the
+    postfix runs?** If the latter, Questsmith's board-injection entries never leave the host and
+    `QS_SYNC_BOARD_V1` (§9.4) becomes mandatory, not just a fallback.
+12. **Does vanilla's quest-log UI expose a numeric/text progress field on quest-instance state for
+    objectives that have counts (e.g. a generic "N of M" readout), and does that field ride the same
+    replication as objective completion?** §9.4's verb-progress-display recommendation (piggyback first,
+    `QS_SYNC_VERBPROGRESS_V1` fallback) depends on the answer; needs a decompile pass on the quest-log
+    progress-display method.
+13. **Repo-wide MP unknowns that bear directly on Questsmith.** See `docs/MULTIPLAYER.md`'s numbered open-
+    questions list, especially #2 (whether custom `GameRunData` state — which is exactly how Questsmith's
+    verb runtime state is stored, §3 — replicates to clients or lives host-side only) and #5 (payload
+    shape/size limits for `_handleNetworkAction`, relevant if `QS_SYNC_BOARD_V1`/`QS_SYNC_VERBPROGRESS_V1`
+    end up required). Track resolution there; this spec's §9 will be updated once those land.

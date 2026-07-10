@@ -24,9 +24,9 @@ surface for AI (`FTK2.WarBrain` and vanilla `AIHelper`), and a per-save opt-in s
 mid-run-toggle story.
 
 **Out of scope**: no new abilities, statuses, or classes; no ability roster rebalancing beyond the cost
-table; no new venue/targeting mechanics; no custom netcode reconciliation protocol beyond detect-and-log
-(auto-correction is an M3+ stretch, not committed); no bespoke pip artwork in M1 (cosmetic-first: reuse
-`eSpriteIcons.PA` before commissioning anything new).
+table; no new venue/targeting mechanics; a detect → resync-from-host → session-warning netcode
+reconciliation protocol (§9.4) ships in M1/M2, not deferred past it; no bespoke pip artwork in M1
+(cosmetic-first: reuse `eSpriteIcons.PA` before commissioning anything new).
 
 ## 2. Player-facing behavior
 
@@ -53,7 +53,14 @@ table; no new venue/targeting mechanics; no custom netcode reconciliation protoc
 ### 3.1 Field-mapping options (the core design decision)
 
 All PA/SA choke points operate on two plain serialized ints on `CombatComponent`:
-`PrimaryActions`, `SecondaryActions`. Three ways to host the AP pool in them were considered:
+`PrimaryActions`, `SecondaryActions`. **This is now the load-bearing MP design decision for the whole mod,
+not a save-persistence convenience** — see §9.1 for the full argument. A fourth option, keeping the AP pool
+in mod-side state (a `Dictionary<EntityId, int>` or equivalent side-table in plugin memory, decoupled from
+any vanilla-serialized field), was considered and is **formally rejected**: it is invisible to the base
+game's replication, so multiplayer consistency would require this mod to reinvent network transport for its
+single highest-frequency value (every ability spend, every turn grant) — exactly the failure mode
+`docs/MULTIPLAYER.md` R3 warns against ("prefer host-decides + vanilla-replicates over custom sync").
+Three ways to host the AP pool *inside the vanilla fields* were considered:
 
 **Option A — Mirrored single pool (recommended, M1).**
 `PrimaryActions` is the live AP pool; every write path also writes the identical value into
@@ -62,6 +69,9 @@ field alone (a stray UI binding, a save-inspection tool, another mod) sees a **c
 half-migrated one. Cost: every gate/spend choke point must be fully replaced (not arithmetically
 corrected), because vanilla's own PA-vs-SA split logic no longer means anything — but the spec's scope
 already requires patching every one of those choke points anyway (§6), so this is not additional work.
+This is also the only option compatible with MP at `ALL_PEERS` parity without a bespoke sync protocol
+(§9.1) — the mirrored value is exactly what the base game's `CombatComponent` replication already carries
+for every peer, for free.
 
 **Option B — Split pool + spent-counter.** `PrimaryActions` = pool, `SecondaryActions` = "AP spent this
 turn" for UI/analytics. Rejected: doubles the number of fields that must stay coherent across save/load and
@@ -79,8 +89,11 @@ enhancement** (show the carryover bank as a visually distinct secondary pip) imp
 gate in §6 is confirmed to route through the shared `ActionPointsService.CanAfford` check, never through a
 raw field read.
 
-**Decision: ship Option A for M1–M3.** Revisit Option C only as a cosmetic layer once the gate/spend audit
-is field-verified.
+**Decision: ship Option A for M1–M3 — non-negotiable for MP, not merely a recommendation.** Options B, C,
+and the rejected mod-side-dictionary alternative above all either desync-risk a raw field read or require a
+custom sync protocol this mod does not implement; Option A is the only one where `ALL_PEERS` parity
+requires nothing beyond R1's ordinary data-hash enforcement. Revisit Option C only as a cosmetic layer once
+the gate/spend audit is field-verified, and only if it does not compromise the mirrored-field MP guarantee.
 
 ### 3.2 Runtime flow
 
@@ -216,7 +229,14 @@ All under BepInEx config, section names as shown.
 - `[Overrides] CarryoverCapOverride` (int, default `-1`) — same pattern for `APPerTurn.CarryoverCap`.
 - `[EnemyAP] Mode` (enum `Symmetric` | `Asymmetric`, default `Symmetric`) — mirrors/overrides
   `CostModel.EnemyAP.Mode` so a host can flip enemy-side asymmetry without editing JSON; JSON value is the
-  fallback if this knob is left at its own default.
+  fallback if this knob is left at its own default. **Host-effective (§9.2, §9.6 item 5)**: enemy decisions
+  and enemy cost resolution run host-side (R3), so only the host's value of this knob has any effect on a
+  live fight; a client's differing local value is inert, not a parity/desync risk, and is not sent through
+  the R1 handshake.
+- `[Multiplayer] OnParityMismatch` (enum `WarnAndSafeMode` | `WarnOnly` | `Block`, default `Block`) —
+  overrides the repo-wide default (`WarnAndSafeMode`, `docs/MULTIPLAYER.md` R1) for this mod specifically.
+  **Recommended and shipped default: `Block`** — see §9.5 for why AP mode has no safe partial-SafeMode
+  state and must refuse a mismatched join outright rather than downgrade a subset of peers.
 
 Knob precedence is always: **knob override (if not the sentinel default) > CostModel.json value**. This
 keeps JSON as the designer-authoritative extensibility contract (per CONVENTIONS.md) while still giving
@@ -334,70 +354,245 @@ Executable by a human in under 15 minutes per CONVENTIONS.md, using a single scr
 11. **Mid-run toggle**: start a run with the mod disabled, play a turn, enable it via the knob mid-run,
     confirm the per-save flag does *not* flip (still disabled for this run) and the warning about opt-in
     being locked at run creation appears in the log.
+12. **MP smoke test (host + client)**: full scripted fight run live with two peers, `VerboseLogging` on
+    both, DevKit dump-compare pulling both peers' AP pools after each event — multi-action turn, carryover
+    round boundary, haste status application, and summon entry. See §9.6 for the full MP test plan
+    (registration check, resync path, late join, join-blocking, enemy-AP host-effectiveness).
 
 ## 9. Save & multiplayer considerations
 
-- **Persistence**: the pool value is a plain int inside `CombatComponent`, which the base game already
-  serializes — no new save schema for the pool itself. The one new save field is `GameRunData.AP_ModeEnabled`
-  (bool), captured once at run creation from the `[General] Enabled` knob, per the Nemesis-style
-  save-piggyback pattern (CONVENTIONS.md, EOR precedent). This is the mechanism behind "per-save opt-in":
-  a run started with the mod off stays off even if the knob is later flipped on, and vice versa, until a
-  *new* run is created.
-- **Mid-run toggling analysis**: because the pool lives in the same int fields vanilla already uses for
-  PA/SA, toggling the mod off mid-run does not crash or corrupt the save — vanilla will simply read
-  whatever pool-shaped number is sitting in `PrimaryActions` as a literal PA count (likely far more
-  generous than intended, self-correcting at the next full `ResetCharacterActions` turn boundary once
-  vanilla's own grant logic runs again). Toggling on mid-run for an already-vanilla-shaped save similarly
-  self-corrects within one turn cycle. The *unsupported* window is the moment of toggling itself, before
-  the next full reset — the mod logs a clear warning at run start (and, if toggled via a live config
-  reload, at the moment the knob is observed to differ from `AP_ModeEnabled`) that transient stale action
-  counts are possible until the next full turn boundary, and does not attempt to force an immediate
-  mid-combat resync.
-- **Multiplayer posture**: per CONVENTIONS.md, this mod mutates shared combat state and therefore
-  **requires all peers to run the identical mod version and identical `CostModel` data file** — there is no
-  graceful degraded mode for a mismatched peer. Recommended (M2+): adopt the EOR-precedent hash handshake
-  pattern (`AP_VER`/`AP_CFG`/`AP_DAT`-style, piggybacked on `AdventureDirector._handleNetworkAction` per
-  the EOR reference) to detect a mismatched peer and warn loudly rather than let combat silently diverge.
-  M1 ships without the handshake (log-only mismatch warning if trivially detectable, e.g. differing
-  `CostModel.Id` reported by a peer over an existing chat/status channel — not a hard blocker).
-- **Desync vectors** (P3-appropriate thoroughness):
-  1. *Divergent cost data* — different `CostModelFile` or edited JSON between peers → different cost
-     lookups → pool values drift. Mitigated by the M2+ hash handshake above; M1 relies on "read the
-     README, run the same files."
-  2. *Non-deterministic grant math* — mitigated by keeping the grant formula pure integer arithmetic
-     (`floor`/`ceil`, no floats carried across the network) so every peer computing it locally from the
-     same `SPD` value gets the same answer.
-  3. *Authority ambiguity* — `docs/research` does not document FTK2's netcode authority model for
-     `CombatComponent` (which peer's locally-Harmony-computed value wins after sync is unverified — §11
-     item 7). Until confirmed by live MP testing, treat this as **host-authoritative by convention**: only
-     the host's grant/spend postfixes are treated as the source of truth; a non-host client's locally
-     computed value is expected to be transiently overwritten by the next network sync of
-     `CombatComponent`, which should self-heal in well under a turn. This is a cosmetic flicker, not a
-     save-corrupting condition, and is explicitly *not* fixed with a corrective patch in M1/M2 — only
-     detected and logged (`VerboseLogging`) as "AP mismatch observed for entity X: local=N, synced=M."
-  4. *Mixed mod sets across a save* — loading a save created with this mod on a peer without it renders
-     the stored pool value as a literal (likely generous) PA count; expected and documented, not a crash
-     risk, but the README should discourage mixed mod sets sharing saves.
+Per `docs/MULTIPLAYER.md` (repo-wide MP architecture, rules R1–R5). AP is the highest-desync-risk mod in
+this repo — it replaces the vanilla action economy inside the exact fields
+(`CombatComponent.PrimaryActions`/`.SecondaryActions`) that every combat choke point, and the base game's
+own netcode, already touch. Every peer's combat sim must agree on affordability at every gate, every turn;
+this section is written to that strict standard.
+
+**Persistence** (unchanged from the base mechanism, restated for context): the pool value is a plain int
+inside `CombatComponent`, which the base game already serializes — no new save schema for the pool itself.
+The one new save field is `GameRunData.AP_ModeEnabled` (bool), captured once at run creation from the
+`[General] Enabled` knob, per the Nemesis-style save-piggyback pattern (CONVENTIONS.md, EOR precedent).
+**Mid-run toggling analysis**: because the pool lives in the same int fields vanilla already uses for PA/SA,
+toggling the mod off mid-run does not crash or corrupt the save — vanilla will simply read whatever
+pool-shaped number is sitting in `PrimaryActions` as a literal PA count, self-correcting at the next full
+`ResetCharacterActions` turn boundary. This single-peer analysis is unchanged by MP; §9.5 below covers why
+toggling can never be *asymmetric* across peers in the first place.
+
+### 9.1 Parity class: `ALL_PEERS`
+
+AP mode requires the identical mod (version + `dataHash`) and the identical active `CostModel` file on
+**every peer**, for the entire time it is enabled for a run. There is no reduced-footprint install that is
+safe:
+
+- **The MP backbone is the field-mapping decision in §3.1, not a convenience.** `CombatComponent.PrimaryActions`/
+  `.SecondaryActions` are vanilla-serialized, vanilla-replicated fields — every peer's game engine already
+  keeps them in sync as part of ordinary combat-state sync, for free, with zero new wire protocol. That is
+  the *only* reason AP mode can exist in MP without inventing a bespoke state-sync system for a value that
+  changes every single ability use. Any design that instead kept the pool in a mod-side dictionary
+  (`Dictionary<EntityId, int>` in plugin memory, or an equivalent side-table) is **formally rejected** (§3.1):
+  such a structure is invisible to the base game's replication entirely, so keeping it consistent across
+  peers would require the mod to reimplement network transport at exactly the frequency this mod's core loop
+  needs it most. Option A (mirrored single pool inside the vanilla fields) is not merely "recommended," it
+  is the only option that keeps this mod inside R3's "vanilla pipeline for effects" guidance.
+- **Cost resolution is pure data (R1).** `CostModel.json`'s `APPerTurn`/`Costs`/`LegacyStatConversion`/
+  `EnemyAP` blocks are parity-hashed like every other mod's data files (§9.3). Because cost resolution is a
+  pure function of `(ability id or category, IsMajorAction, FocusUsed, SPD)` against that data, identical
+  data + identical patched gates on every peer is sufficient for every peer to compute an identical cost —
+  no peer-to-peer cost negotiation is needed, only parity enforcement.
+- **UI affordability is evaluated client-side, which is why this can't be `HOST_ONLY`.** Per R3's authority
+  split (§9.2), the *outcome* of combat (host-simulated, assumed per `docs/MULTIPLAYER.md` open question 1)
+  only strictly needs the patched gates to agree on the host. But `CombatAbilitiesTemplateHelper.Show`'s
+  grey-out/cost-badge rendering runs on whichever peer is looking at their own ability bar — a client
+  without this mod's patches would render vanilla PA/SA-shaped affordability against a pool value that
+  means something else entirely, showing wrong grey-outs, wrong tooltips, and wrong end-turn state well
+  before any host-simulated result comes back. That makes the mod + `CostModel` data a client-side
+  requirement independent of who simulates the fight — hence `ALL_PEERS`, not `HOST_ONLY`.
+
+### 9.2 Feature table & authority analysis (R3)
+
+| Feature | Sync class | Authority |
+|---|---|---|
+| AP pool value (grant/spend/carryover) | `[SYNCED]` — rides vanilla `CombatComponent` replication | Host-simulated combat writes the authoritative value; every peer's local Harmony patches must independently compute the *same* value from the same gates so the pre-sync local read (used for UI) already matches what the host will confirm. |
+| Cost resolution (`ActionPointsService.GetCost`/`CanAfford`) | `[SYNCED]` (data-parity, not network-synced) | All peers, symmetric. Pure function of parity-hashed data; nothing to sync because nothing diverges if data matches. |
+| Gates (`IsUsableAbility`, `IsTurnOver`, `_characterCanUseItem`, `_isValidInventoryOption`, `CombatAbilitiesTemplateHelper.Show`) | `[SYNCED]` | Evaluated **wherever the game evaluates them**: if vanilla combat resolution is host-simulated (per `docs/MULTIPLAYER.md` open question 1), the result that decides fight outcome only needs host/host agreement, so patches only need consistency on the host for that path. But `.Show` and the UI-adjacent gates run locally on every client's own screen to paint their own ability bar (§9.1's third bullet) — all peers must have the patch and the data regardless of who resolves the actual fight. |
+| Grant/reset Ctx-tagging (§3.2/§6) | `[LOCAL]` mechanism, `[SYNCED]` outcome | The Ctx tag is a same-frame, single-peer implementation detail (R4-exempt); the pool value it produces is the synced thing. |
+| Enemy-AP Symmetric/Asymmetric mode | `[SYNCED]` outcome, **host-effective** knob | The `[EnemyAP] Mode` BepInEx knob is read locally per peer, but because enemy decision-making and enemy cost resolution are host-side (R3: AI runs host-only per `docs/MULTIPLAYER.md` open question 1), only the **host's** knob value has any effect on the actual fight. A client's differing local knob value is inert, not a desync source (§9.6 item 5). |
+| Resync snapshot (`AP_SYNC_RESYNC_V1`) | `[SYNCED]` | Host → clients, on-demand + late-join. See §9.4. |
+| `VerboseLogging` diagnostic output | `[LOCAL]` | Presentation-only per R4; no parity requirement, any subset of peers may enable it. |
+| DevKit dump-compare hooks (§9.6) | `[LOCAL]` | Debug tooling; R5 applies (disabled/host-only-with-warning in live MP unless `ForceAllowInMP`). |
+
+### 9.3 Determinism inventory (R2)
+
+Every number this mod produces is integer arithmetic over parity-hashed data and verified-integer game
+state (`SPD`, `IsMajorAction`, `FocusUsed`). **There is no randomness anywhere in this mod's design** — no
+roll, no `System.Random`, no wall-clock, no floating-point value crosses a peer boundary — so there is
+nothing to host-gate or route through `GameRandom`; R2's "never local `System.Random`" rule is satisfied by
+construction, not by a runtime guard. Enumerated:
+
+1. **Grant formula** — `grantedThisReset = min(MaxPool, Base + SpdBonus(SPD) + carriedIn)`, where
+   `SpdBonus(SPD) = min(MaxBonus, floor(SPD / SpdPerPoint))` and `carriedIn = min(CarryoverCap,
+   poolBeforeReset)` (turn boundary) or `0` (fresh entity/wave). All operands are ints; `floor` is integer
+   division, not a float truncation. Two peers with the same `SPD` and the same `CostModel` always compute
+   the same grant.
+2. **Carryover cap arithmetic** — `min(CarryoverCap, poolBeforeReset)`, pure integer comparison.
+3. **Cost resolution** — `PerAbilityOverrides[id] → PerCategoryOverrides[category] → IsMajorAction ?
+   DefaultMajorActionCost : DefaultMinorActionCost`, then `FocusUsedModifier` (`Add`: integer add; `Multiply`:
+   `ceil(cost * Value)`, always rounding up to whole AP per §4.1). All lookups key off data
+   (`CostModel.json`, `Abilities.json`'s `IsMajorAction`/category), never off runtime-generated ids.
+4. **Mid-turn grant policy** — `max(poolBeforeReset, freshGrantFromFormula)`, integer max of two integer
+   values already covered by items 1 and 2.
+5. **`LegacyStatConversion`** — `delta * PAPointValue` / `delta * SAPointValue`, integer multiply against an
+   integer stat delta already sourced from parity-hashed `StatusEffectConfig`/`CharacterConfig` data.
+
+Because every one of these is a pure function of parity-hashed `CostModel.json` + already-deterministic
+game state, R1 (parity enforcement on that data) is what actually carries R2 here — there is no separate
+"agree on a roll" problem to solve.
+
+### 9.4 Sync surface
+
+- **Primary surface: vanilla `CombatComponent` replication** (§9.1) — no `_SYNC_` action is needed for the
+  steady-state pool value; it rides the same wire path `PrimaryActions`/`SecondaryActions` already use for
+  vanilla PA/SA.
+- **`AP_SYNC_RESYNC_V1`** (host → clients, piggybacked on `AdventureDirector._handleNetworkAction` per the
+  EOR/`docs/MULTIPLAYER.md` transport precedent). Fired when a desync is *detected* and cannot be resolved
+  by waiting for the next ordinary `CombatComponent` sync tick, or when a client requests it via
+  `AP_SYNC_RESYNC_REQUEST_V1` (late join/rejoin, or a manual DevKit debug command, R5-gated). Payload
+  sketch (per-entity AP pools):
+  ```jsonc
+  {
+    "SchemaVersion": 1,
+    "RunId": "...",
+    "Entities": [
+      { "EntityId": "...", "PrimaryActions": 5, "SecondaryActions": 5, "CarriedInLastReset": 2 }
+    ]
+  }
+  ```
+  Idempotent by construction: applying the same snapshot twice is just writing the same two ints twice
+  through the mirrored setter (§3.1 Option A) — no accumulation, no "apply once" bookkeeping required.
+- **`AP_SYNC_RESYNC_REQUEST_V1`** (client → host): `{ "SchemaVersion": 1, "RequestingPeerId": "...",
+  "Scope": "AllActive" | ["EntityId", ...] }`. Fired on late join/rejoin (mirrors the EOR town-snapshot
+  `_REQUEST_V1` pattern per `docs/MULTIPLAYER.md` "Practical guidance") and on-demand from a DevKit debug
+  command for manual dump-compare testing (§9.6).
+- **Desync posture — detect → resync-from-host → session warning** (upgraded from a prior detect-and-log-
+  only posture):
+  1. *Detect*: a non-host peer's locally-Harmony-computed pool value disagrees with the value the next
+     ordinary `CombatComponent` network sync delivers for the same entity (`VerboseLogging`: "AP mismatch
+     observed for entity X: local=N, synced=M").
+  2. *Resync-from-host*: on a mismatch that persists past one sync tick (not just normal same-frame
+     flicker), the client fires `AP_SYNC_RESYNC_REQUEST_V1` for the affected entity/entities; the host
+     answers with `AP_SYNC_RESYNC_V1` and the client applies it, overwriting its local value.
+  3. *If resync is impossible* (transport failure, or a second consecutive resync attempt still disagrees,
+     signalling a parity problem deeper than a transient race): a **session-visible warning** is shown to
+     all peers naming the affected entity, recommending the session accept host-authoritative values for
+     the remainder of combat (safe — host state is never wrong, only a client's transient local read might
+     have been) or restart if repeated resync failures suggest a genuine mod/data mismatch that should have
+     been caught by the R1 handshake at join time.
+
+### 9.5 SafeMode definition
+
+AP mode has no partial/degraded state that is safe in MP — unlike features with a graceful
+presentation-only fallback, "half the peers on AP economy, half on vanilla PA/SA" is not a SafeMode, it is
+a guaranteed desync (one side's combat math produces different affordability than the other's for the same
+fight). **AP mode cannot be toggled mid-combat, and cannot be enabled asymmetrically across peers.**
+Accordingly:
+
+- **SafeMode for this mod = refuse to enable AP mode for the session at all (fall back to vanilla PA/SA).**
+  On a `ParityFailed` callback (R1) concerning `ftk2mods.actionpoints` (version, `dataHash`, or
+  `enabledFeatures` mismatch), the mod does not attempt partial feature disablement — it refuses to enable
+  AP mode for the session, every peer falls back to vanilla PA/SA for that session, and a clear message is
+  shown naming the mod and the divergence ("ActionPoints disabled for this session — <peer> is running a
+  different CostModel/version; playing with vanilla PA/SA instead"). This is a deliberate, mod-specific
+  override of the repo-wide default `[Multiplayer] OnParityMismatch = WarnAndSafeMode`.
+- **Recommended (and shipped default) knob: `[Multiplayer] OnParityMismatch = Block` for
+  `ftk2mods.actionpoints`** (§5). Rationale: the repo-default `WarnAndSafeMode` assumes a mod can keep its
+  state-mutating features off while leaving presentation-only features on. AP mode has no such split — its
+  only state-mutating feature *is* the thing that must never run asymmetrically. `Block` is the honest
+  policy: refuse a mismatched peer outright rather than silently downgrade a subset of peers to a
+  `SafeMode` this mod cannot actually offer without risking the asymmetric-economy failure mode itself.
+- **Per-save opt-in interaction with the parity handshake at join.** `GameRunData.AP_ModeEnabled` (§3.3) is
+  captured once at run creation and must be **host-authoritative and identical for all peers for the
+  lifetime of that run** — save state that replicates with the run, not a per-peer knob read. Join-time
+  interaction:
+  1. Joining peer's `ParityService` registration is exchanged with the host (R1, `FTK2MODS_PARITY_V1`).
+  2. If the host's `GameRunData.AP_ModeEnabled == true` and the joining peer does not have
+     `ftk2mods.actionpoints` installed at all (not merely a version/data mismatch, but entirely absent), that
+     is itself an R1 mismatch — the mod's registration is simply missing from the joining peer's handshake
+     payload — and per the `Block` recommendation, the join is refused outright: "This run requires
+     FTK2.ActionPoints — install the mod to join." No `SafeMode` fallback is offered at join time, because a
+     joining client running vanilla PA/SA logic against a save whose `CombatComponent` fields already hold
+     AP-pool-shaped numbers (not vanilla PA/SA-shaped numbers) would misread that state as literal PA counts
+     — the "mixed mod sets across a save" risk, now hardened into a hard join gate rather than a README
+     caveat.
+  3. If the joining peer *has* the mod but with a mismatched version/`dataHash`, same outcome under `Block`:
+     refused, with the specific divergence named (per R1's mismatch reporting).
+  4. Mid-combat or asymmetric toggling is not just discouraged, it is **structurally prevented**: the flag
+     is locked at run creation, is part of the host-owned `GameRunData`, and the join gate above ensures no
+     peer can be present in a session with a different effective value of it. No code path lets one peer be
+     "in AP mode" while another peer of the same live session is not.
+
+### 9.6 MP test plan
+
+Registration: `ftk2mods.actionpoints` registers `(guid, version, dataHash-over-active-CostModel-file,
+enabledFeatures={ApMode, EnemyAPMode})` with `FTK2.DevKit`'s `ParityService` at plugin load (R1). Smoke test
+(host + one client, `VerboseLogging` on both, DevKit dump-compare available on both):
+
+1. **Full scripted fight, host + client** — same fight script as §8, run with two live peers. After every
+   listed event below, use DevKit's dump-compare command to pull both peers' full AP pool state
+   (`PrimaryActions`/`SecondaryActions` per combat entity) and diff them; any non-host-simulated divergence
+   beyond one sync tick is a bug.
+   - **Multi-action turn**: one character spends down to zero affordable actions in a single turn; compare
+     pools after each individual ability use, not just at turn end, since this is the highest-frequency
+     sync point in the mod.
+   - **Carryover round boundary**: deliberately underspend a turn on both a host-controlled and a
+     client-controlled character; compare next turn's granted pool against the formula in §9.3 item 1 on
+     both peers.
+   - **Haste status**: apply a `Stats{PA}`/`Stats{SA}` status; compare `LegacyStatConversion`-adjusted pools
+     on both peers, and confirm no double-application on tick (§8 item 5 / §11 item 6).
+   - **Summon entry**: summon mid-combat on both a host-side and client-side trigger; compare the new
+     entity's initial pool (`carriedIn = 0` expected on both peers per §9.3 item 1) immediately after
+     `_addEntityToCombat`.
+2. **Resync path**: force a transient mismatch (e.g. via DevKit dev-mutation on a non-live test session per
+   R5) and confirm the detect → `AP_SYNC_RESYNC_REQUEST_V1` → `AP_SYNC_RESYNC_V1` → applied sequence in
+   §9.4 fires and resolves within one resync round-trip; confirm the session warning appears only if a
+   second consecutive resync still disagrees.
+3. **Late join**: host starts an AP-mode run, plays several turns, then a second client joins; confirm the
+   `AP_SYNC_RESYNC_V1`/`_REQUEST_V1` snapshot exchange on join reproduces the exact current pool state for
+   every combat entity mid-fight (or, if joining between fights, that the next fight starts identically for
+   both peers).
+4. **Join-blocking**: attempt to join an AP-mode run (a) with the mod entirely absent, (b) with a mismatched
+   `CostModel` file, (c) with a mismatched mod version; confirm all three are refused per `Block` (§9.5),
+   not silently downgraded.
+5. **Enemy-AP host-effectiveness**: set `[EnemyAP] Mode=Asymmetric` on the client only, leaving the host at
+   `Symmetric` (or vice versa); confirm the fight behaves per the **host's** setting on both peers' screens
+   — confirming the knob is host-effective and a client-side difference is inert, not a desync (§9.2).
 
 ## 10. Milestones
 
-- **M1 — Pool + costs + carryover, minimal UI.** Grant/gate/spend patches from §6 (excluding the misc
-  resync-and-log safety nets, which can ship alongside since they're cheap); `CostModel` loader with the
-  shipped default preset; `ActionPointsService` exists but is untested by any consumer; repurposed PA pip
-  display (SA row hidden) + cost text appended to ability tooltips (best-effort against the verified
-  `CombatAbilitiesTemplateHelper.Show` hook); per-save `AP_ModeEnabled` flag and mid-run-toggle warning;
-  Symmetric enemy AP only. **Exit criteria**: scripted test §8 items 1–4, 8, 11 pass.
-- **M2 — Status/skill interaction correctness.** `LegacyStatConversion` wired into `ApplyStatChange`;
-  mid-turn grant policy validated (or corrected, per §11 item 2) against real `ResetCharacterActions`
-  overload semantics; all five misc-toucher safety nets in place and confirmed non-spurious; Asymmetric
-  enemy AP knob + Divinity preset validated; boss-phase and summon-entry behavior confirmed correct.
-  **Exit criteria**: scripted test §8 items 5–7, 9–10 pass; no unexpected safety-net log lines during a
-  full boss fight.
+- **M1 — Pool + costs + carryover, minimal UI, MP parity foundation.** Grant/gate/spend patches from §6
+  (excluding the misc resync-and-log safety nets, which can ship alongside since they're cheap); `CostModel`
+  loader with the shipped default preset; `ActionPointsService` exists but is untested by any consumer;
+  repurposed PA pip display (SA row hidden) + cost text appended to ability tooltips (best-effort against
+  the verified `CombatAbilitiesTemplateHelper.Show` hook); per-save `AP_ModeEnabled` flag and mid-run-toggle
+  warning; Symmetric enemy AP only; **`ParityService` registration at plugin load (R1)**; **`[Multiplayer]
+  OnParityMismatch=Block` shipped as this mod's default**; **join-blocking (§9.5) live** for missing-mod,
+  version, or `dataHash` mismatch whenever `GameRunData.AP_ModeEnabled=true`. **Exit criteria**: scripted
+  test §8 items 1–4, 8, 11 pass; §9.6 items 1 (multi-action turn + carryover subset) and 4 (join-blocking)
+  pass.
+- **M2 — Status/skill interaction correctness + MP resync.** `LegacyStatConversion` wired into
+  `ApplyStatChange`; mid-turn grant policy validated (or corrected, per §11 item 2) against real
+  `ResetCharacterActions` overload semantics; all five misc-toucher safety nets in place and confirmed
+  non-spurious; Asymmetric enemy AP knob (host-effective, §9.2) + Divinity preset validated; boss-phase and
+  summon-entry behavior confirmed correct; **`AP_SYNC_RESYNC_V1`/`AP_SYNC_RESYNC_REQUEST_V1` snapshot
+  implemented** (detect → resync-from-host → session-warning posture, §9.4), covering both on-demand resync
+  and late-join snapshot exchange. **Exit criteria**: scripted test §8 items 5–7, 9–10 pass; no unexpected
+  safety-net log lines during a full boss fight; §9.6 items 2 (resync path), 3 (late join), and 5 (enemy-AP
+  host-effectiveness) pass.
 - **M3 — Full UI + WarBrain interop.** Distinct AP pip art (replacing the repurposed PA icon), animated
   fill/drain, cost shown as an in-pip highlight rather than text-only; `ActionPointsService` consumed by
-  `FTK2.WarBrain`'s scoring function (damage-per-AP efficiency term); MP hash handshake (§9) implemented;
-  desync detection upgraded from log-only toward corrective where the authority model has been confirmed
-  safe to auto-fix (§11 item 7).
+  `FTK2.WarBrain`'s scoring function (damage-per-AP efficiency term). MP posture (parity registration,
+  join-blocking, resync snapshot) is already complete by end of M2 (§9) — M3 introduces no new MP
+  mechanism; its only MP-relevant task is re-verifying §9's authority assumptions against real IL once §11
+  item 7 is resolved, and tightening the resync-vs-corrective-auto-fix boundary in §9.4 if that
+  verification allows it.
 
 ## 11. Open questions
 
@@ -425,10 +620,14 @@ Executable by a human in under 15 minutes per CONVENTIONS.md, using a single scr
    a status is added, or reapplied every combat tick for the status's duration? Directly affects whether
    `LegacyStatConversion` double-counts a haste effect every tick. Highest-priority item to verify before
    M2, per §8 test #5.
-7. FTK2's netcode authority model for `CombatComponent` sync — which peer's patched value wins after
-   replication. No documentation found in `docs/research`; §9's "host-authoritative by convention, log
-   don't auto-correct" posture is a design choice made in the absence of this information, not a verified
-   fact. Requires live MP testing.
+7. **[MP-CRITICAL, highest priority]** FTK2's netcode authority model for `CombatComponent` sync — which
+   peer's patched value wins after replication, and specifically whether vanilla combat resolution (and
+   therefore enemy AI decisions) is host-only. This is `docs/MULTIPLAYER.md`'s repo-wide open question 1,
+   restated here because §9's entire authority analysis (9.1–9.6) is built on the working assumption that
+   combat is host-simulated and `CombatComponent` replicates host→client — if that assumption is wrong, the
+   `ALL_PEERS` parity class, the resync-from-host posture, and the "client UI reads local patched gates"
+   argument in §9.1 all need re-derivation, not just tuning. Requires live MP testing and/or a decompile
+   pass before M1 ships to a real multi-peer session; do not treat §9 as verified until this is resolved.
 8. No verified concrete `Abilities.json` ability id was available in `docs/research` at spec time; the
    shipped `PerAbilityOverrides` example uses a placeholder key (`REPLACE_WITH_REAL_ABILITY_ID`) that must
    be swapped for real ids sourced directly from `Abilities.json` before this feature is demonstrated
@@ -439,3 +638,11 @@ Executable by a human in under 15 minutes per CONVENTIONS.md, using a single scr
    is ability-gated; if it turns out to be a free/separate action outside `IsUsableAbility`'s reach, a
    distinct patch target (unidentified in current docs) will be needed to actually enforce the movement
    cost, and this should be resolved before M1 exit.
+10. **Other MP open questions inherited from `docs/MULTIPLAYER.md`** (repo-wide numbered list, tracked
+    centrally, not duplicated in full here) — two are directly load-bearing for this spec: repo open
+    question 2 (does `GameRunData` custom state replicate to clients, or live host-side only?) directly
+    affects whether §9.5's "`AP_ModeEnabled` is host-authoritative and identical for all peers" claim is
+    automatic or requires this mod to push it explicitly via a `_SYNC_` action of its own; repo open
+    question 5 (exact `_handleNetworkAction` payload size limits) is relevant to confirming
+    `AP_SYNC_RESYNC_V1`'s per-entity two-int payload (§9.4) stays trivially within any limit for large
+    fights (many summons/enemies).
