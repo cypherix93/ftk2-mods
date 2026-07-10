@@ -1,0 +1,15 @@
+# .NET build output
+bin/
+obj/
+*.user
+.vs/
+.idea/
+
+# Local-only
+*.local.json
+scratch/
+_output/
+
+# OS
+Thumbs.db
+.DS_Store
