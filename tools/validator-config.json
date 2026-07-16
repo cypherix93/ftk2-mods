@@ -1,0 +1,5 @@
+{
+  "_comment": "Power-budget thresholds for validate_pack.py. WARN when a stat exceeds p50*warn_mult AND the observed max; ERROR when it exceeds observed max*fail_mult (per Class|Rarity curve cell from vocab-index.json).",
+  "warn_mult": 1.5,
+  "fail_mult": 2.0
+}
