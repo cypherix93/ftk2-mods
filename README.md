@@ -18,6 +18,7 @@ JSON data files and BepInEx config knobs so behavior can be changed without reco
 | [FTK2.Venue](FTK2.Venue/SPEC.md) | Battle-grid control: data-driven grid selection (Extended grid in normal fights) | P3 | Spec draft |
 | [FTK2.ActionPoints](FTK2.ActionPoints/SPEC.md) | Pooled action-point economy (Divinity/BG3 style) with carryover | P3 | Spec draft |
 | [FTK2.DevKit](FTK2.DevKit/SPEC.md) | Modder QoL: JSON hot-reload, config dumps, AI decision logging | P0 (dev) | Spec draft |
+| [FTK2.Armory](FTK2.Armory/SPEC.md) | Item content packs: hand-crafted catalog + curated forge output (zero-code M1) | P1 | **M1 shipped** |
 
 ## Docs
 
@@ -25,6 +26,10 @@ JSON data files and BepInEx config knobs so behavior can be changed without reco
 - [docs/CONVENTIONS.md](docs/CONVENTIONS.md) — repo + engine design conventions all mods follow
 - [docs/research/game-code-reference.md](docs/research/game-code-reference.md) — verified FTK2.dll patch targets
 - [docs/research/data-schemas.md](docs/research/data-schemas.md) — game JSON config schemas
+- [docs/research/game-mechanics.md](docs/research/game-mechanics.md) — decompile-verified combat + overworld mechanics (claim-id ground truth)
+- [docs/research/vocab-summary.md](docs/research/vocab-summary.md) — live-data vocabulary (real enums, stat curves; corrects data-schemas.md)
+- [docs/research/eor-loader-notes.md](docs/research/eor-loader-notes.md) — EOR CustomItems/ItemIcons/VisualFallbacks loader mechanics
+- [tools/README.md](tools/README.md) — content-generation pipelines (vocab extractor, iconforge, itemforge, validator)
 
 ## Environment
 
