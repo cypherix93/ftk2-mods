@@ -703,3 +703,34 @@ both.
   estimate before the ability actually resolves; whether to reuse `InteractableHelper.
   CalculateFinalDamage` directly (if its signature allows a dry-run) or approximate from raw
   stats/ability rolls is an implementation-time call, not a data-schema question.
+
+## 12. Post-discovery revisions (2026-07-16, IL-verified)
+
+Full evidence: `docs/research/battle-ai-deep-dive.md`. Every §11 open question is now resolved:
+
+- **Signatures**: all verified (deep-dive §1.1). One contract correction: `CombatDecisionData.FocusUsed`
+  is an **int** (focus points committed), not a bool — WarBrain treats focus spend as a scored
+  decision dimension (per-candidate focus options + `WB_CONSIDER_FOCUS_EFFICIENCY` + profile
+  `FocusPolicy`), which sim experiments show is the single biggest damage lever.
+- **Parity class is `ALL_PEERS`, not `HOST_ONLY`** (§9.1's likely-branch was wrong): vanilla enemy AI
+  runs deterministic-lockstep on every peer off the shared `CombatState.Random`. Consequences
+  implemented: WarBrain consumes only `CombatState.Random`, all scoring math is `decimal`, every
+  peer needs identical version+data (R1 hash mandatory; M1 logs `dataHash` at startup, enforcement
+  rides the shared ParityService when it lands).
+- **Combat-start reset hook**: `CombatState.Create` postfix (fires once per battle, waves excluded).
+- **Memory keying**: per-battle store keys off the live `CombatState`; per-run rides `GameRunData`
+  object identity (no GUID field exists — `Create` postfix attach, EOR-compatible).
+- **Tendency reuse**: reimplement the orderings (pure LINQ over public helpers) rather than calling
+  private `_orderTargetsByTendency` — `WB_CONSIDER_TENDENCY_MATCH` is a no-op (raw 0) in M1.
+- **Damage prediction**: closed-form binomial over slot rolls from public data
+  (`GetCombatStat`/`GetSkillRollData`/`GetMinAndMaxDamageOfAbilityForCharacter` + verified
+  `CalculateFinalDamage` semantics incl. pierce-on-PERFECT and dodge) — implemented as
+  `DamagePredictor` (plugin) / `DamageOracle` (sandbox), identical math.
+- **New `[Scaling]` knob section** (owner-approved scope extension, off by default): tunable enemy
+  ATK/HP multipliers + flat ACC/FOC adds via `CharacterHelper.GetCharacterBaseStat` postfix — the
+  exact site where vanilla difficulty `EnemyStatMods` applies. Sim-validated defaults: ATK×1.25,
+  HP×1.25, ACC+8, FOC+1. Root cause requires it: discovery showed decisions alone roughly double
+  enemy output but cannot overcome flat-DEF stacking (deep-dive §2.4).
+- **M1 known limitation**: abilities with `TileOccupancy: EMPTY` (summons, teleport-style) are not
+  scored; an enemy whose only usable options are unmodelable defers to vanilla for that turn, so
+  summoners keep summoning.
