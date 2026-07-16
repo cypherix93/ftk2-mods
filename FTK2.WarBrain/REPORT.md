@@ -162,7 +162,7 @@ start any fight, and check the `[WarBrain]` decision lines in the BepInEx consol
 
 - `18eac1f` discovery deep-dive
 - `ccba327` WarBrain.Core + sandbox simulator
-- (results commit) 2000-battle experiment matrix
+- `a7c1f35` 2000-battle experiment matrix
 - `8d800e5` plugin M1 + SPEC §12 + README
 
 *Note: unrelated commits from your parallel session are interleaved on master; nothing collided.*
