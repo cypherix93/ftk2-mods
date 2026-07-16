@@ -1,0 +1,5480 @@
+{
+  "PackId": "ARM_FORGE_CURATED",
+  "Items": [
+    {
+      "Id": "ARM_FRG_BASELINE_1337_097",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 31,
+        "MinTier": 0,
+        "MaxTier": 3,
+        "Class": "BLUNT",
+        "Rarity": "COMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 7,
+            "AWR": 2,
+            "DEF": 2,
+            "EVD": -8,
+            "MOV": 1,
+            "VIT": 2
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_SCOUT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BLUNT",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BLUNT_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 4,
+              "Stat": "VIT"
+            },
+            "BLUNT_STUN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_STUN_ATTACK",
+            "BLUNT_STUN_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BLUNT_BEASTMAN_MEDIUM_01",
+      "Loc": {
+        "Name": "Cudgel of the Tithe",
+        "Description": "It has seen more roads than any map."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLUNT_BEASTMAN_MEDIUM_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.42,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#8adfc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=warden, theme=wayworn, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "baseline",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_BASELINE_42_047",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 0,
+        "MaxTier": 3,
+        "Class": "SHIELD",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "DEF": 13,
+            "LCK": -3,
+            "TAL": 3,
+            "THRN": 6,
+            "VIT": 3
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "SHIELD",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "SHIELD_ARMOR_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "VIT"
+            },
+            "SHIELD_TAUNT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "SHIELD_CULTIST_HEAVY_01",
+      "Loc": {
+        "Name": "Tempered Aegis of the Tithe",
+        "Description": "Luck clings to it like burrs to a traveling cloak."
+      },
+      "Icon": {
+        "Base": "PRERENDER_SHIELD_CULTIST_HEAVY_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.13,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#ffe08a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=spiked, theme=fortunate, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "baseline",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_BASELINE_42_065",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 64,
+        "MinTier": 0,
+        "MaxTier": 3,
+        "Class": "ARMOR_BODY",
+        "Rarity": "COMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "ARMOR"
+          ],
+          "Stats": {
+            "DEF": 8,
+            "EVD": 2,
+            "HP": 5,
+            "SPD": 3,
+            "VIT": -3
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_EAGER"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "COMMON",
+          "ARMOR",
+          "ARMOR_BODY"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_GOBLIN_MAGIC_02",
+      "Loc": {
+        "Name": "Mail of Mistfall",
+        "Description": "Light as rumor, quick as regret."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_GOBLIN_MAGIC_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.33,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#7ef29b",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=plate, theme=swift, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "baseline",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_BASELINE_42_087",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 5,
+        "MinTier": 0,
+        "MaxTier": 3,
+        "Class": "STAFF_2H",
+        "Rarity": "COMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 4,
+            "EVD": -8,
+            "INT": 1,
+            "LCK": 1
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_NICEDAY"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "STAFF",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_FIRE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            },
+            "MAGIC_FIRE_SPLASH_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "STAFF_MILITIA_FIRE_01",
+      "Loc": {
+        "Name": "Gilded Stave",
+        "Description": "Luck clings to it like burrs to a traveling cloak."
+      },
+      "Icon": {
+        "Base": "PRERENDER_STAFF_MILITIA_FIRE_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.13,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#ffe08a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=magus, theme=fortunate, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "baseline",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_BASELINE_7_062",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 64,
+        "MinTier": 0,
+        "MaxTier": 3,
+        "Class": "ARMOR_BODY",
+        "Rarity": "COMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "ARMOR"
+          ],
+          "Stats": {
+            "DEF": 10,
+            "HP": 7,
+            "SPD": -5,
+            "VIT": 2
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FINDTREASURE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "COMMON",
+          "ARMOR",
+          "ARMOR_BODY"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_HAG_MAGIC_02",
+      "Loc": {
+        "Name": "Vest of Foxglove",
+        "Description": "It has seen more roads than any map."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_HAG_MAGIC_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.42,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#8adfc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=plate, theme=wayworn, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "baseline",
+        "Seed": 7
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_001",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 42,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ORB_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 6,
+            "AWR": 3,
+            "DAM_BEAST": 11,
+            "FOC": 1,
+            "INT": 3
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "ORB",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "ENEMY_CHANNEL_ATTACK_00": {
+              "ACC": 100,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "AWR"
+            },
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "WHIP_ENTANGLE_BLEED_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "WHIP_ENTANGLE_BLEED_ATTACK",
+            "ENEMY_CHANNEL_ATTACK_00",
+            "MAGIC_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        }
+      },
+      "VisualFallback": "ORB_MILITIA_LIGHT_03",
+      "Loc": {
+        "Name": "Heart of the Red Season",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_ORB_MILITIA_LIGHT_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=oracle, theme=huntmaster",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_002",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 105,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "GUN",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6,
+            "AWR": 3,
+            "CRT": 4,
+            "CRTD": 2,
+            "DAM_BEAST": 10
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "GUN",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "GUN_BLAST_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_FIRE_ATTACK": {
+              "ACC": -10,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_INTERRUPT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_WHIP_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.2,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [
+            "GUN_BLAST_ATTACK",
+            "GUN_BLAST_ATTACK",
+            "GUN_INTERRUPT_ATTACK",
+            "GUN_FIRE_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "GUN_MILITIA_TINY_03",
+      "Loc": {
+        "Name": "Hexshooter of Endless Winter",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_GUN_MILITIA_TINY_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=gunslinger, theme=huntmaster",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_003",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 88,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BOW_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 72,
+            "AWR": 23,
+            "EVD": 7,
+            "INT": 15,
+            "MOV": 8,
+            "SPD": -8
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_VOIDWALK"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BOW",
+          "WEAPON_TWO_HAND",
+          "MAGICAL"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BOW_AOE_MAGIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.6,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "BOW_ENTANGLE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BOW_FIRE_MEDIUM_02",
+      "Loc": {
+        "Name": "Unrepentant Warbow",
+        "Description": "It exists slightly to the left of where you see it."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOW_FIRE_MEDIUM_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.78,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#8a2bd6",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=warden, theme=voidtouched, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_011",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "STAFF_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 12,
+            "DAM_UNDEAD": 37,
+            "EVD": 2,
+            "INT": 7,
+            "RES": 5,
+            "SPD": 5
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "STAFF",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_FIRE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            },
+            "MAGIC_FIRE_SPLASH_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "STAFF_BEASTMAN_MEDIUM_00",
+      "Loc": {
+        "Name": "Worldpillar of Falling Stars",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_STAFF_BEASTMAN_MEDIUM_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=riftwalker, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_014",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 97,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "GUN",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 23,
+            "CRT": 9,
+            "CRTD": 4,
+            "SPD": -8
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_JUSTICE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "GUN",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "GUN_BLAST_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_FIRE_ATTACK": {
+              "ACC": -10,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_INTERRUPT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_WHIP_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.2,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [
+            "GUN_BLAST_ATTACK",
+            "GUN_BLAST_ATTACK",
+            "GUN_INTERRUPT_ATTACK",
+            "GUN_FIRE_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "GUN_GOLDEN_TINY_00",
+      "Loc": {
+        "Name": "Howling Pistol",
+        "Description": "It has one opinion, delivered once."
+      },
+      "Icon": {
+        "Base": "PRERENDER_GUN_GOLDEN_TINY_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.98,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#ff3b3b",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=gunslinger, theme=executioner, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_015",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 42,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ORB_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 6,
+            "AWR": 3,
+            "DAM_BEAST": 9,
+            "INT": 4
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "ORB",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "ENEMY_CHANNEL_ATTACK_00": {
+              "ACC": 100,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "AWR"
+            },
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "WHIP_ENTANGLE_BLEED_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "WHIP_ENTANGLE_BLEED_ATTACK",
+            "ENEMY_CHANNEL_ATTACK_00",
+            "MAGIC_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        }
+      },
+      "VisualFallback": "ORB_CRACKED_LIGHT_00",
+      "Loc": {
+        "Name": "The Radiant Eye",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_ORB_CRACKED_LIGHT_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=voidgazer, theme=huntmaster",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_016",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "POLEARM_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 10,
+            "CRT": 4,
+            "DAM_UNDEAD": 22,
+            "RES": 3
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "POLEARM",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "POLEARM_LEFT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "POLEARM_PULL_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "POLEARM_PUSH_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "POLEARM_RIGHT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "POLEARM_ETHEREAL_HEAVY_01",
+      "Loc": {
+        "Name": "Sunless Warscythe",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_POLEARM_ETHEREAL_HEAVY_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=impaler, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_022",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 16,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BLADE_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 30,
+            "DEF": 6,
+            "EVD": 6,
+            "INT": 6,
+            "THRN": 6,
+            "VIT": -8
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_VOIDWALK"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BLADE",
+          "WEAPON_TWO_HAND",
+          "MAGICAL"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BLADE_FIRE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "STR"
+            },
+            "BLADE_FIRE_HEAVY_ATTACK": {
+              "ACC": -20,
+              "Ammo": 0,
+              "MaxValue": 1.4,
+              "MinValue": 0,
+              "Rolls": 5,
+              "Stat": "STR"
+            },
+            "BLADE_FIRE_SPIN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.75,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "BLADE_FIRE_ATTACK",
+            "BLADE_FIRE_ATTACK",
+            "BLADE_FIRE_HEAVY_ATTACK",
+            "BLADE_FIRE_SPIN_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BLADE_VARDEMODER_HEAVY_00",
+      "Loc": {
+        "Name": "Greatsword of Silent Bells",
+        "Description": "It exists slightly to the left of where you see it."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLADE_VARDEMODER_HEAVY_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.78,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#8a2bd6",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=sentinel, theme=voidtouched, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_023",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BOW_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 72,
+            "AWR": 33,
+            "DEF": 33,
+            "LCK": -15,
+            "MOV": 11,
+            "THRN": 22
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_STEADFAST"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BOW",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BOW_AOE_MAGIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.6,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "BOW_ENTANGLE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BOW_BONE_LIGHT_02",
+      "Loc": {
+        "Name": "Skypiercer of the Last Dawn",
+        "Description": "Armies have broken on lesser stubbornness."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOW_BONE_LIGHT_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.58,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#4f7dff",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=warden, theme=bulwark, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_028",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 53,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ORB_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 4,
+            "AWR": 2,
+            "DAM_BEAST": 7,
+            "FOC": 1,
+            "INT": 2,
+            "LCK": 1
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "ORB",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "ENEMY_CHANNEL_ATTACK_00": {
+              "ACC": 100,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "AWR"
+            },
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "WHIP_ENTANGLE_BLEED_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "WHIP_ENTANGLE_BLEED_ATTACK",
+            "ENEMY_CHANNEL_ATTACK_00",
+            "MAGIC_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        }
+      },
+      "VisualFallback": "ORB_MILITIA_LIGHT_03",
+      "Loc": {
+        "Name": "The Howling Heart",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_ORB_MILITIA_LIGHT_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=oracle, theme=huntmaster",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_029",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "KATANA",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 13,
+            "CRT": 9,
+            "DAM_UNDEAD": 33,
+            "RES": 4,
+            "SPD": 4
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "KATANA",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BLADE_ARMORDOWN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.25,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "BLADE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "BLADE_SPIN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.75,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "KATANA_MILITIA_MEDIUM_02",
+      "Loc": {
+        "Name": "Nodachi of the Red Season",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_KATANA_MILITIA_MEDIUM_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=iaijutsu, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_032",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 88,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BOW_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 18,
+            "AWR": 21,
+            "CRT": 9,
+            "DAM_BEAST": 30
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BOW",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BOW_AOE_MAGIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.6,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "BOW_ENTANGLE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BOW_DRUID_MEDIUM_02",
+      "Loc": {
+        "Name": "Doomstring of the Red Season",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOW_DRUID_MEDIUM_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=deadeye, theme=huntmaster",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_033",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 70,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_HEAD",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "HELMET"
+          ],
+          "Stats": {
+            "AWR": 6,
+            "DAM_BEAST": 27,
+            "FOC": 1,
+            "INT": 5,
+            "RES": 5
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "ARMOR",
+          "ARMOR_HEAD"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "HELMET_MILITIA_LIGHT_03",
+      "Loc": {
+        "Name": "The Radiant Crown",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_HELMET_MILITIA_LIGHT_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=thirdeye, theme=huntmaster",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_034",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 53,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ORB_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 3,
+            "AWR": 2,
+            "DAM_BEAST": 7,
+            "FOC": 1,
+            "INT": 2,
+            "LCK": 1
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "ORB",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "ENEMY_CHANNEL_ATTACK_00": {
+              "ACC": 100,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "AWR"
+            },
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "WHIP_ENTANGLE_BLEED_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "WHIP_ENTANGLE_BLEED_ATTACK",
+            "ENEMY_CHANNEL_ATTACK_00",
+            "MAGIC_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        }
+      },
+      "VisualFallback": "ORB_STONE_LIGHT_00",
+      "Loc": {
+        "Name": "Sunless Orb",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_ORB_STONE_LIGHT_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=oracle, theme=huntmaster",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_044",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 16,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BOW_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 72,
+            "AWR": 35,
+            "CRT": 20,
+            "HP": -10
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BOW",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BOW_AOE_MAGIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.6,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "BOW_ENTANGLE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BOW_MILITIA_LIGHT_03",
+      "Loc": {
+        "Name": "Starving Skypiercer",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOW_MILITIA_LIGHT_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=deadeye, theme=huntmaster, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_047",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 170,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "TRINKET"
+          ],
+          "Stats": {
+            "CRT": 13,
+            "CRTD": 13,
+            "DAM_BEAST": 64,
+            "DAM_UNDEAD": 64
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_JUSTICE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "ARMOR"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_IMMUNITY_SHOCK",
+      "Loc": {
+        "Name": "The Radiant Relic",
+        "Description": "It has one opinion, delivered once."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_IMMUNITY_SHOCK",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.98,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#ff3b3b",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=monsterbane, theme=executioner",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_048",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 55,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "SHIELD",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "DAM_UNDEAD": 6,
+            "DEF": 2,
+            "HP": 1,
+            "RES": 2
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "SHIELD",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "SHIELD_ARMOR_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "VIT"
+            },
+            "SHIELD_TAUNT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "SHIELD_TOYMAKER_BASIC_00",
+      "Loc": {
+        "Name": "Rampart of the Hungry Dark",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_SHIELD_TOYMAKER_BASIC_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=aegis, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_051",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BOW_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 20,
+            "AWR": 12,
+            "DAM_UNDEAD": 59,
+            "MOV": 4,
+            "RES": 8
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BOW",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BOW_AOE_MAGIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.6,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "BOW_ENTANGLE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BOW_MILITIA_LIGHT_01",
+      "Loc": {
+        "Name": "The Radiant Skypiercer",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOW_MILITIA_LIGHT_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=warden, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_056",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 153,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BLUNT_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 9,
+            "DAM_UNDEAD": 37,
+            "DEF": 5,
+            "RES": 3,
+            "VIT": -5
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BLUNT",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BLUNT_GROUND_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.9,
+              "MinValue": 0,
+              "Rolls": 5,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "BLUNT_GROUND_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BLUNT_TORCH_PROFANED_HEAVY_03",
+      "Loc": {
+        "Name": "The Kingsbane Warhammer",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "DesignNote": "forge: archetype=anchor, theme=gravebane, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_058",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_BODY",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "ARMOR"
+          ],
+          "Stats": {
+            "DAM_UNDEAD": 47,
+            "DEF": 9,
+            "HP": 13,
+            "RES": 6,
+            "THRN": 6
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "ARMOR",
+          "ARMOR_BODY"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_GOBLIN_CLOTH_02",
+      "Loc": {
+        "Name": "The Sunless Warplate",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_GOBLIN_CLOTH_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=dreadplate, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_062",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 53,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ORB_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 3,
+            "AWR": 2,
+            "DAM_BEAST": 11,
+            "INT": 2,
+            "VIT": -8
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "ORB",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "ENEMY_CHANNEL_ATTACK_00": {
+              "ACC": 100,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "AWR"
+            },
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "WHIP_ENTANGLE_BLEED_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "WHIP_ENTANGLE_BLEED_ATTACK",
+            "ENEMY_CHANNEL_ATTACK_00",
+            "MAGIC_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        }
+      },
+      "VisualFallback": "ORB_PROFANED_LIGHT_01",
+      "Loc": {
+        "Name": "Voidtouched Heart",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "DesignNote": "forge: archetype=voidgazer, theme=huntmaster, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_064",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 66,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "TRINKET"
+          ],
+          "Stats": {
+            "DAM_BEAST": 31,
+            "DAM_UNDEAD": 31,
+            "DEF": 2,
+            "THRN": 4
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_GUARD"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "ARMOR"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_COLLAR_02",
+      "Loc": {
+        "Name": "Sigil of the Red Season",
+        "Description": "Armies have broken on lesser stubbornness."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_COLLAR_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.58,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#4f7dff",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=monsterbane, theme=bulwark",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_074",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "STAFF_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 8,
+            "DAM_UNDEAD": 25,
+            "EVD": 2,
+            "INT": 5,
+            "RES": 3,
+            "SPD": 3
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "STAFF",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_FIRE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            },
+            "MAGIC_FIRE_SPLASH_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "STAFF_WITCH_MEDIUM_01",
+      "Loc": {
+        "Name": "Warstaff of Endless Winter",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_STAFF_WITCH_MEDIUM_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=riftwalker, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_080",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 50,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "STAFF_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 5,
+            "DAM_UNDEAD": 15,
+            "EVD": 1,
+            "INT": 3,
+            "RES": 2,
+            "SPD": 2
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "STAFF",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_FIRE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            },
+            "MAGIC_FIRE_SPLASH_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "STAFF_BEASTMAN_MEDIUM_02",
+      "Loc": {
+        "Name": "Warstaff of the Hungry Dark",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_STAFF_BEASTMAN_MEDIUM_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=riftwalker, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_081",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "POLEARM_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 8,
+            "CRT": 3,
+            "DAM_UNDEAD": 17,
+            "RES": 2
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "POLEARM",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "POLEARM_LEFT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "POLEARM_PULL_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "POLEARM_PUSH_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "POLEARM_RIGHT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "POLEARM_MILITIA_MEDIUM_01",
+      "Loc": {
+        "Name": "Unrepentant Halberd",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_POLEARM_MILITIA_MEDIUM_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=impaler, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_087",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 47,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "STAFF_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 7,
+            "AWR": 3,
+            "DAM_BEAST": 10,
+            "FOC": 1,
+            "INT": 4
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "STAFF",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_FIRE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            },
+            "MAGIC_FIRE_SPLASH_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "STAFF_WILDMAGE_MEDIUM_01",
+      "Loc": {
+        "Name": "Voidtouched Warstaff",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_STAFF_WILDMAGE_MEDIUM_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=archmagus, theme=huntmaster",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_093",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "KATANA",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 11,
+            "CRT": 7,
+            "DAM_UNDEAD": 27,
+            "RES": 4,
+            "SPD": 4
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "KATANA",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BLADE_ARMORDOWN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.25,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "BLADE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "BLADE_SPIN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.75,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "KATANA_VOIDWALKER_BASIC_00",
+      "Loc": {
+        "Name": "Starving Moonblade",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_KATANA_VOIDWALKER_BASIC_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=iaijutsu, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_095",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "GUN",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 7,
+            "CRT": 5,
+            "CRTD": 2,
+            "DAM_UNDEAD": 17,
+            "RES": 2
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "GUN",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "GUN_BLAST_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_FIRE_ATTACK": {
+              "ACC": -10,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_INTERRUPT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_WHIP_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.2,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [
+            "GUN_BLAST_ATTACK",
+            "GUN_BLAST_ATTACK",
+            "GUN_INTERRUPT_ATTACK",
+            "GUN_FIRE_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "GUN_MILITIA_TINY_03",
+      "Loc": {
+        "Name": "Pistol of Endless Winter",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_GUN_MILITIA_TINY_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=gunslinger, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_1337_098",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 45,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ORB_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 4,
+            "DAM_UNDEAD": 13,
+            "FOC": 1,
+            "INT": 3,
+            "RES": 2
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "ORB",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "ENEMY_CHANNEL_ATTACK_00": {
+              "ACC": 100,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "AWR"
+            },
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "WHIP_ENTANGLE_BLEED_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "WHIP_ENTANGLE_BLEED_ATTACK",
+            "ENEMY_CHANNEL_ATTACK_00",
+            "MAGIC_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        }
+      },
+      "VisualFallback": "ORB_MILITIA_LIGHT_03",
+      "Loc": {
+        "Name": "The Bloodbound Heart",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_ORB_MILITIA_LIGHT_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=oracle, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_000",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 15,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "GUN",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 9,
+            "CRT": 21,
+            "CRTD": 8,
+            "EVD": -10
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_JUSTICE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "GUN",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "GUN_BLAST_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_FIRE_ATTACK": {
+              "ACC": -10,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_INTERRUPT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_WHIP_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.2,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [
+            "GUN_BLAST_ATTACK",
+            "GUN_BLAST_ATTACK",
+            "GUN_INTERRUPT_ATTACK",
+            "GUN_FIRE_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "GUN_GOLDEN_TINY_00",
+      "Loc": {
+        "Name": "Howling Thunderer",
+        "Description": "It has one opinion, delivered once."
+      },
+      "Icon": {
+        "Base": "PRERENDER_GUN_GOLDEN_TINY_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.98,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#ff3b3b",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=gunslinger, theme=executioner, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_016",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 199,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "TRINKET"
+          ],
+          "Stats": {
+            "DAM_BEAST": 44,
+            "DAM_UNDEAD": 88,
+            "RES": 6
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "ARMOR"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_STAT_TALENT_02",
+      "Loc": {
+        "Name": "Voidtouched Idol",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_STAT_TALENT_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=monsterbane, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_037",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 16,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "KATANA",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 13,
+            "AWR": 7,
+            "CRT": 9,
+            "DAM_BEAST": 22,
+            "SPD": 4
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "KATANA",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BLADE_ARMORDOWN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.25,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "BLADE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "BLADE_SPIN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.75,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "KATANA_MONK_BASIC_00",
+      "Loc": {
+        "Name": "Nodachi of Falling Stars",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_KATANA_MONK_BASIC_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=iaijutsu, theme=huntmaster",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_043",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 16,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "AXE_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 7,
+            "AWR": 3,
+            "DAM_BEAST": 17,
+            "EVD": -10,
+            "SPD": 2
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "AXE",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "AXE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 4,
+              "Stat": "STR"
+            },
+            "AXE_BLEED_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "STR"
+            },
+            "GOBLIN_AXE_HEAVY_ATTACK": {
+              "ACC": -20,
+              "Ammo": 0,
+              "MaxValue": 1.5,
+              "MinValue": 0,
+              "Rolls": 5,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "AXE_BASIC_ATTACK",
+            "AXE_BLEED_ATTACK",
+            "GOBLIN_AXE_HEAVY_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "AXE_MILITIA_HEAVY_03",
+      "Loc": {
+        "Name": "Kingsbane Headsman",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "DesignNote": "forge: archetype=berserk, theme=huntmaster, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_047",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 100,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_BODY",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "ARMOR"
+          ],
+          "Stats": {
+            "AWR": 7,
+            "DAM_BEAST": 55,
+            "DEF": 9,
+            "HP": 12,
+            "THRN": 6,
+            "VIT": -8
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "ARMOR",
+          "ARMOR_BODY"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_GOBLIN_LIGHT_01",
+      "Loc": {
+        "Name": "Shroud of the Red Season",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_GOBLIN_LIGHT_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=dreadplate, theme=huntmaster, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_053",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 50,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "STAFF_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 8,
+            "DAM_UNDEAD": 28,
+            "FOC": 1,
+            "INT": 5,
+            "RES": 2,
+            "VIT": -8
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "STAFF",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_FIRE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            },
+            "MAGIC_FIRE_SPLASH_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "STAFF_MILITIA_FIRE_02",
+      "Loc": {
+        "Name": "Stormcaller of Falling Stars",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "DesignNote": "forge: archetype=archmagus, theme=gravebane, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_057",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 185,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "TRINKET"
+          ],
+          "Stats": {
+            "CRT": 7,
+            "DAM_BOSS": 103,
+            "EVD": 7,
+            "INT": 3,
+            "LCK": -15
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_VOIDWALK"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "ARMOR",
+          "MAGICAL"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_BUFF_ARMOR_02",
+      "Loc": {
+        "Name": "Unrepentant Idol",
+        "Description": "It exists slightly to the left of where you see it."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_BUFF_ARMOR_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.78,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#8a2bd6",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=kingsbane, theme=voidtouched, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_058",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "KATANA",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 15,
+            "DAM_UNDEAD": 37,
+            "EVD": 5,
+            "RES": 5,
+            "TAL": 5
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "KATANA",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BLADE_ARMORDOWN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.25,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "BLADE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "BLADE_SPIN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.75,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "KATANA_MONK_BASIC_00",
+      "Loc": {
+        "Name": "Sunless Moonblade",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_KATANA_MONK_BASIC_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=ronin, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_062",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "AXE_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 8,
+            "CRTD": 2,
+            "DAM_UNDEAD": 14,
+            "RES": 2
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "AXE",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "AXE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 4,
+              "Stat": "STR"
+            },
+            "AXE_BLEED_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "STR"
+            },
+            "GOBLIN_AXE_HEAVY_ATTACK": {
+              "ACC": -20,
+              "Ammo": 0,
+              "MaxValue": 1.5,
+              "MinValue": 0,
+              "Rolls": 5,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "AXE_BASIC_ATTACK",
+            "AXE_BLEED_ATTACK",
+            "GOBLIN_AXE_HEAVY_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "AXE_WOODCUTTER_BASIC_00",
+      "Loc": {
+        "Name": "Bloodbound Greataxe",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_AXE_WOODCUTTER_BASIC_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=reaver, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_080",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 199,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "TRINKET"
+          ],
+          "Stats": {
+            "CRT": 8,
+            "DAM_BOSS": 77,
+            "DAM_UNDEAD": 58,
+            "RES": 8
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "ARMOR"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_IMMUNITY_ICE",
+      "Loc": {
+        "Name": "Idol of Silent Bells",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_IMMUNITY_ICE",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=kingsbane, theme=gravebane",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_082",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 70,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_HEAD",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "HELMET"
+          ],
+          "Stats": {
+            "AWR": 6,
+            "DAM_BEAST": 33,
+            "FOC": 1,
+            "INT": 5,
+            "RES": 7
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "ARMOR",
+          "ARMOR_HEAD"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "HELMET_GOBLIN_MEDIUM_01",
+      "Loc": {
+        "Name": "Visage of the Widow Queen",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_HELMET_GOBLIN_MEDIUM_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=thirdeye, theme=huntmaster",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_42_093",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 16,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "AXE_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 7,
+            "AWR": 3,
+            "DAM_BEAST": 17,
+            "HP": -10,
+            "SPD": 2
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "AXE",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "AXE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 4,
+              "Stat": "STR"
+            },
+            "AXE_BLEED_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "STR"
+            },
+            "GOBLIN_AXE_HEAVY_ATTACK": {
+              "ACC": -20,
+              "Ammo": 0,
+              "MaxValue": 1.5,
+              "MinValue": 0,
+              "Rolls": 5,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "AXE_BASIC_ATTACK",
+            "AXE_BLEED_ATTACK",
+            "GOBLIN_AXE_HEAVY_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "AXE_HANGMAN_HEAVY_00",
+      "Loc": {
+        "Name": "Headsman of the Last Dawn",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "DesignNote": "forge: archetype=berserk, theme=huntmaster, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 42
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_7_004",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 153,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BLUNT_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 13,
+            "DAM_UNDEAD": 40,
+            "HP": -10,
+            "RES": 3,
+            "STR": 3
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BLUNT",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BLUNT_GROUND_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.9,
+              "MinValue": 0,
+              "Rolls": 5,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "BLUNT_GROUND_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BLUNT_TORCH_PROFANED_HEAVY_01",
+      "Loc": {
+        "Name": "Colossus of Broken Crowns",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "DesignNote": "forge: archetype=leveler, theme=gravebane, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 7
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_7_030",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 95,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BOW_2H",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND",
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "ATK": 13,
+            "AWR": 9,
+            "CRT": 6,
+            "DAM_UNDEAD": 53,
+            "EVD": -10,
+            "RES": 4
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BOW",
+          "WEAPON_TWO_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BOW_AOE_MAGIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.6,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "BOW_ENTANGLE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BOW_BONE_LIGHT_01",
+      "Loc": {
+        "Name": "The Kingsbane Doomstring",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOW_BONE_LIGHT_01",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=deadeye, theme=gravebane, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 7
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_7_064",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "GUN",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 9,
+            "CRT": 6,
+            "CRTD": 3,
+            "DAM_UNDEAD": 35,
+            "HP": -10,
+            "RES": 3
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "WEAPON",
+          "HAND_EQUIP",
+          "GUN",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "GUN_BLAST_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_FIRE_ATTACK": {
+              "ACC": -10,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_INTERRUPT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            },
+            "GUN_WHIP_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.2,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [
+            "GUN_BLAST_ATTACK",
+            "GUN_BLAST_ATTACK",
+            "GUN_INTERRUPT_ATTACK",
+            "GUN_FIRE_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "GUN_GOLDEN_TINY_00",
+      "Loc": {
+        "Name": "The Howling Hexshooter",
+        "Description": "The dead remember it, and keep their distance."
+      },
+      "Icon": {
+        "Base": "PRERENDER_GUN_GOLDEN_TINY_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.16,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#f5efc0",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=gunslinger, theme=gravebane, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 7
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_7_066",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 16,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_BODY",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "ARMOR"
+          ],
+          "Stats": {
+            "AWR": 7,
+            "DAM_BEAST": 44,
+            "EVD": -2,
+            "RES": 5,
+            "SPD": 5
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "ARMOR",
+          "ARMOR_BODY"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_GOBLIN_MEDIUM_03",
+      "Loc": {
+        "Name": "The Kingsbane Shroud",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_GOBLIN_MEDIUM_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=shadowweave, theme=huntmaster, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 7
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_7_074",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 100,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_BODY",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "ARMOR"
+          ],
+          "Stats": {
+            "AWR": 7,
+            "DAM_BEAST": 58,
+            "DEF": 10,
+            "EVD": -10,
+            "HP": 13,
+            "THRN": 7
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "RARE",
+          "ARMOR",
+          "ARMOR_BODY"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_WITCH_MAGIC_02",
+      "Loc": {
+        "Name": "The Howling Dreadplate",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_WITCH_MAGIC_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=dreadplate, theme=huntmaster, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 7
+      }
+    },
+    {
+      "Id": "ARM_FRG_CHAOTIC_EPICS_7_079",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 185,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "TRINKET"
+          ],
+          "Stats": {
+            "AWR": 3,
+            "CRT": 19,
+            "CRTD": 14,
+            "DAM_BEAST": 81,
+            "EVD": -10
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_CALLEDSHOT"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARTIFACT",
+          "ARMOR"
+        ],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_1_6_GOBLET_ICE_00",
+      "Loc": {
+        "Name": "Eclipsed Relic",
+        "Description": "It knows where the prey will be, not where it is."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_1_6_GOBLET_ICE_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.3,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#57c46a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=relic, theme=huntmaster, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "chaotic_epics",
+        "Seed": 7
+      }
+    },
+    {
+      "Id": "ARM_FRG_CURSED_BARGAINS_1337_007",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 66,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "BLADE",
+        "Rarity": "UNCOMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 40,
+            "CRT": 11,
+            "DEF": 7,
+            "LCK": -15,
+            "THRN": 7
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_IRONBELLY"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "UNCOMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "BLADE",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "BLADE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 3,
+              "Stat": "STR"
+            },
+            "BLADE_PIERCE_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "BLADE_BASIC_ATTACK",
+            "BLADE_BASIC_ATTACK",
+            "BLADE_BASIC_ATTACK",
+            "BLADE_PIERCE_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BLADE_GLASS_MEDIUM_03",
+      "Loc": {
+        "Name": "The Blade That Weepings",
+        "Description": "Protection has a price, collected in small daily installments."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLADE_GLASS_MEDIUM_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.62,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#33507a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=bloodpact, theme=tithe, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "cursed_bargains",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CURSED_BARGAINS_1337_010",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 70,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "WAND",
+        "Rarity": "UNCOMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 15,
+            "DEF": 3,
+            "FOC": 1,
+            "INT": 5,
+            "SPD": -8,
+            "THRN": 3
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_MEND"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "UNCOMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WAND",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_PULL_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_STUN_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "INT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_STUN_ATTACK",
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "WAND_MILITIA_BASIC_02",
+      "Loc": {
+        "Name": "The Finger That Hungerings",
+        "Description": "Protection has a price, collected in small daily installments."
+      },
+      "Icon": {
+        "Base": "PRERENDER_WAND_MILITIA_BASIC_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.62,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#33507a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=soulburn, theme=tithe, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "cursed_bargains",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CURSED_BARGAINS_1337_019",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 70,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "WAND",
+        "Rarity": "UNCOMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 14,
+            "CRT": 3,
+            "DEF": 3,
+            "INT": 5,
+            "THRN": 3,
+            "VIT": -10
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_MEND"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "UNCOMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WAND",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_PULL_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_STUN_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "INT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_STUN_ATTACK",
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "WAND_MYSTIC_LIGHT_02",
+      "Loc": {
+        "Name": "Weeping Quill",
+        "Description": "Protection has a price, collected in small daily installments."
+      },
+      "Icon": {
+        "Base": "PRERENDER_WAND_MYSTIC_LIGHT_02",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.62,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#33507a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=hexcarver, theme=tithe, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "cursed_bargains",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CURSED_BARGAINS_1337_023",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 34,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "DAGGER",
+        "Rarity": "UNCOMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 11,
+            "CRT": 6,
+            "EVD": -12,
+            "LCK": 4
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "UNCOMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "DAGGER",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "KNIFE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            },
+            "KNIFE_BLEED_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BLEED_ATTACK",
+            "KNIFE_BLEED_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BLADE_CULTIST_TINY_03",
+      "Loc": {
+        "Name": "Splinter of the Tithe",
+        "Description": "Be very, very specific about what you wish for."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLADE_CULTIST_TINY_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.11,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#c9a227",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=backbiter, theme=monkeypaw, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "cursed_bargains",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CURSED_BARGAINS_1337_039",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 49,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "SHIELD",
+        "Rarity": "UNCOMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "DEF": 13,
+            "HP": 5,
+            "THRN": 6,
+            "VIT": -10
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "UNCOMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "SHIELD",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "SHIELD_ARMOR_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "VIT"
+            },
+            "SHIELD_TAUNT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "SHIELD_CULTIST_HEAVY_00",
+      "Loc": {
+        "Name": "Ward of Borrowed Time",
+        "Description": "Be very, very specific about what you wish for."
+      },
+      "Icon": {
+        "Base": "PRERENDER_SHIELD_CULTIST_HEAVY_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.11,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#c9a227",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=martyr, theme=monkeypaw, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "cursed_bargains",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CURSED_BARGAINS_1337_057",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 62,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "WAND",
+        "Rarity": "UNCOMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 14,
+            "CRT": 3,
+            "INT": 5,
+            "VIT": -10
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_FORTUNE"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "UNCOMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WAND",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_PULL_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_STUN_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "INT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_STUN_ATTACK",
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "WAND_MINDBENDER_LIGHT_03",
+      "Loc": {
+        "Name": "The Wand That Whisperings",
+        "Description": "Be very, very specific about what you wish for."
+      },
+      "Icon": {
+        "Base": "PRERENDER_WAND_MINDBENDER_LIGHT_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.11,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#c9a227",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=hexcarver, theme=monkeypaw, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "cursed_bargains",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CURSED_BARGAINS_1337_063",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 39,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "DAGGER",
+        "Rarity": "UNCOMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 12,
+            "CRT": 5,
+            "LCK": 5,
+            "SPD": -8
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_IRONBELLY"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "UNCOMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "DAGGER",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "KNIFE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            },
+            "KNIFE_BLEED_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BLEED_ATTACK",
+            "KNIFE_BLEED_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BLADE_CULTIST_TINY_03",
+      "Loc": {
+        "Name": "Fang of the Crossroads",
+        "Description": "Protection has a price, collected in small daily installments."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLADE_CULTIST_TINY_03",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.62,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#33507a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=pactknife, theme=tithe, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "cursed_bargains",
+        "Seed": 1337
+      }
+    },
+    {
+      "Id": "ARM_FRG_CURSED_BARGAINS_1337_070",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 39,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "DAGGER",
+        "Rarity": "UNCOMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 15,
+            "CRT": 5,
+            "DEF": 4,
+            "LCK": -10,
+            "THRN": 4
+          },
+          "MaxCharges": -1,
+          "Passives": [
+            "SKILL_MEND"
+          ]
+        },
+        "Tags": [
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "UNCOMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "DAGGER",
+          "WEAPON_ONE_HAND"
+        ],
+        "Expansion": "BASE",
+        "Interactable": {
+          "Abilities": {
+            "KNIFE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            },
+            "KNIFE_BLEED_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BLEED_ATTACK",
+            "KNIFE_BLEED_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        }
+      },
+      "VisualFallback": "BLADE_CULTIST_TINY_00",
+      "Loc": {
+        "Name": "Fang of the Fine Print",
+        "Description": "Protection has a price, collected in small daily installments."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLADE_CULTIST_TINY_00",
+        "Transforms": [
+          {
+            "Op": "HSV_SHIFT",
+            "H": 0.62,
+            "S": 0.1,
+            "V": 0.0
+          },
+          {
+            "Op": "GLOW",
+            "Color": "#33507a",
+            "Radius": 5,
+            "Strength": 0.8
+          }
+        ]
+      },
+      "DesignNote": "forge: archetype=pactknife, theme=tithe, cursed",
+      "Provenance": {
+        "Source": "forge",
+        "Profile": "cursed_bargains",
+        "Seed": 1337
+      }
+    }
+  ]
+}
