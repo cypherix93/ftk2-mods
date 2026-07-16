@@ -1,5 +1,33 @@
 # Morning review guide
 
+## 2026-07-16 overnight drop — content generation system + FTK2.Armory M1
+
+**Start here: open `FTK2.Armory/REVIEW.html` in a browser** (local file; item cards, icons,
+in-game verification checklist, open questions). Then:
+
+1. **`FTK2.Armory/CATALOG.md`** — the 9 sets + 13 standalones and the verified mechanics each
+   synergy is built on. The claim ids link into `docs/research/game-mechanics.md`.
+2. **`docs/research/game-mechanics.md`** — the ground-truth doc you asked for (combat +
+   overworld, every claim decompile-cited). Biggest design-relevant finds: crits only on PERFECT
+   rolls; ADD_STATUS only on PERFECT; focus buys guaranteed slots; THRN pierces blocks; `Threat`
+   does nothing in combat; DoT ticks ignore DEF/RES; LCK procs go **negative** below 50; tiers
+   are 0–3; ARTIFACT is the real "legendary".
+3. **`docs/research/forge-tuning-notes.md`** — what each itemforge knob did across 900 rolls;
+   curated 60 shipped in `FTK2.Armory/packs/forge_curated.pack.json`.
+4. **`FTK2.Armory/INSTALL.md`** — manual install (your game dir was never written to). The EOR
+   CustomItems drop-in path is decompile-verified generic (`docs/research/eor-loader-notes.md`,
+   which also resolves Forge SPEC OQ#6 and #2).
+5. Tooling if you want to crank it yourself: `tools/README.md` —
+   `itemforge/forge.py --profile … --seed …` (deterministic), `validate_pack.py` (the gate),
+   `iconforge/render.py`, `compile_pack.py`. 40 pytest tests: `python -m pytest tools/tests`.
+
+In-game verification checklist (nothing was launch-tested): the numbered list at the top of
+REVIEW.html — ~15 minutes with EOR's give-item debug.
+
+---
+
+## 2026-07-10 spec drop (previous)
+
 Nine mod specs were drafted overnight (2026-07-10), each with an example starting dataset.
 **All 60 JSON data files parse; all 9 specs follow the 11-section CONVENTIONS template.**
 Nothing is implemented yet — these are design docs for you to approve/redline.

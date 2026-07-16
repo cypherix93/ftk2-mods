@@ -1,0 +1,3719 @@
+{
+  "ARM_FRG_BASELINE_1337_097": {
+    "Ammo": 0,
+    "Class": "BLUNT",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_SCOUT"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 7,
+        "AWR": 2,
+        "DEF": 2,
+        "EVD": -8,
+        "MOV": 1,
+        "VIT": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLUNT_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 4,
+          "Stat": "VIT"
+        },
+        "BLUNT_STUN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "BLUNT_BASIC_ATTACK",
+        "BLUNT_BASIC_ATTACK",
+        "BLUNT_BASIC_ATTACK",
+        "BLUNT_STUN_ATTACK",
+        "BLUNT_STUN_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BLUNT",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 31
+  },
+  "ARM_FRG_BASELINE_42_047": {
+    "Ammo": 0,
+    "Class": "SHIELD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "DEF": 13,
+        "LCK": -3,
+        "TAL": 3,
+        "THRN": 6,
+        "VIT": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "SHIELD_ARMOR_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "VIT"
+        },
+        "SHIELD_TAUNT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "SHIELD",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_BASELINE_42_065": {
+    "Ammo": 0,
+    "Class": "ARMOR_BODY",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_EAGER"
+      ],
+      "Slots": [
+        "ARMOR"
+      ],
+      "Stats": {
+        "DEF": 8,
+        "EVD": 2,
+        "HP": 5,
+        "SPD": 3,
+        "VIT": -3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "COMMON",
+      "ARMOR",
+      "ARMOR_BODY"
+    ],
+    "Value": 64
+  },
+  "ARM_FRG_BASELINE_42_087": {
+    "Ammo": 0,
+    "Class": "STAFF_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_NICEDAY"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 4,
+        "EVD": -8,
+        "INT": 1,
+        "LCK": 1
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_FIRE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        },
+        "MAGIC_FIRE_SPLASH_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "STAFF",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 5
+  },
+  "ARM_FRG_BASELINE_7_062": {
+    "Ammo": 0,
+    "Class": "ARMOR_BODY",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FINDTREASURE"
+      ],
+      "Slots": [
+        "ARMOR"
+      ],
+      "Stats": {
+        "DEF": 10,
+        "HP": 7,
+        "SPD": -5,
+        "VIT": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "COMMON",
+      "ARMOR",
+      "ARMOR_BODY"
+    ],
+    "Value": 64
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_001": {
+    "Ammo": 0,
+    "Class": "ORB_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 6,
+        "AWR": 3,
+        "DAM_BEAST": 11,
+        "FOC": 1,
+        "INT": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "ENEMY_CHANNEL_ATTACK_00": {
+          "ACC": 100,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "AWR"
+        },
+        "MAGIC_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "WHIP_ENTANGLE_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.45,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [
+        "WHIP_ENTANGLE_BLEED_ATTACK",
+        "ENEMY_CHANNEL_ATTACK_00",
+        "MAGIC_BASIC_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "ORB",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 42
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_002": {
+    "Ammo": 0,
+    "Class": "GUN",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 6,
+        "AWR": 3,
+        "CRT": 4,
+        "CRTD": 2,
+        "DAM_BEAST": 10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "GUN_BLAST_ATTACK": {
+          "ACC": 0,
+          "Ammo": 1,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_FIRE_ATTACK": {
+          "ACC": -10,
+          "Ammo": 1,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_INTERRUPT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 1,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_WHIP_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.2,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [
+        "GUN_BLAST_ATTACK",
+        "GUN_BLAST_ATTACK",
+        "GUN_INTERRUPT_ATTACK",
+        "GUN_FIRE_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "GUN",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 105
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_003": {
+    "Ammo": 0,
+    "Class": "BOW_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_VOIDWALK"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 72,
+        "AWR": 23,
+        "EVD": 7,
+        "INT": 15,
+        "MOV": 8,
+        "SPD": -8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BOW_AOE_MAGIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.6,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "BOW_ENTANGLE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BOW",
+      "WEAPON_TWO_HAND",
+      "MAGICAL"
+    ],
+    "Value": 88
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_011": {
+    "Ammo": 0,
+    "Class": "STAFF_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 12,
+        "DAM_UNDEAD": 37,
+        "EVD": 2,
+        "INT": 7,
+        "RES": 5,
+        "SPD": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_FIRE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        },
+        "MAGIC_FIRE_SPLASH_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "STAFF",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_014": {
+    "Ammo": 0,
+    "Class": "GUN",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_JUSTICE"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 23,
+        "CRT": 9,
+        "CRTD": 4,
+        "SPD": -8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "GUN_BLAST_ATTACK": {
+          "ACC": 0,
+          "Ammo": 1,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_FIRE_ATTACK": {
+          "ACC": -10,
+          "Ammo": 1,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_INTERRUPT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 1,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_WHIP_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.2,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [
+        "GUN_BLAST_ATTACK",
+        "GUN_BLAST_ATTACK",
+        "GUN_INTERRUPT_ATTACK",
+        "GUN_FIRE_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "GUN",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 97
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_015": {
+    "Ammo": 0,
+    "Class": "ORB_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 6,
+        "AWR": 3,
+        "DAM_BEAST": 9,
+        "INT": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "ENEMY_CHANNEL_ATTACK_00": {
+          "ACC": 100,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "AWR"
+        },
+        "MAGIC_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "WHIP_ENTANGLE_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.45,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [
+        "WHIP_ENTANGLE_BLEED_ATTACK",
+        "ENEMY_CHANNEL_ATTACK_00",
+        "MAGIC_BASIC_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "ORB",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 42
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_016": {
+    "Ammo": 0,
+    "Class": "POLEARM_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 10,
+        "CRT": 4,
+        "DAM_UNDEAD": 22,
+        "RES": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "POLEARM_LEFT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "POLEARM_PULL_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "POLEARM_PUSH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "POLEARM_RIGHT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "POLEARM",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_022": {
+    "Ammo": 0,
+    "Class": "BLADE_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_VOIDWALK"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 30,
+        "DEF": 6,
+        "EVD": 6,
+        "INT": 6,
+        "THRN": 6,
+        "VIT": -8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLADE_FIRE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "STR"
+        },
+        "BLADE_FIRE_HEAVY_ATTACK": {
+          "ACC": -20,
+          "Ammo": 0,
+          "MaxValue": 1.4,
+          "MinValue": 0,
+          "Rolls": 5,
+          "Stat": "STR"
+        },
+        "BLADE_FIRE_SPIN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.75,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "STR"
+        }
+      },
+      "AbilityBag": [
+        "BLADE_FIRE_ATTACK",
+        "BLADE_FIRE_ATTACK",
+        "BLADE_FIRE_HEAVY_ATTACK",
+        "BLADE_FIRE_SPIN_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BLADE",
+      "WEAPON_TWO_HAND",
+      "MAGICAL"
+    ],
+    "Value": 16
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_023": {
+    "Ammo": 0,
+    "Class": "BOW_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_STEADFAST"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 72,
+        "AWR": 33,
+        "DEF": 33,
+        "LCK": -15,
+        "MOV": 11,
+        "THRN": 22
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BOW_AOE_MAGIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.6,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "BOW_ENTANGLE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BOW",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_028": {
+    "Ammo": 0,
+    "Class": "ORB_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 4,
+        "AWR": 2,
+        "DAM_BEAST": 7,
+        "FOC": 1,
+        "INT": 2,
+        "LCK": 1
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "ENEMY_CHANNEL_ATTACK_00": {
+          "ACC": 100,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "AWR"
+        },
+        "MAGIC_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "WHIP_ENTANGLE_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.45,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [
+        "WHIP_ENTANGLE_BLEED_ATTACK",
+        "ENEMY_CHANNEL_ATTACK_00",
+        "MAGIC_BASIC_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "ORB",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 53
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_029": {
+    "Ammo": 0,
+    "Class": "KATANA",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 13,
+        "CRT": 9,
+        "DAM_UNDEAD": 33,
+        "RES": 4,
+        "SPD": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLADE_ARMORDOWN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.25,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "BLADE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "BLADE_SPIN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.75,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "KATANA",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_032": {
+    "Ammo": 0,
+    "Class": "BOW_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 18,
+        "AWR": 21,
+        "CRT": 9,
+        "DAM_BEAST": 30
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BOW_AOE_MAGIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.6,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "BOW_ENTANGLE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BOW",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 88
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_033": {
+    "Ammo": 0,
+    "Class": "ARMOR_HEAD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "HELMET"
+      ],
+      "Stats": {
+        "AWR": 6,
+        "DAM_BEAST": 27,
+        "FOC": 1,
+        "INT": 5,
+        "RES": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR",
+      "ARMOR_HEAD"
+    ],
+    "Value": 70
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_034": {
+    "Ammo": 0,
+    "Class": "ORB_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 3,
+        "AWR": 2,
+        "DAM_BEAST": 7,
+        "FOC": 1,
+        "INT": 2,
+        "LCK": 1
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "ENEMY_CHANNEL_ATTACK_00": {
+          "ACC": 100,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "AWR"
+        },
+        "MAGIC_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "WHIP_ENTANGLE_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.45,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [
+        "WHIP_ENTANGLE_BLEED_ATTACK",
+        "ENEMY_CHANNEL_ATTACK_00",
+        "MAGIC_BASIC_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "ORB",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 53
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_044": {
+    "Ammo": 0,
+    "Class": "BOW_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 72,
+        "AWR": 35,
+        "CRT": 20,
+        "HP": -10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BOW_AOE_MAGIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.6,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "BOW_ENTANGLE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BOW",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 16
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_047": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_JUSTICE"
+      ],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "CRT": 13,
+        "CRTD": 13,
+        "DAM_BEAST": 64,
+        "DAM_UNDEAD": 64
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "ARMOR"
+    ],
+    "Value": 170
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_048": {
+    "Ammo": 0,
+    "Class": "SHIELD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "DAM_UNDEAD": 6,
+        "DEF": 2,
+        "HP": 1,
+        "RES": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "SHIELD_ARMOR_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "VIT"
+        },
+        "SHIELD_TAUNT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "SHIELD",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 55
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_051": {
+    "Ammo": 0,
+    "Class": "BOW_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 20,
+        "AWR": 12,
+        "DAM_UNDEAD": 59,
+        "MOV": 4,
+        "RES": 8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BOW_AOE_MAGIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.6,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "BOW_ENTANGLE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BOW",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_056": {
+    "Ammo": 0,
+    "Class": "BLUNT_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 9,
+        "DAM_UNDEAD": 37,
+        "DEF": 5,
+        "RES": 3,
+        "VIT": -5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLUNT_GROUND_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 0.9,
+          "MinValue": 0,
+          "Rolls": 5,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "BLUNT_GROUND_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BLUNT",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 153
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_058": {
+    "Ammo": 0,
+    "Class": "ARMOR_BODY",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "ARMOR"
+      ],
+      "Stats": {
+        "DAM_UNDEAD": 47,
+        "DEF": 9,
+        "HP": 13,
+        "RES": 6,
+        "THRN": 6
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "ARMOR",
+      "ARMOR_BODY"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_062": {
+    "Ammo": 0,
+    "Class": "ORB_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 3,
+        "AWR": 2,
+        "DAM_BEAST": 11,
+        "INT": 2,
+        "VIT": -8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "ENEMY_CHANNEL_ATTACK_00": {
+          "ACC": 100,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "AWR"
+        },
+        "MAGIC_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "WHIP_ENTANGLE_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.45,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [
+        "WHIP_ENTANGLE_BLEED_ATTACK",
+        "ENEMY_CHANNEL_ATTACK_00",
+        "MAGIC_BASIC_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "ORB",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 53
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_064": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_GUARD"
+      ],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "DAM_BEAST": 31,
+        "DAM_UNDEAD": 31,
+        "DEF": 2,
+        "THRN": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR"
+    ],
+    "Value": 66
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_074": {
+    "Ammo": 0,
+    "Class": "STAFF_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 8,
+        "DAM_UNDEAD": 25,
+        "EVD": 2,
+        "INT": 5,
+        "RES": 3,
+        "SPD": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_FIRE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        },
+        "MAGIC_FIRE_SPLASH_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "STAFF",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_080": {
+    "Ammo": 0,
+    "Class": "STAFF_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 5,
+        "DAM_UNDEAD": 15,
+        "EVD": 1,
+        "INT": 3,
+        "RES": 2,
+        "SPD": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_FIRE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        },
+        "MAGIC_FIRE_SPLASH_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "STAFF",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 50
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_081": {
+    "Ammo": 0,
+    "Class": "POLEARM_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 8,
+        "CRT": 3,
+        "DAM_UNDEAD": 17,
+        "RES": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "POLEARM_LEFT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "POLEARM_PULL_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "POLEARM_PUSH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "POLEARM_RIGHT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "POLEARM",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_087": {
+    "Ammo": 0,
+    "Class": "STAFF_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 7,
+        "AWR": 3,
+        "DAM_BEAST": 10,
+        "FOC": 1,
+        "INT": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_FIRE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        },
+        "MAGIC_FIRE_SPLASH_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "STAFF",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 47
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_093": {
+    "Ammo": 0,
+    "Class": "KATANA",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 11,
+        "CRT": 7,
+        "DAM_UNDEAD": 27,
+        "RES": 4,
+        "SPD": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLADE_ARMORDOWN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.25,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "BLADE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "BLADE_SPIN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.75,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "KATANA",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_095": {
+    "Ammo": 0,
+    "Class": "GUN",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 7,
+        "CRT": 5,
+        "CRTD": 2,
+        "DAM_UNDEAD": 17,
+        "RES": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "GUN_BLAST_ATTACK": {
+          "ACC": 0,
+          "Ammo": 1,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_FIRE_ATTACK": {
+          "ACC": -10,
+          "Ammo": 1,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_INTERRUPT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 1,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_WHIP_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.2,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [
+        "GUN_BLAST_ATTACK",
+        "GUN_BLAST_ATTACK",
+        "GUN_INTERRUPT_ATTACK",
+        "GUN_FIRE_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "GUN",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_1337_098": {
+    "Ammo": 0,
+    "Class": "ORB_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 4,
+        "DAM_UNDEAD": 13,
+        "FOC": 1,
+        "INT": 3,
+        "RES": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "ENEMY_CHANNEL_ATTACK_00": {
+          "ACC": 100,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "AWR"
+        },
+        "MAGIC_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "WHIP_ENTANGLE_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.45,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [
+        "WHIP_ENTANGLE_BLEED_ATTACK",
+        "ENEMY_CHANNEL_ATTACK_00",
+        "MAGIC_BASIC_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "ORB",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 45
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_000": {
+    "Ammo": 0,
+    "Class": "GUN",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_JUSTICE"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 9,
+        "CRT": 21,
+        "CRTD": 8,
+        "EVD": -10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "GUN_BLAST_ATTACK": {
+          "ACC": 0,
+          "Ammo": 1,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_FIRE_ATTACK": {
+          "ACC": -10,
+          "Ammo": 1,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_INTERRUPT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 1,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_WHIP_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.2,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [
+        "GUN_BLAST_ATTACK",
+        "GUN_BLAST_ATTACK",
+        "GUN_INTERRUPT_ATTACK",
+        "GUN_FIRE_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "GUN",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 15
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_016": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "DAM_BEAST": 44,
+        "DAM_UNDEAD": 88,
+        "RES": 6
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "ARMOR"
+    ],
+    "Value": 199
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_037": {
+    "Ammo": 0,
+    "Class": "KATANA",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 13,
+        "AWR": 7,
+        "CRT": 9,
+        "DAM_BEAST": 22,
+        "SPD": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLADE_ARMORDOWN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.25,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "BLADE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "BLADE_SPIN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.75,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "KATANA",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 16
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_043": {
+    "Ammo": 0,
+    "Class": "AXE_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 7,
+        "AWR": 3,
+        "DAM_BEAST": 17,
+        "EVD": -10,
+        "SPD": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "AXE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 4,
+          "Stat": "STR"
+        },
+        "AXE_BLEED_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "STR"
+        },
+        "GOBLIN_AXE_HEAVY_ATTACK": {
+          "ACC": -20,
+          "Ammo": 0,
+          "MaxValue": 1.5,
+          "MinValue": 0,
+          "Rolls": 5,
+          "Stat": "STR"
+        }
+      },
+      "AbilityBag": [
+        "AXE_BASIC_ATTACK",
+        "AXE_BLEED_ATTACK",
+        "GOBLIN_AXE_HEAVY_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "AXE",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 16
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_047": {
+    "Ammo": 0,
+    "Class": "ARMOR_BODY",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "ARMOR"
+      ],
+      "Stats": {
+        "AWR": 7,
+        "DAM_BEAST": 55,
+        "DEF": 9,
+        "HP": 12,
+        "THRN": 6,
+        "VIT": -8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR",
+      "ARMOR_BODY"
+    ],
+    "Value": 100
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_053": {
+    "Ammo": 0,
+    "Class": "STAFF_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 8,
+        "DAM_UNDEAD": 28,
+        "FOC": 1,
+        "INT": 5,
+        "RES": 2,
+        "VIT": -8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_FIRE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        },
+        "MAGIC_FIRE_SPLASH_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "STAFF",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 50
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_057": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_VOIDWALK"
+      ],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "CRT": 7,
+        "DAM_BOSS": 103,
+        "EVD": 7,
+        "INT": 3,
+        "LCK": -15
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "ARMOR",
+      "MAGICAL"
+    ],
+    "Value": 185
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_058": {
+    "Ammo": 0,
+    "Class": "KATANA",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 15,
+        "DAM_UNDEAD": 37,
+        "EVD": 5,
+        "RES": 5,
+        "TAL": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLADE_ARMORDOWN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.25,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "BLADE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "BLADE_SPIN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.75,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "KATANA",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_062": {
+    "Ammo": 0,
+    "Class": "AXE_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 8,
+        "CRTD": 2,
+        "DAM_UNDEAD": 14,
+        "RES": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "AXE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 4,
+          "Stat": "STR"
+        },
+        "AXE_BLEED_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "STR"
+        },
+        "GOBLIN_AXE_HEAVY_ATTACK": {
+          "ACC": -20,
+          "Ammo": 0,
+          "MaxValue": 1.5,
+          "MinValue": 0,
+          "Rolls": 5,
+          "Stat": "STR"
+        }
+      },
+      "AbilityBag": [
+        "AXE_BASIC_ATTACK",
+        "AXE_BLEED_ATTACK",
+        "GOBLIN_AXE_HEAVY_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "AXE",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_080": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "CRT": 8,
+        "DAM_BOSS": 77,
+        "DAM_UNDEAD": 58,
+        "RES": 8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "ARMOR"
+    ],
+    "Value": 199
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_082": {
+    "Ammo": 0,
+    "Class": "ARMOR_HEAD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "HELMET"
+      ],
+      "Stats": {
+        "AWR": 6,
+        "DAM_BEAST": 33,
+        "FOC": 1,
+        "INT": 5,
+        "RES": 7
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR",
+      "ARMOR_HEAD"
+    ],
+    "Value": 70
+  },
+  "ARM_FRG_CHAOTIC_EPICS_42_093": {
+    "Ammo": 0,
+    "Class": "AXE_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 7,
+        "AWR": 3,
+        "DAM_BEAST": 17,
+        "HP": -10,
+        "SPD": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "AXE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 4,
+          "Stat": "STR"
+        },
+        "AXE_BLEED_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "STR"
+        },
+        "GOBLIN_AXE_HEAVY_ATTACK": {
+          "ACC": -20,
+          "Ammo": 0,
+          "MaxValue": 1.5,
+          "MinValue": 0,
+          "Rolls": 5,
+          "Stat": "STR"
+        }
+      },
+      "AbilityBag": [
+        "AXE_BASIC_ATTACK",
+        "AXE_BLEED_ATTACK",
+        "GOBLIN_AXE_HEAVY_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "AXE",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 16
+  },
+  "ARM_FRG_CHAOTIC_EPICS_7_004": {
+    "Ammo": 0,
+    "Class": "BLUNT_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 13,
+        "DAM_UNDEAD": 40,
+        "HP": -10,
+        "RES": 3,
+        "STR": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLUNT_GROUND_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 0.9,
+          "MinValue": 0,
+          "Rolls": 5,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "BLUNT_GROUND_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BLUNT",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 153
+  },
+  "ARM_FRG_CHAOTIC_EPICS_7_030": {
+    "Ammo": 0,
+    "Class": "BOW_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 13,
+        "AWR": 9,
+        "CRT": 6,
+        "DAM_UNDEAD": 53,
+        "EVD": -10,
+        "RES": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BOW_AOE_MAGIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.6,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "BOW_ENTANGLE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BOW",
+      "WEAPON_TWO_HAND"
+    ],
+    "Value": 95
+  },
+  "ARM_FRG_CHAOTIC_EPICS_7_064": {
+    "Ammo": 0,
+    "Class": "GUN",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 9,
+        "CRT": 6,
+        "CRTD": 3,
+        "DAM_UNDEAD": 35,
+        "HP": -10,
+        "RES": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "GUN_BLAST_ATTACK": {
+          "ACC": 0,
+          "Ammo": 1,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_FIRE_ATTACK": {
+          "ACC": -10,
+          "Ammo": 1,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_INTERRUPT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 1,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "GUN_WHIP_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.2,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [
+        "GUN_BLAST_ATTACK",
+        "GUN_BLAST_ATTACK",
+        "GUN_INTERRUPT_ATTACK",
+        "GUN_FIRE_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "GUN",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 18
+  },
+  "ARM_FRG_CHAOTIC_EPICS_7_066": {
+    "Ammo": 0,
+    "Class": "ARMOR_BODY",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "ARMOR"
+      ],
+      "Stats": {
+        "AWR": 7,
+        "DAM_BEAST": 44,
+        "EVD": -2,
+        "RES": 5,
+        "SPD": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "ARMOR",
+      "ARMOR_BODY"
+    ],
+    "Value": 16
+  },
+  "ARM_FRG_CHAOTIC_EPICS_7_074": {
+    "Ammo": 0,
+    "Class": "ARMOR_BODY",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "ARMOR"
+      ],
+      "Stats": {
+        "AWR": 7,
+        "DAM_BEAST": 58,
+        "DEF": 10,
+        "EVD": -10,
+        "HP": 13,
+        "THRN": 7
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR",
+      "ARMOR_BODY"
+    ],
+    "Value": 100
+  },
+  "ARM_FRG_CHAOTIC_EPICS_7_079": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "AWR": 3,
+        "CRT": 19,
+        "CRTD": 14,
+        "DAM_BEAST": 81,
+        "EVD": -10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "ARTIFACT",
+      "ARMOR"
+    ],
+    "Value": 185
+  },
+  "ARM_FRG_CURSED_BARGAINS_1337_007": {
+    "Ammo": 0,
+    "Class": "BLADE",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_IRONBELLY"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 40,
+        "CRT": 11,
+        "DEF": 7,
+        "LCK": -15,
+        "THRN": 7
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLADE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "STR"
+        },
+        "BLADE_PIERCE_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "STR"
+        }
+      },
+      "AbilityBag": [
+        "BLADE_BASIC_ATTACK",
+        "BLADE_BASIC_ATTACK",
+        "BLADE_BASIC_ATTACK",
+        "BLADE_PIERCE_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNCOMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "BLADE",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 66
+  },
+  "ARM_FRG_CURSED_BARGAINS_1337_010": {
+    "Ammo": 0,
+    "Class": "WAND",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_MEND"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 15,
+        "DEF": 3,
+        "FOC": 1,
+        "INT": 5,
+        "SPD": -8,
+        "THRN": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_PULL_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_STUN_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "INT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_STUN_ATTACK",
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNCOMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WAND",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 70
+  },
+  "ARM_FRG_CURSED_BARGAINS_1337_019": {
+    "Ammo": 0,
+    "Class": "WAND",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_MEND"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 14,
+        "CRT": 3,
+        "DEF": 3,
+        "INT": 5,
+        "THRN": 3,
+        "VIT": -10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_PULL_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_STUN_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "INT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_STUN_ATTACK",
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNCOMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WAND",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 70
+  },
+  "ARM_FRG_CURSED_BARGAINS_1337_023": {
+    "Ammo": 0,
+    "Class": "DAGGER",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 11,
+        "CRT": 6,
+        "EVD": -12,
+        "LCK": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "KNIFE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "SPD"
+        },
+        "KNIFE_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "SPD"
+        }
+      },
+      "AbilityBag": [
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BLEED_ATTACK",
+        "KNIFE_BLEED_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNCOMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "DAGGER",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 34
+  },
+  "ARM_FRG_CURSED_BARGAINS_1337_039": {
+    "Ammo": 0,
+    "Class": "SHIELD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "DEF": 13,
+        "HP": 5,
+        "THRN": 6,
+        "VIT": -10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "SHIELD_ARMOR_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "VIT"
+        },
+        "SHIELD_TAUNT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNCOMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "SHIELD",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 49
+  },
+  "ARM_FRG_CURSED_BARGAINS_1337_057": {
+    "Ammo": 0,
+    "Class": "WAND",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 14,
+        "CRT": 3,
+        "INT": 5,
+        "VIT": -10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_PULL_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_STUN_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "INT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_STUN_ATTACK",
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNCOMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WAND",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 62
+  },
+  "ARM_FRG_CURSED_BARGAINS_1337_063": {
+    "Ammo": 0,
+    "Class": "DAGGER",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_IRONBELLY"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 12,
+        "CRT": 5,
+        "LCK": 5,
+        "SPD": -8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "KNIFE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "SPD"
+        },
+        "KNIFE_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "SPD"
+        }
+      },
+      "AbilityBag": [
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BLEED_ATTACK",
+        "KNIFE_BLEED_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNCOMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "DAGGER",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 39
+  },
+  "ARM_FRG_CURSED_BARGAINS_1337_070": {
+    "Ammo": 0,
+    "Class": "DAGGER",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_MEND"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 15,
+        "CRT": 5,
+        "DEF": 4,
+        "LCK": -10,
+        "THRN": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "KNIFE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "SPD"
+        },
+        "KNIFE_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "SPD"
+        }
+      },
+      "AbilityBag": [
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BLEED_ATTACK",
+        "KNIFE_BLEED_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNCOMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "DAGGER",
+      "WEAPON_ONE_HAND"
+    ],
+    "Value": 39
+  }
+}

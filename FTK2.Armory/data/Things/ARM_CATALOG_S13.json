@@ -1,0 +1,817 @@
+{
+  "ARM_BRAMBLE_AEGIS": {
+    "Ammo": 0,
+    "Class": "SHIELD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_STEADFAST"
+      ],
+      "Slots": [
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "DEF": 6,
+        "PDEF": 2,
+        "THRN": 5,
+        "VIT": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "SHIELD_ARMOR_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "VIT"
+        },
+        "SHIELD_TAUNT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "WOOD",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "TAUNT",
+      "ARTIFACT",
+      "HAND_EQUIP",
+      "PHYSICAL",
+      "SHIELD",
+      "MEDIUM",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "ARM_SET_BRAMBLELORD"
+    ],
+    "Value": 160
+  },
+  "ARM_BRAMBLE_CUIRASS": {
+    "Ammo": 0,
+    "Class": "ARMOR_BODY",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Passives": [
+        "STATUS_IMMUNITY_ENTANGLE"
+      ],
+      "Slots": [
+        "ARMOR"
+      ],
+      "Stats": {
+        "DEF": 5,
+        "THRN": 4,
+        "VIT": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "LEATHER",
+    "MaxTier": 2,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "UNCOMMON",
+      "ARMOR",
+      "ARMOR_BODY",
+      "MEDIUM",
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "PHYSICAL",
+      "ARM_SET_BRAMBLELORD"
+    ],
+    "Value": 120
+  },
+  "ARM_BRAMBLE_HEART": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "DEF": 2,
+        "HRG": 3,
+        "THRN": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "RARE",
+      "TRINKET",
+      "MAGIC",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "ARM_SET_BRAMBLELORD"
+    ],
+    "Value": 101
+  },
+  "ARM_BRAMBLE_HELM": {
+    "Ammo": 0,
+    "Class": "ARMOR_HEAD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Passives": [
+        "SKILL_GUARD"
+      ],
+      "Slots": [
+        "HELMET"
+      ],
+      "Stats": {
+        "DEF": 4,
+        "RES": 3,
+        "THRN": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "WOOD",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "RARE",
+      "ARMOR",
+      "ARMOR_HEAD",
+      "MEDIUM",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "PHYSICAL",
+      "ARM_SET_BRAMBLELORD"
+    ],
+    "Value": 110
+  },
+  "ARM_BRAMBLE_MACE": {
+    "Ammo": 0,
+    "Class": "BLUNT",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 13,
+        "THRN": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLUNT_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 4,
+          "Stat": "VIT"
+        },
+        "BLUNT_STUN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "BLUNT_BASIC_ATTACK",
+        "BLUNT_BASIC_ATTACK",
+        "BLUNT_BASIC_ATTACK",
+        "BLUNT_STUN_ATTACK",
+        "BLUNT_STUN_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "WOOD",
+    "MaxTier": 2,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "DAZE",
+      "PHYSICAL",
+      "STUN",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "BLUNT",
+      "MELEE",
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "MEDIUM",
+      "ARM_SET_BRAMBLELORD"
+    ],
+    "Value": 40
+  },
+  "ARM_GRAVE_BOOTS": {
+    "Ammo": 0,
+    "Class": "ARMOR_FEET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Passives": [
+        "SKILL_NICEDAY"
+      ],
+      "Slots": [
+        "BOOTS"
+      ],
+      "Stats": {
+        "LCK": 5,
+        "MOV": 1,
+        "SPD": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "LEATHER",
+    "MaxTier": 2,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "UNCOMMON",
+      "ARMOR",
+      "ARMOR_FEET",
+      "LIGHT",
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "PHYSICAL",
+      "ARM_SET_GRAVEDIGGER"
+    ],
+    "Value": 95
+  },
+  "ARM_GRAVE_CHARM": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Passives": [
+        "SKILL_FINDTREASURE"
+      ],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "FIND": 1,
+        "LCK": 20
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "RARE",
+      "TRINKET",
+      "MAGIC",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "ARM_SET_GRAVEDIGGER"
+    ],
+    "Value": 155
+  },
+  "ARM_GRAVE_CROWN": {
+    "Ammo": 0,
+    "Class": "ARMOR_HEAD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "HELMET"
+      ],
+      "Stats": {
+        "AWR": 5,
+        "GLD": 15,
+        "LCK": 10,
+        "PLCK": 10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "METAL",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "ARTIFACT",
+      "ARMOR",
+      "ARMOR_HEAD",
+      "LIGHT",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "ARM_SET_GRAVEDIGGER"
+    ],
+    "Value": 290
+  },
+  "ARM_GRAVE_SPADE": {
+    "Ammo": 0,
+    "Class": "BLUNT_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_HEAVYHANDED"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 28,
+        "CRT": 15,
+        "LCK": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLUNT_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 4,
+          "Stat": "VIT"
+        },
+        "BLUNT_GROUND_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 0.9,
+          "MinValue": 0,
+          "Rolls": 5,
+          "Stat": "VIT"
+        },
+        "BLUNT_STUN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "BLUNT_GROUND_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "WOOD",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DAZE",
+      "PHYSICAL",
+      "STUN",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_TWO_HAND",
+      "BLUNT",
+      "MELEE",
+      "MAKESHIFT",
+      "DROPPABLE",
+      "DUNGEON_MARKET",
+      "NIGHT_MARKET",
+      "HEAVY",
+      "ARM_SET_GRAVEDIGGER"
+    ],
+    "Value": 150
+  },
+  "ARM_GRAVE_TOKEN": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Passives": [
+        "SKILL_FINDSTUFF"
+      ],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "GLD": 5,
+        "LCK": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "METAL",
+    "MaxTier": 1,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "COMMON",
+      "TRINKET",
+      "MAGIC",
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "ARM_SET_GRAVEDIGGER"
+    ],
+    "Value": 25
+  },
+  "ARM_TIDE_CIRCLET": {
+    "Ammo": 0,
+    "Class": "ARMOR_HEAD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Passives": [
+        "SKILL_REFOCUS"
+      ],
+      "Slots": [
+        "HELMET"
+      ],
+      "Stats": {
+        "FOC": 2,
+        "INT": 2,
+        "RES": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "CLOTH",
+    "MaxTier": 2,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "UNCOMMON",
+      "ARMOR",
+      "ARMOR_HEAD",
+      "MAGIC",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "MAGICAL",
+      "ARM_SET_TIDEBINDER"
+    ],
+    "Value": 60
+  },
+  "ARM_TIDE_ORB": {
+    "Ammo": 0,
+    "Class": "ORB_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_DISCIPLINE",
+        "STATUS_IMMUNITY_WATER"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 18,
+        "FIND": 1,
+        "FOC": 1
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "ENEMY_CHANNEL_ATTACK_00": {
+          "ACC": 100,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "AWR"
+        },
+        "IMBUE_ORB_WATER_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "AWR"
+        },
+        "MAGIC_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "MAGIC_FOCUS_ADD_ATTACK_00": {
+          "ACC": -10,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "AWR"
+        },
+        "MAGIC_WATER_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "WHIP_ENTANGLE_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.45,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [
+        "WHIP_ENTANGLE_BLEED_ATTACK",
+        "ENEMY_CHANNEL_ATTACK_00",
+        "MAGIC_BASIC_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "WATER",
+      "MAGICAL",
+      "IMBUE_WATER",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "ELEMENTAL",
+      "WEAPON_TWO_HAND",
+      "ORB",
+      "RANGED",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "LIGHT",
+      "ARM_SET_TIDEBINDER"
+    ],
+    "Value": 285
+  },
+  "ARM_TIDE_PEARL": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "CRT": 10,
+        "FOC": 2,
+        "HRG": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "RARE",
+      "TRINKET",
+      "MAGIC",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "MAGICAL",
+      "ARM_SET_TIDEBINDER"
+    ],
+    "Value": 150
+  },
+  "ARM_TIDE_STAFF": {
+    "Ammo": 0,
+    "Class": "STAFF_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_HARDWORK"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 26,
+        "EVD": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_FIRE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "INT"
+        },
+        "MAGIC_FIRE_SPLASH_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "INT"
+        },
+        "MAGIC_WATER_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "INT"
+        },
+        "MAGIC_WATER_SPLASH_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "INT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_ATTACK",
+        "MAGIC_FIRE_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "WOOD",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "MAGICAL",
+      "WATER",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "ELEMENTAL",
+      "WEAPON_TWO_HAND",
+      "STAFF",
+      "RANGED",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "HEAVY",
+      "ARM_SET_TIDEBINDER"
+    ],
+    "Value": 145
+  },
+  "ARM_TIDE_WAND": {
+    "Ammo": 0,
+    "Class": "WAND",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_SUPPORTRANGE"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 7,
+        "FOC": 1
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_PULL_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_STUN_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "INT"
+        },
+        "WAND_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 2,
+          "Stat": "INT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_STUN_ATTACK",
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "WOOD",
+    "MaxTier": 1,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "MAGICAL",
+      "DAZE",
+      "STUN",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "WAND",
+      "RANGED",
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "LIGHT",
+      "ARM_SET_TIDEBINDER"
+    ],
+    "Value": 18
+  }
+}

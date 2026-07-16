@@ -1,0 +1,678 @@
+{
+  "ARM_UNIQ_ACTUARYS_QUILL": {
+    "Ammo": 0,
+    "Class": "WAND",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 20,
+        "FOC": 1,
+        "INT": 50
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_PULL_ATTACK": {
+          "ACC": 5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.85,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_STUN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.85,
+          "Rolls": 2,
+          "Stat": "INT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_STUN_ATTACK",
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "MAGICAL",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "WAND",
+      "RANGED",
+      "LIGHT",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 350
+  },
+  "ARM_UNIQ_CHARGERS_CREST": {
+    "Ammo": 0,
+    "Class": "ARMOR_HEAD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Passives": [
+        "SKILL_CHARGEATTACK"
+      ],
+      "Slots": [
+        "HELMET"
+      ],
+      "Stats": {
+        "DEF": 2,
+        "FOC": 1,
+        "HP": 10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "ARTIFACT",
+      "ARMOR",
+      "ARMOR_HEAD",
+      "HEAVY",
+      "PHYSICAL",
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 280
+  },
+  "ARM_UNIQ_COURT_COMPOSER": {
+    "Ammo": 0,
+    "Class": "LUTE_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_ENCOURAGE",
+        "SKILL_INSPIRE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 21,
+        "TAL": 15,
+        "XPM": 10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MUSIC_ATTACKUP_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "MUSIC_DARK_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 2,
+          "Stat": "TAL"
+        },
+        "MUSIC_DEFENSEUP_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "MUSIC_PROTECT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [
+        "MUSIC_DARK_ATTACK",
+        "MUSIC_DARK_ATTACK",
+        "MUSIC_DARK_ATTACK",
+        "MUSIC_ATTACKUP_SPLASH_ATTACK",
+        "MUSIC_DEFENSEUP_SPLASH_ATTACK",
+        "MUSIC_PROTECT_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "MAGICAL",
+      "BUFF",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_TWO_HAND",
+      "LUTE",
+      "RANGED",
+      "MEDIUM",
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 450
+  },
+  "ARM_UNIQ_DAWN_TITHE": {
+    "Ammo": 0,
+    "Class": "ARMOR_BODY",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Slots": [
+        "ARMOR"
+      ],
+      "Stats": {
+        "DEF": 8,
+        "HRG": 6,
+        "VIT": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "ARTIFACT",
+      "ARMOR",
+      "ARMOR_BODY",
+      "MEDIUM",
+      "MAGIC",
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 320
+  },
+  "ARM_UNIQ_GLASS_APPETITE": {
+    "Ammo": 0,
+    "Class": "KATANA",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_HEAVYHANDED",
+        "SKILL_MEND"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 30,
+        "CRT": 20,
+        "CRTD": 30
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLADE_ARMORDOWN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.25,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "BLADE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 3,
+          "Stat": "TAL"
+        },
+        "BLADE_HEAVY_ATTACK": {
+          "ACC": -20,
+          "Ammo": 0,
+          "MaxValue": 1.5,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "TAL"
+        },
+        "BLADE_SPIN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.75,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "PHYSICAL",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_TWO_HAND",
+      "KATANA",
+      "MELEE",
+      "BLADE",
+      "LIGHT",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 480
+  },
+  "ARM_UNIQ_KINGSBANE": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "CRT": 15,
+        "DAM_BOSS": 25
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "ARTIFACT",
+      "TRINKET",
+      "MAGIC",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 284
+  },
+  "ARM_UNIQ_LAST_ARGUMENT": {
+    "Ammo": 0,
+    "Class": "BLUNT_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_JUSTICE"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 62,
+        "SPD": -40
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLUNT_GROUND_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 0.9,
+          "MinValue": 0,
+          "Rolls": 5,
+          "Stat": "VIT"
+        },
+        "BLUNT_HEAVY_ATTACK": {
+          "ACC": -20,
+          "Ammo": 0,
+          "MaxValue": 1.5,
+          "MinValue": 0,
+          "Rolls": 5,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [
+        "BLUNT_GROUND_ATTACK",
+        "BLUNT_GROUND_ATTACK",
+        "BLUNT_HEAVY_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "PHYSICAL",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_TWO_HAND",
+      "BLUNT",
+      "MELEE",
+      "MASSIVE",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 580
+  },
+  "ARM_UNIQ_MENTORS_JOURNAL": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "TAL": 3,
+        "XPM": 15
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "ARTIFACT",
+      "TRINKET",
+      "MAGIC",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 260
+  },
+  "ARM_UNIQ_METRONOME": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "FOC": 2,
+        "SKL": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "RARE",
+      "TRINKET",
+      "MAGIC",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 190
+  },
+  "ARM_UNIQ_MIRRORWALL": {
+    "Ammo": 0,
+    "Class": "SHIELD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_PARRY"
+      ],
+      "Slots": [
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "DEF": 5,
+        "THRN": 7
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "SHIELD_ARMOR_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "VIT"
+        },
+        "SHIELD_TAUNT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "PHYSICAL",
+      "TAUNT",
+      "ARTIFACT",
+      "HAND_EQUIP",
+      "SHIELD",
+      "HEAVY",
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 300
+  },
+  "ARM_UNIQ_PILGRIMS_SOLES": {
+    "Ammo": 0,
+    "Class": "ARMOR_FEET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Passives": [
+        "SKILL_LONGHAUL",
+        "SKILL_STEADYSTRIDE"
+      ],
+      "Slots": [
+        "BOOTS"
+      ],
+      "Stats": {
+        "MOV": 2,
+        "SPD": 8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "ARTIFACT",
+      "ARMOR",
+      "ARMOR_FEET",
+      "LIGHT",
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 240
+  },
+  "ARM_UNIQ_SECOND_OPINION": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Passives": [
+        "SKILL_FORTUNE"
+      ],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "LCK": 20,
+        "SKL": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "RARE",
+      "TRINKET",
+      "MAGIC",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 220
+  },
+  "ARM_UNIQ_UNARMED_PALE_KNUCKLES": {
+    "Ammo": 0,
+    "Class": "UNARMED",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 8,
+        "VIT": 10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "UNARMED_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 2,
+          "Stat": "VIT"
+        },
+        "UNARMED_KICK_ATTACK": {
+          "ACC": -10,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "VIT"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "PHYSICAL",
+      "MELEE",
+      "ARTIFACT",
+      "WEAPON",
+      "HAND_EQUIP",
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "UNIQUE"
+    ],
+    "Value": 260
+  }
+}

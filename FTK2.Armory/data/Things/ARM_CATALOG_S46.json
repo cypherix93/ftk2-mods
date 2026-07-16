@@ -1,0 +1,753 @@
+{
+  "ARM_ASHEN_CINDERROD": {
+    "Ammo": 0,
+    "Class": "WAND",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 20,
+        "FOC": 1,
+        "LCK": -8
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_PULL_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "MAGIC_STUN_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "INT"
+        },
+        "WAND_FIRE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 2,
+          "Stat": "INT"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_PULL_ATTACK",
+        "MAGIC_STUN_ATTACK",
+        "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "WOOD",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "MAGICAL",
+      "FIRE",
+      "ELEMENTAL",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "WAND",
+      "RANGED",
+      "LIGHT"
+    ],
+    "Value": 160
+  },
+  "ARM_ASHEN_COVENANT_CHALICE": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "CRT": 20,
+        "DAM_FIRE": 25,
+        "PA": 1,
+        "VIT": -5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "ARTIFACT",
+      "TRINKET",
+      "MAGIC",
+      "FIRE"
+    ],
+    "Value": 270
+  },
+  "ARM_ASHEN_DEBTORS_NOOSE": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "HRG": 5,
+        "LCK": -10,
+        "THRN": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "TRINKET",
+      "MAGIC"
+    ],
+    "Value": 120
+  },
+  "ARM_ASHEN_OATHBRAND": {
+    "Ammo": 0,
+    "Class": "BLADE_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_HEAVYHANDED"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 34,
+        "EVD": -6
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BLADE_FIRE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "STR"
+        },
+        "BLADE_FIRE_HEAVY_ATTACK": {
+          "ACC": -20,
+          "Ammo": 0,
+          "MaxValue": 1.4,
+          "MinValue": 0,
+          "Rolls": 5,
+          "Stat": "STR"
+        },
+        "BLADE_FIRE_SPIN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.75,
+          "MinValue": 0,
+          "Rolls": 4,
+          "Stat": "STR"
+        }
+      },
+      "AbilityBag": [
+        "BLADE_FIRE_ATTACK",
+        "BLADE_FIRE_ATTACK",
+        "BLADE_FIRE_HEAVY_ATTACK",
+        "BLADE_FIRE_SPIN_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "METAL",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "PHYSICAL",
+      "FIRE",
+      "ELEMENTAL",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_TWO_HAND",
+      "BLADE",
+      "MELEE",
+      "HEAVY"
+    ],
+    "Value": 330
+  },
+  "ARM_ASHEN_PENITENT_PLATE": {
+    "Ammo": 0,
+    "Class": "ARMOR_BODY",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [],
+      "Slots": [
+        "ARMOR"
+      ],
+      "Stats": {
+        "DEF": 10,
+        "HP": -8,
+        "RES": 9,
+        "SPD": -4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "METAL",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR",
+      "ARMOR_BODY",
+      "HEAVY",
+      "PHYSICAL"
+    ],
+    "Value": 340
+  },
+  "ARM_REDSEASON_CULLERS_BOW": {
+    "Ammo": 0,
+    "Class": "BOW_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_CALLEDSHOT"
+      ],
+      "Slots": [
+        "MAIN_HAND",
+        "OFF_HAND"
+      ],
+      "Stats": {
+        "ATK": 27,
+        "CRT": 12,
+        "DAM_BEAST": 20
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BOW_AOE_MAGIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.6,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "BOW_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 4,
+          "Stat": "AWR"
+        },
+        "BOW_BLEED_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "BOW_ENTANGLE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "WOOD",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "PHYSICAL",
+      "BLEED",
+      "RARE",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_TWO_HAND",
+      "BOW",
+      "RANGED",
+      "MEDIUM"
+    ],
+    "Value": 165
+  },
+  "ARM_REDSEASON_FANG_OF_THE_CULL": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "AWR": 3,
+        "CRT": 20,
+        "DAM_BEAST": 25
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "ARTIFACT",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "ARTIFACT",
+      "TRINKET",
+      "MAGIC",
+      "PHYSICAL"
+    ],
+    "Value": 260
+  },
+  "ARM_REDSEASON_FLENSING_GLOVES": {
+    "Ammo": 0,
+    "Class": "ARMOR_HANDS",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [],
+      "Slots": [
+        "GLOVES"
+      ],
+      "Stats": {
+        "CRT": 15,
+        "CRTD": 15,
+        "EVD": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "LEATHER",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR",
+      "ARMOR_HANDS",
+      "LIGHT",
+      "PHYSICAL"
+    ],
+    "Value": 150
+  },
+  "ARM_REDSEASON_SKINNERS_KNIFE": {
+    "Ammo": 0,
+    "Class": "DAGGER",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 13,
+        "CRT": 10,
+        "SPD": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "KNIFE_BASIC_ATTACK": {
+          "ACC": 5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "SPD"
+        },
+        "KNIFE_BLEED_ATTACK": {
+          "ACC": 5,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "SPD"
+        }
+      },
+      "AbilityBag": [
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BASIC_ATTACK",
+        "KNIFE_BLEED_ATTACK",
+        "KNIFE_BLEED_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "METAL",
+    "MaxTier": 2,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "PHYSICAL",
+      "BLEED",
+      "UNCOMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "DAGGER",
+      "MELEE",
+      "BLADE",
+      "TINY"
+    ],
+    "Value": 55
+  },
+  "ARM_REDSEASON_STALKERS_HOOD": {
+    "Ammo": 0,
+    "Class": "ARMOR_HEAD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [],
+      "Slots": [
+        "HELMET"
+      ],
+      "Stats": {
+        "AWR": 4,
+        "CRT": 10,
+        "EVD": 6,
+        "FOC": 1
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "CLOTH",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR",
+      "ARMOR_HEAD",
+      "LIGHT",
+      "PHYSICAL"
+    ],
+    "Value": 130
+  },
+  "ARM_WAYWATCH_DAWNFINDER": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_SAFECABIN"
+      ],
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "LCK": 10,
+        "MOV": 1,
+        "XPM": 10
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "NIGHT_MARKET",
+      "RARE",
+      "TRINKET",
+      "MAGIC"
+    ],
+    "Value": 140
+  },
+  "ARM_WAYWATCH_FARSEER_COWL": {
+    "Ammo": 0,
+    "Class": "ARMOR_HEAD",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_NAVIGATOR"
+      ],
+      "Slots": [
+        "HELMET"
+      ],
+      "Stats": {
+        "AWR": 4,
+        "FIND": 1,
+        "LCK": 12
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "CLOTH",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR",
+      "ARMOR_HEAD",
+      "LIGHT",
+      "PHYSICAL"
+    ],
+    "Value": 125
+  },
+  "ARM_WAYWATCH_GREENMANTLE": {
+    "Ammo": 0,
+    "Class": "ARMOR_BODY",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_SCOUT"
+      ],
+      "Slots": [
+        "ARMOR"
+      ],
+      "Stats": {
+        "AWR": 5,
+        "EVD": 8,
+        "HP": -5,
+        "RES": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "CLOTH",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR",
+      "ARMOR_BODY",
+      "LIGHT",
+      "PHYSICAL"
+    ],
+    "Value": 290
+  },
+  "ARM_WAYWATCH_MIREWALKERS": {
+    "Ammo": 0,
+    "Class": "ARMOR_FEET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_STEADYSTRIDE"
+      ],
+      "Slots": [
+        "BOOTS"
+      ],
+      "Stats": {
+        "EVD": 4,
+        "MOV": 1,
+        "SPD": 4
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "LEATHER",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "NIGHT_MARKET",
+      "DUNGEON_MARKET",
+      "RARE",
+      "ARMOR",
+      "ARMOR_FEET",
+      "LIGHT",
+      "PHYSICAL"
+    ],
+    "Value": 115
+  },
+  "ARM_WAYWATCH_TRAILPIKE": {
+    "Ammo": 0,
+    "Class": "SPEAR",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Passives": [
+        "SKILL_ELITEAMBUSH",
+        "SKILL_ELITESNEAK"
+      ],
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 15,
+        "CRT": 6,
+        "DEF": 3
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MELEE_PIERCE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "POLEARM_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0.5,
+          "Rolls": 2,
+          "Stat": "AWR"
+        },
+        "POLEARM_SWIPE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.75,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "AWR"
+        }
+      },
+      "AbilityBag": [
+        "POLEARM_BASIC_ATTACK",
+        "POLEARM_BASIC_ATTACK",
+        "MELEE_PIERCE_ATTACK",
+        "MELEE_PIERCE_ATTACK",
+        "POLEARM_SWIPE_ATTACK",
+        "POLEARM_SWIPE_ATTACK"
+      ],
+      "ShuffleAbilityBag": true
+    },
+    "Material": "WOOD",
+    "MaxTier": 2,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "DROPPABLE",
+      "TOWN_MARKET",
+      "DUNGEON_MARKET",
+      "PHYSICAL",
+      "UNCOMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "SPEAR",
+      "MELEE",
+      "POLEARM",
+      "LIGHT"
+    ],
+    "Value": 85
+  }
+}
