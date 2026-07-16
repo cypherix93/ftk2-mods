@@ -1,0 +1,89 @@
+{
+  "_comment": "High-variance late-game profile: RARE/ARTIFACT only, tier 2-3, big budget swings, strong synergy clustering. Demonstrates the wild end of the knob space.",
+  "Name": "chaotic_epics",
+  "TierRange": [2, 3],
+  "Rarities": {"RARE": 55, "ARTIFACT": 45},
+  "Classes": {
+    "BLADE_2H": 6, "AXE_2H": 6, "BLUNT_2H": 6, "POLEARM_2H": 5, "KATANA": 4,
+    "BOW_2H": 6, "STAFF_2H": 6, "ORB_2H": 4, "GUN": 3, "SHIELD": 4,
+    "ARMOR_BODY": 6, "ARMOR_HEAD": 5, "ARMOR_TRINKET": 8
+  },
+  "BudgetMultiplier": 1.15,
+  "Chaos": 0.35,
+  "SynergyBias": 0.85,
+  "CurseChance": 0.12,
+  "PassiveBudgetShare": 0.45,
+  "SkillPrices": {
+    "SKILL_JUSTICE": 0.40, "SKILL_HEAVYHANDED": 0.20, "SKILL_CALLEDSHOT": 0.35,
+    "SKILL_REDIRECT": 0.30, "SKILL_VOIDWALK": 0.35, "SKILL_CHARGEATTACK": 0.40,
+    "SKILL_DISCIPLINE": 0.35, "SKILL_GUARD": 0.35, "SKILL_DECOY": 0.30,
+    "SKILL_FORTUNE": 0.30, "SKILL_STEADFAST": 0.30
+  },
+  "Archetypes": {
+    "BLADE_2H":  {"executioner": {"W": 3, "Stats": {"ATK": 7, "CRTD": 3}},
+                  "sentinel":    {"W": 2, "Stats": {"ATK": 5, "DEF": 2, "THRN": 2}}},
+    "AXE_2H":    {"reaver":  {"W": 3, "Stats": {"ATK": 8, "CRTD": 2}},
+                  "berserk": {"W": 2, "Stats": {"ATK": 7, "SPD": 2, "EVD": -1}}},
+    "BLUNT_2H":  {"leveler": {"W": 3, "Stats": {"ATK": 8, "STR": 2}},
+                  "anchor":  {"W": 2, "Stats": {"ATK": 6, "DEF": 3, "VIT": 2}}},
+    "POLEARM_2H":{"reach":   {"W": 3, "Stats": {"ATK": 6, "DEF": 2, "AWR": 2}},
+                  "impaler": {"W": 2, "Stats": {"ATK": 7, "CRT": 3}}},
+    "KATANA":    {"iaijutsu":{"W": 3, "Stats": {"ATK": 6, "CRT": 4, "SPD": 2}},
+                  "ronin":   {"W": 2, "Stats": {"ATK": 6, "EVD": 2, "TAL": 2}}},
+    "BOW_2H":    {"deadeye": {"W": 3, "Stats": {"ATK": 6, "AWR": 4, "CRT": 3}},
+                  "warden":  {"W": 2, "Stats": {"ATK": 5, "AWR": 3, "MOV": 1}}},
+    "STAFF_2H":  {"archmagus":{"W": 3, "Stats": {"ATK": 7, "INT": 4, "FOC": 1}},
+                  "riftwalker":{"W": 2, "Stats": {"ATK": 5, "INT": 3, "SPD": 2, "EVD": 1}}},
+    "ORB_2H":    {"oracle":  {"W": 3, "Stats": {"ATK": 5, "INT": 3, "LCK": 2, "FOC": 1}},
+                  "voidgazer":{"W": 2, "Stats": {"ATK": 6, "INT": 4}}},
+    "GUN":       {"gunslinger":{"W": 3, "Stats": {"ATK": 6, "CRT": 4, "CRTD": 2}},
+                  "sharpshooter":{"W": 2, "Stats": {"ATK": 7, "AWR": 3}}},
+    "SHIELD":    {"aegis":   {"W": 3, "Stats": {"DEF": 4, "RES": 2, "HP": 3}},
+                  "thornwall":{"W": 2, "Stats": {"DEF": 3, "THRN": 4, "VIT": 2}}},
+    "ARMOR_BODY":{"dreadplate": {"W": 3, "Stats": {"DEF": 3, "HP": 4, "THRN": 2}},
+                  "shadowweave":{"W": 2, "Stats": {"EVD": 3, "RES": 2, "SPD": 2}}},
+    "ARMOR_HEAD":{"warcrown": {"W": 3, "Stats": {"DEF": 2, "AWR": 3, "CRT": 2}},
+                  "thirdeye":  {"W": 2, "Stats": {"RES": 2, "INT": 3, "FOC": 1}}},
+    "ARMOR_TRINKET": {"relic":   {"W": 3, "Stats": {"CRT": 4, "CRTD": 3}},
+                      "monsterbane": {"W": 3, "Stats": {"DAM_UNDEAD": 15, "DAM_BEAST": 15}},
+                      "kingsbane":   {"W": 2, "Stats": {"DAM_BOSS": 20, "CRT": 2}},
+                      "focus-engine":{"W": 2, "Stats": {"FOC": 2, "SKL": 3}}}
+  },
+  "AffixThemes": {
+    "voidtouched": {"Stats": {"INT": 2, "EVD": 2}, "Skills": ["SKILL_VOIDWALK"],
+                    "Tags": ["MAGICAL"], "IconStyle": {"Hue": 0.78, "Glow": "#8a2bd6"}},
+    "executioner": {"Stats": {"CRT": 3, "CRTD": 3}, "Skills": ["SKILL_JUSTICE"],
+                    "Tags": [], "IconStyle": {"Hue": 0.98, "Glow": "#ff3b3b"}},
+    "bulwark":     {"Stats": {"DEF": 3, "THRN": 2}, "Skills": ["SKILL_STEADFAST", "SKILL_GUARD"],
+                    "Tags": [], "IconStyle": {"Hue": 0.58, "Glow": "#4f7dff"}},
+    "huntmaster":  {"Stats": {"AWR": 3, "DAM_BEAST": 10}, "Skills": ["SKILL_CALLEDSHOT"],
+                    "Tags": [], "IconStyle": {"Hue": 0.30, "Glow": "#57c46a"}},
+    "gravebane":   {"Stats": {"DAM_UNDEAD": 15, "RES": 2}, "Skills": ["SKILL_FORTUNE"],
+                    "Tags": [], "IconStyle": {"Hue": 0.16, "Glow": "#f5efc0"}}
+  },
+  "CurseStats": {"LCK": 15, "SPD": 8, "VIT": 8, "HP": 10, "EVD": 10},
+  "CurseRebate": 0.45,
+  "NameGrammar": {
+    "Patterns": ["{adj} {noun}", "{noun} of {theme}", "The {adj} {noun}"],
+    "Adj": ["Voidtouched", "Kingsbane", "Sunless", "Howling", "Unrepentant",
+            "Starving", "Radiant", "Bloodbound", "Eclipsed", "Thrice-Cursed"],
+    "Theme": ["the Last Dawn", "Broken Crowns", "the Hungry Dark", "Endless Winter",
+              "the Red Season", "Silent Bells", "the Widow Queen", "Falling Stars"],
+    "Nouns": {
+      "BLADE_2H": ["Greatsword", "Claymore", "Warblade"], "AXE_2H": ["Greataxe", "Reaver", "Headsman"],
+      "BLUNT_2H": ["Warhammer", "Doomsledge", "Colossus"], "POLEARM_2H": ["Halberd", "Glaive", "Warscythe"],
+      "KATANA": ["Katana", "Moonblade", "Nodachi"], "BOW_2H": ["Warbow", "Doomstring", "Skypiercer"],
+      "STAFF_2H": ["Warstaff", "Worldpillar", "Stormcaller"], "ORB_2H": ["Orb", "Eye", "Heart"],
+      "GUN": ["Pistol", "Hexshooter", "Thunderer"], "SHIELD": ["Aegis", "Wall", "Rampart"],
+      "ARMOR_BODY": ["Dreadplate", "Warplate", "Shroud"], "ARMOR_HEAD": ["Warcrown", "Visage", "Crown"],
+      "ARMOR_TRINKET": ["Relic", "Sigil", "Idol"]
+    }
+  },
+  "DescriptionTemplates": {
+    "voidtouched": "It exists slightly to the left of where you see it.",
+    "executioner": "It has one opinion, delivered once.",
+    "bulwark": "Armies have broken on lesser stubbornness.",
+    "huntmaster": "It knows where the prey will be, not where it is.",
+    "gravebane": "The dead remember it, and keep their distance."
+  }
+}

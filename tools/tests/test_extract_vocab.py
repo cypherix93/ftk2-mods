@@ -112,6 +112,15 @@ def test_handles_utf8_bom(tmp_path):
     assert len(idx["ItemIds"]) == 2
 
 
+def test_class_slots_and_ability_templates(tmp_path):
+    write_fixtures(tmp_path)
+    idx = build_index(tmp_path)
+    assert idx["ClassSlots"]["BLADE"] == ["MAIN_HAND"]
+    tpl = idx["ClassAbilityTemplates"]["BLADE"]
+    assert "SWORD_BASIC_ATTACK" in tpl["Abilities"]
+    assert tpl["AbilityBag"] == ["SWORD_BASIC_ATTACK"]
+
+
 def test_deterministic_output(tmp_path):
     write_fixtures(tmp_path)
     a = json.dumps(build_index(tmp_path), sort_keys=True)

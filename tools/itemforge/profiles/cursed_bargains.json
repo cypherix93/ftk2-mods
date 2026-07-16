@@ -1,0 +1,72 @@
+{
+  "_comment": "Tradeoff-heavy profile: every item is cursed (CurseChance 1.0) with a big rebate. Demonstrates the curse_chance/rebate knobs producing playable devil's-bargain items.",
+  "Name": "cursed_bargains",
+  "TierRange": [1, 3],
+  "Rarities": {"UNCOMMON": 40, "RARE": 40, "ARTIFACT": 20},
+  "Classes": {
+    "BLADE": 6, "DAGGER": 6, "BLUNT_2H": 5, "WAND": 6, "BOW_2H": 5,
+    "SHIELD": 4, "ARMOR_BODY": 6, "ARMOR_HEAD": 5, "ARMOR_TRINKET": 10
+  },
+  "BudgetMultiplier": 1.05,
+  "Chaos": 0.25,
+  "SynergyBias": 0.75,
+  "CurseChance": 1.0,
+  "PassiveBudgetShare": 0.30,
+  "SkillPrices": {
+    "SKILL_HEAVYHANDED": 0.15, "SKILL_FORTUNE": 0.30, "SKILL_MEND": 0.20,
+    "SKILL_HARDWORK": 0.35, "SKILL_EAGER": 0.25, "SKILL_IRONBELLY": 0.20
+  },
+  "Archetypes": {
+    "BLADE":   {"bloodpact": {"W": 3, "Stats": {"ATK": 7, "CRT": 3}},
+                "grudge":    {"W": 2, "Stats": {"ATK": 6, "THRN": 2}}},
+    "DAGGER":  {"backbiter": {"W": 3, "Stats": {"ATK": 5, "CRT": 5}},
+                "pactknife": {"W": 2, "Stats": {"ATK": 4, "CRT": 3, "LCK": 3}}},
+    "BLUNT_2H":{"debtor":    {"W": 3, "Stats": {"ATK": 9, "STR": 2}},
+                "millstone": {"W": 2, "Stats": {"ATK": 7, "DEF": 3}}},
+    "WAND":    {"soulburn":  {"W": 3, "Stats": {"ATK": 5, "INT": 3, "FOC": 1}},
+                "hexcarver": {"W": 2, "Stats": {"ATK": 4, "INT": 3, "CRT": 2}}},
+    "BOW_2H":  {"heartseeker": {"W": 3, "Stats": {"ATK": 6, "AWR": 3, "CRT": 3}},
+                "tollbow":     {"W": 2, "Stats": {"ATK": 7, "AWR": 2}}},
+    "SHIELD":  {"martyr":    {"W": 3, "Stats": {"DEF": 4, "THRN": 3, "HP": 2}},
+                "collateral":{"W": 2, "Stats": {"DEF": 3, "RES": 3}}},
+    "ARMOR_BODY": {"hairshirt": {"W": 3, "Stats": {"DEF": 3, "THRN": 3, "HP": 2}},
+                   "pactweave": {"W": 2, "Stats": {"RES": 3, "EVD": 2, "INT": 2}}},
+    "ARMOR_HEAD": {"blinders": {"W": 3, "Stats": {"DEF": 2, "CRT": 3}},
+                   "whisperhood": {"W": 2, "Stats": {"RES": 2, "INT": 2, "TAL": 2}}},
+    "ARMOR_TRINKET": {"monkey-paw": {"W": 3, "Stats": {"LCK": 4, "TAL": 2}},
+                      "blood-price": {"W": 3, "Stats": {"ATK": 2, "CRT": 3, "CRTD": 2}},
+                      "iron-tithe":  {"W": 2, "Stats": {"DEF": 2, "THRN": 3}}}
+  },
+  "AffixThemes": {
+    "bloodpact": {"Stats": {"ATK": 2, "CRTD": 2}, "Skills": ["SKILL_HEAVYHANDED"],
+                  "Tags": [], "IconStyle": {"Hue": 0.97, "Glow": "#b3122e"}},
+    "monkeypaw": {"Stats": {"LCK": 3}, "Skills": ["SKILL_FORTUNE"],
+                  "Tags": [], "IconStyle": {"Hue": 0.11, "Glow": "#c9a227"}},
+    "tithe":     {"Stats": {"DEF": 2, "THRN": 2}, "Skills": ["SKILL_MEND", "SKILL_IRONBELLY"],
+                  "Tags": [], "IconStyle": {"Hue": 0.62, "Glow": "#33507a"}},
+    "soulburn":  {"Stats": {"INT": 2, "FOC": 1}, "Skills": ["SKILL_HARDWORK"],
+                  "Tags": ["MAGICAL"], "IconStyle": {"Hue": 0.83, "Glow": "#7a33c9"}}
+  },
+  "CurseStats": {"LCK": 15, "SPD": 8, "VIT": 10, "EVD": 12, "HP": 12, "AWR": 10},
+  "CurseRebate": 0.5,
+  "NameGrammar": {
+    "Patterns": ["{adj} {noun}", "{noun} of {theme}", "The {noun} That {adj}s"],
+    "Adj": ["Hungering", "Borrowed", "Debt-Bound", "Weeping", "Smiling",
+            "Two-Faced", "Whispering", "Thorned", "Covetous", "Bartered"],
+    "Theme": ["the Tithe", "Unpaid Debts", "the Crossroads", "Seven Regrets",
+              "the Pawnbroker", "Borrowed Time", "the Fine Print"],
+    "Nouns": {
+      "BLADE": ["Blade", "Contract", "Bargain"], "DAGGER": ["Fang", "Splinter", "Promise"],
+      "BLUNT_2H": ["Millstone", "Burden", "Debt"], "WAND": ["Wand", "Finger", "Quill"],
+      "BOW_2H": ["Bow", "Toll", "Sigh"], "SHIELD": ["Ward", "Excuse", "Collateral"],
+      "ARMOR_BODY": ["Hairshirt", "Shroud", "Penance"], "ARMOR_HEAD": ["Hood", "Blinders", "Veil"],
+      "ARMOR_TRINKET": ["Paw", "Coin", "Tooth", "Knot"]
+    }
+  },
+  "DescriptionTemplates": {
+    "bloodpact": "Power now. The bill arrives later, with interest.",
+    "monkeypaw": "Be very, very specific about what you wish for.",
+    "tithe": "Protection has a price, collected in small daily installments.",
+    "soulburn": "It burns something to work. It has never said what."
+  }
+}

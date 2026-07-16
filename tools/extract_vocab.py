@@ -102,6 +102,35 @@ def build_index(configs_dir: Path) -> dict:
                 if isinstance(value, (int, float)):
                     curve_values[key].append(value)
 
+    # Per-class modal Slots and a representative Interactable template (weapons need
+    # working ability blocks; the template comes from the class's most common
+    # ability-key-set, copied verbatim from one representative live item).
+    slot_votes: defaultdict[str, Counter] = defaultdict(Counter)
+    ability_sets: defaultdict[str, Counter] = defaultdict(Counter)
+    ability_examples: dict[tuple[str, tuple], dict] = {}
+    for item_id in sorted(things):
+        cfg = things[item_id] or {}
+        cls = cfg.get("Class")
+        eq = cfg.get("Equippable")
+        if not cls or not eq:
+            continue
+        slot_key = tuple(eq.get("Slots") or [])
+        if slot_key:
+            slot_votes[cls][slot_key] += 1
+        inter = cfg.get("Interactable")
+        if inter and inter.get("Abilities"):
+            key = tuple(sorted(inter["Abilities"].keys()))
+            ability_sets[cls][key] += 1
+            ability_examples.setdefault((cls, key), inter)
+
+    class_slots = {
+        cls: list(votes.most_common(1)[0][0]) for cls, votes in sorted(slot_votes.items())
+    }
+    class_ability_templates = {}
+    for cls, votes in sorted(ability_sets.items()):
+        modal_key = votes.most_common(1)[0][0]
+        class_ability_templates[cls] = ability_examples[(cls, modal_key)]
+
     stat_curves = {}
     for key in sorted(set(curve_stats) | set(curve_values)):
         per_stat = {
@@ -142,6 +171,8 @@ def build_index(configs_dir: Path) -> dict:
         "StatCurves": stat_curves,
         "VisualDonors": {k: sorted(v) for k, v in sorted(donors.items())},
         "Abilities": sorted(abilities),
+        "ClassSlots": class_slots,
+        "ClassAbilityTemplates": class_ability_templates,
     }
 
 
