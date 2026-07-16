@@ -13,3 +13,10 @@ _output/
 # OS
 Thumbs.db
 .DS_Store
+
+# Content-generation tooling (machine artifacts, downloaded binaries, venv)
+tools/out/
+tools/bin/
+tools/.venv/
+__pycache__/
+*.pyc
