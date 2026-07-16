@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <RootNamespace>WarBrain.Core</RootNamespace>
+    <!-- Engine core is host-agnostic: no BepInEx, no Unity, no game refs.
+         All arithmetic is decimal/int for cross-peer determinism (MP lockstep). -->
+  </PropertyGroup>
+
+</Project>
