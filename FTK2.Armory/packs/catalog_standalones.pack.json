@@ -1,0 +1,696 @@
+{
+  "PackId": "ARM_CATALOG_UNIQ",
+  "Items": [
+    {
+      "Id": "ARM_UNIQ_KINGSBANE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 284,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {
+            "DAM_BOSS": 25,
+            "CRT": 15
+          },
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["ARTIFACT", "TRINKET", "MAGIC", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_MEDAL_00",
+      "Loc": {
+        "Name": "Kingsbane",
+        "Description": "Forged from the melted crowns of seven deposed tyrants, it hums whenever royalty draws near. Whatever sits upon a throne, it teaches to kneel."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_MEDAL_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.08, "S": 0.2, "V": -0.1},
+          {"Op": "GLOW", "Color": "#c9a227", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Boss-executioner trinket: C-ATK-07 (DAM_<tag> stats add +1% damage per point vs enemies carrying that tag, incl. BOSS); CRT feeds PERFECT-only crits (C-CRIT-01). DAM_BOSS 25 grounded on the live artifact-trinket DAM_* magnitude (25), a step above TRAIT_BOSSKILLER's 20 and the goblet trinkets' 10.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_METRONOME",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 190,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {
+            "SKL": 5,
+            "FOC": 2
+          },
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["RARE", "TRINKET", "MAGIC", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_BUFF_FOCUS_00",
+      "Loc": {
+        "Name": "The Metronome",
+        "Description": "Its tick is older than any song, and every listener's craft falls into step. Those who march to it find their tricks landing just a beat more often."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_BUFF_FOCUS_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.55, "S": 0.05, "V": 0.0},
+          {"Op": "GLOW", "Color": "#7fb4e6", "Radius": 4, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "Global proc engine: C-PROC-02 (SKL adds +1% per point to EVERY skill proc roll, item-equippable); FOC extends the pool of pinned auto-success slots (C-STAT-08) and each pinned point adds +5% crit (C-FOC-04). SKL 5 and FOC 2 sit at the ARMOR_TRINKET|RARE observed maxima.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_MENTORS_JOURNAL",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 260,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {
+            "XPM": 15,
+            "TAL": 3
+          },
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["ARTIFACT", "TRINKET", "MAGIC", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_LOCKET_00",
+      "Loc": {
+        "Name": "The Mentor's Journal",
+        "Description": "Every margin is crowded with corrections in a firm, patient hand. Read a page before sleep and yesterday's mistakes become tomorrow's lessons."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_LOCKET_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.1, "S": -0.1, "V": 0.05},
+          {"Op": "GLOW", "Color": "#e6d38f", "Radius": 4, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "Party-carry XP battery: O-LOOT-16 (XPM = per-character +-% XP on every gain, min +-1); TAL doubles as the top-tier encounter TestStat pool (C-STAT-14, O-ENC-10/11). XPM 15 grounded between the live RARE trinket's 10 and live Queen-weapon XPM 15-30; TAL 3 is the ARMOR_TRINKET|ARTIFACT observed max.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_PILGRIMS_SOLES",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 240,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_FEET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["BOOTS"],
+          "Stats": {
+            "MOV": 2,
+            "SPD": 8
+          },
+          "Passives": ["SKILL_LONGHAUL", "SKILL_STEADYSTRIDE"],
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["ARTIFACT", "ARMOR", "ARMOR_FEET", "LIGHT", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "BOOTS_DRUID_LIGHT_00",
+      "Loc": {
+        "Name": "Pilgrim's Soles",
+        "Description": "Cobbled for a saint who vowed never to sleep in the same parish twice. The road rises to meet them, and the rain gives up trying."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOOTS_DRUID_LIGHT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.12, "S": 0.05, "V": 0.05},
+          {"Op": "GLOW", "Color": "#9fd77a", "Radius": 4, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "Movement engine: O-STAT-01 (MOV adds movement dice; SPD is the per-die land chance, and also buys initiative per C-TGT-04). SKILL_STEADYSTRIDE negates rain slot-flips (O-STAT-02); SKILL_LONGHAUL exists in live vocab Skills (live on TRAIT_COURIER). MOV 2 is a one-step artifact bump over the live boots max of 1.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_LAST_ARGUMENT",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 580,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BLUNT_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND", "OFF_HAND"],
+          "Stats": {
+            "ATK": 62,
+            "SPD": -40
+          },
+          "Passives": ["SKILL_JUSTICE"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "BLUNT_GROUND_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0.9,
+              "ACC": -5,
+              "Stat": "VIT",
+              "Rolls": 5,
+              "Ammo": 0
+            },
+            "BLUNT_HEAVY_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1.5,
+              "ACC": -20,
+              "Stat": "VIT",
+              "Rolls": 5,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": ["BLUNT_GROUND_ATTACK", "BLUNT_GROUND_ATTACK", "BLUNT_HEAVY_ATTACK"],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["PHYSICAL", "ARTIFACT", "WEAPON", "HAND_EQUIP", "WEAPON_TWO_HAND", "BLUNT", "MELEE", "MASSIVE", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "BLUNT_IRONANCHOR_HEAVY_00",
+      "Loc": {
+        "Name": "The Last Argument",
+        "Description": "When diplomacy, bribery, and prayer have all been tabled, this is the closing statement. It always speaks last, and nothing speaks after."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLUNT_IRONANCHOR_HEAVY_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.05, "S": 0.1, "V": -0.1},
+          {"Op": "GLOW", "Color": "#d94f30", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Auto-crit wave build-around: SKILL_JUSTICE (2H melee auto-crit + wave, STR-scaled) is verified item-passive-ready (C-PROC-12) and its PROC_EQUIPMENT gate covers 2H BLUNT (C-PROC-08). ATK 62 sits at the BLUNT_2H|ARTIFACT observed max (live Walloper). SPD tradeoff per C-TGT-04 (initiative = min(100, SPD + rand 0..10)); set to -40 (double the Walloper's -20) because the validator's negative-max budget threshold rejects anything milder - the identity is 'always acts last'. Abilities are the BLUNT_2H template baseline plus BLUNT_HEAVY_ATTACK, a live ability wired on live militia 2H weapons.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_MIRRORWALL",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 300,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "SHIELD",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["OFF_HAND"],
+          "Stats": {
+            "DEF": 5,
+            "THRN": 7
+          },
+          "Passives": ["SKILL_PARRY"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "SHIELD_ARMOR_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "VIT",
+              "Rolls": 1,
+              "Ammo": 0
+            },
+            "SHIELD_TAUNT_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "VIT",
+              "Rolls": 2,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["PHYSICAL", "TAUNT", "ARTIFACT", "HAND_EQUIP", "SHIELD", "HEAVY", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "SHIELD_BLACKSMITH_BASIC_00",
+      "Loc": {
+        "Name": "Mirrorwall",
+        "Description": "Polished until it remembers every blow ever struck against it. What the wall receives, the wall returns."
+      },
+      "Icon": {
+        "Base": "PRERENDER_SHIELD_BLACKSMITH_BASIC_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.5, "S": -0.15, "V": 0.1},
+          {"Op": "GLOW", "Color": "#b7d4e8", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "The wall that hits back: C-STAT-11 (THRN deals flat unreduced damage to non-ranged attackers, even on BLOCKED outcomes - see also C-DEF-04). SKILL_PARRY (halve + reflect) is verified item-passive-ready (C-PROC-12) but BLADE-gated by PROC_EQUIPMENT (C-PROC-08) - the build pairs this shield with a 1H blade. THRN 7 is a measured artifact bump over the live RARE max of 5; abilities are the SHIELD template baseline.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_UNARMED_PALE_KNUCKLES",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 260,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "UNARMED",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND", "OFF_HAND"],
+          "Stats": {
+            "VIT": 10,
+            "ATK": 8
+          },
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "UNARMED_BASIC_ATTACK": {
+              "MinValue": 0.5,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "VIT",
+              "Rolls": 2,
+              "Ammo": 0
+            },
+            "UNARMED_KICK_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1,
+              "ACC": -10,
+              "Stat": "VIT",
+              "Rolls": 2,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["PHYSICAL", "MELEE", "ARTIFACT", "WEAPON", "HAND_EQUIP", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "UNARMED_HUMANOID_03",
+      "Loc": {
+        "Name": "Pale Knuckles",
+        "Description": "Wrappings of grave-linen that grow tighter as the body beneath grows stronger. The fist is only as dead as the heart behind it."
+      },
+      "DesignNote": "VIT stack build-around: C-STAT-06 (players get +VIT/10 unarmed ATK when the equipped item's name contains 'UNARMED' - hence the id string) plus C-STAT-05 (max HP adds round(level x VIT x 0.13)) and VIT as a roll stat (C-STAT-02). Slots mirror the base UNARMED thing (MAIN_HAND + OFF_HAND); abilities are the UNARMED template baseline wired exactly like live UNARMED_HUMANOID_*. No Icon: no PRERENDER_UNARMED_* sprite exists in the sprite index.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_COURT_COMPOSER",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 450,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "LUTE_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND", "OFF_HAND"],
+          "Stats": {
+            "ATK": 21,
+            "TAL": 15,
+            "XPM": 10
+          },
+          "Passives": ["SKILL_ENCOURAGE", "SKILL_INSPIRE"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "MUSIC_DARK_ATTACK": {
+              "MinValue": 0.5,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "TAL",
+              "Rolls": 2,
+              "Ammo": 0
+            },
+            "MUSIC_ATTACKUP_SPLASH_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "TAL",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "MUSIC_DEFENSEUP_SPLASH_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "TAL",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "MUSIC_PROTECT_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "TAL",
+              "Rolls": 2,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": ["MUSIC_DARK_ATTACK", "MUSIC_DARK_ATTACK", "MUSIC_DARK_ATTACK", "MUSIC_ATTACKUP_SPLASH_ATTACK", "MUSIC_DEFENSEUP_SPLASH_ATTACK", "MUSIC_PROTECT_ATTACK"],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["MAGICAL", "BUFF", "ARTIFACT", "WEAPON", "HAND_EQUIP", "WEAPON_TWO_HAND", "LUTE", "RANGED", "MEDIUM", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "LUTE_MINSTREL_BASIC_00",
+      "Loc": {
+        "Name": "The Court Composer",
+        "Description": "Commissioned for a king who preferred his flattery in four-part harmony. Allies fight better once their failures are transposed into triumphs."
+      },
+      "Icon": {
+        "Base": "PRERENDER_LUTE_MINSTREL_BASIC_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.12, "S": 0.15, "V": 0.05},
+          {"Op": "GLOW", "Color": "#d9a7e0", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Bard support core: C-STAT-14 (TAL is a pure roll stat incl. LUTE_2H, and encounter TestStat). SKILL_ENCOURAGE (flip an ally's failed slot, TAL-scaled, radius 2) is verified item-passive-ready (C-PROC-12); SKILL_INSPIRE is live on LUTE_CLOWN_HEAVY_02/03. The TAL 15 roll-stat pump is patterned on the live WAND INT 50 pump, at a fraction of the magnitude; ATK 21 and XPM 10 track the LUTE_2H|RARE maxima (19/10). Abilities = LUTE_2H template baseline + MUSIC_PROTECT_ATTACK (live-wired on LUTE_CLOWN_HEAVY_03).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_ACTUARYS_QUILL",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 350,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "WAND",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND"],
+          "Stats": {
+            "INT": 50,
+            "ATK": 20,
+            "FOC": 1
+          },
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_PULL_ATTACK": {
+              "MinValue": 0.85,
+              "MaxValue": 1,
+              "ACC": 5,
+              "Stat": "INT",
+              "Rolls": 2,
+              "Ammo": 0
+            },
+            "MAGIC_STUN_ATTACK": {
+              "MinValue": 0.85,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "INT",
+              "Rolls": 2,
+              "Ammo": 0
+            },
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "INT",
+              "Rolls": 2,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": ["MAGIC_PULL_ATTACK", "MAGIC_PULL_ATTACK", "MAGIC_STUN_ATTACK", "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["MAGICAL", "ARTIFACT", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "WAND", "RANGED", "LIGHT", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "STAFF_HAG_LIGHT_00",
+      "Loc": {
+        "Name": "The Actuary's Quill",
+        "Description": "It has already calculated the expected outcome and sees no reason for suspense. There are no surprises in its ledger, only settlements."
+      },
+      "Icon": {
+        "Base": "PRERENDER_STAFF_HAG_LIGHT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.3, "S": -0.2, "V": 0.1},
+          {"Op": "GLOW", "Color": "#8fe0d0", "Radius": 4, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "Reliability identity: C-ATK-05/06 - player min damage = MinValue x rollStat x 0.01 x atk, so MinValue 0.85 on an INT 50 pump (live precedent: WAND_LOLLI_LIGHT_00) makes even worst-case rolls land near max. Fewer Rolls also concentrate the slot distribution (C-ATK-02/03), making PERFECTs - and thus ADD_STATUS procs (C-STATUS-10) - more frequent. ATK 20 tracks the WAND|RARE max of 23; abilities are the WAND template baseline with tuned numerics.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_GLASS_APPETITE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 480,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "KATANA",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND", "OFF_HAND"],
+          "Stats": {
+            "ATK": 30,
+            "CRT": 20,
+            "CRTD": 30
+          },
+          "Passives": ["SKILL_HEAVYHANDED", "SKILL_MEND"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "BLADE_BASIC_ATTACK": {
+              "MinValue": 0.5,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "TAL",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "BLADE_SPIN_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0.75,
+              "ACC": 0,
+              "Stat": "TAL",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "BLADE_ARMORDOWN_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0.25,
+              "ACC": 0,
+              "Stat": "TAL",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "BLADE_HEAVY_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1.5,
+              "ACC": -20,
+              "Stat": "TAL",
+              "Rolls": 4,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["PHYSICAL", "ARTIFACT", "WEAPON", "HAND_EQUIP", "WEAPON_TWO_HAND", "KATANA", "MELEE", "BLADE", "LIGHT", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "KATANA_VOIDWALKER_BASIC_00",
+      "Loc": {
+        "Name": "Glass Appetite",
+        "Description": "A blade honed past wisdom, forever hungry for the perfect cut. It shatters like a promise and mends like a grudge."
+      },
+      "Icon": {
+        "Base": "PRERENDER_KATANA_VOIDWALKER_BASIC_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.65, "S": 0.1, "V": 0.05},
+          {"Op": "GLOW", "Color": "#e07a9a", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Glass-cannon tension: SKILL_HEAVYHANDED (+20% rolls but crit-fails ALWAYS break the weapon) against SKILL_MEND (restore the broken weapon, VIT-scaled) - both verified item-passive-ready (C-PROC-12); breakage rules per C-ATK-09. CRT 20 / CRTD 30 pay off on PERFECTs only (C-CRIT-01/02); CRTD 30 grounded on the ARMOR_HEAD|ARTIFACT max, CRT within the BLUNT_2H|RARE max of 30. KATANA carries the BLADE tag like live katanas, so its innate parry synergies survive. Abilities = KATANA template baseline + BLADE_HEAVY_ATTACK (live-wired on KATANA_MONK_BASIC_00).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_CHARGERS_CREST",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 280,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_HEAD",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["HELMET"],
+          "Stats": {
+            "DEF": 2,
+            "HP": 10,
+            "FOC": 1
+          },
+          "Passives": ["SKILL_CHARGEATTACK"],
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["ARTIFACT", "ARMOR", "ARMOR_HEAD", "HEAVY", "PHYSICAL", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "HELMET_BEASTMAN_HEAVY_01",
+      "Loc": {
+        "Name": "Charger's Crest",
+        "Description": "The horned helm of a knight who considered stopping a form of cowardice. Lower the head, count the heartbeats, arrive like weather."
+      },
+      "Icon": {
+        "Base": "PRERENDER_HELMET_BEASTMAN_HEAVY_01",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.03, "S": 0.15, "V": -0.05},
+          {"Op": "GLOW", "Color": "#e0b25c", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Charge enabler: C-CHG-01..03 - charge attacks need SKILL_CHARGEATTACK + a Chargeable ability + ChargeConfig; the charging turn forfeits all actions, the payoff is +50%..+175% damage, possible area upgrade, and an on-PERFECT inflict status. Chargeable is live on player staples (BLUNT_BASIC_ATTACK, BLADE_BASIC/HEAVY, AXE_*, POLEARM_* et al), so the helmet turns most melee kits into charge kits. DEF 2, HP 10 and FOC 1 sit at the ARMOR_HEAD|ARTIFACT observed maxima.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_DAWN_TITHE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 320,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_BODY",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["ARMOR"],
+          "Stats": {
+            "HRG": 6,
+            "VIT": 5,
+            "DEF": 8
+          },
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["ARTIFACT", "ARMOR", "ARMOR_BODY", "MEDIUM", "MAGIC", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_DRUID_LIGHT_00",
+      "Loc": {
+        "Name": "The Dawn Tithe",
+        "Description": "Each sunrise it collects its due and pays the wearer back with interest. Long roads fear it more than any battle does."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_DRUID_LIGHT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.15, "S": 0.15, "V": 0.1},
+          {"Op": "GLOW", "Color": "#f0c060", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Attrition-run armor: C-STAT-10 - HRG is flat out-of-combat end-of-turn regen (dungeon: min(missing, HRG); overworld adds unused move points), so it converts every quiet turn into HP for long hauls. VIT adds max HP (C-STAT-05) and is a roll stat (C-STAT-02). HRG 6 grounded on the ARMOR_HEAD|ARTIFACT max of 6; DEF 8 within the ARMOR_BODY|RARE max of 12.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_UNIQ_SECOND_OPINION",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 220,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {
+            "LCK": 20,
+            "SKL": 3
+          },
+          "Passives": ["SKILL_FORTUNE"],
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["RARE", "TRINKET", "MAGIC", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "UNIQUE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_LUCK_00",
+      "Loc": {
+        "Name": "The Second Opinion",
+        "Description": "A cracked monocle through which every disaster looks negotiable. When fate signs its verdict, this asks for a moment to reconsider."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_LUCK_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.2, "S": 0.1, "V": 0.05},
+          {"Op": "GLOW", "Color": "#a8e378", "Radius": 4, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "LCK threshold play: C-STAT-15 - the player skill-proc luck bonus is ceil((LCK - 50) x mult)%, NEGATIVE below 50 LCK, so a flat +20 LCK swings characters across the pivot; LCK is also the most common encounter TestStat (O-ENC-10/11). SKILL_FORTUNE (full slot re-roll, AWR-scaled) is verified item-passive-ready (C-PROC-12) and is the game's only re-roll (O-ENC-05). LCK 20 and SKL 3 within ARMOR_TRINKET|RARE observed maxima (20/5).",
+      "Provenance": {"Source": "handcrafted"}
+    }
+  ]
+}

@@ -1,0 +1,647 @@
+{
+  "PackId": "ARM_CATALOG_S13",
+  "Items": [
+    {
+      "Id": "ARM_BRAMBLE_MACE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 40,
+        "MinTier": 0,
+        "MaxTier": 2,
+        "Class": "BLUNT",
+        "Rarity": "COMMON",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND"],
+          "Stats": {"ATK": 13, "THRN": 2},
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "BLUNT_BASIC_ATTACK": {"MinValue": 0.5, "MaxValue": 1, "ACC": 0, "Stat": "VIT", "Rolls": 4, "Ammo": 0},
+            "BLUNT_STUN_ATTACK": {"MinValue": 0, "MaxValue": 0, "ACC": 0, "Stat": "VIT", "Rolls": 4, "Ammo": 0}
+          },
+          "AbilityBag": [
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_STUN_ATTACK",
+            "BLUNT_STUN_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["DAZE", "PHYSICAL", "STUN", "COMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "BLUNT", "MELEE", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "MEDIUM", "ARM_SET_BRAMBLELORD"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "BLUNT_BEASTMAN_MEDIUM_00",
+      "Loc": {
+        "Name": "Bramblelord Cudgel",
+        "Description": "A knotted bough still green at the core; its thorns drink from every hand that dares to strike its bearer."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLUNT_BEASTMAN_MEDIUM_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.28, "S": 0.15, "V": -0.05},
+          {"Op": "OUTLINE", "Color": "#4a7c2f", "Width": 2}
+        ]
+      },
+      "DesignNote": "Set entry weapon: baseline BLUNT kit with a starter THRN 2 so the retaliation loop begins at COMMON. C-STAT-11 (THRN is flat, unreduced, fires even on BLOCKED melee hits, ranged-immune); C-DEF-04 (BLOCKED hits still trigger thorns). BLUNT template copied from ClassAbilityTemplates, Rolls 4 as live-observed.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_BRAMBLE_CUIRASS",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 120,
+        "MinTier": 0,
+        "MaxTier": 2,
+        "Class": "ARMOR_BODY",
+        "Rarity": "UNCOMMON",
+        "Material": "LEATHER",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["ARMOR"],
+          "Stats": {"DEF": 5, "THRN": 4, "VIT": 2},
+          "Passives": ["STATUS_IMMUNITY_ENTANGLE"],
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["UNCOMMON", "ARMOR", "ARMOR_BODY", "MEDIUM", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "PHYSICAL", "ARM_SET_BRAMBLELORD"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_DRUID_LIGHT_00",
+      "Loc": {
+        "Name": "Bramblelord Cuirass",
+        "Description": "Living briars laced through boiled leather. The vines know their lord, and answer every wound dealt to him in kind."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_DRUID_LIGHT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.22, "S": 0.2, "V": -0.05},
+          {"Op": "GLOW", "Color": "#3fae4a", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Core body piece of the retaliation tank: THRN 4 sits at live ARMOR_BODY|UNCOMMON curve (observed 4-5), DEF pairs per C-DEF-01 (flat subtraction, floor 0) so blocked hits still feed C-STAT-11 thorns via C-DEF-04. Entangle immunity keeps the melee-facing tank free to hold the line (C-STATUS-23: ENTANGLE blocks melee/move/flee).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_BRAMBLE_HELM",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 110,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_HEAD",
+        "Rarity": "RARE",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["HELMET"],
+          "Stats": {"DEF": 4, "RES": 3, "THRN": 2},
+          "Passives": ["SKILL_GUARD"],
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["RARE", "ARMOR", "ARMOR_HEAD", "MEDIUM", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "PHYSICAL", "ARM_SET_BRAMBLELORD"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "HELMET_DRUID_LIGHT_00",
+      "Loc": {
+        "Name": "Bramblelord Crown of Wardens",
+        "Description": "A wreath of iron-hard thorns. Those who shelter in its shadow cannot be touched; those who reach past it bleed."
+      },
+      "Icon": {
+        "Base": "PRERENDER_HELMET_DRUID_LIGHT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.25, "S": 0.15, "V": -0.08},
+          {"Op": "GLOW", "Color": "#6db33f", "Radius": 4, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "Backline protector: SKILL_GUARD projects the tile aura behind the wearer, making guarded tiles untargetable by enemies (C-STATUS-11) - this funnels melee into the thorn tank, where C-STAT-11 pays it back. DEF/RES per C-DEF-01 flat mitigation; THRN 2 within live head-slot magnitudes (ARMOR_HEAD|UNCOMMON THRN 1-5, ARTIFACT 3).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_BRAMBLE_HEART",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 101,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {"THRN": 3, "HRG": 3, "DEF": 2},
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["RARE", "TRINKET", "MAGIC", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "ARM_SET_BRAMBLELORD"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_HERBS_00",
+      "Loc": {
+        "Name": "Heart of the Briarwood",
+        "Description": "A fist-sized knot of thorned root that beats, slowly. Wounds taken by its keeper close over by morning; wounds it gives do not."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_HERBS_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.3, "S": 0.25, "V": -0.05},
+          {"Op": "GLOW", "Color": "#8bc34a", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Sustain piece: THRN 3 and HRG 3 both at live ARMOR_TRINKET|RARE curve (THRN 3-5, HRG 3-5). C-STAT-11 makes the trinket's THRN stack additively with the rest of the set (thorns read the target's total THRN stat); C-STAT-10 (HRG = flat out-of-combat end-of-turn regen) refills the HP the tank trades for retaliation.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_BRAMBLE_AEGIS",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 160,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "SHIELD",
+        "Rarity": "ARTIFACT",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["OFF_HAND"],
+          "Stats": {"DEF": 6, "THRN": 5, "VIT": 3, "PDEF": 2},
+          "Passives": ["SKILL_STEADFAST"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "SHIELD_ARMOR_ATTACK": {"MinValue": 0, "MaxValue": 0, "ACC": 0, "Stat": "VIT", "Rolls": 1, "Ammo": 0},
+            "SHIELD_TAUNT_ATTACK": {"MinValue": 0, "MaxValue": 0, "ACC": 0, "Stat": "VIT", "Rolls": 2, "Ammo": 0}
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["TAUNT", "ARTIFACT", "HAND_EQUIP", "PHYSICAL", "SHIELD", "MEDIUM", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "ARM_SET_BRAMBLELORD"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "SHIELD_SPIKED_LIGHT_00",
+      "Loc": {
+        "Name": "Aegis of the Bramblelord",
+        "Description": "The first bramble ever to refuse an axe, grown flat and patient. Every blow it turns aside is repaid with interest in thorns."
+      },
+      "Icon": {
+        "Base": "PRERENDER_SHIELD_SPIKED_LIGHT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.26, "S": 0.2, "V": -0.05},
+          {"Op": "GLOW", "Color": "#2e8b57", "Radius": 6, "Strength": 0.9},
+          {"Op": "OUTLINE", "Color": "#1e5631", "Width": 2}
+        ]
+      },
+      "DesignNote": "Set ARTIFACT and keystone: SKILL_STEADFAST requires an equipped shield and scales on VIT/DEF/RES to block hits to 0 (C-PROC-12), and C-DEF-04 + C-STAT-11 guarantee thorns still fire on those BLOCKED hits, unreduced - the whole set loop in one item. THRN 5 = highest live-observed THRN on any item (artifact may push to observed max); DEF/VIT within live shield magnitudes (SHIELD|UNCOMMON DEF max 9, VIT max 4); PDEF 2 under SHIELD|ARTIFACT observed max 4. SHIELD taunt/armor kit copied verbatim from ClassAbilityTemplates - TAUNT synergizes per C-STATUS-12 (collapses enemy targeting onto the taunter, who reflects).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_TIDE_WAND",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 18,
+        "MinTier": 0,
+        "MaxTier": 1,
+        "Class": "WAND",
+        "Rarity": "COMMON",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND"],
+          "Stats": {"ATK": 7, "FOC": 1},
+          "Passives": ["SKILL_SUPPORTRANGE"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {"MinValue": 0, "MaxValue": 0, "ACC": 0, "Stat": "INT", "Rolls": 2, "Ammo": 0},
+            "MAGIC_PULL_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "INT", "Rolls": 2, "Ammo": 0},
+            "MAGIC_STUN_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": -5, "Stat": "INT", "Rolls": 3, "Ammo": 0},
+            "WAND_BASIC_ATTACK": {"MinValue": 0.5, "MaxValue": 1, "ACC": 0, "Stat": "INT", "Rolls": 2, "Ammo": 0}
+          },
+          "AbilityBag": [
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_STUN_ATTACK",
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["MAGICAL", "DAZE", "STUN", "COMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "WAND", "RANGED", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "LIGHT", "ARM_SET_TIDEBINDER"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "WAND_MILITIA_ICE_00",
+      "Loc": {
+        "Name": "Tidebinder Sprig",
+        "Description": "Driftwood that never dried. Novice tidebinders learn the first law with it: a pinned wave never misses."
+      },
+      "Icon": {
+        "Base": "PRERENDER_WAND_MILITIA_ICE_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.08, "S": 0.2, "V": 0.05},
+          {"Op": "GLOW", "Color": "#3fa7c9", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Set entry weapon for the focus caster: low-Rolls kit (2-3 slots) means each pinned focus point auto-succeeds a large fraction of the roll (C-STAT-08) and adds +5% crit (C-FOC-04); FOC 1 grows the pool toward the cap (C-STAT-03, max 9). WAND template copied verbatim from ClassAbilityTemplates; WAND_BASIC_ATTACK added exactly as live player wands carry it (WAND_MILITIA_BASIC_00: 0.5/1/INT/2). SKILL_SUPPORTRANGE mirrors live wand passives.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_TIDE_CIRCLET",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 60,
+        "MinTier": 0,
+        "MaxTier": 2,
+        "Class": "ARMOR_HEAD",
+        "Rarity": "UNCOMMON",
+        "Material": "CLOTH",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["HELMET"],
+          "Stats": {"FOC": 2, "RES": 3, "INT": 2},
+          "Passives": ["SKILL_REFOCUS"],
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["UNCOMMON", "ARMOR", "ARMOR_HEAD", "MAGIC", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "MAGICAL", "ARM_SET_TIDEBINDER"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "HELMET_FOCUS_MAGIC_00",
+      "Loc": {
+        "Name": "Tidebinder Circlet",
+        "Description": "A band of tide-polished silver that cools the temples. Between battles, the wearer's thoughts pool like slack water."
+      },
+      "Icon": {
+        "Base": "PRERENDER_HELMET_FOCUS_MAGIC_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.05, "S": 0.15, "V": 0.05},
+          {"Op": "GLOW", "Color": "#5bc8e8", "Radius": 4, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "Focus battery: FOC 2 matches the live ARMOR_HEAD|UNCOMMON curve exactly (observed FOC 2, the HELMET_FOCUS_MAGIC line), pushing the pool toward the 9 cap (C-STAT-03). SKILL_REFOCUS is a verified focus gain source (+1 FOC overworld, C-FOC-05) and appears on this donor's live entry. Every extra point is one more auto-succeeded slot and +5% crit when pinned (C-STAT-08, C-FOC-04).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_TIDE_STAFF",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 145,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "STAFF_2H",
+        "Rarity": "RARE",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND", "OFF_HAND"],
+          "Stats": {"ATK": 26, "EVD": 4},
+          "Passives": ["SKILL_HARDWORK"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_FIRE_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "INT", "Rolls": 4, "Ammo": 0},
+            "MAGIC_FIRE_SPLASH_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": -5, "Stat": "INT", "Rolls": 4, "Ammo": 0},
+            "MAGIC_WATER_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "INT", "Rolls": 4, "Ammo": 0},
+            "MAGIC_WATER_SPLASH_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": -5, "Stat": "INT", "Rolls": 4, "Ammo": 0}
+          },
+          "AbilityBag": [
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_ATTACK",
+            "MAGIC_FIRE_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["MAGICAL", "WATER", "RARE", "WEAPON", "HAND_EQUIP", "ELEMENTAL", "WEAPON_TWO_HAND", "STAFF", "RANGED", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "HEAVY", "ARM_SET_TIDEBINDER"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "STAFF_MERLING_HEAVY_00",
+      "Loc": {
+        "Name": "Staff of the Scalding Tide",
+        "Description": "Cut from a vent-reef where the sea itself boils. It throws breakers of steam and brine, and rewards the caster who spends nothing."
+      },
+      "Icon": {
+        "Base": "PRERENDER_STAFF_MERLING_HEAVY_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.06, "S": 0.2, "V": 0.03},
+          {"Op": "GLOW", "Color": "#46b1d6", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Focus-economy engine: SKILL_HARDWORK refunds the primary action on a 0-focus attack (C-PROC-12), so the Tidebinder banks FOC for the big pinned casts where each point auto-succeeds a slot and adds +5% crit (C-STAT-08, C-FOC-04). STAFF_2H template copied from ClassAbilityTemplates with Stat tuned VIT->INT (live player staffs roll INT, e.g. STAFF_MILITIA_BASIC_00) and live water abilities added (MAGIC_WATER_ATTACK / MAGIC_WATER_SPLASH_ATTACK, both in live Abilities.json); the retained fire kit is the scald in the name. ATK 26 ~ live STAFF_2H|RARE p50 24, EVD 4 at cell minimum.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_TIDE_PEARL",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 150,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {"FOC": 2, "CRT": 10, "HRG": 3},
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["RARE", "TRINKET", "MAGIC", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "MAGICAL", "ARM_SET_TIDEBINDER"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_PEARLS_00",
+      "Loc": {
+        "Name": "Pearl of the Undertow",
+        "Description": "A grey pearl that pulls faintly toward the sea. Held tight, it turns patience into precision."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_PEARLS_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.04, "S": 0.1, "V": 0.08},
+          {"Op": "GLOW", "Color": "#7fd4e8", "Radius": 5, "Strength": 0.9}
+        ]
+      },
+      "DesignNote": "Crit payoff for the focus loop: crits only roll on PERFECT and there is no base crit chance (C-CRIT-01), so CRT 10 plus +5% per pinned focus point (C-FOC-04) makes the Tidebinder's auto-succeeded PERFECTs actually crit. FOC 2 and CRT 10 both sit exactly on the live ARMOR_TRINKET|RARE curve (FOC observed 2, CRT p50 10); HRG 3 at cell minimum for overworld sustain (C-STAT-10).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_TIDE_ORB",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 285,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ORB_2H",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND", "OFF_HAND"],
+          "Stats": {"ATK": 18, "FOC": 1, "FIND": 1},
+          "Passives": ["SKILL_DISCIPLINE", "STATUS_IMMUNITY_WATER"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "ENEMY_CHANNEL_ATTACK_00": {"MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "AWR", "Rolls": 1, "Ammo": 0},
+            "MAGIC_BASIC_ATTACK": {"MinValue": 0.5, "MaxValue": 1, "ACC": 0, "Stat": "AWR", "Rolls": 3, "Ammo": 0},
+            "WHIP_ENTANGLE_BLEED_ATTACK": {"MinValue": 0, "MaxValue": 0.45, "ACC": 0, "Stat": "AWR", "Rolls": 4, "Ammo": 0},
+            "MAGIC_WATER_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "AWR", "Rolls": 3, "Ammo": 0},
+            "MAGIC_FOCUS_ADD_ATTACK_00": {"MinValue": 0, "MaxValue": 0, "ACC": -10, "Stat": "AWR", "Rolls": 1, "Ammo": 0},
+            "IMBUE_ORB_WATER_ATTACK": {"MinValue": 0, "MaxValue": 0, "ACC": 0, "Stat": "AWR", "Rolls": 4, "Ammo": 0}
+          },
+          "AbilityBag": [
+            "WHIP_ENTANGLE_BLEED_ATTACK",
+            "ENEMY_CHANNEL_ATTACK_00",
+            "MAGIC_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Tags": ["WATER", "MAGICAL", "IMBUE_WATER", "ARTIFACT", "WEAPON", "HAND_EQUIP", "ELEMENTAL", "WEAPON_TWO_HAND", "ORB", "RANGED", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "LIGHT", "ARM_SET_TIDEBINDER"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "ORB_WET_LIGHT_00",
+      "Loc": {
+        "Name": "Tidebinder's Drowned Moon",
+        "Description": "A sphere of seawater that never spills, waxing with its keeper's resolve. Each kill returns the tide to the whole crew."
+      },
+      "Icon": {
+        "Base": "PRERENDER_ORB_WET_LIGHT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.05, "S": 0.25, "V": 0.05},
+          {"Op": "GLOW", "Color": "#2f8fc4", "Radius": 6, "Strength": 1.0},
+          {"Op": "OUTLINE", "Color": "#1b4f72", "Width": 2}
+        ]
+      },
+      "DesignNote": "Set ARTIFACT: SKILL_DISCIPLINE grants party FOC on kill/crit (verified item-passive skill, C-PROC-12; focus gain source per C-FOC-05), turning the set's crit-fishing (C-FOC-04 +5% per point) into a party-wide focus engine - MP-first by construction. MAGIC_FOCUS_ADD_ATTACK_00 (live ORB_WET_LIGHT_00 kit) is a 1-roll CHANGE_STAT FOC action: FOC only lands on PERFECT (C-STAT-07), and a single-roll ability is PERFECT on any success, so one pinned point guarantees it (C-STAT-08). ORB_2H template copied verbatim from ClassAbilityTemplates (incl. bag and ShuffleAbilityBag false); water abilities added exactly as the live donor references them. Stats ATK 18 / FOC 1 / FIND 1 mirror the only live ORB_2H|ARTIFACT cell exactly.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_GRAVE_SPADE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 150,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "BLUNT_2H",
+        "Rarity": "RARE",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND", "OFF_HAND"],
+          "Stats": {"ATK": 28, "CRT": 15, "LCK": 5},
+          "Passives": ["SKILL_HEAVYHANDED"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "BLUNT_GROUND_ATTACK": {"MinValue": 0, "MaxValue": 0.9, "ACC": -5, "Stat": "VIT", "Rolls": 5, "Ammo": 0},
+            "BLUNT_BASIC_ATTACK": {"MinValue": 0.5, "MaxValue": 1, "ACC": 0, "Stat": "VIT", "Rolls": 4, "Ammo": 0},
+            "BLUNT_STUN_ATTACK": {"MinValue": 0, "MaxValue": 0, "ACC": 0, "Stat": "VIT", "Rolls": 4, "Ammo": 0}
+          },
+          "AbilityBag": [
+            "BLUNT_GROUND_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["DAZE", "PHYSICAL", "STUN", "RARE", "WEAPON", "HAND_EQUIP", "WEAPON_TWO_HAND", "BLUNT", "MELEE", "MAKESHIFT", "DROPPABLE", "DUNGEON_MARKET", "NIGHT_MARKET", "HEAVY", "ARM_SET_GRAVEDIGGER"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "BLUNT_SHOVEL_HEAVY_00",
+      "Loc": {
+        "Name": "Gravedigger's Last Spade",
+        "Description": "It has closed a thousand graves and opened a few it shouldn't have. Swing it like you mean it, or it will dig your own."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLUNT_SHOVEL_HEAVY_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.0, "S": -0.25, "V": -0.1},
+          {"Op": "GLOW", "Color": "#a8e063", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "The gambler's weapon: SKILL_HEAVYHANDED gives +20% to rolls but a CRIT_FAIL always breaks the weapon (C-PROC-12; breakage per C-ATK-09) - LCK 5 sweetens every other skill proc since the player proc bonus is (LCK-50)*mult, negative below 50 (C-STAT-15). BLUNT_2H template (BLUNT_GROUND_ATTACK) copied verbatim; BLUNT_BASIC/STUN added exactly as the live donor BLUNT_SHOVEL_HEAVY_00 carries them. ATK 28 / CRT 15 / LCK 5 all on the live BLUNT_2H|RARE curve (p50 28 / min 15 / observed 5).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_GRAVE_TOKEN",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 25,
+        "MinTier": 0,
+        "MaxTier": 1,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "COMMON",
+        "Material": "METAL",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {"LCK": 5, "GLD": 5},
+          "Passives": ["SKILL_FINDSTUFF"],
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["COMMON", "TRINKET", "MAGIC", "DROPPABLE", "TOWN_MARKET", "ARM_SET_GRAVEDIGGER"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_COMPASS_00",
+      "Loc": {
+        "Name": "Coffin Nail Token",
+        "Description": "A bent nail pried from a pauper's coffin and worn smooth by worried thumbs. Wrong to keep; luckier still."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_COMPASS_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.1, "S": -0.2, "V": -0.05},
+          {"Op": "OUTLINE", "Color": "#c9b458", "Width": 2}
+        ]
+      },
+      "DesignNote": "Ladder starter for the LCK stack: below 50 LCK the player skill-proc bonus is NEGATIVE (C-STAT-15), so cheap early LCK is the set's on-ramp; LCK is also the most common overworld TestStat (O-ENC-10/11, 30 of 172 encounters). SKILL_FINDSTUFF is LCK-scaled loot finding (O-STAT-06). LCK 5 / GLD 5 sit at the live ARMOR_TRINKET|COMMON cell maxima.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_GRAVE_BOOTS",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 95,
+        "MinTier": 0,
+        "MaxTier": 2,
+        "Class": "ARMOR_FEET",
+        "Rarity": "UNCOMMON",
+        "Material": "LEATHER",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["BOOTS"],
+          "Stats": {"LCK": 5, "MOV": 1, "SPD": 3},
+          "Passives": ["SKILL_NICEDAY"],
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["UNCOMMON", "ARMOR", "ARMOR_FEET", "LIGHT", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "PHYSICAL", "ARM_SET_GRAVEDIGGER"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "BOOTS_SPEED_LIGHT_00",
+      "Loc": {
+        "Name": "Sexton's Quickstep Boots",
+        "Description": "Boots that learned to cross a graveyard before dark. Somehow the weather is always kind to whoever wears them."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOOTS_SPEED_LIGHT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.08, "S": -0.15, "V": -0.08},
+          {"Op": "GLOW", "Color": "#b8d96a", "Radius": 3, "Strength": 0.5}
+        ]
+      },
+      "DesignNote": "Overworld mobility payoff: SKILL_NICEDAY adds LCK-scaled golden movement slots (O-STAT-02), and MOV adds movement dice while SPD makes them land (O-STAT-01) - the LCK the set stacks literally becomes map speed. LCK 5 / MOV 1 / SPD 3 all within the live ARMOR_FEET|UNCOMMON cell (LCK max 6, MOV 1, SPD max 8).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_GRAVE_CHARM",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 155,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {"LCK": 20, "FIND": 1},
+          "Passives": ["SKILL_FINDTREASURE"],
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["RARE", "TRINKET", "MAGIC", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "ARM_SET_GRAVEDIGGER"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_NOOSE_00",
+      "Loc": {
+        "Name": "Hangman's Lucky Knot",
+        "Description": "A noose that never did its job, cut down and coiled thirteen times. What failed the condemned works wonders for the digger."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_NOOSE_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.12, "S": -0.1, "V": -0.05},
+          {"Op": "GLOW", "Color": "#d4c65a", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "The big LCK rock: LCK 20 equals the live ARMOR_TRINKET|RARE maximum (TRINKET_LUCK_00), pushing the wearer past the 50-LCK break-even where skill-proc bonuses turn positive (C-STAT-15) and feeding the most common overworld TestStat (O-ENC-10/11). SKILL_FINDTREASURE is an LCK-scaled find proc (O-STAT-06); LCK does NOT enter loot rarity rolls, so the payoff is procs and encounter checks, not drop tables.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_GRAVE_CROWN",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 290,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_HEAD",
+        "Rarity": "ARTIFACT",
+        "Material": "METAL",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["HELMET"],
+          "Stats": {"LCK": 10, "PLCK": 10, "AWR": 5, "GLD": 15},
+          "Passives": ["SKILL_FORTUNE"],
+          "MaxCharges": 0
+        },
+        "Interactable": null,
+        "Tags": ["ARTIFACT", "ARMOR", "ARMOR_HEAD", "LIGHT", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "ARM_SET_GRAVEDIGGER"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "HELMET_SCOURGE_LUCKY_00",
+      "Loc": {
+        "Name": "Crown of the Fortunate Dead",
+        "Description": "Buried kings keep no secrets from the one who digs them up. Their pooled fortune settles on the whole party like grave-dust."
+      },
+      "Icon": {
+        "Base": "PRERENDER_HELMET_SCOURGE_LUCKY_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.05, "S": 0.1, "V": 0.05},
+          {"Op": "GLOW", "Color": "#e8d44d", "Radius": 6, "Strength": 1.0},
+          {"Op": "OUTLINE", "Color": "#8a7a1e", "Width": 2}
+        ]
+      },
+      "DesignNote": "Set ARTIFACT: PLCK 10 is a party-wide luck aura (P-prefixed stats apply to every player, C-STAT-04) - the co-op capstone of a set whose proc math is per-character (C-STAT-15). SKILL_FORTUNE is the game's only full-roll re-roll, AWR-scaled (O-ENC-05, C-PROC-12), hence the AWR 5. LCK 10 / PLCK 10 / AWR 5 / GLD 15 all within the live ARMOR_HEAD|ARTIFACT cell (LCK max 7 observed, 10 stays under the p50*1.5 warn line; PLCK/AWR/GLD at observed maxima).",
+      "Provenance": {"Source": "handcrafted"}
+    }
+  ]
+}

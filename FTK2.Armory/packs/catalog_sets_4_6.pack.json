@@ -1,0 +1,814 @@
+{
+  "PackId": "ARM_CATALOG_S46",
+  "Items": [
+    {
+      "Id": "ARM_REDSEASON_CULLERS_BOW",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 165,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "BOW_2H",
+        "Rarity": "RARE",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND", "OFF_HAND"],
+          "Stats": {
+            "ATK": 27,
+            "CRT": 12,
+            "DAM_BEAST": 20
+          },
+          "Passives": ["SKILL_CALLEDSHOT"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "BOW_AOE_MAGIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.6,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "BOW_ENTANGLE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "BOW_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 4,
+              "Stat": "AWR"
+            },
+            "BOW_BLEED_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "PHYSICAL", "BLEED", "RARE", "WEAPON", "HAND_EQUIP", "WEAPON_TWO_HAND", "BOW", "RANGED", "MEDIUM"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "BOW_HUNTER_BASIC_01",
+      "Loc": {
+        "Name": "Culler's Bow",
+        "Description": "Strung for the red season, when the wardens thin the herds. Every arrow it looses is meant to open a wound that will not close."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOW_HUNTER_BASIC_01",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.05, "S": 0.25, "V": -0.05},
+          {"Op": "GLOW", "Color": "#b3122e", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Set keystone: SKILL_CALLEDSHOT forces a PERFECT roll + crit on ranged attacks [C-PROC-12], and since ADD_STATUS only lands on PERFECT [C-STATUS-10], the proc turns BOW_BLEED_ATTACK's bleed into a guarantee. BLEED ticks are flat and pierce DEF/RES [C-STATUS-07]; DAM_BEAST adds +1%/pt vs BEAST-tagged prey [C-ATK-07]. Baseline BOW_2H template kept verbatim; BOW_BASIC_ATTACK and BOW_BLEED_ATTACK added at live roll params (AWR per C-STAT-13). ATK 27/CRT 12 within BOW_2H|RARE p50*1.5. DAM_BEAST has no BOW_2H curve cell; magnitude mirrors live DAM_FLYING 15-25 on bows.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_REDSEASON_SKINNERS_KNIFE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 55,
+        "MinTier": 0,
+        "MaxTier": 2,
+        "Class": "DAGGER",
+        "Rarity": "UNCOMMON",
+        "Material": "METAL",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND"],
+          "Stats": {
+            "ATK": 13,
+            "CRT": 10,
+            "SPD": 4
+          },
+          "Passives": [],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "KNIFE_BASIC_ATTACK": {
+              "ACC": 5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            },
+            "KNIFE_BLEED_ATTACK": {
+              "ACC": 5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_BLEED_ATTACK",
+            "KNIFE_BLEED_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "PHYSICAL", "BLEED", "UNCOMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "DAGGER", "MELEE", "BLADE", "TINY"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "BLADE_THIEF_TINY_02",
+      "Loc": {
+        "Name": "Skinner's Knife",
+        "Description": "A field-dresser's blade honed on ten thousand hides. It finds the vein by habit, not by aim."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLADE_THIEF_TINY_02_WEP_OBSIDIAN",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.04, "S": 0.2, "V": 0.0},
+          {"Op": "GLOW", "Color": "#8f0f22", "Radius": 4, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "Reliability blade: DAGGER template kept verbatim except ACC tuned 0->+5 on both 1-Roll SPD abilities (well inside the live -20..0 ACC band magnitude, per-ability ACC per C-STAT-19). A single-slot roll is the easiest PERFECT in the game [C-ATK-03], and ADD_STATUS only lands on PERFECT [C-STATUS-10], so this knife bleeds nearly on demand; the ticks then pierce DEF/RES [C-STATUS-07]. Crits also only roll on PERFECT [C-CRIT-01], so the same reliability feeds the set's CRT stack. Stats at DAGGER|UNCOMMON p50.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_REDSEASON_FLENSING_GLOVES",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 150,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_HANDS",
+        "Rarity": "RARE",
+        "Material": "LEATHER",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["GLOVES"],
+          "Stats": {
+            "CRT": 15,
+            "CRTD": 15,
+            "EVD": 3
+          },
+          "Passives": [],
+          "MaxCharges": -1
+        },
+        "Interactable": null,
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "RARE", "ARMOR", "ARMOR_HANDS", "LIGHT", "PHYSICAL"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "GLOVES_THIEF_LIGHT_02",
+      "Loc": {
+        "Name": "Flensing Gloves",
+        "Description": "Supple red leather, stained darker at the fingertips. The hands that wear them never hesitate on the killing stroke."
+      },
+      "Icon": {
+        "Base": "PRERENDER_GLOVES_THIEF_LIGHT_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.06, "S": 0.3, "V": -0.05},
+          {"Op": "GLOW", "Color": "#b3122e", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Crit payload piece: crits only roll on PERFECT and chance = CRT + 5/focus + 30 if MARKED [C-CRIT-01]; CRTD converts those crits into +15% bonus damage on top of the base 15% [C-CRIT-02]. CRT 15 = ARMOR_HANDS|RARE p50, CRTD 15 = observed value, EVD 3 under p50*1.5.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_REDSEASON_STALKERS_HOOD",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 130,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_HEAD",
+        "Rarity": "RARE",
+        "Material": "CLOTH",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["HELMET"],
+          "Stats": {
+            "AWR": 4,
+            "CRT": 10,
+            "EVD": 6,
+            "FOC": 1
+          },
+          "Passives": [],
+          "MaxCharges": -1
+        },
+        "Interactable": null,
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "RARE", "ARMOR", "ARMOR_HEAD", "LIGHT", "PHYSICAL"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "HELMET_DRUID_LIGHT_02",
+      "Loc": {
+        "Name": "Stalker's Hood",
+        "Description": "Dyed with rowan-berry and ash, it keeps the breath slow and the eye patient until the season opens."
+      },
+      "Icon": {
+        "Base": "PRERENDER_HELMET_DRUID_LIGHT_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.08, "S": 0.2, "V": -0.1},
+          {"Op": "GLOW", "Color": "#7c1024", "Radius": 4, "Strength": 0.5}
+        ]
+      },
+      "DesignNote": "Focus battery for the set: each pinned focus point auto-succeeds one roll slot [C-STAT-08] pushing attacks toward PERFECT (where bleeds [C-STATUS-10] and crits [C-CRIT-01] live), and adds +5% crit chance on top [C-CRIT-01]; +1 FOC raises the pool cap [C-STAT-07]. AWR feeds the bow's roll stat [C-STAT-13]. All stats at or under ARMOR_HEAD|RARE p50*1.5.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_REDSEASON_FANG_OF_THE_CULL",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 260,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {
+            "CRT": 20,
+            "DAM_BEAST": 25,
+            "AWR": 3
+          },
+          "Passives": [],
+          "MaxCharges": -1
+        },
+        "Interactable": null,
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "ARTIFACT", "TRINKET", "MAGIC", "PHYSICAL"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_COLLAR_02",
+      "Loc": {
+        "Name": "Fang of the Cull",
+        "Description": "The first tooth taken in the first red season, strung on a cord of sinew. The wilds remember the debt, and pay it in blood."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_COLLAR_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": -0.05, "S": 0.25, "V": -0.05},
+          {"Op": "GLOW", "Color": "#d41f3c", "Radius": 6, "Strength": 0.9}
+        ]
+      },
+      "DesignNote": "Set ARTIFACT (the only one in RED SEASON). The game has no base crit chance - CRT is the entire budget [C-CRIT-01] - so a flat CRT 20 trinket is the strongest crit enabler a hunter can slot; DAM_BEAST 25 = +25% vs BEAST-tagged enemies [C-ATK-07]. CRT 20 and AWR 3 equal the observed ARMOR_TRINKET|ARTIFACT maxima (ARTIFACT may reach observed max); DAM_BEAST mirrors the cell's DAM_* 25 pattern.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_WAYWATCH_MIREWALKERS",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 115,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_FEET",
+        "Rarity": "RARE",
+        "Material": "LEATHER",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["BOOTS"],
+          "Stats": {
+            "SPD": 4,
+            "MOV": 1,
+            "EVD": 4
+          },
+          "Passives": ["SKILL_STEADYSTRIDE"],
+          "MaxCharges": -1
+        },
+        "Interactable": null,
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "RARE", "ARMOR", "ARMOR_FEET", "LIGHT", "PHYSICAL"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "BOOTS_SPEED_LIGHT_00",
+      "Loc": {
+        "Name": "Mirewalkers",
+        "Description": "Waxed against bog-water and rain, these boots have never once turned back for weather."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOOTS_SPEED_LIGHT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.25, "S": 0.15, "V": 0.0},
+          {"Op": "GLOW", "Color": "#3f8f4a", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Movement engine: MOV adds movement dice and SPD is the per-slot chance that lands them [O-STAT-01]; SKILL_STEADYSTRIDE makes the wearer immune to rain converting those successes to failures [O-STAT-02]. SPD/MOV/EVD all at ARMOR_FEET|RARE p50 levels.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_WAYWATCH_GREENMANTLE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 290,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_BODY",
+        "Rarity": "RARE",
+        "Material": "CLOTH",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["ARMOR"],
+          "Stats": {
+            "AWR": 5,
+            "EVD": 8,
+            "RES": 4,
+            "HP": -5
+          },
+          "Passives": ["SKILL_SCOUT"],
+          "MaxCharges": -1
+        },
+        "Interactable": null,
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "RARE", "ARMOR", "ARMOR_BODY", "LIGHT", "PHYSICAL"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_DRUID_LIGHT_02",
+      "Loc": {
+        "Name": "Greenmantle",
+        "Description": "A waywatcher's cloak woven from under-canopy moss and shadow. Roads end; the mantle does not."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_DRUID_LIGHT_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.22, "S": 0.2, "V": -0.05},
+          {"Op": "GLOW", "Color": "#2f7a3e", "Radius": 5, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "Ambush insurance: AWR gives a flat AWR*1% chance to avoid roaming-enemy AMBUSH [O-STAT-03] and is the TestStat of the camp-ambush minigame's all-must-succeed rolls [O-STAT-04]; EVD 8 doubles as dodge in combat [C-STAT-20]. SKILL_SCOUT for the overworld kit. AWR 5/EVD 8/RES 4 at ARMOR_BODY|RARE p50 levels; HP -5 mirrors the live light-armor tradeoff (cell p50 -5.5).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_WAYWATCH_FARSEER_COWL",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 125,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_HEAD",
+        "Rarity": "RARE",
+        "Material": "CLOTH",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["HELMET"],
+          "Stats": {
+            "AWR": 4,
+            "LCK": 12,
+            "FIND": 1
+          },
+          "Passives": ["SKILL_NAVIGATOR"],
+          "MaxCharges": -1
+        },
+        "Interactable": null,
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "RARE", "ARMOR", "ARMOR_HEAD", "LIGHT", "PHYSICAL"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "HELMET_DRUID_LIGHT_01",
+      "Loc": {
+        "Name": "Farseer's Cowl",
+        "Description": "Its hem is stitched with sixty tiny knots, one for every pass the first waywatcher charted and never lost."
+      },
+      "Icon": {
+        "Base": "PRERENDER_HELMET_DRUID_LIGHT_01",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.24, "S": 0.15, "V": 0.0},
+          {"Op": "GLOW", "Color": "#4a9a55", "Radius": 4, "Strength": 0.5}
+        ]
+      },
+      "DesignNote": "Encounter head: LCK is the single most common overworld TestStat (30 of 172 encounters) [O-ENC-11], AWR both feeds ambush avoidance [O-STAT-03] and the ambush minigame [O-STAT-04]. SKILL_NAVIGATOR for the explorer kit; FIND 1 at its observed live magnitude (flavor economy stat, semantics tracked as inferred). LCK 12 under ARMOR_HEAD|RARE p50 13.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_WAYWATCH_DAWNFINDER",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 140,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {
+            "XPM": 10,
+            "LCK": 10,
+            "MOV": 1
+          },
+          "Passives": ["SKILL_SAFECABIN"],
+          "MaxCharges": -1
+        },
+        "Interactable": null,
+        "Tags": ["DROPPABLE", "TOWN_MARKET", "NIGHT_MARKET", "RARE", "TRINKET", "MAGIC"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_COMPASS_00",
+      "Loc": {
+        "Name": "Dawnfinder",
+        "Description": "A brass compass whose needle points not north, but toward morning. Those who carry it always find somewhere safe to sleep."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_COMPASS_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.2, "S": 0.1, "V": 0.05},
+          {"Op": "GLOW", "Color": "#69b872", "Radius": 5, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "Journey trinket: XPM is a per-character +10% on every XP gain [O-LOOT-16], LCK feeds the top overworld TestStat pool [O-ENC-11] and the skill-proc luck bonus above 50 [C-STAT-15]; SKILL_SAFECABIN for camp safety. XPM 10 = ARMOR_TRINKET|RARE observed value, LCK 10 under the cell's observed 20, MOV 1 mirrors live COMMON/UNCOMMON trinket MOV.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_WAYWATCH_TRAILPIKE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 85,
+        "MinTier": 0,
+        "MaxTier": 2,
+        "Class": "SPEAR",
+        "Rarity": "UNCOMMON",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND"],
+          "Stats": {
+            "ATK": 15,
+            "CRT": 6,
+            "DEF": 3
+          },
+          "Passives": ["SKILL_ELITEAMBUSH", "SKILL_ELITESNEAK"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "MELEE_PIERCE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "POLEARM_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 2,
+              "Stat": "AWR"
+            },
+            "POLEARM_SWIPE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.75,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "POLEARM_BASIC_ATTACK",
+            "POLEARM_BASIC_ATTACK",
+            "MELEE_PIERCE_ATTACK",
+            "MELEE_PIERCE_ATTACK",
+            "POLEARM_SWIPE_ATTACK",
+            "POLEARM_SWIPE_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "PHYSICAL", "UNCOMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "SPEAR", "MELEE", "POLEARM", "LIGHT"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "POLEARM_BEASTMAN_LIGHT_02",
+      "Loc": {
+        "Name": "Trailpike",
+        "Description": "Half walking-staff, half boar-spear. A waywatcher plants it at camp's edge and sleeps with both eyes closed."
+      },
+      "Icon": {
+        "Base": "PRERENDER_POLEARM_BEASTMAN_LIGHT_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.2, "S": 0.12, "V": 0.0},
+          {"Op": "GLOW", "Color": "#3f8f4a", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Minigame skeleton key: SKILL_ELITEAMBUSH and SKILL_ELITESNEAK remove the all-must-succeed AWR/SPD rolls from the ambush and sneak minigames entirely [O-STAT-04]. SPEAR class ability template kept verbatim - its AWR roll stat [C-STAT-13] fits the watcher theme. ATK/CRT/DEF at SPEAR|UNCOMMON p50.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_ASHEN_OATHBRAND",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 330,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "BLADE_2H",
+        "Rarity": "RARE",
+        "Material": "METAL",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND", "OFF_HAND"],
+          "Stats": {
+            "ATK": 34,
+            "EVD": -6
+          },
+          "Passives": ["SKILL_HEAVYHANDED"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "BLADE_FIRE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "STR"
+            },
+            "BLADE_FIRE_HEAVY_ATTACK": {
+              "ACC": -20,
+              "Ammo": 0,
+              "MaxValue": 1.4,
+              "MinValue": 0,
+              "Rolls": 5,
+              "Stat": "STR"
+            },
+            "BLADE_FIRE_SPIN_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.75,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "BLADE_FIRE_ATTACK",
+            "BLADE_FIRE_ATTACK",
+            "BLADE_FIRE_HEAVY_ATTACK",
+            "BLADE_FIRE_SPIN_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "PHYSICAL", "FIRE", "ELEMENTAL", "RARE", "WEAPON", "HAND_EQUIP", "WEAPON_TWO_HAND", "BLADE", "MELEE", "HEAVY"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "BLADE_DEMON_HEAVY_02",
+      "Loc": {
+        "Name": "Oathbrand",
+        "Description": "The covenant's terms are etched down the fuller in a script that smoulders. Swing it without doubt, for it punishes hesitation before it punishes the enemy."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BLADE_DEMON_HEAVY_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.02, "S": -0.2, "V": -0.15},
+          {"Op": "GLOW", "Color": "#e2571b", "Radius": 6, "Strength": 0.9}
+        ]
+      },
+      "DesignNote": "Cursed bargain blade: SKILL_HEAVYHANDED grants +20% to attack rolls but any crit-fail ALWAYS breaks the weapon [C-PROC-12] - and a crit-fail player attack breaks a real weapon anyway [C-ATK-09], so the pact merely removes mercy. The drawback is real: EVD -6 is dodge chance lost point-for-point [C-STAT-20]. ATK 34 is over-curve by design (BLADE_2H|RARE p50 28) but under the observed max 36. BLADE_2H template kept verbatim; its fire abilities are the set's flavor.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_ASHEN_CINDERROD",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 160,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "WAND",
+        "Rarity": "RARE",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND"],
+          "Stats": {
+            "ATK": 20,
+            "FOC": 1,
+            "LCK": -8
+          },
+          "Passives": [],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_PULL_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_STUN_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "INT"
+            },
+            "WAND_FIRE_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0.5,
+              "Rolls": 2,
+              "Stat": "INT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_STUN_ATTACK",
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "MAGICAL", "FIRE", "ELEMENTAL", "RARE", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "WAND", "RANGED", "LIGHT"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "WAND_IMP_LIGHT_02",
+      "Loc": {
+        "Name": "Cinderrod",
+        "Description": "Cut from a gallows-tree struck by covenant fire. It burns bright for its bearer and quietly burns their fortune to pay for it."
+      },
+      "Icon": {
+        "Base": "PRERENDER_WAND_IMP_LIGHT_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.03, "S": 0.1, "V": -0.1},
+          {"Op": "GLOW", "Color": "#e2571b", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Cursed bargain wand: ATK 20 sits over the WAND|RARE p50 13 (under observed max 23) and +1 FOC feeds the focus pool [C-STAT-07], but LCK -8 is a REAL cost - the player skill-proc luck bonus is ceil((LCK-50)*mult)% and goes NEGATIVE below 50 LCK, dragging every skill proc on the character [C-STAT-15]. WAND template kept verbatim; WAND_FIRE_ATTACK added at its live roll params (INT, 2 rolls).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_ASHEN_PENITENT_PLATE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 340,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_BODY",
+        "Rarity": "RARE",
+        "Material": "METAL",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["ARMOR"],
+          "Stats": {
+            "DEF": 10,
+            "RES": 9,
+            "HP": -8,
+            "SPD": -4
+          },
+          "Passives": [],
+          "MaxCharges": -1
+        },
+        "Interactable": null,
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "RARE", "ARMOR", "ARMOR_BODY", "HEAVY", "PHYSICAL"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_INFERNO_HEAVY_00",
+      "Loc": {
+        "Name": "Penitent's Plate",
+        "Description": "Ash-grey plate quenched in the covenant's own pyre. It turns nearly any blade, and in exchange asks only a little of the life it protects."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_INFERNO_HEAVY_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.0, "S": -0.35, "V": -0.1},
+          {"Op": "GLOW", "Color": "#b0492a", "Radius": 5, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Cursed bargain armor: DEF/RES are flat, uncapped subtraction [C-DEF-01], so DEF 10 / RES 9 (over p50 3/5 but under observed maxima 12/13) is a big mitigation spike. The bargain bites three ways: HP -8 comes straight off max HP [C-STAT-05], SPD -4 delays initiative = min(100, SPD + rand 0..10) [C-TGT-04], and the same SPD loss hurts overworld movement slot chances [O-STAT-01].",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_ASHEN_COVENANT_CHALICE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 270,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {
+            "CRT": 20,
+            "DAM_FIRE": 25,
+            "PA": 1,
+            "VIT": -5
+          },
+          "Passives": [],
+          "MaxCharges": -1
+        },
+        "Interactable": null,
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "ARTIFACT", "TRINKET", "MAGIC", "FIRE"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_1_6_GOBLET_FIRE_00",
+      "Loc": {
+        "Name": "Covenant Chalice",
+        "Description": "Drink, and the covenant lends you its hunger: another hand raised in every hour of violence. What it drinks back is the marrow of your bones."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_1_6_GOBLET_FIRE_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.01, "S": 0.15, "V": -0.05},
+          {"Op": "GLOW", "Color": "#ff7a2f", "Radius": 6, "Strength": 1.0}
+        ]
+      },
+      "DesignNote": "Set ARTIFACT (the only one in ASHEN COVENANT). PA +1 is a whole extra primary action per turn - action economy is directly data-expressible via the PA equipment stat [C-STAT-18]. The price is VIT -5, a REAL drawback: players' max HP includes round(level x VIT x 0.13) [C-STAT-05] and VIT is a rollable combat stat on 430 live abilities [C-STAT-06, C-ATK-01], so the chalice bleeds both health pool and blunt/unarmed rolls. CRT 20 [C-CRIT-01], DAM_FIRE 25 and PA 1 all equal observed ARMOR_TRINKET|ARTIFACT cell values (ARTIFACT may reach observed max). Note: the cell's live drawback stat FOC -3 was the first choice but the validator's negative-max budget rule (-3 > -3x2) rejects it, so the curse moved to VIT.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_ASHEN_DEBTORS_NOOSE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 120,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {
+            "THRN": 5,
+            "HRG": 5,
+            "LCK": -10
+          },
+          "Passives": [],
+          "MaxCharges": -1
+        },
+        "Interactable": null,
+        "Tags": ["DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "RARE", "TRINKET", "MAGIC"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_NOOSE_00",
+      "Loc": {
+        "Name": "Debtor's Noose",
+        "Description": "A hangman's knot worn as a pendant. Whoever strikes the wearer pays a little of the debt; the wearer pays the rest in misfortune."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_NOOSE_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.0, "S": -0.25, "V": -0.15},
+          {"Op": "GLOW", "Color": "#8a4a2a", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Cursed bargain trinket: THRN 5 (observed max for ARMOR_TRINKET|RARE) returns flat damage on every non-ranged hit, even BLOCKED ones, unreduced by DEF/RES [C-STAT-11]; HRG 5 (observed max) regenerates it back out of combat [C-STAT-10]. The cost is LCK -10 - below 50 LCK the skill-proc luck bonus turns negative and worsens ALL skill procs [C-STAT-15]. Both positive stats sit above p50 but at cell maxima, the set's stated over-curve-plus-drawback pattern.",
+      "Provenance": {"Source": "handcrafted"}
+    }
+  ]
+}

@@ -1,0 +1,669 @@
+{
+  "PackId": "ARM_CATALOG_S79",
+  "Items": [
+    {
+      "Id": "ARM_HOLLOW_COURTIER",
+      "Thing": {
+        "ConsumableType": "COMBAT",
+        "Value": 40,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "DOLL",
+        "Rarity": "UNCOMMON",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": true,
+        "Ammo": 0,
+        "Interactable": {
+          "Abilities": {
+            "DOLL_SUMMON_01": null
+          },
+          "ShuffleAbilityBag": false
+        },
+        "Tags": ["PLAYTHING", "UNCOMMON", "DOLL", "LOOTABLE", "DROPPABLE", "NIGHT_MARKET"],
+        "Expansion": "FATE"
+      },
+      "VisualFallback": "DOLL_HUMAN_01",
+      "Loc": {
+        "Name": "Hollow Courtier",
+        "Description": "A porcelain attendant of a court that no longer exists. Wind it, and it still bows to an empty throne."
+      },
+      "Icon": {
+        "Base": "PRERENDER_DOLL_HUMAN_01",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.0, "S": -0.45, "V": -0.08},
+          {"Op": "GLOW", "Color": "#b8c8d8", "Radius": 5, "Strength": 0.7}
+        ]
+      },
+      "DesignNote": "Doll-class summon consumable, wiring copied verbatim from live DOLL_HUMAN_01 (Interactable {DOLL_SUMMON_01: null}, ConsumableType COMBAT, Stacks true - the proven PLAYTHING pattern; DOLL_SUMMON_01 has RequiresSkillRoll:false so it sidesteps the PERFECT gate, but still needs a free tile per C-SMN-01). The summoned plaything acts the same round and vanishes at combat end (C-SMN-02/03). Deviates from the generic equippable template because live DOLL items are consumables with no Equippable/slots.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_HOLLOW_SCEPTER",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 150,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "STAFF",
+        "Rarity": "RARE",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND"],
+          "Stats": {"ATK": 18, "CRT": 8, "FOC": 1},
+          "Passives": ["SKILL_SUPPORTRANGE"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_BASIC_ATTACK": {
+              "MinValue": 0.5,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "INT",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "CURSED_FOLLOWER_CURSE_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "INT",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "SUMMON_GHOST_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "INT",
+              "Rolls": 2,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_BASIC_ATTACK",
+            "MAGIC_BASIC_ATTACK",
+            "CURSED_FOLLOWER_CURSE_ATTACK",
+            "SUMMON_GHOST_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["MAGICAL", "CURSE", "RARE", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "STAFF", "RANGED", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "LIGHT"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "STAFF_HAG_CURSE_02",
+      "Loc": {
+        "Name": "Scepter of the Hollow Court",
+        "Description": "The old regent's staff of office. Tap it thrice on cold stone and something pale remembers it was once summoned to serve."
+      },
+      "Icon": {
+        "Base": "PRERENDER_STAFF_HAG_LIGHT_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.58, "S": -0.3, "V": -0.05},
+          {"Op": "GLOW", "Color": "#9fb6c9", "Radius": 6, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Summoner staff: STAFF ClassAbilityTemplate kept verbatim (MAGIC_BASIC_ATTACK, CURSED_FOLLOWER_CURSE_ATTACK on INT/3), plus SUMMON_GHOST_ATTACK - a real live ADD_CHARACTER ability (RANDOM/GHOST) with SkillRollData wiring copied from BOOK_MILITIA_DARK_02's MAGIC_SUMMON_UNDEAD_ATTACK (MinValue 0/MaxValue 0/Stat INT), tuned from Rolls 3 to Rolls 2: ADD_CHARACTER lands only on a PERFECT roll with a free tile (C-SMN-01), and fewer roll slots or focus auto-successes make that PERFECT reliable (C-STAT-08). FOC 1 feeds the same loop.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_HOLLOW_SIGNET",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 205,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {"FOC": 2},
+          "Passives": ["SKILL_REFOCUS"],
+          "MaxCharges": -1
+        },
+        "Tags": ["RARE", "TRINKET", "MAGIC", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_LOCKET_02",
+      "Loc": {
+        "Name": "Signet of the Vacant Throne",
+        "Description": "Whoever wears the seal speaks with the crown's authority. The dead still answer to it out of habit."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_LOCKET_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.55, "S": -0.25, "V": 0.02},
+          {"Op": "GLOW", "Color": "#aebfd4", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Focus battery for the summoner: pinned focus points force roll slots to auto-SUCCEED (C-STAT-08), which is exactly what ADD_CHARACTER summons need to hit their PERFECT gate (C-SMN-01). FOC 2 mirrors live TRINKET_BUFF_FOCUS_02 (observed max for ARMOR_TRINKET|RARE); SKILL_REFOCUS is a verified live focus-gain source (C-FOC-05).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_HOLLOW_CROWN",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 265,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "ARMOR_HEAD",
+        "Rarity": "ARTIFACT",
+        "Material": "METAL",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["HELMET"],
+          "Stats": {"INT": 5, "FOC": 1, "PRES": 3},
+          "Passives": ["SKILL_DISCIPLINE"],
+          "MaxCharges": -1
+        },
+        "Tags": ["ARTIFACT", "ARMOR", "ARMOR_HEAD", "LIGHT", "MAGICAL", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "HELMET_QUEEN_MAGIC_03",
+      "Loc": {
+        "Name": "Crown of the Hollow Court",
+        "Description": "Tarnished silver over a brow no one remembers. The court it commands is patient, quiet, and very cold."
+      },
+      "Icon": {
+        "Base": "PRERENDER_HELMET_QUEEN_MAGIC_03",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.6, "S": -0.35, "V": -0.05},
+          {"Op": "GLOW", "Color": "#c7d5e6", "Radius": 6, "Strength": 0.85}
+        ]
+      },
+      "DesignNote": "Set artifact and summoner capstone: SKILL_DISCIPLINE grants party focus on kill/crit (C-FOC-05), and focus is the summoner's currency - each pinned point auto-succeeds a roll slot (C-STAT-08), converting kills into the PERFECT rolls that ADD_CHARACTER summons require (C-SMN-01). INT 5 / FOC 1 / PRES 3 all within observed ARMOR_HEAD|ARTIFACT curve (maxes 6/1/5).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_STORM_WAND",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 160,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "WAND",
+        "Rarity": "RARE",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND"],
+          "Stats": {"ATK": 16, "FOC": 1},
+          "Passives": ["STATUS_IMMUNITY_SHOCK", "SKILL_SUPPORTRANGE"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "INT",
+              "Rolls": 2,
+              "Ammo": 0
+            },
+            "MAGIC_PULL_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "INT",
+              "Rolls": 2,
+              "Ammo": 0
+            },
+            "MAGIC_STUN_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1,
+              "ACC": -5,
+              "Stat": "INT",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "WAND_LIGHTNING_ATTACK": {
+              "MinValue": 0.5,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "INT",
+              "Rolls": 2,
+              "Ammo": 0
+            },
+            "IMBUE_ORB_SHOCK_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "INT",
+              "Rolls": 4,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": [
+            "WAND_LIGHTNING_ATTACK",
+            "WAND_LIGHTNING_ATTACK",
+            "MAGIC_PULL_ATTACK",
+            "MAGIC_STUN_ATTACK",
+            "MAGIC_CONFUSE_ONLY_SPLASH_ATTACK",
+            "IMBUE_ORB_SHOCK_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["SHOCK", "MAGICAL", "BUFF", "IMBUE_SHOCK", "ELEMENTAL", "RARE", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "WAND", "RANGED", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "LIGHT"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "WAND_MILITIA_LIGHTNING_03",
+      "Loc": {
+        "Name": "Stormcaller's Rod",
+        "Description": "Cut from a mast that survived nine strikes. The tenth lives in the grain, waiting to be spent."
+      },
+      "Icon": {
+        "Base": "PRERENDER_WAND_MILITIA_LIGHTNING_03",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.12, "S": 0.15, "V": 0.05},
+          {"Op": "GLOW", "Color": "#7fd4ff", "Radius": 6, "Strength": 0.9}
+        ]
+      },
+      "DesignNote": "WAND ClassAbilityTemplate kept verbatim (confuse/pull/stun on INT), extended with two live abilities: WAND_LIGHTNING_ATTACK (CHANGE_STAT HP + ADD_STATUS STATUS_SHOCK_00, params from live WAND_MILITIA_LIGHTNING_02) and IMBUE_ORB_SHOCK_ATTACK (ADD_STATUS STATUS_IMBUE_SHOCK_00 on an ALLY, wiring from live ORB_LIGHTNING_LIGHT_00, Rolls 4). ADD_STATUS only lands on PERFECT (C-STATUS-10); SHOCK then auto-fails one enemy roll slot unless focused (C-STATUS-20); the imbue makes an ally apply shock on every damaging hit (C-STATUS-19). Passives mirror the live lightning wand (STATUS_IMMUNITY_SHOCK + SKILL_SUPPORTRANGE).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_STORM_HANDBOW",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 180,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "HANDBOW",
+        "Rarity": "RARE",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND"],
+          "Stats": {"ATK": 16, "CRT": 15},
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "BOW_LIGHTNING_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "AWR",
+              "Rolls": 1,
+              "Ammo": 0
+            },
+            "BOW_LIGHTNING_PUSH_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 0.5,
+              "ACC": 0,
+              "Stat": "AWR",
+              "Rolls": 1,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": [
+            "BOW_LIGHTNING_ATTACK",
+            "BOW_LIGHTNING_ATTACK",
+            "BOW_LIGHTNING_ATTACK",
+            "BOW_LIGHTNING_PUSH_ATTACK",
+            "BOW_LIGHTNING_PUSH_ATTACK"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["SHOCK", "PHYSICAL", "DAZE", "ELEMENTAL", "RARE", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "HANDBOW", "RANGED", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET", "LIGHT"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "HANDBOW_LIGHTNING_LIGHT_03",
+      "Loc": {
+        "Name": "Thunderhead Repeater",
+        "Description": "Each bolt hums like a storm rolling in over the plains. Struck targets forget which hand holds their sword."
+      },
+      "Icon": {
+        "Base": "PRERENDER_HANDBOW_LIGHTNING_LIGHT_03",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.05, "S": 0.1, "V": 0.05},
+          {"Op": "GLOW", "Color": "#9fe0ff", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "The HANDBOW ClassAbilityTemplate IS the live lightning handbow kit (BOW_LIGHTNING_ATTACK / BOW_LIGHTNING_PUSH_ATTACK, both CHANGE_STAT HP + ADD_STATUS STATUS_SHOCK_00), kept verbatim at Rolls 1 on AWR: with a single roll slot every success is a PERFECT (C-ATK-03), so the SHOCK rider clears its PERFECT-only gate (C-STATUS-10) on any hit. SHOCK then auto-fails one enemy roll slot unless they pin focus (C-STATUS-20). ATK/CRT sit at the HANDBOW|RARE curve p50s (14/15).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_STORM_GLOVES",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 120,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_HANDS",
+        "Rarity": "RARE",
+        "Material": "CLOTH",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["GLOVES"],
+          "Stats": {"CRT": 10, "EVD": 3, "MAG": 2},
+          "Passives": ["STATUS_IMMUNITY_SHOCK"],
+          "MaxCharges": -1
+        },
+        "Tags": ["RARE", "ARMOR", "ARMOR_HANDS", "LIGHT", "MAGICAL", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "GLOVES_MYSTIC_MAGIC_02",
+      "Loc": {
+        "Name": "Galvanic Handwraps",
+        "Description": "Copper thread wound through silk. The wearer's fingertips smell faintly of rain and burnt air."
+      },
+      "Icon": {
+        "Base": "PRERENDER_GLOVES_MYSTIC_MAGIC_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.1, "S": 0.12, "V": 0.03},
+          {"Op": "GLOW", "Color": "#8fd8ff", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Caster gloves for the shock kit: MAG is a flat additive to the attack stat for magical-school damage (C-ATK-04), directly boosting the set's lightning bolts, and CRT pays off because shock builds fish for PERFECT rolls anyway - crits roll only on PERFECT (C-CRIT-01). STATUS_IMMUNITY_SHOCK mirrors live lightning weapons' self-protection; SHOCK denial matters because it auto-fails a roll slot unless focused (C-STATUS-20). All stats within ARMOR_HANDS|RARE curve.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_STORM_CONDUIT",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 284,
+        "MinTier": 3,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "ARTIFACT",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {"DAM_LIGHTNING": 25, "SPD": 3},
+          "Passives": ["STATUS_IMMUNITY_SHOCK"],
+          "MaxCharges": -1
+        },
+        "Tags": ["ARTIFACT", "TRINKET", "MAGIC", "UNIQUE", "DROPPABLE", "NIGHT_MARKET"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_TALISMAN_LIGHTNING_00",
+      "Loc": {
+        "Name": "Stormheart Conduit",
+        "Description": "A splinter of fulgurite set in silver. It does not store the storm; it invites it."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_TALISMAN_LIGHTNING_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.02, "S": 0.2, "V": 0.05},
+          {"Op": "GLOW", "Color": "#b3e6ff", "Radius": 7, "Strength": 1.0}
+        ]
+      },
+      "DesignNote": "Set artifact, modeled on live TRINKET_TALISMAN_LIGHTNING_00 (ARTIFACT, DAM_LIGHTNING 25 + STATUS_IMMUNITY_SHOCK): DAM_* stats give +1% damage per point against enemies carrying that tag (C-ATK-07), so it rewards hunting LIGHTNING-tagged foes and pairs with the set's shock output. Both stats at the observed ARMOR_TRINKET|ARTIFACT maxes (DAM_LIGHTNING 25, SPD 3) - ARTIFACT is allowed to reach max.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_VANGUARD_RAPIER",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 250,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "RAPIER",
+        "Rarity": "ARTIFACT",
+        "Material": "METAL",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND"],
+          "Stats": {"ATK": 18, "EVD": 5, "CRT": 10, "PA": 1},
+          "Passives": ["SKILL_EAGER", "SKILL_PARRY"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "BLADE_BASIC_ATTACK": {
+              "MinValue": 0.5,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "SPD",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "BLADE_PIERCE_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1,
+              "ACC": -5,
+              "Stat": "SPD",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "BLADE_REFLECT_MERC": {
+              "MinValue": 0,
+              "MaxValue": 0,
+              "ACC": 0,
+              "Stat": "SPD",
+              "Rolls": 2,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["PHYSICAL", "ARTIFACT", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "RAPIER", "BLADE", "LIGHT", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "RAPIER_MILITIA_LIGHT_03",
+      "Loc": {
+        "Name": "Oathfirst",
+        "Description": "The vanguard's vow, ground to a point: be first through the gate, and let nothing touch you on the way."
+      },
+      "Icon": {
+        "Base": "PRERENDER_RAPIER_MILITIA_LIGHT_03",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.14, "S": 0.1, "V": 0.08},
+          {"Op": "GLOW", "Color": "#ffd98a", "Radius": 5, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Set artifact skirmish blade: RAPIER ClassAbilityTemplate verbatim (SPD-rolled blade kit). SKILL_EAGER forces acting first (C-PROC-12), trumping the once-per-combat initiative roll of SPD + rand(0..10) (C-TGT-04); EVD is a binary total-negation dodge (C-STAT-20); PA adds a primary action (C-STAT-18). SKILL_PARRY is blade-gated (C-PROC-08) and appears on live rapiers. Stat line mirrors the live ARTIFACT rapier curve exactly (RAPIER|ARTIFACT: ATK 18, CRT 10, EVD 5, PA 1); SKILL_EAGER itself is precedented on live rapiers (RAPIER_TOYMAKER_BASIC_00).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_VANGUARD_BOOTS",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 140,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_FEET",
+        "Rarity": "RARE",
+        "Material": "LEATHER",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["BOOTS"],
+          "Stats": {"SPD": 4, "EVD": 4, "MOV": 1},
+          "Passives": ["STATUS_IMMUNITY_ENTANGLE"],
+          "MaxCharges": -1
+        },
+        "Tags": ["RARE", "ARMOR", "ARMOR_FEET", "LIGHT", "PHYSICAL", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "BOOTS_SPEED_LIGHT_00",
+      "Loc": {
+        "Name": "Vanguard's Striders",
+        "Description": "Soles worn thin from always being a step ahead. Brambles, nets, and grasping hands find nothing to hold."
+      },
+      "Icon": {
+        "Base": "PRERENDER_BOOTS_SPEED_LIGHT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.14, "S": 0.08, "V": 0.05},
+          {"Op": "GLOW", "Color": "#ffe1a0", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Initiative/evasion boots: SPD feeds the once-per-combat initiative roll of SPD + rand(0..10) (C-TGT-04) and EVD is a binary dodge capped at 95 (C-STAT-20). STATUS_IMMUNITY_ENTANGLE protects both halves - ENTANGLE blocks melee/move/flee AND disables dodging entirely (C-STATUS-23), so immunity keeps the evasion plan online. Stats within ARMOR_FEET|RARE curve (SPD max 5, EVD max 6, MOV 1), modeled on live BOOTS_SPEED_LIGHT_00.",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_VANGUARD_BANNER",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 200,
+        "MinTier": 2,
+        "MaxTier": 3,
+        "Class": "POLEARM_2H",
+        "Rarity": "RARE",
+        "Material": "WOOD",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["MAIN_HAND", "OFF_HAND"],
+          "Stats": {"ATK": 20, "RES": 3, "PSPD": 2},
+          "Passives": ["SKILL_ENCOURAGE"],
+          "MaxCharges": -1
+        },
+        "Interactable": {
+          "Abilities": {
+            "POLEARM_LEFT_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "AWR",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "POLEARM_PULL_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "AWR",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "POLEARM_PUSH_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "AWR",
+              "Rolls": 3,
+              "Ammo": 0
+            },
+            "POLEARM_RIGHT_ATTACK": {
+              "MinValue": 0,
+              "MaxValue": 1,
+              "ACC": 0,
+              "Stat": "AWR",
+              "Rolls": 3,
+              "Ammo": 0
+            }
+          },
+          "AbilityBag": [],
+          "ShuffleAbilityBag": true
+        },
+        "Tags": ["PHYSICAL", "BUFF", "RARE", "WEAPON", "HAND_EQUIP", "WEAPON_TWO_HAND", "POLEARM", "MEDIUM", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "POLEARM_CROOK_MEDIUM_02",
+      "Loc": {
+        "Name": "Standard of the Oath",
+        "Description": "A company standard on a fighting haft. Where it is planted, the line does not waver - it advances."
+      },
+      "Icon": {
+        "Base": "PRERENDER_POLEARM_CROOK_MEDIUM_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.13, "S": 0.15, "V": 0.05},
+          {"Op": "GLOW", "Color": "#ffd27f", "Radius": 6, "Strength": 0.8}
+        ]
+      },
+      "DesignNote": "Banner-polearm party anchor: POLEARM_2H ClassAbilityTemplate verbatim (four AWR/3 sweep-and-shove attacks). SKILL_ENCOURAGE flips one ally fail slot into a success, TAL-scaled at radius 2 (C-PROC-12) - a banner you keep near the line. PSPD is a P-prefixed party-wide stat applied to every player (C-STAT-04), nudging the whole party's initiative rolls (C-TGT-04). ATK 20/RES 3 sit near the POLEARM_2H|RARE curve p50s (19.5/3.5).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_VANGUARD_PLATE",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 170,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_BODY",
+        "Rarity": "RARE",
+        "Material": "METAL",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["ARMOR"],
+          "Stats": {"DEF": 3, "EVD": 6, "SPD": 3, "PEVD": 2},
+          "Passives": ["SKILL_STEADFAST"],
+          "MaxCharges": -1
+        },
+        "Tags": ["RARE", "ARMOR", "ARMOR_BODY", "MEDIUM", "PHYSICAL", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "CHESTARMOR_MILITIA_MEDIUM_02",
+      "Loc": {
+        "Name": "Oathkeeper's Halfplate",
+        "Description": "Light enough to lead the charge, proud enough to be seen doing it. The dents are all on the front."
+      },
+      "Icon": {
+        "Base": "PRERENDER_CHESTARMOR_MILITIA_MEDIUM_02",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.13, "S": 0.1, "V": 0.06},
+          {"Op": "GLOW", "Color": "#ffdf9e", "Radius": 4, "Strength": 0.5}
+        ]
+      },
+      "DesignNote": "Skirmisher body armor: EVD 6 rides the binary-dodge check (EVD x 0.01, cap 95, total negation - C-STAT-20) while SKILL_STEADFAST is a verified item-passive-ready skill (block to 0 damage, VIT/DEF/RES-scaled - C-PROC-12) as the fallback when the dodge doesn't come up. PEVD extends dodge party-wide (C-STAT-04). All stats within ARMOR_BODY|RARE curve (EVD max 10, SPD max 5, PEVD max 4).",
+      "Provenance": {"Source": "handcrafted"}
+    },
+    {
+      "Id": "ARM_VANGUARD_PENNON",
+      "Thing": {
+        "ConsumableType": "NONE",
+        "Value": 190,
+        "MinTier": 1,
+        "MaxTier": 3,
+        "Class": "ARMOR_TRINKET",
+        "Rarity": "RARE",
+        "Material": "NONE",
+        "Hidden": false,
+        "Stacks": false,
+        "Ammo": 0,
+        "Equippable": {
+          "Slots": ["TRINKET"],
+          "Stats": {"SKL": 5, "PDEF": 2},
+          "Passives": ["SKILL_DISTRACT"],
+          "MaxCharges": -1
+        },
+        "Tags": ["RARE", "TRINKET", "MAGIC", "DROPPABLE", "NIGHT_MARKET", "DUNGEON_MARKET"],
+        "Expansion": "BASE"
+      },
+      "VisualFallback": "TRINKET_DISTRACT_00",
+      "Loc": {
+        "Name": "Pennon of the Vanguard",
+        "Description": "A ribbon from the first banner ever carried through a breach. Enemies watch it flutter when they should be watching the blade."
+      },
+      "Icon": {
+        "Base": "PRERENDER_TRINKET_DISTRACT_00",
+        "Transforms": [
+          {"Op": "HSV_SHIFT", "H": 0.14, "S": 0.12, "V": 0.05},
+          {"Op": "GLOW", "Color": "#ffd98a", "Radius": 4, "Strength": 0.6}
+        ]
+      },
+      "DesignNote": "Support trinket mirroring live TRINKET_DISTRACT_00 (SKL 5 + SKILL_DISTRACT): DISTRACT flips one enemy success slot into a failure, TAL-scaled (C-PROC-12), and the SKL stat adds +1% to EVERY skill proc roll (C-PROC-02), feeding the whole set's ENCOURAGE/DISTRACT/EAGER package. PDEF 2 is a party-wide defense aura (C-STAT-04), within ARMOR_TRINKET|RARE curve (PDEF max 3).",
+      "Provenance": {"Source": "handcrafted"}
+    }
+  ]
+}
