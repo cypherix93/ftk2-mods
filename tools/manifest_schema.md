@@ -27,7 +27,7 @@ validation, same compilation. Provenance records which is which.
     "Equippable": {
       "Slots": ["ARMOR"],            // never empty (EOR loader rejects)
       "Stats": {"DEF": 3, "THRN": 4, "VIT": 5},   // keys must exist on live equipment
-      "Passives": ["SKILL_TAUNTINGBLOW"],          // must exist in live SkillConfigs/ids
+      "Passives": ["SKILL_STEADFAST"],             // must exist in live SkillConfigs/ids
       "MaxCharges": -1
     },
     // Optional; every ability referenced (keys, AbilityBag, AbilityFillBag) must exist

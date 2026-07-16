@@ -167,6 +167,19 @@ def test_icon_base_must_resolve_when_sprites_given():
     assert errors(validate_pack(pack_of(e), VOCAB, None)) == []
 
 
+def test_negative_stats_skip_budget_check():
+    # curses/drawbacks: a negative value must never trip budget checks, even
+    # when the observed max for that stat is itself negative
+    vocab = copy.deepcopy(VOCAB)
+    vocab["StatCurves"]["BLADE|COMMON"]["stats"]["LCK"] = {
+        "min": -6, "max": -3, "mean": -4, "p50": -4
+    }
+    e = good_entry()
+    e["Thing"]["Equippable"]["Stats"]["LCK"] = -10
+    findings = validate_pack(pack_of(e), vocab, SPRITES)
+    assert not any(f["check"].startswith("budget") for f in findings)
+
+
 def test_rarity_none_equippable_warns():
     e = good_entry()
     e["Thing"]["Rarity"] = "NONE"

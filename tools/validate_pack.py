@@ -114,6 +114,11 @@ def validate_pack(pack: dict, vocab: dict, sprite_index: dict | None = None) -> 
                 ref = curve.get(stat)
                 if ref is None or not isinstance(val, (int, float)):
                     continue
+                if val <= 0:
+                    # negative stats are curses/drawbacks; the max-based budget
+                    # ceiling is meaningless for them (and misfires when the
+                    # observed max is itself negative)
+                    continue
                 if val > ref["max"] * fail_mult:
                     err("budget_error",
                         f"{stat}={val} exceeds {fail_mult}x observed max "
