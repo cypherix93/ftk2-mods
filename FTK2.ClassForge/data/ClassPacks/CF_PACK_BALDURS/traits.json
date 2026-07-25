@@ -1,5 +1,5 @@
 {
-  "CF_TRAIT_HEXBLADE_CURSE": {
+  "TRAIT_CF_BALDURS_HEXBLADE_CURSE": {
     "ConsumableType": "NONE",
     "Value": 0,
     "MinTier": 1,
@@ -11,7 +11,7 @@
     "Tags": ["TRAIT", "CF_PACK_BALDURS"],
     "Expansion": ""
   },
-  "CF_TRAIT_PACT_BOON": {
+  "TRAIT_CF_BALDURS_PACT_BOON": {
     "ConsumableType": "NONE",
     "Value": 0,
     "MinTier": 1,
@@ -23,7 +23,7 @@
     "Tags": ["TRAIT", "CF_PACK_BALDURS"],
     "Expansion": ""
   },
-  "CF_TRAIT_COMBAT_SUPERIORITY": {
+  "TRAIT_CF_BALDURS_COMBAT_SUPERIORITY": {
     "ConsumableType": "NONE",
     "Value": 0,
     "MinTier": 1,
@@ -35,7 +35,7 @@
     "Tags": ["TRAIT", "CF_PACK_BALDURS"],
     "Expansion": ""
   },
-  "CF_TRAIT_TACTICAL_MIND": {
+  "TRAIT_CF_BALDURS_TACTICAL_MIND": {
     "ConsumableType": "NONE",
     "Value": 0,
     "MinTier": 1,
@@ -47,7 +47,7 @@
     "Tags": ["TRAIT", "CF_PACK_BALDURS"],
     "Expansion": ""
   },
-  "CF_TRAIT_UNDEAD_LEGION": {
+  "TRAIT_CF_BALDURS_UNDEAD_LEGION": {
     "ConsumableType": "NONE",
     "Value": 0,
     "MinTier": 1,
@@ -59,7 +59,7 @@
     "Tags": ["TRAIT", "CF_PACK_BALDURS"],
     "Expansion": ""
   },
-  "CF_TRAIT_DEATHS_DESIGN": {
+  "TRAIT_CF_BALDURS_DEATHS_DESIGN": {
     "ConsumableType": "NONE",
     "Value": 0,
     "MinTier": 1,

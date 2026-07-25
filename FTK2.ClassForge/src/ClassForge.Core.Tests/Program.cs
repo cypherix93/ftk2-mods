@@ -138,7 +138,12 @@ Test("CF_PACK_BALDURS: loads cleanly with zero Error findings", () =>
 {
     var fs = new FileSystemFileSource();
     var loader = new PackLoader();
-    baldursResult = loader.Load(fs, new[] { classPacksDir });
+    // Scan the real data/ClassPacks dir (so this is still a true end-to-end read of the shipped
+    // BALDURS fixture), but restrict "enabled" to just CF_PACK_BALDURS via the isPackEnabled knob
+    // (same mechanism ClassForge.PackCheck uses). This keeps the assertion independent of how many
+    // other packs happen to be enabled in the repo (e.g. CF_PACK_EOR_CLASSES) -- we assert on
+    // CF_PACK_BALDURS's own presence/shape, not on a repo-wide enabled-pack count.
+    baldursResult = loader.Load(fs, new[] { classPacksDir }, id => string.Equals(id, "CF_PACK_BALDURS", StringComparison.Ordinal));
 
     var errors = baldursResult.Findings.Where(f => f.Severity == FindingSeverity.Error).ToList();
     Assert(errors.Count == 0, "Unexpected Error findings: " + string.Join(" | ", errors.Select(e => e.ToString())));
@@ -179,12 +184,15 @@ Test("CF_PACK_BALDURS: merge plan counts match independently re-parsed raw JSON"
                        $"loc={result.MergePlan.Localization.Count} icons={result.MergePlan.Icons.Count} portraits={result.MergePlan.Portraits.Count}");
 });
 
-Test("CF_PACK_BALDURS: non-TRAIT_-prefixed trait ids produce a Warning, not an Error (M1 still merges them)", () =>
+Test("CF_PACK_BALDURS: TRAIT_-prefixed trait ids produce zero CF_TRAIT_PREFIX warnings", () =>
 {
+    // The fixture's 6 trait ids were renamed CF_TRAIT_* -> TRAIT_CF_BALDURS_* so the native trait
+    // substrate (CharacterHelper.GiveTrait/InventoryHelper.GetTraits, which keys on a literal
+    // "TRAIT_" ConfigName prefix) can actually inject them. That should make the loader's
+    // CF_TRAIT_PREFIX warning disappear for this pack entirely.
     var result = baldursResult!;
     var warnings = result.Findings.Where(f => f.Code == "CF_TRAIT_PREFIX").ToList();
-    Assert(warnings.Count == 6, $"Expected 6 CF_TRAIT_PREFIX warnings (fixture uses CF_TRAIT_* ids), got {warnings.Count}");
-    Assert(warnings.All(f => f.Severity == FindingSeverity.Warning), "CF_TRAIT_PREFIX findings must be Warning severity, not Error (fail-safe: still merges as inert data for M1).");
+    Assert(warnings.Count == 0, $"Expected 0 CF_TRAIT_PREFIX warnings (fixture trait ids are TRAIT_-prefixed), got {warnings.Count}: " + string.Join(" | ", warnings.Select(w => w.ToString())));
 });
 
 Test("CF_PACK_BALDURS: dataHash is a stable 64-char hex SHA-256", () =>
