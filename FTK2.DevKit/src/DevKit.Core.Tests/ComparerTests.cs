@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace FTK2Mods.DevKit.Tests
 {
@@ -154,6 +155,60 @@ namespace FTK2Mods.DevKit.Tests
                     Reg("ftk2mods.indexer", "1.0.0-I", HashA, new string[] { "Idle", "INDEX" }));
                 TestHarness.EqualKind(ParityVerdictKind.Match, identical.Kind,
                     "identical registrations must match under tr-TR too");
+            });
+
+            // ---- MP review B0, the exact failure scenario, end to end ----------------------
+            // "Host and client both run ClassForge 0.1.0 with byte-identical ClassPacks/. The
+            //  handshake compares two identical strings, hashUnusable is true because neither is 71
+            //  chars, so dataDiffers is forced true and the verdict is DataMismatch."
+            // Built from REAL hasher output, not a constant, so it exercises the integration.
+
+            TestHarness.Run("B0: bare sibling hash vs prefixed DevKit hash of the same data is a Match", delegate
+            {
+                string prefixed = DataHasher.ComputeHash(
+                    new List<DataFileEntry> { new DataFileEntry("packs/a.json", "{\"id\":\"CF_A\"}") }, null);
+                string bare = HasherTests.StripPrefix(prefixed);
+
+                ParityVerdict v = One(
+                    Reg("ftk2mods.classforge", "0.1.0", bare, null),        // sibling emits bare hex
+                    Reg("ftk2mods.classforge", "0.1.0", prefixed, null));   // DevKit emits prefixed
+                TestHarness.EqualKind(ParityVerdictKind.Match, v.Kind,
+                    "identical data reported in two spellings must NOT be a mismatch");
+                TestHarness.False(v.IsMismatch, "IsMismatch");
+            });
+
+            TestHarness.Run("B0: two bare sibling hashes of the same data match", delegate
+            {
+                string bare = HasherTests.StripPrefix(DataHasher.ComputeHash(
+                    new List<DataFileEntry> { new DataFileEntry("packs/a.json", "same") }, null));
+                TestHarness.EqualKind(ParityVerdictKind.Match,
+                    One(Reg("m", "1.0.0", bare, null), Reg("m", "1.0.0", bare, null)).Kind,
+                    "two bare hashes of identical data must match");
+            });
+
+            TestHarness.Run("B0: tolerance does not hide a real divergence in either spelling", delegate
+            {
+                string left = DataHasher.ComputeHash(
+                    new List<DataFileEntry> { new DataFileEntry("packs/a.json", "left") }, null);
+                string right = DataHasher.ComputeHash(
+                    new List<DataFileEntry> { new DataFileEntry("packs/a.json", "right") }, null);
+
+                TestHarness.EqualKind(ParityVerdictKind.DataMismatch,
+                    One(Reg("m", "1.0.0", HasherTests.StripPrefix(left), null), Reg("m", "1.0.0", right, null)).Kind,
+                    "genuinely different data must still be DataMismatch across spellings");
+                TestHarness.EqualKind(ParityVerdictKind.DataMismatch,
+                    One(Reg("m", "1.0.0", HasherTests.StripPrefix(left), null),
+                        Reg("m", "1.0.0", HasherTests.StripPrefix(right), null)).Kind,
+                    "genuinely different data must still be DataMismatch in bare spelling");
+            });
+
+            TestHarness.Run("B0: a malformed hash is still a guaranteed mismatch", delegate
+            {
+                string good = DataHasher.ComputeHash(
+                    new List<DataFileEntry> { new DataFileEntry("packs/a.json", "x") }, null);
+                TestHarness.EqualKind(ParityVerdictKind.DataMismatch,
+                    One(Reg("m", "1.0.0", "(merge-failed)", null), Reg("m", "1.0.0", good, null)).Kind,
+                    "an unusable hash must never compare as a silent pass");
             });
         }
 

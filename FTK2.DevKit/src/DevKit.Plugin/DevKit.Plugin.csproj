@@ -9,8 +9,18 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <!-- Game install; override with -p:GameDir=... (docs/research/build-template-notes.md §1) -->
     <GameDir Condition="'$(GameDir)' == ''">E:\Games\Steam\steamapps\common\For The King II</GameDir>
-    <ManagedDir>$(GameDir)\For The King II_Data\Managed</ManagedDir>
-    <BepInExDir>$(GameDir)\BepInEx\core</BepInExDir>
+    <ManagedDir Condition="'$(ManagedDir)' == ''">$(GameDir)\For The King II_Data\Managed</ManagedDir>
+    <BepInExDir Condition="'$(BepInExDir)' == ''">$(GameDir)\BepInEx\core</BepInExDir>
+
+    <!-- Both dirs may be overridden with a path RELATIVE TO THE REPO ROOT, which is how the
+         snapshot-reference build documented in docs/research/build-template-notes.md is invoked:
+           -p:ManagedDir=tools/bin/refs -p:BepInExDir=tools/bin/refs
+         A bare relative HintPath would otherwise resolve against this project's own directory.
+         Path.Combine returns the second argument unchanged when it is already absolute, so the
+         live-game defaults above and an absolute -p: override both keep working. -->
+    <RepoRoot>$(MSBuildThisFileDirectory)..\..\..\</RepoRoot>
+    <ManagedDirResolved>$([System.IO.Path]::Combine('$(RepoRoot)', '$(ManagedDir)'))</ManagedDirResolved>
+    <BepInExDirResolved>$([System.IO.Path]::Combine('$(RepoRoot)', '$(BepInExDir)'))</BepInExDirResolved>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
@@ -22,19 +32,19 @@
        net472 resolves against the machine-installed .NET Framework 4.7.2 reference assemblies. -->
   <ItemGroup>
     <Reference Include="BepInEx">
-      <HintPath>$(BepInExDir)\BepInEx.dll</HintPath>
+      <HintPath>$(BepInExDirResolved)\BepInEx.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>$(BepInExDir)\0Harmony.dll</HintPath>
+      <HintPath>$(BepInExDirResolved)\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>$(ManagedDir)\UnityEngine.dll</HintPath>
+      <HintPath>$(ManagedDirResolved)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(ManagedDirResolved)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <!-- FTK2.dll is referenced for parity with the other plugin projects, but this plugin
@@ -43,7 +53,7 @@
          still an open question (SPEC §11.8). That keeps the parity hook resilient to a game update
          changing the signature - it degrades to "Target NOT found", never a load failure. -->
     <Reference Include="FTK2">
-      <HintPath>$(ManagedDir)\FTK2.dll</HintPath>
+      <HintPath>$(ManagedDirResolved)\FTK2.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

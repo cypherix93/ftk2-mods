@@ -14,6 +14,12 @@ namespace ClassForge.Core.IO
         bool FileExists(string path);
         string ReadAllText(string path);
 
+        /// <summary>Raw file bytes, no encoding applied. <see cref="DataHasher"/> hashes every enabled pack
+        /// file (including binary assets such as icons/portraits) by its actual bytes (MP review B0/M5) —
+        /// <see cref="ReadAllText"/> is unsafe for that purpose because a lossy UTF-8 decode of a PNG is not
+        /// a faithful (or even peer-stable across runtimes) representation of the file.</summary>
+        byte[] ReadAllBytes(string path);
+
         /// <summary>Immediate subdirectories of <paramref name="path"/>, in whatever order the underlying source returns them (callers must sort before treating order as meaningful).</summary>
         IEnumerable<string> GetDirectories(string path);
 

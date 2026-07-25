@@ -11,15 +11,74 @@ namespace FTK2Mods.DevKit.Tests
         {
             TestHarness.Section("DataHasher (SHA-256, sorted paths, normalized line endings)");
 
-            TestHarness.Run("hash format is sha256: + 64 lowercase hex", delegate
+            TestHarness.Run("emitted hash format is sha256: + 64 lowercase hex", delegate
             {
                 string hash = DataHasher.ComputeHash(Entries("a.json", "{}"), null);
                 TestHarness.True(hash.StartsWith("sha256:", StringComparison.Ordinal), "prefix");
                 TestHarness.Equal(7 + 64, hash.Length, "length");
                 TestHarness.True(DataHasher.IsWellFormedHash(hash), "IsWellFormedHash");
-                TestHarness.False(DataHasher.IsWellFormedHash(hash.ToUpperInvariant()), "uppercase hex must be rejected");
-                TestHarness.False(DataHasher.IsWellFormedHash("sha256:xyz"), "short hash must be rejected");
-                TestHarness.False(DataHasher.IsWellFormedHash(""), "empty must be rejected");
+                TestHarness.Equal(hash, DataHasher.NormalizeHash(hash), "an emitted hash is already canonical");
+            });
+
+            // ---- MP review B0: acceptance must tolerate BOTH spellings ----------------------
+            // The sibling hashers (ClassForge, Summoner) return bare 64-hex with no prefix. When
+            // IsWellFormedHash required the prefix, ParityComparer forced hashUnusable=true and every
+            // pair of byte-identical peers reported DataMismatch. These tests use REAL hasher output
+            // rather than a hardcoded constant, which is precisely why the old suite stayed green
+            // while the integration was broken.
+
+            TestHarness.Run("B0: a real hash is well-formed in bare AND prefixed spelling", delegate
+            {
+                string prefixed = DataHasher.ComputeHash(Entries("a.json", "{\"k\":1}"), null);
+                string bare = StripPrefix(prefixed);
+                TestHarness.Equal(64, bare.Length, "bare form is 64 hex digits");
+
+                TestHarness.True(DataHasher.IsWellFormedHash(prefixed), "prefixed form must be accepted");
+                TestHarness.True(DataHasher.IsWellFormedHash(bare), "bare sibling-style form must be accepted");
+                TestHarness.Equal(prefixed, DataHasher.NormalizeHash(bare),
+                    "bare and prefixed forms of the same digest must normalize identically");
+            });
+
+            TestHarness.Run("B0: normalization is case- and whitespace-insensitive", delegate
+            {
+                string prefixed = DataHasher.ComputeHash(Entries("a.json", "{\"k\":2}"), null);
+                string bare = StripPrefix(prefixed);
+                TestHarness.Equal(prefixed, DataHasher.NormalizeHash(bare.ToUpperInvariant()),
+                    "uppercase bare hex must normalize to the canonical lowercase form");
+                TestHarness.Equal(prefixed, DataHasher.NormalizeHash("  " + prefixed.ToUpperInvariant() + "  "),
+                    "surrounding whitespace and uppercase must normalize away");
+            });
+
+            TestHarness.Run("B0: genuinely malformed hashes are still rejected in both spellings", delegate
+            {
+                string[] bad = new string[]
+                {
+                    "", null, "sha256:", "sha256:xyz", "xyz",
+                    "sha256:" + new string('a', 63),        // one hex digit short
+                    "sha256:" + new string('a', 65),        // one too many
+                    new string('a', 63),                    // bare, one short
+                    new string('g', 64),                    // bare, non-hex
+                    "sha256:" + new string('g', 64),        // prefixed, non-hex
+                    "md5:" + new string('a', 64),           // wrong algorithm prefix
+                };
+                for (int i = 0; i < bad.Length; i++)
+                {
+                    TestHarness.False(DataHasher.IsWellFormedHash(bad[i]),
+                        "must reject '" + (bad[i] ?? "(null)") + "'");
+                    TestHarness.Equal("", DataHasher.NormalizeHash(bad[i]),
+                        "malformed input must normalize to empty, never to a plausible-looking hash");
+                }
+            });
+
+            TestHarness.Run("B0: a registration carries the raw spelling but normalizes for compare", delegate
+            {
+                string prefixed = DataHasher.ComputeHash(Entries("a.json", "{\"k\":3}"), null);
+                string bare = StripPrefix(prefixed);
+
+                ParityRegistration sibling = new ParityRegistration("ftk2mods.classforge", "1.0.0", bare, null);
+                TestHarness.Equal(bare, sibling.DataHash, "DataHash keeps what the mod actually reported");
+                TestHarness.Equal(prefixed, sibling.NormalizedDataHash, "NormalizedDataHash is canonical");
+                TestHarness.True(sibling.HasWellFormedDataHash, "a bare sibling hash must be usable");
             });
 
             TestHarness.Run("file enumeration order does not affect the hash", delegate
@@ -217,6 +276,17 @@ namespace FTK2Mods.DevKit.Tests
         private static List<DataFileEntry> Entries(string relativePath, string content)
         {
             return new List<DataFileEntry> { new DataFileEntry(relativePath, content) };
+        }
+
+        /// <summary>
+        /// Turns a canonical DevKit hash into the bare 64-hex form the sibling hashers emit
+        /// (ClassForge.Core/DataHasher.cs:44, Summoner.Core/Parity/DataHasher.cs:48).
+        /// </summary>
+        internal static string StripPrefix(string canonicalHash)
+        {
+            return canonicalHash.StartsWith(DataHasher.HashPrefix, StringComparison.Ordinal)
+                ? canonicalHash.Substring(DataHasher.HashPrefix.Length)
+                : canonicalHash;
         }
 
         private static void TryDelete(string root)

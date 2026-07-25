@@ -191,6 +191,55 @@ namespace FTK2Mods.DevKit.Tests
                 });
                 TestHarness.Equal(invariantPayload, payload, "German culture must not change the payload");
             });
+
+            // ---- MP review M4b: the degraded count-only snapshot ----------------------------
+
+            TestHarness.Run("M4b: a truncated snapshot round-trips its count and stays a PARITY_V1 payload", delegate
+            {
+                string payload = ParityPayloadCodec.EncodeTruncatedSnapshot("client-7", 31);
+                TestHarness.True(ParityPayloadCodec.LooksLikeParityPayload(payload),
+                    "the degraded form must still pass the receive pre-filter");
+                TestHarness.Equal(ParityPayloadCodec.ParityActionKey, ParityPayloadCodec.PeekAction(payload),
+                    "the degraded form routes as a normal snapshot");
+
+                ParitySnapshot decoded;
+                string error;
+                TestHarness.True(ParityPayloadCodec.TryDecodeSnapshot(payload, out decoded, out error), "decode: " + error);
+                TestHarness.True(decoded.IsTruncated, "IsTruncated");
+                TestHarness.Equal(31, decoded.TruncatedRegistrationCount, "count round-trips");
+                TestHarness.Equal(0, decoded.Registrations.Length, "no registrations are carried");
+                TestHarness.Equal("client-7", decoded.SenderPeerId, "sender round-trips");
+            });
+
+            TestHarness.Run("M4b: a normal snapshot is never mistaken for a truncated one", delegate
+            {
+                ParitySnapshot decoded;
+                string error;
+                ParityPayloadCodec.TryDecodeSnapshot(ParityPayloadCodec.EncodeSnapshot("host",
+                    new ParityRegistration[] { new ParityRegistration("m", "1", Sha(2), null) }), out decoded, out error);
+                TestHarness.False(decoded.IsTruncated, "absent Truncated member means a full snapshot");
+                TestHarness.Equal(-1, decoded.TruncatedRegistrationCount, "sentinel for 'not truncated'");
+            });
+
+            TestHarness.Run("M4b: an unreadable Truncated marker still fails safe (unverifiable, not empty)", delegate
+            {
+                ParitySnapshot decoded;
+                string error;
+                TestHarness.True(ParityPayloadCodec.TryDecodeSnapshot(
+                    "{\"Action\":\"FTK2MODS_PARITY_V1\",\"SenderPeerId\":\"h\",\"Registrations\":[],\"Truncated\":\"nope\"}",
+                    out decoded, out error), "decode: " + error);
+                TestHarness.True(decoded.IsTruncated,
+                    "a garbled marker must still mark the peer unverifiable rather than compare an empty list");
+            });
+
+            TestHarness.RunInCulture("M4b: the truncated count is culture-invariant", "de-DE", delegate
+            {
+                ParitySnapshot decoded;
+                string error;
+                ParityPayloadCodec.TryDecodeSnapshot(
+                    ParityPayloadCodec.EncodeTruncatedSnapshot("client-7", 1234), out decoded, out error);
+                TestHarness.Equal(1234, decoded.TruncatedRegistrationCount, "no thousands separator, no locale drift");
+            });
         }
 
         internal static string Sha(int seed)

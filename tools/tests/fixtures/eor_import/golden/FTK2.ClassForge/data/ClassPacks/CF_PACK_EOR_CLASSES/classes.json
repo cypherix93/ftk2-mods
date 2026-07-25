@@ -1,0 +1,52 @@
+{
+  "CF_EOR_TESTKNIGHT": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_TESTKNIGHT",
+    "Passives": [
+      "SKILL_TEST_GUARD"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "HP": 32,
+      "LCK": 50,
+      "STR": 58
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "TEST_WAND_DONOR_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_TESTMAGE": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_TESTMAGE",
+    "Passives": [
+      "SKILL_TEST_BLAST"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "HP": 30,
+      "LCK": 95,
+      "STR": 52
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "TEST_KATANA_DONOR_00": 1
+    },
+    "Threat": 0
+  }
+}

@@ -135,12 +135,15 @@ namespace ClassForge.Plugin
         }
 
         /// <summary>Drops the per-battle runtime. Belt-and-braces only: <see cref="SyncCombat"/> already
-        /// reallocates on a new CombatKey, so a missed end-of-combat hook cannot leak state.</summary>
+        /// reallocates on a new CombatKey, so a missed end-of-combat hook cannot leak state. Also clears
+        /// <c>CombatHookPatches._healOrigin</c> (MP review M4) — that static is exception-safe on its own
+        /// (Harmony finalizer), but this is the combat-end reset boundary and it must not survive it either.</summary>
         internal static void ResetCombat()
         {
             _cachedState = null;
             _cachedSeed = 0;
             _cachedDispatcher = null;
+            CombatHookPatches.ClearHealOrigin();
         }
 
         // =====================================================================================

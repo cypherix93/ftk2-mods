@@ -15,6 +15,8 @@ namespace ClassForge.Core.IO
 
         public string ReadAllText(string path) => File.ReadAllText(path, Encoding.UTF8);
 
+        public byte[] ReadAllBytes(string path) => File.ReadAllBytes(path);
+
         public IEnumerable<string> GetDirectories(string path)
             => DirectoryExists(path) ? Directory.GetDirectories(path) : Enumerable.Empty<string>();
 

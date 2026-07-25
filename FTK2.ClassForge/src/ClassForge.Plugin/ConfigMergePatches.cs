@@ -36,17 +36,20 @@ namespace ClassForge.Plugin
                 return;
             }
 
-            // SPEC.md §9.5 / SPEC-DELTA-v1.1 §5.3: a Block-policy parity mismatch turns EVERY feature off,
-            // including the content merge. Content already merged earlier in the session stays merged (it is
-            // in a Configs object we no longer own), but nothing further is added.
-            if (ParityBridge.Blocked)
-            {
-                ClassForgePlugin.Log.LogWarning(
-                    $"[ClassForge] {caller}: skipped — ClassForge is BLOCKED by a multiplayer parity mismatch " +
-                    "([Multiplayer] OnParityMismatch=Block). Restart with identical packs on every peer.");
-                return;
-            }
-
+            // MP review M2 — honest Block semantics, documented here rather than pretended in code:
+            // ClassForge's Block policy (SPEC.md §9.5 / SPEC-DELTA-v1.1 §5.3) turns off RUNTIME features
+            // (recipe engine, trait-loadout injection, class-select injection — everything gated behind
+            // ClassForgePlugin.FeaturesActive), not the content merge. There used to be an
+            // `if (ParityBridge.Blocked) return;` guard right here; it was dead code in practice (this method
+            // only runs from ConfigsHelper.LoadConfigs at boot, before any multiplayer handshake could
+            // possibly have latched Blocked, and ConfigsHelper.ReloadConfigs has no vanilla caller at all — see
+            // the MP review), and worse, it actively misrepresented the real posture as "merge stops too".
+            // The honest posture is: merged Configs entries (classes/traits/items/abilities/localization/
+            // icons/portraits) are inert DATA. With FeaturesActive false, nothing exercises that data — no
+            // class-select/trait-loadout injection offers it, and the recipe engine never fires — so
+            // re-running (or having already run) the merge under Block cannot itself cause an asymmetric
+            // simulation. Re-running the merge is also always safe: ApplyPlan is idempotent, and this is the
+            // same data-only content ConfigsHelper.LoadConfigs/ReloadConfigs already rebuilds from scratch.
             try
             {
                 ClassForgePlugin.EnsurePackKnobsBound();
@@ -54,7 +57,13 @@ namespace ClassForge.Plugin
                 var fs = new FileSystemFileSource();
                 var roots = ClassForgePlugin.GetRoots();
                 var loader = new PackLoader();
-                var result = loader.Load(fs, roots, ClassForgePlugin.IsPackEnabled);
+
+                // MP review M0 — adds-only enforcement against LIVE ids. Snapshot the ids already present in
+                // `configs` (vanilla content the native LoadConfigs/ReloadConfigs body just built, BEFORE this
+                // postfix applies anything) so MergePlanner can refuse a pack entry that would silently
+                // overwrite pre-existing content (e.g. a pack shipping an id named "KNIGHT").
+                var liveIds = new LiveIdSets(configs.Characters?.Keys, configs.Things?.Keys, configs.Abilities?.Keys);
+                var result = loader.Load(fs, roots, ClassForgePlugin.IsPackEnabled, liveIds);
 
                 foreach (var finding in result.Findings)
                     LogFinding(finding);
@@ -81,7 +90,11 @@ namespace ClassForge.Plugin
                     $"{result.MergePlan.Localization.Count} loc keys, {result.MergePlan.Icons.Count} icons, " +
                     $"{result.MergePlan.Portraits.Count} portraits. dataHash={result.DataHash}.");
 
-                var payload = ParityRegistrationBuilder.Build(result, ClassForgePlugin.Guid, ClassForgePlugin.Version);
+                // MP review B4: hand the real, current knob values to the registration builder so a knob
+                // difference between peers becomes a genuine parity divergence instead of silent "Match".
+                var payload = ParityRegistrationBuilder.Build(
+                    result, ClassForgePlugin.Guid, ClassForgePlugin.Version,
+                    ClassForgePlugin.EnableRecipeEngine.Value, ClassForgePlugin.EnableTraitLoadoutInjection.Value);
                 ClassForgePlugin.RegisterParity(payload);
             }
             catch (Exception ex)

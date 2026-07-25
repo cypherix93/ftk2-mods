@@ -43,6 +43,23 @@ namespace ClassForge.Plugin
     /// <c>GiveTrait</c>, so picking any trait strips every other <c>TRAIT_</c>-prefixed Thing on that
     /// character — pack traits are mutually exclusive with each other and with vanilla traits. That is
     /// vanilla behavior for vanilla traits too; ClassForge does not patch around it.</para>
+    ///
+    /// <para><b>MP review B3 — session gate.</b> Everything above is correct in isolation, but its correctness
+    /// rests entirely on R1 (parity), and R1 has no enforcement point that runs before this postfix: DevKit
+    /// runs the whole handshake from an <c>AdventureDirector.Initialize</c> postfix, which fires AFTER
+    /// <c>PartyManagementDirector</c> may already have built and serialized the pool via this exact method.
+    /// So "ClassForge is not yet Blocked" is not sufficient evidence that injection is safe online — there may
+    /// simply be no verdict yet. The fix applied here: read
+    /// <see cref="NetworkSessionState.IsOnlineMultiplayer"/> (reflective, cached, fail-closed = treat as
+    /// online). Offline/single-player: inject unconditionally, exactly as before. Online multiplayer:
+    /// injection additionally requires <see cref="ParityBridge.HasVerifiedMatch"/> — a POSITIVE verdict, not
+    /// merely "not blocked" — so the pool cannot diverge in length between peers during the window before the
+    /// handshake resolves. This means MP trait injection may legitimately be off for the first loadout build
+    /// of an online session; that is the fail-closed, SP-safe-today posture (see <see cref="SessionInjectionGate"/>).
+    /// FOLLOW-UP (not fixed here): full day-one MP trait support needs DevKit's handshake to run BEFORE
+    /// <c>PartyManagementDirector</c> in the boot sequence (the B3 finding's own suggested anchor is
+    /// <c>AdventureSelectionDirector</c>, which already branches on <c>PlayingOnlineMultiplayer &amp;&amp;
+    /// IsHost</c>) — that is a DevKit-side ordering change, outside ClassForge's ownership.</para>
     /// </summary>
     public static class TraitLoadoutPatches
     {
@@ -53,6 +70,10 @@ namespace ClassForge.Plugin
         private static readonly HashSet<string> WarnedNonPrefixed = new HashSet<string>(StringComparer.Ordinal);
         private static bool _warnedMissingConfig;
 
+        // MP review B3: log the online/offline + allow/deny decision once per session, not once per
+        // GetAdventureLoadOut call (party setup / join-in-progress rebuild can both call this repeatedly).
+        private static bool _loggedSessionGateDecision;
+
         /// <summary>
         /// Postfix for <c>LootDropHelper.GetAdventureLoadOut(string, GameRandom)</c>. Appends one
         /// <c>Thing</c> per eligible pack trait not already present in the pool.
@@ -62,6 +83,7 @@ namespace ClassForge.Plugin
             if (!ClassForgePlugin.FeaturesActive) return;
             if (!ClassForgePlugin.EnableTraitLoadoutInjection.Value) return;
             if (__result == null) return;
+            if (!SessionInjectionGate()) return;
 
             var plan = ClassForgePlugin.CurrentMergePlan;
             if (plan == null || plan.TraitIds.Count == 0) return;
@@ -167,6 +189,42 @@ namespace ClassForge.Plugin
                 ClassForgePlugin.Log.LogError(
                     "[ClassForge] Trait loadout injection failed (fail-safe, vanilla pool unchanged): " + ex);
             }
+        }
+
+        /// <summary>
+        /// MP review B3 session gate. Offline/single-player: always true. Online multiplayer: true only once
+        /// <see cref="ParityBridge.HasVerifiedMatch"/> — DevKit's handshake round-trip has actually produced a
+        /// <c>Match</c> verdict for ClassForge this session — fail CLOSED (false) otherwise, including the
+        /// window before the handshake has had a chance to run at all. Logs the decision exactly once per
+        /// session (the first call), not once per invocation.
+        /// </summary>
+        private static bool SessionInjectionGate()
+        {
+            bool online = NetworkSessionState.IsOnlineMultiplayer();
+            bool allowed = !online || ParityBridge.HasVerifiedMatch();
+
+            if (!_loggedSessionGateDecision)
+            {
+                _loggedSessionGateDecision = true;
+                if (!online)
+                {
+                    ClassForgePlugin.Log.LogInfo(
+                        "[ClassForge] Trait loadout injection: offline/single-player session — injecting unconditionally.");
+                }
+                else
+                {
+                    ClassForgePlugin.Log.LogInfo(
+                        "[ClassForge] Trait loadout injection: online multiplayer session — " +
+                        (allowed
+                            ? "DevKit parity handshake already verified Match; injecting."
+                            : "no verified parity Match yet (handshake may not have completed) — injection " +
+                              "FAILS CLOSED this call (MP review B3). This is expected on the very first " +
+                              "loadout build of an online session; full day-one MP trait support needs the " +
+                              "handshake to run before party management (follow-up, DevKit-side ordering change)."));
+                }
+            }
+
+            return allowed;
         }
 
         /// <summary>thingId -&gt; owning packId, so the deterministic id can be namespaced per SPEC-DELTA-v1.1 OQ#1.5.</summary>

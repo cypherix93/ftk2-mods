@@ -9,11 +9,21 @@ namespace ClassForge.Core
     /// runtime flow). Id collisions across packs resolve last-pack-wins (the later pack in resolved load order),
     /// logging both pack ids (SPEC.md §3, §8 edge cases). Iteration is always over keys sorted ordinally —
     /// Dictionary enumeration order is never relied on for anything observable (MULTIPLAYER.md R2).
+    ///
+    /// <para><b>MP review M0 — adds-only enforcement against LIVE ids.</b> The pack-vs-pack collision check
+    /// above is the only thing the original implementation had; it says nothing about a pack that defines an
+    /// id which already exists in the live game (e.g. a pack shipping <c>KNIGHT</c> and silently replacing the
+    /// vanilla Knight <c>CharacterConfig</c>). <see cref="LiveIdSets"/> (supplied by the Plugin, snapshotted
+    /// from <c>Configs</c> immediately before the merge runs) closes that gap: a candidate id already present
+    /// in the live set is refused outright with a <see cref="FindingSeverity.Error"/> Finding and never enters
+    /// the target dictionary — it never even reaches the pack-vs-pack collision check below, and a second pack
+    /// defining the same live-colliding id is refused independently, the same way, every time.</para>
     /// </summary>
     public static class MergePlanner
     {
-        public static MergePlan Build(List<(DiscoveredPack Pack, ParsedPack Content)> orderedContents, List<Finding> findings)
+        public static MergePlan Build(List<(DiscoveredPack Pack, ParsedPack Content)> orderedContents, List<Finding> findings, LiveIdSets liveIds = null)
         {
+            var live = liveIds ?? LiveIdSets.Empty;
             var plan = new MergePlan();
             var characters = new Dictionary<string, MergeOp>(StringComparer.Ordinal);
             var things = new Dictionary<string, MergeOp>(StringComparer.Ordinal);
@@ -24,10 +34,10 @@ namespace ClassForge.Core
                 var packId = entry.Pack.Manifest.Id;
                 var content = entry.Content;
 
-                MergeCategory(characters, packId, content.Classes, findings, "Character");
-                MergeCategory(things, packId, content.Traits, findings, "Trait/Thing");
-                MergeCategory(things, packId, content.Items, findings, "Item/Thing");
-                MergeCategory(abilities, packId, content.Abilities, findings, "Ability");
+                MergeCategory(characters, packId, content.Classes, findings, "Character", live.Characters);
+                MergeCategory(things, packId, content.Traits, findings, "Trait/Thing", live.Things);
+                MergeCategory(things, packId, content.Items, findings, "Item/Thing", live.Things);
+                MergeCategory(abilities, packId, content.Abilities, findings, "Ability", live.Abilities);
 
                 MergeStringDict(plan.Localization, packId, content.Localization, findings, "CF_LOC_OVERRIDE", "Localization key");
                 MergeStringDict(plan.Icons, packId, content.Icons, findings, "CF_ICON_OVERRIDE", "Icon id");
@@ -55,10 +65,23 @@ namespace ClassForge.Core
             string packId,
             Dictionary<string, ClassForge.Core.Json.JsonValue> entries,
             List<Finding> findings,
-            string label)
+            string label,
+            ISet<string> liveIds)
         {
             foreach (var kv in entries.OrderBy(e => e.Key, StringComparer.Ordinal))
             {
+                // M0: refuse outright — packs are adds-only and must never overwrite something the live game
+                // (or a prior, non-pack source) already defines. This is checked BEFORE the pack-vs-pack
+                // collision logic below, so a live-colliding id never enters `target` at all.
+                if (liveIds != null && liveIds.Contains(kv.Key))
+                {
+                    findings.Add(Finding.Error("CF_LIVE_ID_COLLISION",
+                        $"{label} id '{kv.Key}' from pack '{packId}' collides with an id already present in the " +
+                        "live game data and was REFUSED (packs are adds-only; a pack must never overwrite " +
+                        "pre-existing content). Rename the id in the pack.", packId));
+                    continue;
+                }
+
                 if (target.TryGetValue(kv.Key, out var existing) && !string.Equals(existing.SourcePackId, packId, StringComparison.Ordinal))
                 {
                     findings.Add(Finding.Warning("CF_ID_COLLISION",

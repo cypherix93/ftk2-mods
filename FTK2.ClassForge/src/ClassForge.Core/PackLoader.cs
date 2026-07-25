@@ -16,7 +16,11 @@ namespace ClassForge.Core
         /// <param name="fs">Filesystem abstraction (real disk in the Plugin, in-memory in tests).</param>
         /// <param name="roots">Root directories to scan for `&lt;root&gt;/&lt;PackName&gt;/pack.json` (the plugin's own ClassPacks folder plus any [Packs] AdditionalRoots).</param>
         /// <param name="isPackEnabled">Optional per-pack override (the BepInEx-generated `[Packs] &lt;PackId&gt;.Enabled` knob). Null = every pack's own manifest `enabled` field is authoritative.</param>
-        public PackLoadResult Load(IFileSource fs, IEnumerable<string> roots, Func<string, bool> isPackEnabled = null)
+        /// <param name="liveIds">MP review M0: ids already present in the live game <c>Configs</c>, snapshotted by the
+        /// Plugin immediately before this call. Null (the default — e.g. <c>ClassForge.PackCheck</c>, which has no live
+        /// Configs to snapshot) means adds-only enforcement against live ids is skipped; pack-vs-pack collision handling
+        /// is unaffected either way.</param>
+        public PackLoadResult Load(IFileSource fs, IEnumerable<string> roots, Func<string, bool> isPackEnabled = null, LiveIdSets liveIds = null)
         {
             var findings = new List<Finding>();
 
@@ -50,7 +54,7 @@ namespace ClassForge.Core
                 }
             }
 
-            var mergePlan = MergePlanner.Build(parsedContents, findings);
+            var mergePlan = MergePlanner.Build(parsedContents, findings, liveIds);
 
             var hashInputs = parsedContents.Select(t => new PackForHash(t.Pack.Manifest.Id, t.Pack.RootDir));
             var dataHash = DataHasher.ComputeHash(fs, hashInputs);

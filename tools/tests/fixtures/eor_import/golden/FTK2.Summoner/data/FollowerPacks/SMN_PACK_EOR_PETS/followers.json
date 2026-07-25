@@ -1,0 +1,26 @@
+{
+  "SMN_FOL_TEST_GHOST_GENERIC_00": {
+    "AppendableStats": {
+      "HP": 10,
+      "MAG": 4
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_TEST_GHOST_GENERIC_00",
+    "ConfigName": "TEST_GHOST_GENERIC_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  }
+}

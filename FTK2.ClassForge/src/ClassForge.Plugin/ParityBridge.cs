@@ -46,8 +46,13 @@ namespace ClassForge.Plugin
         private static bool _blocked;
 
         /// <summary>
-        /// True once a parity mismatch has been reported for ClassForge. Latching and process-wide:
-        /// a session that has diverged once is never trusted again without a restart.
+        /// True once a parity mismatch has been reported for ClassForge THIS SESSION. Latching within a
+        /// session — a session that has diverged once is never trusted again without at least a new session
+        /// — but NOT process-wide (MP review M1): see <see cref="AdventureDirectorInitialize_Postfix"/>,
+        /// which clears this at the same session-start boundary FTK2.DevKit's own
+        /// <c>ParityService.ResetSession()</c> uses, so a stale latch from a previous session in the same
+        /// process cannot silently run one peer feature-off while a fresh, fully-verified handshake reports
+        /// <c>Match</c> for everyone.
         /// Read through <see cref="ClassForgePlugin.FeaturesActive"/>, which every patch body consults.
         /// </summary>
         internal static bool Blocked { get { return _blocked; } }
@@ -124,6 +129,74 @@ namespace ClassForge.Plugin
         }
 
         /// <summary>
+        /// Postfix for <c>AdventureDirector.Initialize</c> — the SAME session-start anchor FTK2.DevKit's own
+        /// <c>ParityCoordinator</c> uses to call <c>ParityService.ResetSession()</c> (MP review M1;
+        /// <c>ParityCoordinator.OnSessionStarted</c> resets <c>_sessionBlocked</c>, <c>SafeModeGuids</c> and
+        /// <c>RemoteSnapshots</c> on every call). Without this, <see cref="_blocked"/> would be process-wide:
+        /// a peer that blocked in session 1 (stale pack) and then fixed it for session 2 would still run
+        /// features-off in session 2 even though DevKit now reports <c>Match</c> for everyone — a stale
+        /// asymmetry blessed by a green verdict, which is worse than the original mismatch.
+        /// <para>Re-derived, not merely cleared: if the new session's handshake diverges again,
+        /// <see cref="OnParityFailed"/> re-latches it exactly as before.</para>
+        /// </summary>
+        internal static void AdventureDirectorInitialize_Postfix()
+        {
+            try
+            {
+                if (!_blocked) return;
+                _blocked = false;
+                ClassForgePlugin.Log.LogInfo(
+                    "[ClassForge] New session started (AdventureDirector.Initialize) — clearing the previous " +
+                    "session's parity Block latch. Re-armed: a fresh mismatch this session will block again.");
+            }
+            catch (Exception ex)
+            {
+                // Never let a session-boundary hook take the game down; worst case the stale latch survives
+                // one more session, which is the pre-M1 behavior, not a regression.
+                ClassForgePlugin.Log.LogWarning("[ClassForge] Session-start parity reset failed (non-fatal): " + ex);
+            }
+        }
+
+        /// <summary>
+        /// True only once DevKit's handshake has produced a <c>Match</c> verdict for ClassForge's own guid in
+        /// the CURRENT session (MP review B3). Deliberately NOT the same thing as "<see cref="Blocked"/> is
+        /// false" — before the handshake round-trip completes there is no verdict at all yet, and B3 requires
+        /// online-multiplayer trait injection to fail CLOSED in that gap (no verdict yet is not the same as a
+        /// verified match), not fail open just because nothing has failed YET.
+        /// </summary>
+        internal static bool HasVerifiedMatch()
+        {
+            if (_blocked) return false;
+
+            try
+            {
+                var service = ResolveServiceType();
+                if (service == null) return false; // no DevKit present -> no handshake -> nothing verified.
+
+                var method = service.GetMethod("GetLastVerdictRows",
+                    BindingFlags.Public | BindingFlags.Static, null, Type.EmptyTypes, null);
+                if (method == null) return false;
+
+                var rows = method.Invoke(null, null) as string[][];
+                if (rows == null) return false;
+
+                for (int i = 0; i < rows.Length; i++)
+                {
+                    var row = rows[i];
+                    if (row == null || row.Length < 2) continue;
+                    if (string.Equals(row[0], ClassForgePlugin.Guid, StringComparison.Ordinal) &&
+                        string.Equals(row[1], KindMatch, StringComparison.Ordinal))
+                        return true;
+                }
+                return false;
+            }
+            catch
+            {
+                return false; // fail closed: an unreadable verdict set is not a verified match.
+            }
+        }
+
+        /// <summary>
         /// DevKit's <c>ParityFailed</c> callback. Row layout is fixed by position
         /// (<c>ParityVerdict.ToCallbackArgs</c>): <c>[guid, kind, local, remote, peer, message]</c>.
         /// DevKit only dispatches this for verdicts where <c>IsMismatch</c> is already true, but the
@@ -150,7 +223,7 @@ namespace ClassForge.Plugin
 
                 ClassForgePlugin.Log.LogError(
                     "==================================================================\n" +
-                    "  ClassForge PARITY MISMATCH — ALL FEATURES DISABLED FOR THIS SESSION\n" +
+                    "  ClassForge PARITY MISMATCH — RUNTIME FEATURES DISABLED FOR THIS SESSION\n" +
                     "==================================================================\n" +
                     "  kind   : " + kind + "\n" +
                     "  peer   : " + peer + "\n" +
@@ -159,14 +232,20 @@ namespace ClassForge.Plugin
                     "  detail : " + message + "\n" +
                     "------------------------------------------------------------------\n" +
                     "  [Multiplayer] OnParityMismatch = Block (SPEC.md §9.5).\n" +
-                    "  Pack merging, the class-select injection, icon/portrait fallback,\n" +
-                    "  trait loadout injection and the ENTIRE skill-recipe engine are now\n" +
-                    "  off. There is no partial/presentation-only mode by design\n" +
-                    "  (SPEC-DELTA-v1.1 §5.3) — a half-running recipe engine is exactly the\n" +
-                    "  asymmetric execution the determinism invariants exist to prevent.\n" +
-                    "  FIX: make every peer's ClassPacks/ folder byte-identical, then\n" +
-                    "  restart the game. Content already merged into Configs this session\n" +
-                    "  stays merged, but nothing further will fire.\n" +
+                    "  Honest scope of what 'Block' does (MP review M2): the class-select\n" +
+                    "  injection, icon/portrait fallback, trait loadout injection and the\n" +
+                    "  ENTIRE skill-recipe engine are off for the rest of THIS SESSION\n" +
+                    "  (see AdventureDirectorInitialize_Postfix -- this clears at the start\n" +
+                    "  of the NEXT session). There is no partial/presentation-only runtime\n" +
+                    "  mode by design (SPEC-DELTA-v1.1 §5.3) -- a half-running recipe engine\n" +
+                    "  is exactly the asymmetric execution the determinism invariants exist\n" +
+                    "  to prevent. This does NOT unmerge or block the content merge itself:\n" +
+                    "  merged Configs entries (classes/traits/items/abilities/localization/\n" +
+                    "  icons/portraits) are inert DATA and stay merged, exactly like every\n" +
+                    "  other config divergence between peers -- nothing above exercises that\n" +
+                    "  data while runtime features are off. FIX: make every peer's\n" +
+                    "  ClassPacks/ folder byte-identical (and matching [Skills]/[Traits]\n" +
+                    "  knobs), then start a new session.\n" +
                     "==================================================================");
             }
             catch (Exception ex)

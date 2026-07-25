@@ -138,6 +138,13 @@ namespace ClassForge.Plugin
                 postfix: M(typeof(TraitLoadoutPatches), nameof(TraitLoadoutPatches.GetAdventureLoadOut_Postfix)),
                 argumentTypes: new[] { typeof(string), typeof(GameRandom) });
 
+            // ---- MP session lifecycle (M1) ----
+            // Same anchor FTK2.DevKit's own ParityCoordinator uses to reset its session state
+            // (AdventureDirector.Initialize) — see ParityBridge.AdventureDirectorInitialize_Postfix for why
+            // the Block latch must not survive into a new session.
+            Patch(harmony, typeof(AdventureDirector), "Initialize",
+                postfix: M(typeof(ParityBridge), nameof(ParityBridge.AdventureDirectorInitialize_Postfix)));
+
             ApplyRecipeEnginePatches(harmony);
         }
 
@@ -164,9 +171,14 @@ namespace ClassForge.Plugin
                 postfix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.ApplyAction_Postfix)));
 
             // ON_CRIT / ON_KILL / T3 ON_DAMAGE_DEALT / T4 ON_DAMAGE_TAKEN / ON_HEAL
+            // MP review M4: the healer-slot restore rides a Harmony FINALIZER, not just the postfix --
+            // Harmony never runs a postfix when the original throws, but a finalizer always runs (Prefix ->
+            // Original -> Postfix -> Finalizer, regardless of what threw), so this is the only place the
+            // restore can live and still be exception-safe. See CombatHookPatches.ApplyStatChange_Finalizer.
             Patch(harmony, typeof(InteractableHelper), "ApplyStatChange",
                 prefix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.ApplyStatChange_Prefix)),
-                postfix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.ApplyStatChange_Postfix)));
+                postfix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.ApplyStatChange_Postfix)),
+                finalizer: M(typeof(CombatHookPatches), nameof(CombatHookPatches.ApplyStatChange_Finalizer)));
 
             // T5 ON_STATUS_APPLIED — single-target overload only (the party-broadcast overload at L1128 has a
             // List<Entity> target and cannot bind this trigger's single-entity owner).
@@ -216,7 +228,8 @@ namespace ClassForge.Plugin
         /// is simply off, everything else still installs).
         /// </summary>
         private static bool Patch(HarmonyLib.Harmony harmony, Type type, string method,
-            HarmonyMethod prefix = null, HarmonyMethod postfix = null, Type[] argumentTypes = null)
+            HarmonyMethod prefix = null, HarmonyMethod postfix = null, Type[] argumentTypes = null,
+            HarmonyMethod finalizer = null)
         {
             try
             {
@@ -230,7 +243,7 @@ namespace ClassForge.Plugin
                     return false;
                 }
 
-                harmony.Patch(target, prefix: prefix, postfix: postfix);
+                harmony.Patch(target, prefix: prefix, postfix: postfix, finalizer: finalizer);
                 Log.LogInfo($"Target found: {type.Name}.{method}");
                 return true;
             }

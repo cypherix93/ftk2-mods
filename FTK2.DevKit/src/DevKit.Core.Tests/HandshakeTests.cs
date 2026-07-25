@@ -279,6 +279,191 @@ namespace FTK2Mods.DevKit.Tests
                 TestHarness.Equal(1, fired.Count, "case-only version difference must diverge under tr-TR");
                 TestHarness.Equal("VersionMismatch", fired[0][1], "kind");
             });
+
+            // ---- MP review m13: duplicate receipt must be idempotent ------------------------
+            // "ParityFailed is re-dispatched on every duplicate snapshot from the same peer. A
+            //  sibling mod that doesn't guard gets notified indefinitely."
+
+            TestHarness.Section("Duplicate-receipt idempotency (m13)");
+
+            TestHarness.Run("m13: the same snapshot received twice dispatches ParityFailed once", delegate
+            {
+                List<string[]> fired = new List<string[]>();
+                ParityService.SetLocalPeerId("client-1");
+                ParityService.RegisterWithCallback("ftk2mods.forge", "1.0.0", HashA, null,
+                    delegate (string[] args) { fired.Add(args); });
+
+                string payload = ParityPayloadCodec.EncodeSnapshot("host", new ParityRegistration[]
+                {
+                    new ParityRegistration("ftk2mods.forge", "1.0.0", HashB, null),
+                });
+
+                ParityService.HandleIncomingPayload(payload, "host");
+                TestHarness.Equal(1, fired.Count, "first receipt dispatches");
+                string firstBanner = ParityService.TakePendingBanner();
+                TestHarness.True(firstBanner.Length > 0, "first receipt raises a banner");
+
+                ParityService.HandleIncomingPayload(payload, "host");
+                ParityService.HandleIncomingPayload(payload, "host");
+                TestHarness.Equal(1, fired.Count, "duplicate receipts must NOT re-dispatch");
+                TestHarness.Equal("", ParityService.TakePendingBanner(), "duplicates must not re-raise the banner");
+
+                // State stays applied and correct - idempotent, not ignored (SPEC 9 point 4).
+                TestHarness.True(ParityService.IsInSafeMode("ftk2mods.forge"), "SafeMode stays engaged");
+                TestHarness.True(ParityService.GetLastMismatchSummary().Contains("ftk2mods.forge"),
+                    "summary still reflects the divergence");
+            });
+
+            TestHarness.Run("m13: a CHANGED verdict from the same peer does re-dispatch", delegate
+            {
+                List<string[]> fired = new List<string[]>();
+                ParityService.SetLocalPeerId("client-1");
+                ParityService.RegisterWithCallback("ftk2mods.forge", "1.0.0", HashA, null,
+                    delegate (string[] args) { fired.Add(args); });
+
+                ParityService.HandleIncomingPayload(ParityPayloadCodec.EncodeSnapshot("host",
+                    new ParityRegistration[] { new ParityRegistration("ftk2mods.forge", "1.0.0", HashB, null) }), "host");
+                TestHarness.Equal(1, fired.Count, "first divergence dispatches");
+
+                // Same peer, different divergence -> genuinely new news.
+                ParityService.HandleIncomingPayload(ParityPayloadCodec.EncodeSnapshot("host",
+                    new ParityRegistration[] { new ParityRegistration("ftk2mods.forge", "2.0.0", HashB, null) }), "host");
+                TestHarness.Equal(2, fired.Count, "a changed verdict must re-dispatch");
+                TestHarness.Equal("VersionMismatch", fired[1][1], "the new verdict kind");
+            });
+
+            TestHarness.Run("m13: two different peers each dispatch independently", delegate
+            {
+                List<string[]> fired = new List<string[]>();
+                ParityService.SetLocalPeerId("client-1");
+                ParityService.RegisterWithCallback("ftk2mods.forge", "1.0.0", HashA, null,
+                    delegate (string[] args) { fired.Add(args); });
+
+                ParityService.HandleIncomingPayload(ParityPayloadCodec.EncodeSnapshot("peer-a",
+                    new ParityRegistration[] { new ParityRegistration("ftk2mods.forge", "1.0.0", HashB, null) }), "peer-a");
+                ParityService.HandleIncomingPayload(ParityPayloadCodec.EncodeSnapshot("peer-b",
+                    new ParityRegistration[] { new ParityRegistration("ftk2mods.forge", "1.0.0", HashB, null) }), "peer-b");
+                TestHarness.Equal(2, fired.Count, "per-peer tracking: both peers report");
+            });
+
+            // ---- MP review M3: the late-join REQUEST path was dead code ---------------------
+
+            TestHarness.Section("Late-join REQUEST path (M3)");
+
+            TestHarness.Run("M3: the host answers a late joiner's REQUEST with a fresh snapshot", delegate
+            {
+                ParityService.SetLocalPeerId("host");
+                ParityService.SetIsHost(true);
+                ParityService.Register("ftk2mods.forge", "1.0.0", HashA, new string[] { "Recipes" });
+
+                string reply = ParityService.HandleIncomingPayload(
+                    ParityPayloadCodec.EncodeRequest("late-joiner"), "late-joiner");
+
+                TestHarness.True(reply != null && reply.Length > 0, "host must answer the REQUEST");
+                ParitySnapshot decoded;
+                string error;
+                TestHarness.True(ParityPayloadCodec.TryDecodeSnapshot(reply, out decoded, out error),
+                    "the reply must be a decodable snapshot: " + error);
+                TestHarness.Equal("host", decoded.SenderPeerId, "reply is from the host");
+                TestHarness.Equal(1, decoded.Registrations.Length, "reply carries the host's live registrations");
+                TestHarness.Equal("ftk2mods.forge", decoded.Registrations[0].Guid, "reply names the mod");
+            });
+
+            TestHarness.Run("M3: a non-host ignores a REQUEST", delegate
+            {
+                ParityService.SetLocalPeerId("client-2");
+                ParityService.SetIsHost(false);
+                ParityService.Register("ftk2mods.forge", "1.0.0", HashA, null);
+                TestHarness.True(ParityService.HandleIncomingPayload(
+                    ParityPayloadCodec.EncodeRequest("late-joiner"), "late-joiner") == null,
+                    "only the host answers a REQUEST");
+            });
+
+            TestHarness.Run("M3: the host answers a peer's snapshot exactly once", delegate
+            {
+                ParityService.SetLocalPeerId("host");
+                ParityService.SetIsHost(true);
+                ParityService.Register("ftk2mods.forge", "1.0.0", HashA, null);
+
+                string peerSnapshot = ParityPayloadCodec.EncodeSnapshot("client-9",
+                    new ParityRegistration[] { new ParityRegistration("ftk2mods.forge", "1.0.0", HashA, null) });
+
+                TestHarness.True(ParityService.HandleIncomingPayload(peerSnapshot, "client-9") != null,
+                    "host replies to a peer's first snapshot");
+                TestHarness.True(ParityService.HandleIncomingPayload(peerSnapshot, "client-9") == null,
+                    "host must not ping-pong on repeats");
+            });
+
+            // ---- MP review M4b: payload cap and degraded mode --------------------------------
+
+            TestHarness.Section("Payload size cap / degraded mode (M4b)");
+
+            TestHarness.Run("M4b: a payload under the cap is sent in full", delegate
+            {
+                ParityService.SetLocalPeerId("client-1");
+                ParityService.Register("ftk2mods.forge", "1.0.0", HashA, new string[] { "Recipes" });
+
+                string payload = ParityService.BuildSnapshotPayloadCapped(ParityService.DefaultMaxPayloadBytes);
+                TestHarness.Equal(ParityService.BuildSnapshotPayload(), payload, "under the cap, nothing is degraded");
+
+                ParitySnapshot decoded;
+                string error;
+                TestHarness.True(ParityPayloadCodec.TryDecodeSnapshot(payload, out decoded, out error), "decodes: " + error);
+                TestHarness.False(decoded.IsTruncated, "a full snapshot is not truncated");
+                TestHarness.Equal(1, decoded.Registrations.Length, "carries the registration");
+            });
+
+            TestHarness.Run("M4b: over the cap, a count-only snapshot is sent instead of nothing", delegate
+            {
+                ParityService.SetLocalPeerId("client-1");
+                for (int i = 0; i < 40; i++)
+                {
+                    ParityService.Register("ftk2mods.mod" + i.ToString("D2"), "1.0.0", HashA,
+                        new string[] { "PackWithAnEspeciallyLongIdentifier_" + i, "AnotherLongFeatureName_" + i });
+                }
+                string full = ParityService.BuildSnapshotPayload();
+                TestHarness.True(full.Length > 256, "the fixture must actually be large");
+
+                string capped = ParityService.BuildSnapshotPayloadCapped(256);
+                TestHarness.True(capped.Length <= 256, "the degraded payload must fit under the cap");
+                TestHarness.NotEqual(full, capped, "over the cap the payload must be degraded");
+
+                ParitySnapshot decoded;
+                string error;
+                TestHarness.True(ParityPayloadCodec.TryDecodeSnapshot(capped, out decoded, out error), "decodes: " + error);
+                TestHarness.True(decoded.IsTruncated, "the degraded payload is flagged truncated");
+                TestHarness.Equal(40, decoded.TruncatedRegistrationCount, "it carries the registration COUNT");
+                TestHarness.Equal(0, decoded.Registrations.Length, "and no registrations");
+                TestHarness.Equal("client-1", decoded.SenderPeerId, "the sender is still identified");
+            });
+
+            TestHarness.Run("M4b: a truncated snapshot warns loudly and is never compared", delegate
+            {
+                List<string[]> fired = new List<string[]>();
+                ParityService.SetLocalPeerId("client-1");
+                ParityService.RegisterWithCallback("ftk2mods.forge", "1.0.0", HashA, null,
+                    delegate (string[] args) { fired.Add(args); });
+
+                ParityService.HandleIncomingPayload(
+                    ParityPayloadCodec.EncodeTruncatedSnapshot("host", 12), "host");
+
+                // Comparing an empty registration list would have reported MissingRemote for
+                // ftk2mods.forge - a false divergence. It must report "unverifiable" instead.
+                TestHarness.Equal(0, fired.Count, "a truncated snapshot must not fabricate a divergence");
+                string banner = ParityService.TakePendingBanner();
+                TestHarness.True(banner.Contains("TRUNCATED"), "the banner says the peer was truncated: " + banner);
+                TestHarness.True(banner.Contains("host"), "the banner names the peer");
+                TestHarness.True(banner.Contains("12"), "the banner reports the mod count");
+                TestHarness.Equal(0, ParityService.GetSafeModeGuids().Length, "no SafeMode from an unverifiable peer");
+            });
+
+            TestHarness.Run("M4b: a zero-or-less cap falls back to the default", delegate
+            {
+                ParityService.SetLocalPeerId("client-1");
+                ParityService.Register("ftk2mods.forge", "1.0.0", HashA, null);
+                TestHarness.Equal(ParityService.BuildSnapshotPayload(), ParityService.BuildSnapshotPayloadCapped(0),
+                    "cap<=0 means 'use the default', not 'degrade everything'");
+            });
         }
     }
 }

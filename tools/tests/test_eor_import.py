@@ -1,5 +1,7 @@
 import filecmp
+import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -15,11 +17,36 @@ FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "eor_import"
 PACKAGE_DIR = FIXTURES_DIR / "package"
 SOURCE_DIR = PACKAGE_DIR / "BepInEx" / "plugins"
 VOCAB_FIXTURE = FIXTURES_DIR / "vocab.json"
+GOLDEN_DIR = FIXTURES_DIR / "golden"
 
-REAL_SOURCE = Path(
-    r"D:\temp\mods\Release 29 0.7.0.60 2026-07-18T18-42Z H0bovQUbN\BepInEx\plugins"
+# §M7: the real-corpus integration tests used to hardcode one workstation's absolute path, so
+# REAL_PACKAGE_AVAILABLE was False (and these tests silently skipped) on every other machine and
+# in CI. EOR_PACKAGE_DIR, if set, points at the package root that directly contains
+# BepInEx/plugins (i.e. the same directory you'd pass `--source <that>/BepInEx/plugins` for);
+# absent that, fall back to the original known-good path so this still runs unattended on the
+# author's machine. Either way, the skip reason below says exactly what's missing and how to fix
+# it instead of a bare "not present".
+_REAL_PACKAGE_DIR_ENV = "EOR_PACKAGE_DIR"
+_DEFAULT_REAL_PACKAGE_DIR = Path(
+    r"D:\temp\mods\Release 29 0.7.0.60 2026-07-18T18-42Z H0bovQUbN"
 )
+REAL_PACKAGE_DIR = Path(os.environ.get(_REAL_PACKAGE_DIR_ENV, str(_DEFAULT_REAL_PACKAGE_DIR)))
+REAL_SOURCE = REAL_PACKAGE_DIR / "BepInEx" / "plugins"
 REAL_VOCAB = TOOLS_DIR / "out" / "vocab-index.json"
+
+REAL_VOCAB_AVAILABLE = REAL_VOCAB.is_file()
+REAL_PACKAGE_AVAILABLE = REAL_SOURCE.is_dir() and REAL_VOCAB_AVAILABLE
+
+_REAL_VOCAB_SKIP_REASON = (
+    f"real vocab-index.json not present at {REAL_VOCAB} -- run tools/extract_vocab.py against "
+    "a live FTK2 install first (see tools/README.md)"
+)
+_REAL_PACKAGE_SKIP_REASON = (
+    f"real EOR package/vocab not present -- set {_REAL_PACKAGE_DIR_ENV} to the package root "
+    "that directly contains BepInEx/plugins (or place one at the default "
+    f"{_DEFAULT_REAL_PACKAGE_DIR}), and ensure a vocab is at {REAL_VOCAB} "
+    "(tools/extract_vocab.py)"
+)
 
 # Fixture package shape (see tools/tests/fixtures/eor_import/) -- small numbers, so full-pipeline
 # tests patch eor_import's EXPECTED_* invariant constants to match rather than the real corpus.
@@ -163,6 +190,7 @@ def test_residual_undeclared_bag_ids_are_dropped_and_reported():
 
 # ─────────────────────────────── items — class & fallback (6) ────────────────────────────────
 
+@pytest.mark.skipif(not REAL_VOCAB_AVAILABLE, reason=_REAL_VOCAB_SKIP_REASON)
 def test_class_remap_table_targets_all_present_in_vocab():
     real_vocab = eor_import.load_vocab(REAL_VOCAB)
     live_classes = set(real_vocab["Classes"])
@@ -374,6 +402,326 @@ def test_stats_report_flags_lck_95_above_vanilla_max():
     assert flagged["LCK"]["vanilla_max"] == 50
 
 
+# ─────────────────────────────── §B5 — vocab snapshot provenance ───────────────────────────────
+
+def test_compute_vocab_snapshot_all_none_when_path_missing():
+    assert eor_import.compute_vocab_snapshot(None, {}) == {
+        "VocabSha256": None, "VocabItemIdsCount": None, "VocabAllIdsCount": None,
+    }
+
+
+def test_compute_vocab_snapshot_all_none_when_path_does_not_exist(tmp_path):
+    assert eor_import.compute_vocab_snapshot(tmp_path / "nope.json", {}) == {
+        "VocabSha256": None, "VocabItemIdsCount": None, "VocabAllIdsCount": None,
+    }
+
+
+def test_compute_vocab_snapshot_hashes_the_real_fixture_file():
+    vocab = small_vocab()
+    result = eor_import.compute_vocab_snapshot(VOCAB_FIXTURE, vocab)
+    assert result["VocabSha256"] == hashlib.sha256(VOCAB_FIXTURE.read_bytes()).hexdigest()
+    assert result["VocabItemIdsCount"] == len(vocab["ItemIds"])
+    assert result["VocabAllIdsCount"] == len(vocab["AllIds"])
+
+
+def test_convert_classes_stamps_vocab_snapshot_into_provenance():
+    vocab = small_vocab()
+    sources = small_sources()
+    report = eor_import.make_report()
+    ctx = eor_import.build_context(vocab, sources, "9.9.9-test", report, vocab_path=VOCAB_FIXTURE)
+    class_result = eor_import.convert_classes(ctx)
+    snapshot = class_result["provenance"]["_vocab_snapshot"]
+    assert snapshot["VocabSha256"] == hashlib.sha256(VOCAB_FIXTURE.read_bytes()).hexdigest()
+    assert snapshot["VocabItemIdsCount"] == len(vocab["ItemIds"])
+    # per-class entries are untouched by the marker.
+    assert "CF_EOR_TESTMAGE" in class_result["provenance"]
+    assert "_vocab_snapshot" not in class_result["classes"]
+
+
+def test_convert_classes_without_vocab_path_records_null_snapshot():
+    ctx = small_ctx()  # small_ctx doesn't pass vocab_path -> defaults to None
+    class_result = eor_import.convert_classes(ctx)
+    assert class_result["provenance"]["_vocab_snapshot"] == {
+        "VocabSha256": None, "VocabItemIdsCount": None, "VocabAllIdsCount": None,
+    }
+
+
+def test_main_vocab_missing_is_loud_in_report_and_snapshot_is_null(tmp_path, monkeypatch):
+    patch_expected_counts(monkeypatch)
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    report_dir = tmp_path / "reports"
+    missing_vocab = tmp_path / "does-not-exist-vocab.json"
+
+    rc = eor_import.main([
+        "--source", str(SOURCE_DIR),
+        "--repo-root", str(repo_root),
+        "--vocab", str(missing_vocab),
+        "--report-dir", str(report_dir),
+        "--package-version", "9.9.9-test",
+        "--dry-run",
+    ])
+
+    assert rc == 1
+    report = json.loads((report_dir / "report.json").read_text(encoding="utf-8"))
+    assert any(f["kind"] == "vocab_missing" and f["severity"] == "blocking"
+               for f in report["findings"])
+    assert report["vocab_snapshot"] == {
+        "VocabSha256": None, "VocabItemIdsCount": None, "VocabAllIdsCount": None,
+    }
+
+
+def test_main_writes_vocab_snapshot_into_report_json(tmp_path, monkeypatch):
+    patch_expected_counts(monkeypatch)
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    report_dir = tmp_path / "reports"
+
+    eor_import.main([
+        "--source", str(SOURCE_DIR),
+        "--repo-root", str(repo_root),
+        "--vocab", str(VOCAB_FIXTURE),
+        "--report-dir", str(report_dir),
+        "--package-version", "9.9.9-test",
+    ])
+
+    report = json.loads((report_dir / "report.json").read_text(encoding="utf-8"))
+    assert report["vocab_snapshot"]["VocabSha256"] == hashlib.sha256(
+        VOCAB_FIXTURE.read_bytes()
+    ).hexdigest()
+
+    classes_prov = json.loads(
+        (repo_root / "FTK2.ClassForge" / "data" / "ClassPacks" / eor_import.CLASS_PACK_ID
+         / "provenance.json").read_text(encoding="utf-8")
+    )
+    assert classes_prov["_vocab_snapshot"] == report["vocab_snapshot"]
+
+
+# ─────────────────────────────── §B6 — authored-content detection ──────────────────────────────
+
+def test_detect_authored_content_empty_for_clean_fresh_pack(tmp_path):
+    pack_dir = tmp_path / "pack"
+    pack_dir.mkdir()
+    (pack_dir / "classes.json").write_text(
+        json.dumps({"CF_EOR_X": {"Passives": ["SKILL_NATIVE_ONE"]}}), encoding="utf-8"
+    )
+    (pack_dir / "provenance.json").write_text(
+        json.dumps({"CF_EOR_X": {"Source": "eor-import"}}), encoding="utf-8"
+    )
+    assert eor_import.detect_authored_class_content(pack_dir) == []
+
+
+def test_detect_authored_content_empty_for_nonexistent_dir(tmp_path):
+    assert eor_import.detect_authored_class_content(tmp_path / "does-not-exist") == []
+
+
+def test_detect_authored_content_via_extra_traits_file(tmp_path):
+    pack_dir = tmp_path / "pack"
+    pack_dir.mkdir()
+    (pack_dir / "traits.json").write_text("{}", encoding="utf-8")
+    reasons = eor_import.detect_authored_class_content(pack_dir)
+    assert any("traits.json" in r for r in reasons)
+
+
+def test_detect_authored_content_via_extra_skillrecipes_file(tmp_path):
+    pack_dir = tmp_path / "pack"
+    pack_dir.mkdir()
+    (pack_dir / "skillrecipes.json").write_text("{}", encoding="utf-8")
+    reasons = eor_import.detect_authored_class_content(pack_dir)
+    assert any("skillrecipes.json" in r for r in reasons)
+
+
+def test_detect_authored_content_via_authored_content_provenance_marker(tmp_path):
+    pack_dir = tmp_path / "pack"
+    pack_dir.mkdir()
+    (pack_dir / "provenance.json").write_text(
+        json.dumps({"_authored_content": {"_note": "hand-authoring pass"}}), encoding="utf-8"
+    )
+    reasons = eor_import.detect_authored_class_content(pack_dir)
+    assert any("_authored_content" in r for r in reasons)
+
+
+def test_detect_authored_content_via_skill_cf_passive_marker(tmp_path):
+    pack_dir = tmp_path / "pack"
+    pack_dir.mkdir()
+    (pack_dir / "classes.json").write_text(
+        json.dumps({"CF_EOR_KNIGHT": {"Passives": ["SKILL_CF_KNIGHT_CHIVALRY"]}}),
+        encoding="utf-8",
+    )
+    reasons = eor_import.detect_authored_class_content(pack_dir)
+    assert any("SKILL_CF_" in r for r in reasons)
+
+
+def test_detect_authored_content_tolerates_malformed_json(tmp_path):
+    pack_dir = tmp_path / "pack"
+    pack_dir.mkdir()
+    (pack_dir / "provenance.json").write_text("not valid json{{{", encoding="utf-8")
+    (pack_dir / "classes.json").write_text("also not json", encoding="utf-8")
+    # malformed files never crash detection; they're just treated as carrying no marker. The
+    # extra-file check still fires independently if traits.json/skillrecipes.json are present.
+    assert eor_import.detect_authored_class_content(pack_dir) == []
+
+
+# ─────────────────────────────── §B6 — emit_class_pack skip/force behaviour ────────────────────
+
+def _fresh_class_result(class_id: str = "CF_EOR_FRESH", hp: int = 1) -> dict:
+    return {
+        "classes": {class_id: {"Stats": {"HP": hp}, "LocKey": class_id}},
+        "localization": {class_id: "Fresh", class_id + "_DESCRIPTION": "A fresh class."},
+        "provenance": {
+            class_id: {"Source": "eor-import", "EorId": "EOR_FRESH", "PackageVersion": "9.9.9-test"},
+        },
+    }
+
+
+def test_emit_class_pack_no_op_when_no_classes():
+    status = eor_import.emit_class_pack(
+        {"classes": {}, "localization": {}, "provenance": {}}, Path("unused")
+    )
+    assert status == "skipped_empty"
+
+
+def test_emit_class_pack_writes_fresh_when_pack_dir_absent(tmp_path):
+    class_packs_dir = tmp_path / "ClassPacks"
+    status = eor_import.emit_class_pack(_fresh_class_result(), class_packs_dir)
+    assert status == "written"
+    pack_dir = class_packs_dir / eor_import.CLASS_PACK_ID
+    assert (pack_dir / "classes.json").is_file()
+    assert (pack_dir / "pack.json").is_file()
+    assert not (pack_dir / eor_import.PRE_IMPORT_BACKUP_DIRNAME).exists()
+
+
+def test_emit_class_pack_skips_when_authored_content_present_and_not_forced(tmp_path):
+    class_packs_dir = tmp_path / "ClassPacks"
+    pack_dir = class_packs_dir / eor_import.CLASS_PACK_ID
+    pack_dir.mkdir(parents=True)
+    (pack_dir / "traits.json").write_text("{}", encoding="utf-8")
+    (pack_dir / "classes.json").write_text(
+        json.dumps({"CF_EOR_OLD": {"Stats": {"HP": 42}}}), encoding="utf-8"
+    )
+    report = eor_import.make_report()
+
+    status = eor_import.emit_class_pack(_fresh_class_result(), class_packs_dir, force=False,
+                                         report=report)
+
+    assert status == "skipped_authored"
+    on_disk = json.loads((pack_dir / "classes.json").read_text(encoding="utf-8"))
+    assert on_disk == {"CF_EOR_OLD": {"Stats": {"HP": 42}}}, "authored pack must be untouched"
+    assert not (pack_dir / "pack.json").exists(), "no partial write on skip"
+    assert not (pack_dir / eor_import.PRE_IMPORT_BACKUP_DIRNAME).exists()
+    skip_findings = [f for f in report["findings"]
+                     if f["kind"] == "class_pack_authored_content_skipped"]
+    assert len(skip_findings) == 1
+    assert skip_findings[0]["severity"] == "warn"  # §B6: skip is not an error
+
+
+def test_emit_class_pack_forced_overwrite_backs_up_then_writes(tmp_path):
+    class_packs_dir = tmp_path / "ClassPacks"
+    pack_dir = class_packs_dir / eor_import.CLASS_PACK_ID
+    pack_dir.mkdir(parents=True)
+    (pack_dir / "skillrecipes.json").write_text("{}", encoding="utf-8")
+    (pack_dir / "classes.json").write_text(
+        json.dumps({"CF_EOR_OLD": {"Stats": {"HP": 99}}}), encoding="utf-8"
+    )
+    report = eor_import.make_report()
+
+    status = eor_import.emit_class_pack(_fresh_class_result(), class_packs_dir, force=True,
+                                         report=report)
+
+    assert status == "overwritten_forced"
+    new_classes = json.loads((pack_dir / "classes.json").read_text(encoding="utf-8"))
+    assert new_classes == {"CF_EOR_FRESH": {"Stats": {"HP": 1}, "LocKey": "CF_EOR_FRESH"}}
+
+    backup_classes = json.loads(
+        (pack_dir / eor_import.PRE_IMPORT_BACKUP_DIRNAME / "classes.json")
+        .read_text(encoding="utf-8")
+    )
+    assert backup_classes == {"CF_EOR_OLD": {"Stats": {"HP": 99}}}
+
+    gi_lines = (pack_dir / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert f"{eor_import.PRE_IMPORT_BACKUP_DIRNAME}/" in gi_lines
+
+    overwrite_findings = [f for f in report["findings"]
+                          if f["kind"] == "class_pack_authored_content_overwritten"]
+    assert len(overwrite_findings) == 1
+    assert overwrite_findings[0]["severity"] == "warn"
+
+
+def test_emit_class_pack_gitignore_is_appended_not_clobbered(tmp_path):
+    class_packs_dir = tmp_path / "ClassPacks"
+    pack_dir = class_packs_dir / eor_import.CLASS_PACK_ID
+    pack_dir.mkdir(parents=True)
+    (pack_dir / "traits.json").write_text("{}", encoding="utf-8")
+    (pack_dir / ".gitignore").write_text("some-other-pattern/\n", encoding="utf-8")
+
+    eor_import.emit_class_pack(_fresh_class_result(), class_packs_dir, force=True)
+
+    gi_lines = (pack_dir / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert "some-other-pattern/" in gi_lines
+    assert f"{eor_import.PRE_IMPORT_BACKUP_DIRNAME}/" in gi_lines
+
+
+def test_emit_class_pack_backup_reflects_immediately_prior_state_without_accumulating(tmp_path):
+    class_packs_dir = tmp_path / "ClassPacks"
+    pack_dir = class_packs_dir / eor_import.CLASS_PACK_ID
+    pack_dir.mkdir(parents=True)
+    (pack_dir / "traits.json").write_text("{}", encoding="utf-8")
+    (pack_dir / "classes.json").write_text(
+        json.dumps({"CF_EOR_OLD": {"Stats": {"HP": 0}}}), encoding="utf-8"
+    )
+
+    eor_import.emit_class_pack(_fresh_class_result("CF_EOR_A", hp=1), class_packs_dir, force=True)
+    eor_import.emit_class_pack(_fresh_class_result("CF_EOR_B", hp=2), class_packs_dir, force=True)
+
+    backup_dir = pack_dir / eor_import.PRE_IMPORT_BACKUP_DIRNAME
+    backup_files = sorted(str(p.relative_to(backup_dir).as_posix())
+                          for p in backup_dir.rglob("*") if p.is_file())
+    assert backup_files == ["classes.json", "localization/en.json", "pack.json",
+                            "provenance.json"], "backup must not accumulate across runs"
+
+    # the second run's backup is the *first* run's freshly-written output, not the original
+    # pre-import content and not the second run's own output.
+    backed_up = json.loads((backup_dir / "classes.json").read_text(encoding="utf-8"))
+    assert backed_up == {"CF_EOR_A": {"Stats": {"HP": 1}, "LocKey": "CF_EOR_A"}}
+    live = json.loads((pack_dir / "classes.json").read_text(encoding="utf-8"))
+    assert live == {"CF_EOR_B": {"Stats": {"HP": 2}, "LocKey": "CF_EOR_B"}}
+
+
+def test_main_force_classes_flag_end_to_end(tmp_path, monkeypatch):
+    patch_expected_counts(monkeypatch)
+    repo_root = tmp_path / "repo"
+    class_pack_dir = (repo_root / "FTK2.ClassForge" / "data" / "ClassPacks"
+                     / eor_import.CLASS_PACK_ID)
+    class_pack_dir.mkdir(parents=True)
+    (class_pack_dir / "traits.json").write_text("{}", encoding="utf-8")
+    (class_pack_dir / "classes.json").write_text(
+        json.dumps({"CF_EOR_OLD": {"Stats": {}}}), encoding="utf-8"
+    )
+    report_dir = tmp_path / "reports"
+    base_args = [
+        "--source", str(SOURCE_DIR),
+        "--repo-root", str(repo_root),
+        "--vocab", str(VOCAB_FIXTURE),
+        "--report-dir", str(report_dir),
+        "--package-version", "9.9.9-test",
+    ]
+
+    eor_import.main(base_args)  # no --force-classes: must skip, not touch the authored pack
+    on_disk = json.loads((class_pack_dir / "classes.json").read_text(encoding="utf-8"))
+    assert on_disk == {"CF_EOR_OLD": {"Stats": {}}}
+    report = json.loads((report_dir / "report.json").read_text(encoding="utf-8"))
+    assert any(f["kind"] == "class_pack_authored_content_skipped" for f in report["findings"])
+    assert report["summary"]["blocking"] == 1  # unrelated pre-existing per-item finding only
+
+    eor_import.main(base_args + ["--force-classes"])
+    on_disk_forced = json.loads((class_pack_dir / "classes.json").read_text(encoding="utf-8"))
+    assert set(on_disk_forced) == {"CF_EOR_TESTMAGE", "CF_EOR_TESTKNIGHT"}
+    assert (class_pack_dir / eor_import.PRE_IMPORT_BACKUP_DIRNAME / "classes.json").is_file()
+    report_forced = json.loads((report_dir / "report.json").read_text(encoding="utf-8"))
+    assert any(f["kind"] == "class_pack_authored_content_overwritten"
+               for f in report_forced["findings"])
+
+
 # ─────────────────────────────── cross-cutting (2) ─────────────────────────────────────────────
 
 def test_id_collision_against_vocab_snapshot_is_blocking(monkeypatch):
@@ -567,12 +915,49 @@ def test_main_full_run_writes_expected_pack_layout(tmp_path, monkeypatch):
     assert (report_dir / "eor-class-stats-report.md").is_file()
 
 
+# ─────────────────────────────── §M7 — golden-file regression test ─────────────────────────────
+#
+# This is the regression net B6 lacked: nothing previously asserted that a fresh regeneration of
+# the emitted *packs* (not the diagnostic reports/ dir, which embeds a host-dependent absolute
+# --source path and so is deliberately excluded from this byte-compare) equals a committed,
+# reviewed baseline. To refresh GOLDEN_DIR after an intentional converter change, regenerate it
+# with the same call this test makes (patch_expected_counts + run_pipeline + emit_all against
+# GOLDEN_DIR) and review the diff like any other change to committed pack content.
+
+def test_golden_full_pipeline_matches_committed_output(tmp_path, monkeypatch):
+    patch_expected_counts(monkeypatch)
+    vocab = small_vocab()
+    sources = small_sources()
+    report = eor_import.make_report()
+    ctx = eor_import.build_context(vocab, sources, "9.9.9-test", report, vocab_path=VOCAB_FIXTURE)
+    result = eor_import.run_pipeline(ctx, {"items", "followers", "classes"},
+                                      check_invariants=True)
+    assert result.aborted is False, report["findings"]
+
+    out_dir = tmp_path / "out"
+    status = eor_import.emit_all(result, out_dir)
+    assert status == "written"  # fresh dir, no prior authored content -- must not be skipped
+
+    golden_files = sorted(p.relative_to(GOLDEN_DIR) for p in GOLDEN_DIR.rglob("*")
+                          if p.is_file())
+    out_files = sorted(p.relative_to(out_dir) for p in out_dir.rglob("*") if p.is_file())
+    assert golden_files, "golden fixture tree is empty -- was it committed?"
+    assert out_files == golden_files, (
+        "emitted pack file layout drifted from the committed golden tree in "
+        "tools/tests/fixtures/eor_import/golden/ -- if this is an intentional converter "
+        "change, regenerate the goldens and review the diff"
+    )
+    mismatches = [
+        rel for rel in golden_files
+        if (out_dir / rel).read_bytes() != (GOLDEN_DIR / rel).read_bytes()
+    ]
+    assert mismatches == [], f"byte mismatch vs committed golden for: {mismatches}"
+
+
 # ─────────────────────────────── integration (skipped without the real package) ────────────────
 
-REAL_PACKAGE_AVAILABLE = REAL_SOURCE.is_dir() and REAL_VOCAB.is_file()
 
-
-@pytest.mark.skipif(not REAL_PACKAGE_AVAILABLE, reason="real EOR package/vocab not present")
+@pytest.mark.skipif(not REAL_PACKAGE_AVAILABLE, reason=_REAL_PACKAGE_SKIP_REASON)
 def test_real_package_invariants_pass():
     vocab = eor_import.load_vocab(REAL_VOCAB)
     sources = eor_import.load_sources(REAL_SOURCE)
@@ -580,7 +965,7 @@ def test_real_package_invariants_pass():
     assert eor_import.assert_corpus_invariants(sources, vocab, report) is True, report["findings"]
 
 
-@pytest.mark.skipif(not REAL_PACKAGE_AVAILABLE, reason="real EOR package/vocab not present")
+@pytest.mark.skipif(not REAL_PACKAGE_AVAILABLE, reason=_REAL_PACKAGE_SKIP_REASON)
 def test_real_package_item_packs_pass_validate_pack():
     vocab = eor_import.load_vocab(REAL_VOCAB)
     sources = eor_import.load_sources(REAL_SOURCE)
@@ -595,7 +980,7 @@ def test_real_package_item_packs_pass_validate_pack():
         assert errors == [], f"{pack_id}: {errors}"
 
 
-@pytest.mark.skipif(not REAL_PACKAGE_AVAILABLE, reason="real EOR package/vocab not present")
+@pytest.mark.skipif(not REAL_PACKAGE_AVAILABLE, reason=_REAL_PACKAGE_SKIP_REASON)
 def test_real_package_two_runs_byte_identical(tmp_path):
     def run_once(out_dir: Path) -> None:
         vocab = eor_import.load_vocab(REAL_VOCAB)

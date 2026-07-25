@@ -1,0 +1,133 @@
+{
+  "Items": [
+    {
+      "Id": "ARM_EOR_STARTER_ORACLE_TEST_ORB",
+      "Loc": {
+        "Description": "Cloudy glass that hums faintly.",
+        "Name": "Oracle's Test Orb"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_ORACLE_TEST_ORB",
+        "PackageVersion": "9.9.9-test",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "ORB",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 5
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "ORB_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "INT"
+            }
+          },
+          "AbilityBag": [
+            "ORB_BASIC_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "ORB_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "WOOD",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "TEST_ORB2H_DONOR_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_TESTMAGE_BASIC_WAND",
+      "Loc": {
+        "Description": "A starting focus for the fledgling arcanist.",
+        "Name": "Testmage's Basic Wand"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_TESTMAGE_BASIC_WAND",
+        "PackageVersion": "9.9.9-test",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "WAND",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_BASIC_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "MAGIC_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "WOOD",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "TEST_WAND_DONOR_00"
+    }
+  ],
+  "PackId": "ARM_EOR_STARTERS"
+}

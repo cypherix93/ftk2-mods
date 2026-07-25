@@ -1,0 +1,21 @@
+{
+  "SMN_MRC_TEST_BANDIT_HEAVY_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_TEST_BANDIT_HEAVY_00",
+    "ConfigName": "TEST_BANDIT_HEAVY_00",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  }
+}

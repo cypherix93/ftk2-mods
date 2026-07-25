@@ -27,6 +27,7 @@ namespace FTK2Mods.DevKit
         private readonly string _guid;
         private readonly string _version;
         private readonly string _dataHash;
+        private readonly string _normalizedDataHash;
         private readonly string[] _enabledFeatures;
 
         public ParityRegistration(string pluginGuid, string version, string dataHash, string[] enabledFeatures)
@@ -34,6 +35,7 @@ namespace FTK2Mods.DevKit
             _guid = Clean(pluginGuid);
             _version = Clean(version);
             _dataHash = Clean(dataHash).ToLowerInvariant();
+            _normalizedDataHash = DataHasher.NormalizeHash(_dataHash);
             _enabledFeatures = NormalizeFeatures(enabledFeatures);
         }
 
@@ -60,14 +62,26 @@ namespace FTK2Mods.DevKit
         public int FeatureCount { get { return _enabledFeatures.Length; } }
 
         /// <summary>
-        /// True only for a syntactically valid <c>sha256:</c> + 64 lowercase hex digits hash.
+        /// True for a syntactically valid SHA-256 digest in either accepted spelling — bare 64 hex,
+        /// or <c>sha256:</c> + 64 hex (MP review B0: sibling hashers emit the bare form).
         /// A null/empty/malformed hash is treated as a GUARANTEED mismatch by
         /// <see cref="ParityComparer"/> (SPEC §8 edge case), never as a silent pass.
         /// </summary>
         public bool HasWellFormedDataHash
         {
-            get { return DataHasher.IsWellFormedHash(_dataHash); }
+            get { return _normalizedDataHash.Length != 0; }
         }
+
+        /// <summary>
+        /// The canonical <c>sha256:&lt;64 lowercase hex&gt;</c> form of <see cref="DataHash"/>, or
+        /// <see cref="string.Empty"/> if the reported hash was missing/malformed.
+        ///
+        /// <b>This — not <see cref="DataHash"/> — is what parity comparison compares</b>, so a peer
+        /// reporting a bare digest and a peer reporting a prefixed one agree when the underlying
+        /// data is identical (MP review B0). <see cref="DataHash"/> keeps the raw reported spelling
+        /// so <c>dk_dump_parity</c> shows what the mod actually registered.
+        /// </summary>
+        public string NormalizedDataHash { get { return _normalizedDataHash; } }
 
         internal string[] FeaturesNoCopy { get { return _enabledFeatures; } }
 
@@ -148,16 +162,36 @@ namespace FTK2Mods.DevKit
 
         private readonly string _senderPeerId;
         private readonly ParityRegistration[] _registrations;
+        private readonly int _truncatedRegistrationCount;
 
         public ParitySnapshot(string senderPeerId, ParityRegistration[] registrations)
+            : this(senderPeerId, registrations, -1)
+        {
+        }
+
+        public ParitySnapshot(string senderPeerId, ParityRegistration[] registrations, int truncatedRegistrationCount)
         {
             _senderPeerId = senderPeerId == null ? string.Empty : senderPeerId.Trim();
             _registrations = registrations == null ? EmptyRegistrations : registrations;
+            _truncatedRegistrationCount = truncatedRegistrationCount;
         }
 
         public string SenderPeerId { get { return _senderPeerId; } }
 
         /// <summary>Registrations, always sorted by guid (ordinal) by the codec.</summary>
         public ParityRegistration[] Registrations { get { return _registrations; } }
+
+        /// <summary>
+        /// True when the sender's payload exceeded its size cap and it sent the degraded
+        /// count-only form (MP review M4b). Such a snapshot carries NO registrations and must never
+        /// be fed to <see cref="ParityComparer"/> — an empty list would report a spurious
+        /// MissingRemote for every local mod. Receivers report it loudly as "unverifiable peer".
+        /// </summary>
+        public bool IsTruncated { get { return _truncatedRegistrationCount >= 0; } }
+
+        /// <summary>
+        /// How many registrations the sender had when it truncated, or -1 for a normal snapshot.
+        /// </summary>
+        public int TruncatedRegistrationCount { get { return _truncatedRegistrationCount; } }
     }
 }

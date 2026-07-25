@@ -11,8 +11,15 @@ namespace Summoner.Core.Parity
     /// supply every enabled pack's file bytes already read from disk. Deterministic construction:
     /// packs are iterated in sorted-by-PackId (ordinal) order; within each pack, files are iterated
     /// in sorted-by-RelPath (ordinal) order after dropping any path under "localization/" (R1:
-    /// localization is parity-exempt); every file's bytes are newline-normalized (CRLF -> LF)
-    /// before hashing so a Windows-vs-Unix checkout of the same content hashes identically.
+    /// localization is parity-exempt); a file whose extension is a known-text type (currently just
+    /// ".json" -- the only file kind FollowerPacks ship, see PackLoader) is newline-normalized
+    /// (CRLF -> LF) before hashing so a Windows-vs-Unix checkout of the same content hashes
+    /// identically; any other extension is hashed as raw bytes, unmodified (mirrors ClassForge's
+    /// B0/M5 fix -- normalize known text, never mangle binary content by decoding/re-encoding it).
+    /// The result is prefixed with <see cref="HashPrefix"/> ("sha256:" + 64 lowercase hex) to match
+    /// FTK2.DevKit's <c>DataHasher.HashPrefix</c>/<c>IsWellFormedHash</c> contract (MP review B0):
+    /// ParityRegistration.HasWellFormedDataHash requires the prefix, and a bare-hex hash is treated
+    /// as a guaranteed mismatch by DevKit's ParityComparer.
     /// The exact byte layout fed to SHA256 is an internal implementation detail (design left this
     /// latitude — it specifies inputs/ordering/exclusions/normalization, not a wire format); the
     /// only external contract is: stable across input ordering, changes iff enabled-pack content
@@ -20,6 +27,11 @@ namespace Summoner.Core.Parity
     /// </summary>
     public static class DataHasher
     {
+        /// <summary>Prefix on every hash string, matching FTK2.DevKit.DataHasher.HashPrefix exactly.</summary>
+        public const string HashPrefix = "sha256:";
+
+        private static readonly string[] TextExtensions = { ".json" };
+
         public static string ComputeHash(IReadOnlyList<(string PackId, IReadOnlyList<(string RelPath, byte[] Bytes)> Files)> packs)
         {
             using (var sha = SHA256.Create())
@@ -37,16 +49,33 @@ namespace Summoner.Core.Parity
                     foreach (var file in files)
                     {
                         WriteToken(stream, "FILE:" + file.RelPath);
-                        var normalized = NormalizeNewlines(file.Bytes ?? Array.Empty<byte>());
-                        stream.Write(normalized, 0, normalized.Length);
+                        var raw = file.Bytes ?? Array.Empty<byte>();
+                        var toHash = IsKnownTextExtension(file.RelPath) ? NormalizeNewlines(raw) : raw;
+                        stream.Write(toHash, 0, toHash.Length);
                         WriteToken(stream, "/FILE");
                     }
                 }
 
                 stream.Position = 0;
                 var hash = sha.ComputeHash(stream);
-                return ToHex(hash);
+                return HashPrefix + ToHex(hash);
             }
+        }
+
+        /// <summary>True for well-formed FollowerPacks hashes: <see cref="HashPrefix"/> + 64 lowercase hex,
+        /// the identical shape DevKit's own IsWellFormedHash requires.</summary>
+        public static bool IsWellFormedHash(string hash)
+        {
+            if (string.IsNullOrEmpty(hash)) return false;
+            if (!hash.StartsWith(HashPrefix, StringComparison.Ordinal)) return false;
+            if (hash.Length != HashPrefix.Length + 64) return false;
+            for (int i = HashPrefix.Length; i < hash.Length; i++)
+            {
+                var c = hash[i];
+                var isHex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+                if (!isHex) return false;
+            }
+            return true;
         }
 
         private static bool IsLocalization(string relPath)
@@ -54,6 +83,14 @@ namespace Summoner.Core.Parity
             if (string.IsNullOrEmpty(relPath)) return false;
             var normalized = relPath.Replace('\\', '/');
             return normalized.StartsWith("localization/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsKnownTextExtension(string relPath)
+        {
+            if (string.IsNullOrEmpty(relPath)) return false;
+            foreach (var ext in TextExtensions)
+                if (relPath.EndsWith(ext, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
         }
 
         /// <summary>Byte-level CRLF -> LF normalization -- avoids any text-encoding assumption about the file content.</summary>

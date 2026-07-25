@@ -45,6 +45,15 @@ namespace ClassForge.Plugin
         // CharacterHelper.AddHealth, so the AddHealth prefix reads the origin the ApplyStatChange prefix
         // captured one frame up the stack. Saved/restored through __state rather than depth-counted, so
         // nesting is exact and a prefix that threw before setting it cannot corrupt an outer call.
+        //
+        // MP review M4: the restore used to live at the top of ApplyStatChange_Postfix, which Harmony never
+        // runs when the ORIGINAL method throws -- so a throwing InteractableHelper.ApplyStatChange would pin
+        // this to a stale Entity for the rest of the process (across combats, across the whole run). The
+        // restore now lives exclusively in ApplyStatChange_Finalizer, a Harmony finalizer, which Harmony
+        // guarantees runs after Prefix -> Original -> Postfix regardless of what threw. It is ALSO cleared on
+        // every combat-end reset (RecipeEngineHost.ResetCombat -> ClearHealOrigin) as a belt-and-braces
+        // second line of defense, so even a wholly missed ApplyStatChange call cannot leak this across a
+        // combat boundary.
         private static Entity _healOrigin;
 
         private static bool _warnedTurnHookMissing;
@@ -277,9 +286,9 @@ namespace ClassForge.Plugin
         {
             try
             {
-                // Always first: restore the healer slot even on every early-return path below.
-                if (__state != null) _healOrigin = __state.PrevHealOrigin;
-
+                // NOTE (MP review M4): the healer-slot restore does NOT happen here anymore -- a postfix never
+                // runs when the original throws, so the restore now lives exclusively in
+                // ApplyStatChange_Finalizer, which Harmony guarantees runs regardless of exceptions.
                 if (__state == null || !__state.Valid) return;
                 if (pStatAction == null || !string.Equals(pStatAction.Stat, "HP", StringComparison.Ordinal)) return;
 
@@ -345,6 +354,40 @@ namespace ClassForge.Plugin
                 }
             }
             catch (Exception ex) { Fail("ApplyStatChange(postfix)", ex); }
+        }
+
+        /// <summary>
+        /// Harmony FINALIZER for <c>InteractableHelper.ApplyStatChange</c> (MP review M4). Finalizers run
+        /// after Prefix -&gt; Original -&gt; Postfix no matter what threw, so this is the one place the healer
+        /// slot's restore can live and be genuinely exception-safe: a <c>try/finally</c> inside the prefix
+        /// cannot see the original throwing (the prefix has already returned by then), which is why the
+        /// restore was moved out of the postfix (never runs on a throwing original) entirely into here.
+        /// Never swallows or replaces the exception (void return) — it only cleans up state and lets whatever
+        /// happened propagate exactly as it would without this patch.
+        /// </summary>
+        public static void ApplyStatChange_Finalizer(StatChangeCapture __state)
+        {
+            try
+            {
+                if (__state != null) _healOrigin = __state.PrevHealOrigin;
+            }
+            catch
+            {
+                // If even reading __state throws, do not leave the slot pinned to a stale entity: clearing it
+                // is strictly safer than leaving a stale reference that could survive across combats.
+                _healOrigin = null;
+            }
+        }
+
+        /// <summary>
+        /// Belt-and-braces second line of defense for <see cref="_healOrigin"/> (MP review M4): called from
+        /// <see cref="RecipeEngineHost.ResetCombat"/> on every combat-key change, so even an
+        /// <c>ApplyStatChange</c> call this hook never observed at all (not just one that threw) cannot leave
+        /// a stale healer identity readable in the next combat.
+        /// </summary>
+        internal static void ClearHealOrigin()
+        {
+            _healOrigin = null;
         }
 
         // =====================================================================================

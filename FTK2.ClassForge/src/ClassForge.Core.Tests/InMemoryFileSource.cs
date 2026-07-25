@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using ClassForge.Core.IO;
 
 namespace ClassForge.Core.Tests;
@@ -13,13 +14,29 @@ namespace ClassForge.Core.Tests;
 /// </summary>
 public sealed class InMemoryFileSource : IFileSource
 {
-    private readonly Dictionary<string, string> _files = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _textFiles = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, byte[]> _binaryFiles = new(StringComparer.Ordinal);
     private readonly List<string> _dirs = new();
 
     public void AddFile(string path, string content)
     {
         path = Normalize(path);
-        _files[path] = content;
+        _textFiles[path] = content;
+        RegisterDirs(path);
+    }
+
+    /// <summary>Registers a file by raw bytes rather than text — used by DataHasher's PNG-bytes tests, where
+    /// the fixture content must not be valid UTF-8 (or must contain byte sequences, like a PNG header's own
+    /// 0x0D 0x0A, that must survive hashing completely untouched — see MP review M5).</summary>
+    public void AddBinaryFile(string path, byte[] content)
+    {
+        path = Normalize(path);
+        _binaryFiles[path] = content;
+        RegisterDirs(path);
+    }
+
+    private void RegisterDirs(string path)
+    {
         var parts = path.Split('/');
         var cur = "";
         for (int i = 0; i < parts.Length - 1; i++)
@@ -44,12 +61,30 @@ public sealed class InMemoryFileSource : IFileSource
     public bool DirectoryExists(string path)
     {
         var norm = Normalize(path);
-        return _dirs.Contains(norm) || _files.Keys.Any(f => f.StartsWith(norm + "/", StringComparison.Ordinal));
+        return _dirs.Contains(norm) || AllPaths().Any(f => f.StartsWith(norm + "/", StringComparison.Ordinal));
     }
 
-    public bool FileExists(string path) => _files.ContainsKey(Normalize(path));
+    public bool FileExists(string path)
+    {
+        var norm = Normalize(path);
+        return _textFiles.ContainsKey(norm) || _binaryFiles.ContainsKey(norm);
+    }
 
-    public string ReadAllText(string path) => _files[Normalize(path)];
+    public string ReadAllText(string path)
+    {
+        var norm = Normalize(path);
+        if (_textFiles.TryGetValue(norm, out var text)) return text;
+        if (_binaryFiles.TryGetValue(norm, out var bytes)) return Encoding.UTF8.GetString(bytes);
+        throw new System.IO.FileNotFoundException(norm);
+    }
+
+    public byte[] ReadAllBytes(string path)
+    {
+        var norm = Normalize(path);
+        if (_binaryFiles.TryGetValue(norm, out var bytes)) return bytes;
+        if (_textFiles.TryGetValue(norm, out var text)) return Encoding.UTF8.GetBytes(text);
+        throw new System.IO.FileNotFoundException(norm);
+    }
 
     public IEnumerable<string> GetDirectories(string path)
     {
@@ -65,11 +100,13 @@ public sealed class InMemoryFileSource : IFileSource
     public IEnumerable<string> GetFiles(string path, string searchPattern, bool recursive)
     {
         var norm = Normalize(path) + "/";
-        var candidates = _files.Keys.Where(f => f.StartsWith(norm, StringComparison.Ordinal));
+        var candidates = AllPaths().Where(f => f.StartsWith(norm, StringComparison.Ordinal));
         if (!recursive)
             candidates = candidates.Where(f => !f.Substring(norm.Length).Contains('/'));
         return candidates.Where(f => MatchesPattern(f.Substring(f.LastIndexOf('/') + 1), searchPattern)).OrderBy(f => f, StringComparer.Ordinal);
     }
+
+    private IEnumerable<string> AllPaths() => _textFiles.Keys.Concat(_binaryFiles.Keys);
 
     private static bool MatchesPattern(string fileName, string pattern)
     {

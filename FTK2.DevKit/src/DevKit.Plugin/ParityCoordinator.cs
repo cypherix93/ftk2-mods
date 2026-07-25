@@ -10,14 +10,18 @@ namespace DevKit.Plugin
     /// wires the logger and the policy knob, registers DevKit's own tuple, drives the host/join
     /// exchange, and pumps replies back out through <see cref="ParityTransport"/>.
     ///
-    /// <b>Session/host detection is an open question</b> (SPEC §11.8: no networking/session-state
-    /// flag has been identified yet). This coordinator therefore <i>fails closed</i> — it always
-    /// runs the handshake on adventure init and treats itself as a non-host unless proven otherwise.
-    /// Both halves of that are safe:
-    ///  - running the exchange in single-player is a no-op (nothing receives it, nothing replies);
-    ///  - a peer that wrongly believes it is not the host simply doesn't answer a late-join
-    ///    <c>FTK2MODS_PARITY_REQUEST_V1</c>, while every peer still broadcasts its own snapshot on
-    ///    session start — so the mismatch is still detected on both sides.
+    /// <b>Session/host detection is wired, not guessed</b> (MP review M3; SPEC §11.8's open question
+    /// is answered by the repo's own decompile). Both flags come from <see cref="GameSurface"/>:
+    /// <c>NetworkData.PlayingOnlineMultiplayer</c> (<c>NetworkData.cs:61</c>) gates the whole
+    /// handshake so single-player takes no network code path at all, and <c>NetworkData.IsHost</c>
+    /// (<c>NetworkData.cs:24</c>) decides whether this peer answers a late joiner's
+    /// <c>FTK2MODS_PARITY_REQUEST_V1</c>. Both are re-read on every session start, because a process
+    /// can host one session and join the next.
+    ///
+    /// If the flags cannot be resolved, both read <c>false</c>: DevKit then does nothing at all
+    /// rather than broadcasting into a session it cannot reason about.
+    /// <c>ParityService.SetIsHost</c> remains a public override so tests can drive the host paths
+    /// without a live game.
     /// </summary>
     internal static class ParityCoordinator
     {
@@ -48,10 +52,18 @@ namespace DevKit.Plugin
                 DevKitPlugin.Log.LogInfo("ParityService: OnParityMismatch is now " + ParityService.GetPolicy() + ".");
             };
 
+            // M4b: one ceiling for every snapshot DevKit emits, including the host's replies.
+            ParityService.SetMaxPayloadBytes(DevKitPlugin.MaxParityPayloadBytes.Value);
+            DevKitPlugin.MaxParityPayloadBytes.SettingChanged += delegate
+            {
+                ParityService.SetMaxPayloadBytes(DevKitPlugin.MaxParityPayloadBytes.Value);
+            };
+
             // Peer identity: no peer-id API has been identified yet (SPEC §11.8). A per-process id is
             // enough for what ParityService uses it for - labelling divergences and suppressing our
             // own echoed broadcast - and never feeds a hash, so it cannot affect R1/R2 determinism.
             ParityService.SetLocalPeerId("peer-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            // Host-ness is unknown until a session exists; OnSessionStarted reads the real flag.
             ParityService.SetIsHost(false);
 
             _localDataHash = ComputeOwnDataHash();
@@ -59,25 +71,58 @@ namespace DevKit.Plugin
         }
 
         /// <summary>
-        /// Session started/joined: broadcast our snapshot, then (as a possible late joiner) ask the
-        /// host for a fresh one rather than trusting stale state (SPEC §3 late-join re-query).
+        /// Session started/joined: read the real session flags, broadcast our snapshot, then (as a
+        /// possible late joiner) ask the host for a fresh one rather than trusting stale state
+        /// (SPEC §3 late-join re-query).
         /// </summary>
-        internal static void OnSessionStarted()
+        internal static void OnSessionStarted(object directorInstance)
         {
             if (!_initialized) return;
+
+            // M4b: a transport failure blinds this peer for one session at most. Clearing here is
+            // what makes the retry "re-probe on next session start" rather than process-permanent.
+            ParityTransport.ResetForNewSession();
             ParityService.ResetSession();
 
-            string snapshot = ParityService.BuildSnapshotPayload();
+            // The Initialize postfix always supplies __instance; fall back to the cached director so a
+            // future non-instance trigger still reaches the session flags.
+            if (directorInstance == null) directorInstance = ParityTransport.CurrentDirector;
+
+            // M3: gate the entire handshake on the game's own MP flag. In single-player the game's
+            // sender returns false before touching the network anyway (AdventureDirector.cs:15137),
+            // but taking no code path at all is the stronger guarantee.
+            if (!GameSurface.IsOnlineMultiplayer(directorInstance))
+            {
+                DevKitPlugin.Verbose("ParityService: not an online multiplayer session "
+                    + "(NetworkData.PlayingOnlineMultiplayer=false); parity handshake skipped.");
+                return;
+            }
+
+            bool isHost = GameSurface.IsHost(directorInstance);
+            ParityService.SetIsHost(isHost);
+            DevKitPlugin.Log.LogInfo("ParityService: online multiplayer session detected, isHost="
+                + (isHost ? "true" : "false") + "; running the FTK2MODS_PARITY_V1 handshake.");
+
+            string snapshot = ParityService.BuildCappedSnapshotPayload();
             bool sent = ParityTransport.Send(snapshot);
             if (!sent)
             {
                 DevKitPlugin.Log.LogWarning("ParityService: could not broadcast FTK2MODS_PARITY_V1 - "
-                    + "this peer is invisible to the parity handshake this session. " + ParityTransport.DescribeState());
-                return;
+                    + "this peer may be invisible to the parity handshake this session. "
+                    + ParityTransport.DescribeState());
             }
-            if (!ParityService.GetIsHost())
+
+            // MP review m5: send the REQUEST even when the broadcast failed. It is the one message a
+            // send-broken peer most needs, and a non-host that stays silent is indistinguishable from
+            // a healthy peer. A host does not request from itself.
+            if (!isHost)
             {
-                ParityTransport.Send(ParityService.BuildRequestPayload());
+                if (!ParityTransport.Send(ParityService.BuildRequestPayload()) && !sent)
+                {
+                    DevKitPlugin.Log.LogError("ParityService: this peer can neither broadcast nor request - "
+                        + "it is INVISIBLE to the parity handshake this session and no divergence involving it "
+                        + "will be detected. " + ParityTransport.DescribeState());
+                }
             }
         }
 
@@ -113,7 +158,7 @@ namespace DevKit.Plugin
                     + "about this mod's data without anyone being told.");
                 return;
             }
-            ParityTransport.Send(ParityService.BuildSnapshotPayload());
+            ParityTransport.Send(ParityService.BuildCappedSnapshotPayload());
         }
 
         private static string ComputeOwnDataHash()

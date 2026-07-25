@@ -1,0 +1,344 @@
+{
+  "Items": [
+    {
+      "Id": "ARM_EOR_ASH_TEST_KNIFE",
+      "Loc": {
+        "Description": "A worn practice blade.",
+        "Name": "Ash Test Knife"
+      },
+      "Provenance": {
+        "EorId": "EORR_ASH_TEST_KNIFE",
+        "PackageVersion": "9.9.9-test",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "DAGGER",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6,
+            "CRT": 10,
+            "SPD": 4
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "KNIFE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KNIFE_BASIC_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "KNIFE_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": 1,
+        "MinTier": 0,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "PHYSICAL",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DAGGER",
+          "MELEE",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARM_ENDGAME_GEAR"
+        ],
+        "Value": 12
+      },
+      "VisualFallback": "TEST_BLADE_DONOR_TINY_00"
+    },
+    {
+      "Id": "ARM_EOR_LOST_SILVER_KATANA",
+      "Loc": {
+        "Description": "A curved blade of foreign make, kept keen by long habit.",
+        "Name": "Lost Silver Katana"
+      },
+      "Provenance": {
+        "EorId": "EORR_LOST_SILVER_KATANA",
+        "PackageVersion": "9.9.9-test",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "KATANA",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 14,
+            "CRT": 8
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "KATANA_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KATANA_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": 2,
+        "MinTier": 1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "PHYSICAL",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "KATANA",
+          "MELEE",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARM_STRONGER_GEAR"
+        ],
+        "Value": 90
+      },
+      "VisualFallback": "TEST_KATANA_DONOR_00"
+    },
+    {
+      "Id": "ARM_EOR_NIGHT_SHADOW_BLADE",
+      "Loc": {
+        "Description": "Cuts a shadow across the field.",
+        "Name": "Night Shadow Blade"
+      },
+      "Provenance": {
+        "EorId": "EORR_NIGHT_SHADOW_BLADE",
+        "PackageVersion": "9.9.9-test",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "DAGGER",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 17,
+            "CRT": 16,
+            "SPD": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BLADE_SHADOW_AOE": {
+              "ACC": -10,
+              "Ammo": 0,
+              "MaxValue": 0.5,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "AWR"
+            },
+            "KNIFE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KNIFE_BASIC_ATTACK",
+            "BLADE_SHADOW_AOE"
+          ],
+          "AbilityFillBag": [
+            "KNIFE_BASIC_ATTACK",
+            "BLADE_SHADOW_AOE"
+          ],
+          "ShuffleAbilityBag": true
+        },
+        "Material": "METAL",
+        "MaxTier": 3,
+        "MinTier": 2,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "PHYSICAL",
+          "BUFF",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DAGGER",
+          "MELEE",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 136
+      },
+      "VisualFallback": "TEST_BLADE_DONOR_SHADOW_00"
+    },
+    {
+      "Id": "ARM_EOR_OLD_TOWER_SHIELD",
+      "Loc": {
+        "Description": "A dented remnant of a forgotten keep.",
+        "Name": "Old Tower Shield"
+      },
+      "Provenance": {
+        "EorId": "EORR_OLD_TOWER_SHIELD",
+        "PackageVersion": "9.9.9-test",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "SHIELD",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "OFF_HAND"
+          ],
+          "Stats": {
+            "DEF": 1,
+            "PDEF": 1,
+            "RES": 1
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "SHIELD_TAUNT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            }
+          },
+          "ShuffleAbilityBag": true
+        },
+        "Material": "NONE",
+        "MaxTier": 1,
+        "MinTier": 0,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "TAUNT",
+          "BUFF",
+          "COMMON",
+          "HAND_EQUIP",
+          "PHYSICAL",
+          "MAGICAL",
+          "SHIELD",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARM_WEAKER_GEAR"
+        ],
+        "Value": 22
+      },
+      "VisualFallback": "TEST_SHIELD_DONOR_00"
+    },
+    {
+      "Id": "ARM_EOR_RUSTY_OLD_SWORD",
+      "Loc": {
+        "Description": "It has seen better decades.",
+        "Name": "Rusty Old Sword"
+      },
+      "Provenance": {
+        "EorId": "EORR_RUSTY_OLD_SWORD",
+        "PackageVersion": "9.9.9-test",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "BLADE",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 9
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "SWORD_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "SWORD_BASIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": 1,
+        "MinTier": 0,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "PHYSICAL",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "MELEE",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET",
+          "ARM_UTILITY_GEAR"
+        ],
+        "Value": 40
+      },
+      "VisualFallback": "TEST_SWORD_DONOR_00"
+    }
+  ],
+  "PackId": "ARM_EOR_ITEMS"
+}

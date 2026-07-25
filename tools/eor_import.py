@@ -15,10 +15,36 @@ is ARM_/SMN_/CF_-prefixed, so that contamination cannot cause a false id-collisi
 here. Re-run this tool (and re-validate its output) after the vocab index is regenerated from
 a verified-clean game install.
 
+NOTE on vocab identity (MP review B5): the vocab index is not merely a validation input -- it
+changes emitted content (pick_visual_fallback/filter_tags/repair_class all branch on it), so two
+operators regenerating from different vocab snapshots can silently get different packs.
+Regenerating packs requires the *same game version's* vocab-index.json that produced the
+currently-committed packs; do not regenerate against a vocab pulled from a different FTK2 build.
+Every run's report.json carries a "vocab_snapshot" block (sha256 of the --vocab file plus its
+ItemIds/AllIds counts) so a mismatch is at least visible after the fact, and a missing --vocab
+file is always a blocking "vocab_missing" finding (report.json + nonzero exit), never a silent
+default (see compute_vocab_snapshot, main()).
+
+NOTE on hand-authored pack content (MP review B6): CF_PACK_EOR_CLASSES has hand-authored content
+layered onto it after the initial import (traits.json, skillrecipes.json, extra SKILL_CF_*
+Passives sewn into classes.json, extra loc keys, and a provenance.json `_authored_content`
+block) that this converter cannot regenerate, because none of it comes from the EOR source
+package. A bare re-run therefore refuses to overwrite that pack unless `--force-classes` is
+given (see detect_authored_class_content/emit_class_pack); with --force-classes it writes a
+deterministic backup to CF_PACK_EOR_CLASSES/.pre-import-backup/ first. There is deliberately no
+automatic read-modify-write merge of the authored layer back onto a fresh regeneration
+("PRESERVE-MERGE"): a correct merge needs a three-way base (the last-known-generated state
+before authoring) that this tool does not track, so it would have to guess which of two
+conflicting values (a hand-tuned Passives entry vs. a freshly re-imported one) is authoritative.
+Guessing wrong silently is worse than refusing outright; --force-classes plus a manual
+re-application of the authoring pass (see provenance.json's `_authored_content` block for what
+that pass did) is the supported path today.
+
 Usage:
     python tools/eor_import.py --source "<EOR pkg>/BepInEx/plugins" --repo-root .
         [--vocab tools/out/vocab-index.json] [--only items,followers,classes]
         [--report-dir tools/out/eor-import] [--package-version 0.7.0.60] [--dry-run]
+        [--force-classes]
 
 The --source tree's ../.. also carries the package's Characters.json at
 For The King II_Data/StreamingAssets/Assets/Configs/JSON~/Characters.json; that file supplies
@@ -30,7 +56,9 @@ the character-id set used to validate follower ConfigName references and is the 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -251,6 +279,37 @@ def humanize(raw_id: str, *, strip_prefixes: tuple[str, ...] = (),
 
 def provenance(eor_id: str, package_version: str) -> dict:
     return {"Source": "eor-import", "EorId": eor_id, "PackageVersion": package_version}
+
+
+def compute_vocab_snapshot(vocab_path: Optional[Path], vocab: dict) -> dict:
+    """§B5. Fingerprint of the vocab-index.json snapshot used for this run: a sha256 of the
+    file's bytes plus its ItemIds/AllIds counts. vocab-index.json (tools/extract_vocab.py) has
+    no dedicated "Characters" count of its own -- Characters.json entries are folded into
+    AllIds alongside Abilities/Statuses/Skills/ItemIds with no standalone count -- so
+    VocabAllIdsCount is recorded alongside VocabItemIdsCount as the closest available
+    whole-snapshot size signal. Returns all-None fields if vocab_path is missing/unreadable
+    (the caller is still responsible for the loud "vocab_missing" abort finding; this function
+    never raises).
+
+    Recorded in report.json for every run (see emit_reports), and inside the ClassForge class
+    pack's own provenance.json (as `_vocab_snapshot`, next to the existing `_authored_content`
+    marker a hand-authoring pass may add -- see convert_classes/detect_authored_class_content)
+    whenever that pack is actually written. It is deliberately NOT folded into the shared
+    provenance() shape used by Armory items / Summoner followers: those packs' emitted bytes are
+    part of what M7's golden-file test and the real-package determinism re-run treat as
+    "already-committed, must stay byte-identical", and vocab-driven *content* differences for
+    those converters are already visible per-id via report.json's findings (class_remap,
+    no_visual_donor, tag_dropped, unmapped_class, etc.) without churning every item's Provenance
+    block on every vocab regeneration.
+    """
+    if vocab_path is None or not Path(vocab_path).is_file():
+        return {"VocabSha256": None, "VocabItemIdsCount": None, "VocabAllIdsCount": None}
+    digest = hashlib.sha256(Path(vocab_path).read_bytes()).hexdigest()
+    return {
+        "VocabSha256": digest,
+        "VocabItemIdsCount": len(vocab.get("ItemIds", [])),
+        "VocabAllIdsCount": len(vocab.get("AllIds", [])),
+    }
 
 
 def make_report() -> dict:
@@ -688,6 +747,13 @@ def convert_classes(ctx: "Ctx") -> dict:
                message="signature skill, mastery, and starting-kit code are DLL-only and not "
                        "ported; ClassForge M3 recipe territory")
 
+    if classes_doc:
+        # §B5: stamp the vocab snapshot identity into this pack's own provenance, mirroring the
+        # `_authored_content` marker convention a hand-authoring pass may already have added
+        # (see detect_authored_class_content). Only meaningful once classes were actually
+        # produced -- an empty run has nothing to attribute a vocab snapshot to.
+        provenance_doc["_vocab_snapshot"] = compute_vocab_snapshot(ctx.vocab_path, ctx.vocab)
+
     return {"classes": classes_doc, "localization": localization, "provenance": provenance_doc}
 
 
@@ -860,13 +926,15 @@ class Ctx:
     package_version: str
     report: dict
     sources: EorSources
+    vocab_path: Optional[Path] = None
 
 
-def build_context(vocab: dict, sources: EorSources, package_version: str, report: dict) -> Ctx:
+def build_context(vocab: dict, sources: EorSources, package_version: str, report: dict, *,
+                   vocab_path: Optional[Path] = None) -> Ctx:
     char_ids = frozenset(sources.classes_all.keys()) if sources.characters_json_found else frozenset()
     return Ctx(
         vocab=vocab, en=sources.en, vf_map=sources.vf_map, char_ids=char_ids,
-        package_version=package_version, report=report, sources=sources,
+        package_version=package_version, report=report, sources=sources, vocab_path=vocab_path,
     )
 
 
@@ -916,19 +984,169 @@ def _classforge_pack_json(package_version_semver: str = "1.0.0") -> dict:
     }
 
 
-def emit_class_pack(class_result: dict, class_packs_dir: Path) -> None:
+# §B6 -- files the converter never emits, but a hand-authoring pass adds directly to the pack
+# dir (SPEC-DELTA-v1.1's trait/recipe authoring workflow). Presence of either is on its own
+# sufficient evidence of hand-authored content: this converter has no code path that would ever
+# create them.
+CLASS_PACK_UNEMITTED_FILES: tuple[str, ...] = ("traits.json", "skillrecipes.json")
+
+# §B6 -- deterministic (non-timestamped, so it's stable/overwritten every run rather than
+# accumulating) pre-write backup dir for --force-classes, gitignored via _ensure_pack_gitignore.
+PRE_IMPORT_BACKUP_DIRNAME = ".pre-import-backup"
+
+# The subset of files emit_class_pack actually overwrites -- what a --force-classes backup needs
+# to preserve. icons/portraits are never written by this converter and are therefore never at
+# risk, so they are intentionally excluded from the backup.
+_CLASS_PACK_EMITTED_RELATIVE_FILES: tuple[str, ...] = (
+    "classes.json", "localization/en.json", "pack.json", "provenance.json",
+)
+
+
+def detect_authored_class_content(pack_dir: Path) -> list[str]:
+    """§B6. Two independent signals, either sufficient on its own, that `pack_dir` carries
+    hand-authored content this converter did not produce and cannot regenerate:
+
+      1. extra files -- traits.json / skillrecipes.json (CLASS_PACK_UNEMITTED_FILES). The
+         converter has no code that ever writes either file.
+      2. markers inside files the converter *does* emit:
+           - provenance.json's `_authored_content` block, written by the same authoring pass
+             that adds traits.json/skillrecipes.json (see compute_vocab_snapshot's docstring for
+             the sibling `_vocab_snapshot` marker convention this mirrors).
+           - classes.json Passives referencing a SKILL_CF_* id. convert_classes/strip_to_native
+             only ever copies whatever Passives already existed on the *EOR* source class
+             (native ids like vanilla skill ids or EOR's own), and never synthesizes a
+             SKILL_CF_*-shaped id itself -- so a SKILL_CF_* passive in a live classes.json can
+             only have been added by hand after the fact.
+
+    Returns a list of human-readable reasons (empty if pack_dir shows none of the above -- e.g.
+    a fresh install with no prior pack, or a pack this converter fully owns end-to-end).
+    Never raises: unreadable/malformed JSON in an existing file is treated as "no marker found
+    in that file" rather than aborting detection (the file-presence check above still fires for
+    the two unemitted files regardless).
+    """
+    pack_dir = Path(pack_dir)
+    reasons: list[str] = []
+
+    for fname in CLASS_PACK_UNEMITTED_FILES:
+        if (pack_dir / fname).is_file():
+            reasons.append(f"{fname} is present (this converter never writes that file)")
+
+    prov_path = pack_dir / "provenance.json"
+    if prov_path.is_file():
+        try:
+            prov = read_json(prov_path)
+        except (OSError, ValueError):
+            prov = {}
+        if isinstance(prov, dict) and "_authored_content" in prov:
+            reasons.append("provenance.json contains an _authored_content block")
+
+    classes_path = pack_dir / "classes.json"
+    if classes_path.is_file():
+        try:
+            classes_doc = read_json(classes_path)
+        except (OSError, ValueError):
+            classes_doc = {}
+        marked_classes = sorted(
+            cls_id for cls_id, cfg in classes_doc.items()
+            if isinstance(cfg, dict)
+            and any(str(p).startswith("SKILL_CF_") for p in (cfg.get("Passives") or []))
+        )
+        if marked_classes:
+            reasons.append(
+                f"classes.json Passives reference SKILL_CF_* ids in {len(marked_classes)} "
+                f"class(es) (e.g. {marked_classes[0]})"
+            )
+
+    return reasons
+
+
+def _backup_pre_import(pack_dir: Path) -> None:
+    """§B6. Deterministic (name never changes run-to-run) snapshot of the files emit_class_pack
+    is about to overwrite, taken immediately before --force-classes writes anything. Overwritten
+    on every forced run rather than accumulating -- it exists so an operator who force-overwrote
+    can recover the just-clobbered state, not as a history."""
+    pack_dir = Path(pack_dir)
+    backup_dir = pack_dir / PRE_IMPORT_BACKUP_DIRNAME
+    if backup_dir.exists():
+        shutil.rmtree(backup_dir)
+    for rel in _CLASS_PACK_EMITTED_RELATIVE_FILES:
+        src = pack_dir / rel
+        if src.is_file():
+            dst = backup_dir / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+
+
+def _ensure_pack_gitignore(pack_dir: Path) -> None:
+    """§B6. The pre-import backup is a local recovery artifact, not something to commit --
+    make sure the pack's own .gitignore excludes it (creating the .gitignore if the pack didn't
+    already have one)."""
+    entry = f"{PRE_IMPORT_BACKUP_DIRNAME}/"
+    gi_path = Path(pack_dir) / ".gitignore"
+    if gi_path.is_file():
+        existing = gi_path.read_text(encoding="utf-8")
+        if entry in existing.splitlines():
+            return
+        write_text(gi_path, existing.rstrip("\n") + "\n" + entry + "\n")
+    else:
+        write_text(gi_path, entry + "\n")
+
+
+def emit_class_pack(class_result: dict, class_packs_dir: Path, *, force: bool = False,
+                     report: Optional[dict] = None) -> str:
+    """§B6. Returns one of:
+      "skipped_empty"     -- class_result had no classes to write (nothing attempted).
+      "skipped_authored"  -- the target pack carries hand-authored content and force=False;
+                              nothing written, a loud non-blocking finding recorded instead.
+      "written"           -- wrote cleanly (no authored content detected, or pack didn't exist).
+      "overwritten_forced"-- authored content was detected and force=True: pre-write backup
+                              taken, .gitignore ensured, then overwritten.
+    `report`, if given, gets a finding recorded for the skipped/overwritten-forced cases so the
+    decision is visible in report.json even when nothing is printed to the console.
+    """
     if not class_result["classes"]:
-        return
+        return "skipped_empty"
+
     pack_dir = Path(class_packs_dir) / CLASS_PACK_ID
+    reasons = detect_authored_class_content(pack_dir) if pack_dir.is_dir() else []
+
+    if reasons and not force:
+        if report is not None:
+            record(report, "class_pack_authored_content_skipped", severity="warn",
+                   id=CLASS_PACK_ID, reasons=reasons,
+                   message=(
+                       f"{CLASS_PACK_ID} carries hand-authored content ({'; '.join(reasons)}); "
+                       "skipping classes-pack emission to avoid destroying it. This is not an "
+                       "error -- re-run with --force-classes to overwrite anyway (a pre-write "
+                       f"backup will be written to {CLASS_PACK_ID}/{PRE_IMPORT_BACKUP_DIRNAME}/)."
+                   ))
+        return "skipped_authored"
+
+    status = "written"
+    if reasons and force:
+        _backup_pre_import(pack_dir)
+        _ensure_pack_gitignore(pack_dir)
+        status = "overwritten_forced"
+        if report is not None:
+            record(report, "class_pack_authored_content_overwritten", severity="warn",
+                   id=CLASS_PACK_ID, reasons=reasons,
+                   message=(
+                       f"--force-classes given; {CLASS_PACK_ID} carried hand-authored content "
+                       f"({'; '.join(reasons)}). Pre-write state backed up to "
+                       f"{PRE_IMPORT_BACKUP_DIRNAME}/ before overwrite."
+                   ))
+
     write_json(pack_dir / "pack.json", _classforge_pack_json())
     write_json(pack_dir / "classes.json", class_result["classes"])
     write_json(pack_dir / "localization" / "en.json", class_result["localization"])
     write_json(pack_dir / "provenance.json", class_result["provenance"])
+    return status
 
 
 def emit_reports(report: dict, follower_result: dict, stats_report: Optional[dict],
                   report_dir: Path, source: Path, package_version: str, *,
-                  dry_run: bool, wrote_packs: bool) -> None:
+                  dry_run: bool, wrote_packs: bool,
+                  vocab_snapshot: Optional[dict] = None) -> None:
     report_dir = Path(report_dir)
     findings = _sorted_findings(report)
     n_blocking = sum(1 for f in findings if f["severity"] == "blocking")
@@ -947,6 +1165,10 @@ def emit_reports(report: dict, follower_result: dict, stats_report: Optional[dic
             "that cannot cause a false collision negative here -- re-run after a verified-"
             "clean vocab extraction. See design doc Part B, §B7."
         ),
+        # §B5: sha256 + counts identifying exactly which vocab-index.json snapshot produced
+        # this run's output (None/None/None if --vocab was missing, which is itself always
+        # accompanied by a blocking "vocab_missing" finding below -- never a silent default).
+        "vocab_snapshot": vocab_snapshot if vocab_snapshot is not None else compute_vocab_snapshot(None, {}),
         "summary": {"blocking": n_blocking, "warn": n_warn, "info": n_info,
                     "total": len(findings)},
         "findings": findings,
@@ -1004,11 +1226,14 @@ def run_pipeline(ctx: Ctx, selected: set[str], *, check_invariants: bool = True)
 
     if check_invariants:
         if not assert_corpus_invariants(ctx.sources, ctx.vocab, report):
-            return RunResult({}, {"packs": {}, "dropped": [], "vanilla_overrides": []}, {}, None,
-                              aborted=True)
+            return RunResult(
+                {}, {"packs": {}, "dropped": [], "vanilla_overrides": []},
+                {"classes": {}, "localization": {}, "provenance": {}}, None, aborted=True,
+            )
 
     if any(_is_abort_finding(f) for f in report["findings"]):
-        return RunResult({}, {"packs": {}, "dropped": [], "vanilla_overrides": []}, {}, None,
+        return RunResult({}, {"packs": {}, "dropped": [], "vanilla_overrides": []},
+                          {"classes": {}, "localization": {}, "provenance": {}}, None,
                           aborted=True)
 
     item_packs: dict = {}
@@ -1026,7 +1251,8 @@ def run_pipeline(ctx: Ctx, selected: set[str], *, check_invariants: bool = True)
                        "followers/classes converters need it for ConfigName/class resolution")
 
     if any(_is_abort_finding(f) for f in report["findings"]):
-        return RunResult({}, {"packs": {}, "dropped": [], "vanilla_overrides": []}, {}, None,
+        return RunResult({}, {"packs": {}, "dropped": [], "vanilla_overrides": []},
+                          {"classes": {}, "localization": {}, "provenance": {}}, None,
                           aborted=True)
 
     if "followers" in selected and have_characters:
@@ -1047,21 +1273,29 @@ def run_pipeline(ctx: Ctx, selected: set[str], *, check_invariants: bool = True)
     emitted_ids.extend(class_result["classes"].keys())
 
     if check_id_collisions(emitted_ids, ctx.vocab, report):
-        return RunResult({}, {"packs": {}, "dropped": [], "vanilla_overrides": []}, {}, None,
+        return RunResult({}, {"packs": {}, "dropped": [], "vanilla_overrides": []},
+                          {"classes": {}, "localization": {}, "provenance": {}}, None,
                           aborted=True)
 
     return RunResult(item_packs, follower_result, class_result, stats_report, aborted=False)
 
 
-def emit_all(result: RunResult, repo_root: Path) -> None:
+def emit_all(result: RunResult, repo_root: Path, *, force_classes: bool = False,
+             report: Optional[dict] = None) -> str:
+    """Writes every pack family this run produced. Returns emit_class_pack's status string
+    ("skipped_empty" if classes weren't selected/produced at all) so callers -- notably main() --
+    can report §B6's skip/overwrite decision without re-deriving it."""
     if result.item_packs:
         emit_item_packs(result.item_packs, Path(repo_root) / "FTK2.Armory" / "packs")
     if result.follower_result["packs"]:
         emit_follower_packs(result.follower_result,
                              Path(repo_root) / "FTK2.Summoner" / "data" / "FollowerPacks")
     if result.class_result["classes"]:
-        emit_class_pack(result.class_result,
-                         Path(repo_root) / "FTK2.ClassForge" / "data" / "ClassPacks")
+        return emit_class_pack(
+            result.class_result, Path(repo_root) / "FTK2.ClassForge" / "data" / "ClassPacks",
+            force=force_classes, report=report,
+        )
+    return "skipped_empty"
 
 
 # ───────────────────────────────────── 9. cli ────────────────────────────────────────────────
@@ -1091,6 +1325,18 @@ def main(argv: Optional[list[str]] = None) -> int:
     ap.add_argument("--report-dir", type=Path, default=None)
     ap.add_argument("--package-version", default=PACKAGE_VERSION_DEFAULT)
     ap.add_argument("--dry-run", action="store_true", help="compute and report, write nothing")
+    ap.add_argument("--force-classes", action="store_true",
+                     help=(
+                         "§B6: overwrite CF_PACK_EOR_CLASSES even if it carries hand-authored "
+                         "content (traits.json/skillrecipes.json, a provenance.json "
+                         "_authored_content block, or SKILL_CF_* Passives in classes.json). "
+                         "Without this flag, a pack with any of those is left untouched and "
+                         "classes-pack emission is skipped (loudly, non-blocking). With it, a "
+                         f"pre-write backup is written to {CLASS_PACK_ID}/"
+                         f"{PRE_IMPORT_BACKUP_DIRNAME}/ before overwriting. There is no "
+                         "automatic merge of the authored content back on top -- see the module "
+                         "docstring for why."
+                     ))
     args = ap.parse_args(argv)
 
     repo_root = (args.repo_root or REPO_ROOT_DEFAULT).resolve()
@@ -1107,21 +1353,30 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.vocab and Path(args.vocab).is_file():
         vocab = load_vocab(args.vocab)
     else:
+        # §B5: a missing/unpinned vocab is always a loud, blocking abort -- never a silent
+        # fallback to an empty vocab that would then quietly drop/mis-tag everything downstream.
         record(report, "vocab_missing", severity="blocking",
                message=f"--vocab file not found: {args.vocab}")
 
+    vocab_snapshot = compute_vocab_snapshot(
+        args.vocab if args.vocab and Path(args.vocab).is_file() else None, vocab
+    )
+
     sources = load_sources(source)
-    ctx = build_context(vocab, sources, args.package_version, report)
+    ctx = build_context(vocab, sources, args.package_version, report, vocab_path=args.vocab)
 
     result = run_pipeline(ctx, selected, check_invariants=True)
 
     wrote_packs = False
+    class_pack_status = "skipped_empty"
     if not result.aborted and not args.dry_run:
-        emit_all(result, repo_root)
+        class_pack_status = emit_all(result, repo_root, force_classes=args.force_classes,
+                                      report=report)
         wrote_packs = True
 
     emit_reports(report, result.follower_result, result.stats_report, report_dir, source,
-                 args.package_version, dry_run=args.dry_run, wrote_packs=wrote_packs)
+                 args.package_version, dry_run=args.dry_run, wrote_packs=wrote_packs,
+                 vocab_snapshot=vocab_snapshot)
 
     findings = report["findings"]
     n_blocking = sum(1 for f in findings if f["severity"] == "blocking")
@@ -1138,6 +1393,15 @@ def main(argv: Optional[list[str]] = None) -> int:
               f"vanilla_overrides: {len(result.follower_result['vanilla_overrides'])}")
     if result.class_result["classes"]:
         print(f"  {CLASS_PACK_ID}: {len(result.class_result['classes'])} classes")
+        if class_pack_status == "skipped_authored":
+            print(f"eor_import: {CLASS_PACK_ID} SKIPPED -- hand-authored content detected "
+                  "(traits.json/skillrecipes.json, an _authored_content provenance marker, or "
+                  "SKILL_CF_* Passives); nothing written for this pack. This is not an error. "
+                  "Re-run with --force-classes to overwrite it anyway.")
+        elif class_pack_status == "overwritten_forced":
+            print(f"eor_import: {CLASS_PACK_ID} had hand-authored content; --force-classes was "
+                  f"given, so it was overwritten (pre-write backup saved to {CLASS_PACK_ID}/"
+                  f"{PRE_IMPORT_BACKUP_DIRNAME}/).")
     if result.aborted:
         print("eor_import: ABORTED before writing anything -- see report.json for blocking "
               "findings")

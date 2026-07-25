@@ -35,6 +35,18 @@ namespace DevKit.Plugin
         internal static ConfigEntry<string> OnParityMismatch;
         internal static ConfigEntry<bool> RehandshakeOnHotReload;
         internal static ConfigEntry<int> ParityRequestTimeoutMs;
+        internal static ConfigEntry<int> MaxParityPayloadBytes;
+        internal static ConfigEntry<string> ParityChannel;
+
+        /// <summary>
+        /// True when the operator selected the EOR-identical transport channel. Default is DevKit's
+        /// own inert channel — see <see cref="ParityTransport"/> for why they differ.
+        /// </summary>
+        internal static bool UseEorParityChannel()
+        {
+            return ParityChannel != null
+                && string.Equals(ParityChannel.Value, "EorTownServices", StringComparison.OrdinalIgnoreCase);
+        }
 
         /// <summary>True only if the parity network hook actually resolved its target.</summary>
         internal static bool ParityHookInstalled;
@@ -58,6 +70,21 @@ namespace DevKit.Plugin
             ParityRequestTimeoutMs = Config.Bind("Multiplayer", "ParityRequestTimeoutMs", 5000,
                 "How long a late-joining client waits for the host's FTK2MODS_PARITY_V1 reply to its "
                 + "FTK2MODS_PARITY_REQUEST_V1 before logging a timeout warning and retrying once.");
+            MaxParityPayloadBytes = Config.Bind("Multiplayer", "MaxParityPayloadBytes",
+                ParityService.DefaultMaxPayloadBytes,
+                "Size ceiling for one serialized parity payload. Over this, DevKit logs loudly and sends a "
+                + "DEGRADED count-only snapshot instead of the full one: peers then report this peer as "
+                + "present-but-unverifiable rather than silently never hearing from it. Raise it only if you "
+                + "know the game's transport accepts larger actions.");
+            ParityChannel = Config.Bind("Multiplayer", "ParityChannel", "DebugThing",
+                "Which network-action carrier the FTK2MODS_PARITY_V1 payload rides in. "
+                + "DebugThing (default) uses eAdventureActions.DEBUG_GET_SPECIFIC_THING, which vanilla's "
+                + "_handleNetworkAction does not handle, so it hits the default arm, logs one line and advances "
+                + "the network pump with NO simulation side effects. "
+                + "EorTownServices uses ENCOUNTER_ACTION/TOWN_SERVICES exactly as EOR 0.7.0.60 does; it is the "
+                + "channel with the most field mileage, but because DevKit's receive hook never suppresses the "
+                + "original handler, vanilla WILL also run its town-services handler on every peer for each "
+                + "payload. Only switch if DebugThing proves not to replicate on your build.");
 
             if (!EnabledKnob.Value)
             {

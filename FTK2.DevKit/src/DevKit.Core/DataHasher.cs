@@ -78,19 +78,48 @@ namespace FTK2Mods.DevKit
             return (string[])DefaultExclusions.Clone();
         }
 
-        /// <summary>True for <c>sha256:</c> followed by exactly 64 lowercase hex digits.</summary>
+        /// <summary>
+        /// True for a SHA-256 hash in EITHER accepted form: bare 64 hex digits, or <c>sha256:</c>
+        /// followed by 64 hex digits. Case-insensitive on the hex digits.
+        ///
+        /// <b>Why both forms are accepted</b> (MP review finding B0). This method used to require the
+        /// <c>sha256:</c> prefix, while every sibling hasher (ClassForge, Summoner) emitted bare hex.
+        /// <see cref="ParityComparer"/> turns "not well formed" into a hard <c>DataMismatch</c>, so two
+        /// peers running byte-identical packs were forced into a permanent mismatch that shut the
+        /// engines off. Acceptance is deliberately tolerant of both spellings; <b>comparison</b> is
+        /// never done on the raw string — callers compare <see cref="NormalizeHash"/> output, so the
+        /// two forms of the same digest are equal (see ParityRegistration.NormalizedDataHash).
+        /// </summary>
         public static bool IsWellFormedHash(string hash)
         {
-            if (string.IsNullOrEmpty(hash)) return false;
-            if (!hash.StartsWith(HashPrefix, StringComparison.Ordinal)) return false;
-            if (hash.Length != HashPrefix.Length + 64) return false;
-            for (int i = HashPrefix.Length; i < hash.Length; i++)
+            return NormalizeHash(hash).Length != 0;
+        }
+
+        /// <summary>
+        /// Canonicalizes a hash to <c>sha256:&lt;64 lowercase hex&gt;</c>, accepting either a bare
+        /// 64-hex digest or an already-prefixed one, with surrounding whitespace and any hex casing.
+        /// Returns <see cref="string.Empty"/> for anything that is not a syntactically valid digest —
+        /// an unusable hash must surface as a guaranteed mismatch, never as a silent pass.
+        /// This is the ONLY value parity comparisons are allowed to compare.
+        /// </summary>
+        public static string NormalizeHash(string hash)
+        {
+            if (string.IsNullOrEmpty(hash)) return string.Empty;
+            string trimmed = hash.Trim();
+            if (trimmed.StartsWith(HashPrefix, StringComparison.OrdinalIgnoreCase))
+                trimmed = trimmed.Substring(HashPrefix.Length);
+            if (trimmed.Length != 64) return string.Empty;
+
+            char[] lowered = new char[64];
+            for (int i = 0; i < 64; i++)
             {
-                char c = hash[i];
-                bool isHex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
-                if (!isHex) return false;
+                char c = trimmed[i];
+                if (c >= '0' && c <= '9') { lowered[i] = c; continue; }
+                if (c >= 'a' && c <= 'f') { lowered[i] = c; continue; }
+                if (c >= 'A' && c <= 'F') { lowered[i] = (char)(c + 32); continue; }
+                return string.Empty;
             }
-            return true;
+            return HashPrefix + new string(lowered);
         }
 
         /// <summary>

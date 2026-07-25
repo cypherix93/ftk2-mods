@@ -163,4 +163,40 @@ namespace ClassForge.Core
             RootDir = rootDir;
         }
     }
+
+    /// <summary>
+    /// Snapshot of ids already present in the LIVE (pre-merge) game <c>Configs</c> dictionaries, captured by
+    /// the Plugin immediately before a merge run and handed to <see cref="MergePlanner"/> (MP review M0).
+    /// ClassForge packs are adds-only: a pack entry whose id collides with something already in the live
+    /// target dictionary (vanilla content, or content the game itself pre-populated) is refused with a loud
+    /// <see cref="Finding"/> rather than silently overwriting it. This is a DIFFERENT check from the existing
+    /// pack-vs-pack collision warning in <see cref="MergePlanner"/>, which still resolves last-pack-wins
+    /// unchanged — only a collision against a LIVE id is a hard refusal.
+    /// <para>A null/absent set (the Plugin's own construction, or a caller such as
+    /// <c>ClassForge.PackCheck</c> that has no live <c>Configs</c> to snapshot) is treated as empty: nothing is
+    /// refused. That keeps every existing caller's behavior unchanged unless it opts in by supplying real ids.</para>
+    /// </summary>
+    public sealed class LiveIdSets
+    {
+        public static readonly LiveIdSets Empty = new LiveIdSets(null, null, null);
+
+        /// <summary>Live keys of <c>Configs.Characters</c> (classes.json target).</summary>
+        public ISet<string> Characters { get; }
+        /// <summary>Live keys of <c>Configs.Things</c> (traits.json + items.json target).</summary>
+        public ISet<string> Things { get; }
+        /// <summary>Live keys of <c>Configs.Abilities</c> (abilities.json target).</summary>
+        public ISet<string> Abilities { get; }
+
+        public LiveIdSets(IEnumerable<string> characters, IEnumerable<string> things, IEnumerable<string> abilities)
+        {
+            Characters = ToSet(characters);
+            Things = ToSet(things);
+            Abilities = ToSet(abilities);
+        }
+
+        private static ISet<string> ToSet(IEnumerable<string> source)
+            => source != null
+                ? new HashSet<string>(source, System.StringComparer.Ordinal)
+                : new HashSet<string>(System.StringComparer.Ordinal);
+    }
 }

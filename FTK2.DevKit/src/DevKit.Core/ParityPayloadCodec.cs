@@ -42,6 +42,7 @@ namespace FTK2Mods.DevKit
         private const string KeyVersion = "Version";
         private const string KeyDataHash = "DataHash";
         private const string KeyEnabledFeatures = "EnabledFeatures";
+        private const string KeyTruncated = "Truncated";
 
         private static readonly ParityRegistration[] EmptyRegistrations = new ParityRegistration[0];
 
@@ -73,6 +74,36 @@ namespace FTK2Mods.DevKit
                 WriteRegistration(sb, ordered[i]);
             }
             sb.Append("]}");
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Encodes the <b>degraded</b> form of a <c>FTK2MODS_PARITY_V1</c> snapshot: the registration
+        /// list is dropped and only its count is carried, in the <c>Truncated</c> member
+        /// (MP review M4b — the payload has no size limit, and a peer with many mods/packs could
+        /// exceed whatever the game's transport accepts, latching the sender off for the process and
+        /// leaving the session looking healthy because nothing ever arrives to compare).
+        ///
+        /// A truncated snapshot deliberately does NOT compare as anything: a receiver must treat it
+        /// as "this peer could not be verified" and say so loudly, because comparing an empty
+        /// registration list would report a spurious MissingRemote for every local mod. The member is
+        /// additive, so a <c>_V1</c> decoder that predates it simply ignores it and sees zero
+        /// registrations — hence <see cref="ParitySnapshot.IsTruncated"/> is checked before compare.
+        /// </summary>
+        public static string EncodeTruncatedSnapshot(string senderPeerId, int registrationCount)
+        {
+            if (registrationCount < 0) registrationCount = 0;
+            StringBuilder sb = new StringBuilder(128);
+            sb.Append('{');
+            WriteMember(sb, KeyAction, ParityActionKey);
+            sb.Append(',');
+            WriteMember(sb, KeySenderPeerId, senderPeerId ?? string.Empty);
+            sb.Append(',');
+            MiniJson.WriteString(sb, KeyRegistrations);
+            sb.Append(":[],");
+            WriteMember(sb, KeyTruncated,
+                registrationCount.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sb.Append('}');
             return sb.ToString();
         }
 
@@ -145,10 +176,31 @@ namespace FTK2Mods.DevKit
             object senderObj;
             string sender = map.TryGetValue(KeySenderPeerId, out senderObj) ? MiniJson.AsString(senderObj) : null;
 
+            // Degraded-mode marker (M4b). Absent on a normal snapshot; when present the sender's
+            // payload exceeded its size cap and only the registration COUNT survived.
+            int truncatedCount = -1;
+            object truncatedObj;
+            if (map.TryGetValue(KeyTruncated, out truncatedObj))
+            {
+                string raw = MiniJson.AsString(truncatedObj);
+                int parsedCount;
+                if (raw != null && int.TryParse(raw, System.Globalization.NumberStyles.Integer,
+                        System.Globalization.CultureInfo.InvariantCulture, out parsedCount) && parsedCount >= 0)
+                {
+                    truncatedCount = parsedCount;
+                }
+                else
+                {
+                    // Marker present but unreadable: still treat the snapshot as unverifiable rather
+                    // than comparing an empty list and reporting every local mod as MissingRemote.
+                    truncatedCount = 0;
+                }
+            }
+
             object registrationsObj;
             if (!map.TryGetValue(KeyRegistrations, out registrationsObj))
             {
-                snapshot = new ParitySnapshot(sender, EmptyRegistrations);
+                snapshot = new ParitySnapshot(sender, EmptyRegistrations, truncatedCount);
                 return true;
             }
             List<object> rawList = MiniJson.AsArray(registrationsObj);
@@ -174,7 +226,7 @@ namespace FTK2Mods.DevKit
                 result.Add(new ParityRegistration(guid, version, dataHash, features));
             }
             result.Sort(CompareByGuid);
-            snapshot = new ParitySnapshot(sender, result.ToArray());
+            snapshot = new ParitySnapshot(sender, result.ToArray(), truncatedCount);
             return true;
         }
 

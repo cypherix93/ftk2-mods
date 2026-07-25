@@ -189,7 +189,12 @@ namespace FTK2Mods.DevKit
             // SPEC §8 edge case: a null/empty/malformed dataHash is a GUARANTEED mismatch, never a
             // silent pass — otherwise a mod that failed to hash its data would look healthy.
             bool hashUnusable = !l.HasWellFormedDataHash || !r.HasWellFormedDataHash;
-            bool dataDiffers = hashUnusable || !string.Equals(l.DataHash, r.DataHash, StringComparison.Ordinal);
+            // MP review B0: compare the NORMALIZED digests, never the raw reported strings. A peer
+            // whose hasher emits bare 64-hex and a peer whose hasher emits "sha256:"+hex are reporting
+            // the SAME data and must compare equal; comparing DataHash directly forced a permanent
+            // DataMismatch between correctly-configured peers.
+            bool dataDiffers = hashUnusable
+                || !string.Equals(l.NormalizedDataHash, r.NormalizedDataHash, StringComparison.Ordinal);
             bool featuresDiffer = !l.FeaturesEqual(r);
 
             if (!versionDiffers && !dataDiffers && !featuresDiffer)

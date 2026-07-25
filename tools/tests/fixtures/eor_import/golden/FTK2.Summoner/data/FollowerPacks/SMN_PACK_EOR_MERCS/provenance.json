@@ -1,0 +1,7 @@
+{
+  "SMN_MRC_TEST_BANDIT_HEAVY_00": {
+    "EorId": "MERC_PLUS_TEST_BANDIT_HEAVY_00",
+    "PackageVersion": "9.9.9-test",
+    "Source": "eor-import"
+  }
+}

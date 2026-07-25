@@ -195,12 +195,15 @@ Test("CF_PACK_BALDURS: TRAIT_-prefixed trait ids produce zero CF_TRAIT_PREFIX wa
     Assert(warnings.Count == 0, $"Expected 0 CF_TRAIT_PREFIX warnings (fixture trait ids are TRAIT_-prefixed), got {warnings.Count}: " + string.Join(" | ", warnings.Select(w => w.ToString())));
 });
 
-Test("CF_PACK_BALDURS: dataHash is a stable 64-char hex SHA-256", () =>
+Test("CF_PACK_BALDURS: dataHash is sha256:-prefixed, stable 64-char hex (MP review B0)", () =>
 {
     var result = baldursResult!;
     Assert(!string.IsNullOrEmpty(result.DataHash), "DataHash was empty.");
-    Assert(result.DataHash.Length == 64, $"DataHash should be 64 hex chars, was {result.DataHash.Length}.");
-    Assert(result.DataHash.All(c => "0123456789abcdef".Contains(c)), "DataHash contained non-hex characters.");
+    Assert(result.DataHash.StartsWith("sha256:", StringComparison.Ordinal),
+        "DataHash must be sha256:-prefixed so DevKit's ParityComparer treats it as well-formed (MP review B0), was: " + result.DataHash);
+    var hex = result.DataHash.Substring("sha256:".Length);
+    Assert(hex.Length == 64, $"DataHash hex portion should be 64 chars, was {hex.Length}.");
+    Assert(hex.All(c => "0123456789abcdef".Contains(c)), "DataHash hex portion contained non-hex characters.");
 });
 
 // ---------------------------------------------------------------------
@@ -280,19 +283,159 @@ Test("DataHasher: a real (non-localization) content change does change the hash"
     Assert(hash1 != hash2, "Changing classes.json content should change the dataHash");
 });
 
+Test("DataHasher: provenance.json is excluded (metadata, not gameplay data -- MP review M5)", () =>
+{
+    var fsWithout = new InMemoryFileSource();
+    fsWithout.AddFile("root/CF_PACK_PROV/pack.json", MakePackJson("CF_PACK_PROV"));
+    fsWithout.AddFile("root/CF_PACK_PROV/classes.json", "{\"A\":1}");
+
+    var fsWith = new InMemoryFileSource();
+    fsWith.AddFile("root/CF_PACK_PROV/pack.json", MakePackJson("CF_PACK_PROV"));
+    fsWith.AddFile("root/CF_PACK_PROV/classes.json", "{\"A\":1}");
+    fsWith.AddFile("root/CF_PACK_PROV/provenance.json", "{\"PackageVersion\":\"anything, doesn't matter\"}");
+
+    var hashWithout = DataHasher.ComputeHash(fsWithout, new[] { new PackForHash("CF_PACK_PROV", "root/CF_PACK_PROV") });
+    var hashWith = DataHasher.ComputeHash(fsWith, new[] { new PackForHash("CF_PACK_PROV", "root/CF_PACK_PROV") });
+
+    AssertEqual(hashWithout, hashWith, "provenance.json is import/regeneration bookkeeping, not gameplay data, and must not affect the dataHash");
+});
+
+Test("DataHasher: PNG (binary, non-UTF8) bytes are hashed directly and stably (MP review M5)", () =>
+{
+    // Real PNG signature bytes, deliberately including 0x0D 0x0A (which a naive text-based CRLF
+    // normalizer would corrupt) and 0xFF/0x89 (invalid as a UTF-8 lead byte on its own -- a
+    // File.ReadAllText(..., Encoding.UTF8) decode would replace these with U+FFFD).
+    var pngBytes = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0xFF, 0xFE, 0x01, 0x02, 0x03 };
+
+    var fs1 = new InMemoryFileSource();
+    fs1.AddFile("root/CF_PACK_PNG/pack.json", MakePackJson("CF_PACK_PNG"));
+    fs1.AddBinaryFile("root/CF_PACK_PNG/icons/CF_X.png", pngBytes);
+
+    var fs2 = new InMemoryFileSource();
+    fs2.AddFile("root/CF_PACK_PNG/pack.json", MakePackJson("CF_PACK_PNG"));
+    fs2.AddBinaryFile("root/CF_PACK_PNG/icons/CF_X.png", (byte[])pngBytes.Clone());
+
+    var hash1 = DataHasher.ComputeHash(fs1, new[] { new PackForHash("CF_PACK_PNG", "root/CF_PACK_PNG") });
+    var hash2 = DataHasher.ComputeHash(fs2, new[] { new PackForHash("CF_PACK_PNG", "root/CF_PACK_PNG") });
+    AssertEqual(hash1, hash2, "Identical PNG bytes must hash identically across independent runs (byte-stable, no lossy text decode).");
+
+    var changedBytes = (byte[])pngBytes.Clone();
+    changedBytes[changedBytes.Length - 1] = 0x99;
+    var fsChanged = new InMemoryFileSource();
+    fsChanged.AddFile("root/CF_PACK_PNG/pack.json", MakePackJson("CF_PACK_PNG"));
+    fsChanged.AddBinaryFile("root/CF_PACK_PNG/icons/CF_X.png", changedBytes);
+    var hashChanged = DataHasher.ComputeHash(fsChanged, new[] { new PackForHash("CF_PACK_PNG", "root/CF_PACK_PNG") });
+    Assert(hash1 != hashChanged, "Changing a single PNG byte must change the dataHash.");
+});
+
+Test("DataHasher: line-ending normalization is NOT applied to non-text (.png) extensions", () =>
+{
+    // If normalization incorrectly applied to .png, these two fixtures (one with a real CRLF pair, one
+    // with it pre-collapsed to a single LF) would hash identically. They must NOT: a PNG's bytes are
+    // opaque and 0x0D/0x0A are ordinary content bytes, not line endings.
+    var withCrlf = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+    var withLfOnly = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0A, 0x1A, 0x0A };
+
+    var fsCrlf = new InMemoryFileSource();
+    fsCrlf.AddFile("root/CF_PACK_BIN/pack.json", MakePackJson("CF_PACK_BIN"));
+    fsCrlf.AddBinaryFile("root/CF_PACK_BIN/icons/x.png", withCrlf);
+
+    var fsLf = new InMemoryFileSource();
+    fsLf.AddFile("root/CF_PACK_BIN/pack.json", MakePackJson("CF_PACK_BIN"));
+    fsLf.AddBinaryFile("root/CF_PACK_BIN/icons/x.png", withLfOnly);
+
+    var hashCrlf = DataHasher.ComputeHash(fsCrlf, new[] { new PackForHash("CF_PACK_BIN", "root/CF_PACK_BIN") });
+    var hashLf = DataHasher.ComputeHash(fsLf, new[] { new PackForHash("CF_PACK_BIN", "root/CF_PACK_BIN") });
+
+    Assert(hashCrlf != hashLf,
+        "A .png file's bytes must be hashed verbatim -- CRLF normalization must be scoped to the known-text extension set (.json/.md/.txt) only.");
+});
+
 // ---------------------------------------------------------------------
 // 6. Parity-registration payload shape.
 // ---------------------------------------------------------------------
-Test("ParityRegistrationBuilder: payload shape matches (guid, version, dataHash, enabledFeatures)", () =>
+Test("ParityRegistrationBuilder: payload includes pack ids + gameplay feature knobs (MP review B4)", () =>
 {
     var result = baldursResult!;
-    var payload = ParityRegistrationBuilder.Build(result, "ftk2mods.classforge", "0.1.0");
+    var payload = ParityRegistrationBuilder.Build(result, "ftk2mods.classforge", "0.1.0",
+        enableRecipeEngine: true, enableTraitLoadoutInjection: false);
 
     AssertEqual("ftk2mods.classforge", payload.Guid, "guid");
     AssertEqual("0.1.0", payload.Version, "version");
     AssertEqual(result.DataHash, payload.DataHash, "dataHash");
-    Assert(payload.EnabledFeatures.SequenceEqual(new[] { "CF_PACK_BALDURS" }), $"enabledFeatures should be [CF_PACK_BALDURS], got [{string.Join(",", payload.EnabledFeatures)}]");
+    Assert(payload.EnabledFeatures.SequenceEqual(new[]
+    {
+        "CF_PACK_BALDURS",
+        "feature:EnableRecipeEngine=true",
+        "feature:EnableTraitLoadoutInjection=false"
+    }), $"enabledFeatures should include the pack id and both gameplay feature knobs, got [{string.Join(",", payload.EnabledFeatures)}]");
     Assert(payload.EnabledFeatures.SequenceEqual(payload.EnabledFeatures.OrderBy(x => x, StringComparer.Ordinal)), "enabledFeatures must be sorted ordinally");
+});
+
+Test("ParityRegistrationBuilder: feature knob values flip the encoded string (MP review B4)", () =>
+{
+    var result = baldursResult!;
+    var payload = ParityRegistrationBuilder.Build(result, "ftk2mods.classforge", "0.1.0",
+        enableRecipeEngine: false, enableTraitLoadoutInjection: true);
+
+    Assert(payload.EnabledFeatures.Contains("feature:EnableRecipeEngine=false"), "Expected feature:EnableRecipeEngine=false in " + string.Join(",", payload.EnabledFeatures));
+    Assert(payload.EnabledFeatures.Contains("feature:EnableTraitLoadoutInjection=true"), "Expected feature:EnableTraitLoadoutInjection=true in " + string.Join(",", payload.EnabledFeatures));
+    Assert(!payload.EnabledFeatures.Any(f => f.Contains("EnableClassSelectInjection")), "EnableClassSelectInjection is presentation-only and must NOT appear in enabledFeatures.");
+    Assert(!payload.EnabledFeatures.Any(f => f.Contains("EnableIconFallback")), "EnableIconFallback is presentation-only and must NOT appear in enabledFeatures.");
+});
+
+// ---------------------------------------------------------------------
+// 7. Merge-time adds-only enforcement against live (pre-existing) ids (MP review M0).
+// ---------------------------------------------------------------------
+Test("Merge: a pack entry colliding with a LIVE id is refused, not merged (MP review M0)", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_LIVE/pack.json", MakePackJson("CF_PACK_LIVE"));
+    fs.AddFile("root/CF_PACK_LIVE/classes.json",
+        "{\"KNIGHT\":{\"Stats\":{},\"Value\":1},\"CF_NEW_CLASS\":{\"Stats\":{},\"Value\":2}}");
+
+    var loader = new PackLoader();
+    var liveIds = new LiveIdSets(new[] { "KNIGHT" }, null, null);
+    var result = loader.Load(fs, new[] { "root" }, null, liveIds);
+
+    AssertEqual(1, result.MergePlan.Characters.Count, "Only the non-colliding class should merge");
+    AssertEqual("CF_NEW_CLASS", result.MergePlan.Characters.Single().Id, "KNIGHT must not appear in the merge plan");
+
+    var refusals = result.Findings.Where(f => f.Code == "CF_LIVE_ID_COLLISION").ToList();
+    Assert(refusals.Count == 1, $"Expected 1 CF_LIVE_ID_COLLISION finding, got {refusals.Count}");
+    Assert(refusals[0].Severity == FindingSeverity.Error, "A live-id collision must be an Error (loud), not a Warning");
+    Assert(refusals[0].Message.Contains("KNIGHT"), "Finding should name the refused id: " + refusals[0].Message);
+});
+
+Test("Merge: pack-vs-pack collisions still resolve last-pack-wins alongside an unrelated live-id set (MP review M0)", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_ONE/pack.json", MakePackJson("CF_PACK_ONE", loadOrder: 0));
+    fs.AddFile("root/CF_PACK_ONE/classes.json", "{\"CF_Y\":{\"Stats\":{},\"Value\":1}}");
+    fs.AddFile("root/CF_PACK_TWO/pack.json", MakePackJson("CF_PACK_TWO", loadOrder: 10));
+    fs.AddFile("root/CF_PACK_TWO/classes.json", "{\"CF_Y\":{\"Stats\":{},\"Value\":2}}");
+
+    var loader = new PackLoader();
+    var liveIds = new LiveIdSets(new[] { "SOME_OTHER_LIVE_ID" }, null, null);
+    var result = loader.Load(fs, new[] { "root" }, null, liveIds);
+
+    AssertEqual(1, result.MergePlan.Characters.Count, "Expected exactly one merged CF_Y entry");
+    AssertEqual("CF_PACK_TWO", result.MergePlan.Characters.Single().SourcePackId, "Last-pack-wins must be unaffected by an unrelated live-id set");
+    Assert(result.Findings.Any(f => f.Code == "CF_ID_COLLISION"), "The existing pack-vs-pack collision Finding must still fire");
+    Assert(!result.Findings.Any(f => f.Code == "CF_LIVE_ID_COLLISION"), "No live-id collision should fire when neither id is live");
+});
+
+Test("Merge: a null live-id set (e.g. ClassForge.PackCheck) refuses nothing (MP review M0)", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_NOLIVE/pack.json", MakePackJson("CF_PACK_NOLIVE"));
+    fs.AddFile("root/CF_PACK_NOLIVE/classes.json", "{\"KNIGHT\":{\"Stats\":{},\"Value\":1}}");
+
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { "root" }); // liveIds omitted entirely
+
+    AssertEqual(1, result.MergePlan.Characters.Count, "With no live-id set supplied, nothing is refused");
+    Assert(!result.Findings.Any(f => f.Code == "CF_LIVE_ID_COLLISION"), "No live-id collision Finding should appear when liveIds is null");
 });
 
 // ---------------------------------------------------------------------

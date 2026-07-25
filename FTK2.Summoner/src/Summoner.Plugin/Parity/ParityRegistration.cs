@@ -14,12 +14,12 @@ namespace Summoner.Plugin.Parity
     /// later in the same session without a restart still gets registered. No-op + log once if the
     /// type or method is absent.
     ///
-    /// Summoner has no ParityFailed pathway to wire a callback into: design §A5 notes SafeMode is a
-    /// no-op for this load-time loader (the M0 merge happens once at Awake(), nothing to switch off
-    /// at runtime), and OnParityMismatch=Block likewise has no runtime hook here -- Summoner just
-    /// warns if the knob isn't Block (see SummonerPlugin.Awake). So this calls the callback-less
-    /// Register(...) rather than RegisterWithCallback(...) with a callback that would have nothing to
-    /// do, and logs that the callback is omitted.
+    /// MP review B7 fix: Summoner now HAS a ParityFailed pathway -- SummonerPlugin's callback latches a
+    /// session-scoped Blocked flag on any non-Match verdict row, which the Configs merge postfixes
+    /// (ConfigsMergePatches) consult to stop future merges (see SummonerPlugin.OnParityMismatchRow and
+    /// its doc comment for the exact WarnOnly/WarnAndSafeMode/Block semantics). So registration now
+    /// prefers RegisterWithCallback and only falls back to the callback-less Register(...) when this
+    /// DevKit build doesn't expose it -- in which case the policy is UNENFORCEABLE and we say so loudly.
     /// </summary>
     public static class ParityRegistration
     {
@@ -27,33 +27,68 @@ namespace Summoner.Plugin.Parity
         private const string AssemblyQualifiedTypeName = "FTK2Mods.DevKit.ParityService, ftk2mods.devkit";
         private static bool _loggedAbsence;
 
-        public static void Register(string guid, string version, string dataHash, string[] enabledFeatures, ManualLogSource log)
+        /// <summary>
+        /// Registers Summoner's parity tuple plus its mismatch callback. Prefers
+        /// <c>RegisterWithCallback(string,string,string,string[],Action&lt;string[]&gt;)</c> so the
+        /// <c>[Multiplayer] OnParityMismatch</c> policy can actually fire; falls back to the
+        /// callback-less <c>Register(string,string,string,string[])</c> only if an older DevKit build
+        /// lacks it. Never throws.
+        /// </summary>
+        public static void RegisterWithCallback(string guid, string version, string dataHash, string[] enabledFeatures,
+            Action<string[]> onParityMismatch, ManualLogSource log)
         {
             try
             {
                 var type = FindType();
                 if (type == null)
                 {
-                    LogAbsenceOnce(log, $"[Summoner] {TypeName} not found -- parity registration is a no-op (DevKit not installed).");
+                    LogAbsenceOnce(log, $"[Summoner] {TypeName} not found -- parity registration is a no-op (DevKit not installed). " +
+                                        "Multiplayer parity is UNENFORCED without DevKit; install FTK2.DevKit for the R1 handshake.");
                     return;
                 }
 
-                var method = type.GetMethod("Register", BindingFlags.Public | BindingFlags.Static, null,
-                    new[] { typeof(string), typeof(string), typeof(string), typeof(string[]) }, null);
-                if (method == null)
+                var withCallback = type.GetMethod("RegisterWithCallback", BindingFlags.Public | BindingFlags.Static, null,
+                    new[] { typeof(string), typeof(string), typeof(string), typeof(string[]), typeof(Action<string[]>) }, null);
+
+                if (withCallback != null)
                 {
-                    LogAbsenceOnce(log, $"[Summoner] {TypeName}.Register(string,string,string,string[]) not found -- parity registration is a no-op.");
+                    var result = withCallback.Invoke(null, new object[] { guid, version, dataHash, enabledFeatures, onParityMismatch });
+                    LogRegistered(log, guid, dataHash, enabledFeatures, result, "RegisterWithCallback");
                     return;
                 }
 
-                method.Invoke(null, new object[] { guid, version, dataHash, enabledFeatures });
-                log.LogInfo($"[Summoner] Registered with ParityService: guid={guid}, dataHash={dataHash}, " +
-                            $"enabledFeatures=[{string.Join(",", enabledFeatures)}] (no ParityFailed callback wired -- " +
-                            "Summoner has no SafeMode/Block runtime pathway to call it from; see design §A5).");
+                var plain = type.GetMethod("Register", BindingFlags.Public | BindingFlags.Static, null,
+                    new[] { typeof(string), typeof(string), typeof(string), typeof(string[]) }, null);
+                if (plain == null)
+                {
+                    LogAbsenceOnce(log, $"[Summoner] {TypeName} found but exposes neither RegisterWithCallback(string,string,string,string[],Action<string[]>) " +
+                                        "nor Register(string,string,string,string[]) -- parity registration is a no-op.");
+                    return;
+                }
+
+                var plainResult = plain.Invoke(null, new object[] { guid, version, dataHash, enabledFeatures });
+                LogRegistered(log, guid, dataHash, enabledFeatures, plainResult, "Register");
+                log.LogWarning("[Summoner] This DevKit build has no RegisterWithCallback -- Summoner's [Multiplayer] " +
+                                "OnParityMismatch policy CANNOT be enforced (no callback to latch Blocked on). " +
+                                "Verify data parity manually before playing online.");
             }
             catch (Exception e)
             {
-                log.LogWarning($"[Summoner] ParityService.Register reflection call failed: {e.Message} -- continuing without parity registration.");
+                log.LogWarning($"[Summoner] ParityService registration reflection call failed: {e.Message} -- continuing without parity registration.");
+            }
+        }
+
+        private static void LogRegistered(ManualLogSource log, string guid, string dataHash, string[] enabledFeatures, object result, string via)
+        {
+            bool ok = !(result is bool) || (bool)result;
+            var features = enabledFeatures == null || enabledFeatures.Length == 0 ? "(none)" : string.Join(",", enabledFeatures);
+            if (ok)
+            {
+                log.LogInfo($"[Summoner] Registered with ParityService via {via}: guid={guid}, dataHash={dataHash}, enabledFeatures=[{features}].");
+            }
+            else
+            {
+                log.LogWarning($"[Summoner] ParityService.{via} returned false (rejected registration) -- parity is UNENFORCED for Summoner this session. dataHash={dataHash}.");
             }
         }
 

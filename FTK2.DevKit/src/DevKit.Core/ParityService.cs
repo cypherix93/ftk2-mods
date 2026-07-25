@@ -51,7 +51,16 @@ namespace FTK2Mods.DevKit
         private static readonly Dictionary<string, ParityRegistration[]> RemoteSnapshots = new Dictionary<string, ParityRegistration[]>(StringComparer.Ordinal);
         private static readonly HashSet<string> SafeModeGuids = new HashSet<string>(StringComparer.Ordinal);
         private static readonly HashSet<string> RepliedPeers = new HashSet<string>(StringComparer.Ordinal);
+        /// <summary>Per-peer verdict fingerprint, so a duplicate snapshot doesn't re-dispatch callbacks (m13).</summary>
+        private static readonly Dictionary<string, string> LastVerdictSignatures = new Dictionary<string, string>(StringComparer.Ordinal);
         private static readonly ParityVerdict[] NoVerdicts = new ParityVerdict[0];
+
+        /// <summary>
+        /// Upper bound on tracked remote peers (m13). The peer id is sender-supplied, so without a
+        /// bound a peer that rotates it grows the dictionaries for the whole session. FTK2 lobbies
+        /// are 4 players; 32 is far above any legitimate session.
+        /// </summary>
+        private const int MaxTrackedPeers = 32;
         private static readonly string[] NoStrings = new string[0];
 
         private static ParityMismatchPolicy _policy = ParityPolicyEngine.DefaultPolicy;
@@ -61,6 +70,7 @@ namespace FTK2Mods.DevKit
         private static ParityVerdict[] _lastVerdicts = NoVerdicts;
         private static string _lastMismatchSummary = string.Empty;
         private static string _pendingBanner = string.Empty;
+        private static int _maxPayloadBytes = DefaultMaxPayloadBytes;
         private static Action<string, string> _logger;
 
         // ---------------------------------------------------------------- registration
@@ -361,6 +371,7 @@ namespace FTK2Mods.DevKit
                 RemoteSnapshots.Clear();
                 SafeModeGuids.Clear();
                 RepliedPeers.Clear();
+                LastVerdictSignatures.Clear();
                 _sessionBlocked = false;
                 _lastVerdicts = NoVerdicts;
                 _lastMismatchSummary = string.Empty;
@@ -411,6 +422,80 @@ namespace FTK2Mods.DevKit
             catch (Exception ex)
             {
                 Log("Error", "ParityService.BuildSnapshotPayload failed: " + ex.Message);
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Default ceiling for one serialized parity payload, in bytes (MP review M4b). The codec
+        /// escapes every non-ASCII character to <c>\uXXXX</c>, so the encoded payload is pure ASCII
+        /// and its UTF-8 byte length equals its character length — the cap can be applied to either.
+        /// Deliberately conservative: the game's transport (<c>NetworkHelper.BroadcastActionMessage</c>
+        /// over Photon) has no documented per-action limit, and the failure mode of guessing too high
+        /// is a silently invisible peer.
+        /// </summary>
+        public const int DefaultMaxPayloadBytes = 8192;
+
+        /// <summary>
+        /// Sets the payload ceiling used by every snapshot DevKit emits — including the host's
+        /// replies to a peer snapshot and to a late-join <c>FTK2MODS_PARITY_REQUEST_V1</c>, which are
+        /// exactly as capable of exceeding the transport as the initial broadcast. Pass 0 or less to
+        /// restore <see cref="DefaultMaxPayloadBytes"/>.
+        /// </summary>
+        public static void SetMaxPayloadBytes(int bytes)
+        {
+            lock (Sync) { _maxPayloadBytes = bytes <= 0 ? DefaultMaxPayloadBytes : bytes; }
+        }
+
+        /// <summary>The current payload ceiling in bytes.</summary>
+        public static int GetMaxPayloadBytes()
+        {
+            lock (Sync) { return _maxPayloadBytes; }
+        }
+
+        /// <summary>The local snapshot payload, capped at the configured ceiling. Never throws.</summary>
+        public static string BuildCappedSnapshotPayload()
+        {
+            return BuildSnapshotPayloadCapped(GetMaxPayloadBytes());
+        }
+
+        /// <summary>
+        /// The local snapshot payload, degrading to the count-only form if the full one exceeds
+        /// <paramref name="maxPayloadBytes"/> (pass 0 or less for <see cref="DefaultMaxPayloadBytes"/>).
+        ///
+        /// <b>Degraded mode is loud, not silent</b> (MP review M4b): exceeding the cap logs an Error
+        /// and still sends something, so a peer with 30 mods and 40 packs is reported as
+        /// "present but unverifiable" instead of vanishing from the handshake entirely. Never throws.
+        /// </summary>
+        public static string BuildSnapshotPayloadCapped(int maxPayloadBytes)
+        {
+            try
+            {
+                if (maxPayloadBytes <= 0) maxPayloadBytes = DefaultMaxPayloadBytes;
+                string full = BuildSnapshotPayload();
+                if (full.Length <= maxPayloadBytes) return full;
+
+                string peerId;
+                int count;
+                lock (Sync)
+                {
+                    peerId = _localPeerId;
+                    count = Registry.Count;
+                }
+                string degraded = ParityPayloadCodec.EncodeTruncatedSnapshot(peerId, count);
+                Log("Error", string.Format(CultureInfo.InvariantCulture,
+                    "ParityService: snapshot payload is {0} bytes, over the {1}-byte cap - sending the DEGRADED "
+                    + "count-only form for {2} mod(s). Peers will report this peer as PRESENT BUT UNVERIFIABLE: "
+                    + "no version/dataHash/feature comparison happens against it this session. Raise "
+                    + "[Multiplayer] MaxParityPayloadBytes or reduce the number of registered packs/features.",
+                    full.Length.ToString(CultureInfo.InvariantCulture),
+                    maxPayloadBytes.ToString(CultureInfo.InvariantCulture),
+                    count.ToString(CultureInfo.InvariantCulture)));
+                return degraded;
+            }
+            catch (Exception ex)
+            {
+                Log("Error", "ParityService.BuildSnapshotPayloadCapped failed: " + ex.Message);
                 return string.Empty;
             }
         }
@@ -516,7 +601,7 @@ namespace FTK2Mods.DevKit
                 return null;
             }
             Log("Info", "ParityService: late-join parity request from '" + peer + "' - replying with a fresh snapshot.");
-            return BuildSnapshotPayload();
+            return BuildCappedSnapshotPayload();
         }
 
         private static string HandleSnapshot(string payload, string senderPeerIdFallback)
@@ -539,22 +624,59 @@ namespace FTK2Mods.DevKit
                     // Our own broadcast echoed back to us; nothing to compare.
                     return null;
                 }
-                RemoteSnapshots[peer] = snapshot.Registrations;
-                localRegs = LocalRegistrationsNoLock();
                 isHost = _isHost;
                 alreadyReplied = RepliedPeers.Contains(peer);
                 if (isHost) RepliedPeers.Add(peer);
+                if (!snapshot.IsTruncated)
+                {
+                    // MP review m13: the peer dictionaries are keyed by the SENDER-SUPPLIED peer id,
+                    // so a peer rotating that field would grow them without bound until ResetSession.
+                    if (RemoteSnapshots.Count >= MaxTrackedPeers && !RemoteSnapshots.ContainsKey(peer))
+                    {
+                        Log("Warning", "ParityService: tracking " + MaxTrackedPeers.ToString(CultureInfo.InvariantCulture)
+                            + " peers already; ignoring snapshot from '" + peer
+                            + "'. A peer rotating its SenderPeerId, or a session larger than expected, can cause this.");
+                        return null;
+                    }
+                    RemoteSnapshots[peer] = snapshot.Registrations;
+                }
+                localRegs = LocalRegistrationsNoLock();
+            }
+
+            if (snapshot.IsTruncated)
+            {
+                // M4b degraded mode: comparing an empty registration list would report a spurious
+                // MissingRemote for every local mod, so we refuse to compare and say so loudly.
+                string message = string.Format(CultureInfo.InvariantCulture,
+                    "ParityService: peer '{0}' sent a TRUNCATED snapshot ({1} mod(s), payload over its size cap). "
+                    + "Parity with that peer CANNOT be verified this session - treat a divergence as possible.",
+                    peer, snapshot.TruncatedRegistrationCount.ToString(CultureInfo.InvariantCulture));
+                lock (Sync) { _pendingBanner = message; }
+                Log("Warning", message);
+                if (isHost && !alreadyReplied) return BuildCappedSnapshotPayload();
+                return null;
             }
 
             ParityVerdict[] verdicts = ParityComparer.Compare(localRegs, snapshot.Registrations, peer);
             ParityDecision decision = ParityPolicyEngine.Decide(GetPolicyEnum(), verdicts);
 
+            // MP review m13: a peer re-broadcasting the same snapshot (the host reply, a late-join
+            // re-query, a retry) must not re-dispatch ParityFailed to every sibling mod. Callbacks and
+            // the banner fire only on a verdict TRANSITION for that peer; the stored state above is
+            // still refreshed every time, so applying a snapshot stays idempotent (SPEC §9 point 4).
+            string signature = BuildVerdictSignature(verdicts);
+            bool verdictChanged;
             List<KeyValuePair<Action<string[]>, string[]>> pending = new List<KeyValuePair<Action<string[]>, string[]>>();
             lock (Sync)
             {
+                string previous;
+                verdictChanged = !LastVerdictSignatures.TryGetValue(peer, out previous)
+                    || !string.Equals(previous, signature, StringComparison.Ordinal);
+                LastVerdictSignatures[peer] = signature;
+
                 _lastVerdicts = verdicts;
                 _lastMismatchSummary = ParityComparer.Summarize(verdicts);
-                if (decision.HasMismatch)
+                if (decision.HasMismatch && verdictChanged)
                 {
                     _pendingBanner = decision.BannerText;
                     if (decision.BlockSession) _sessionBlocked = true;
@@ -574,7 +696,12 @@ namespace FTK2Mods.DevKit
                 }
             }
 
-            if (decision.HasMismatch)
+            if (decision.HasMismatch && !verdictChanged)
+            {
+                Log("Debug", "ParityService: duplicate snapshot from peer '" + peer
+                    + "' with an unchanged verdict; state refreshed, callbacks not re-dispatched.");
+            }
+            else if (decision.HasMismatch)
             {
                 Log("Warning", decision.BannerText);
                 // Callbacks run OUTSIDE the lock, each isolated: one sibling mod throwing must never
@@ -601,8 +728,26 @@ namespace FTK2Mods.DevKit
 
             // Host answers each peer's snapshot exactly once, so the client can run the same
             // comparison locally. No ping-pong: the client never replies to a snapshot.
-            if (isHost && !alreadyReplied) return BuildSnapshotPayload();
+            if (isHost && !alreadyReplied) return BuildCappedSnapshotPayload();
             return null;
+        }
+
+        /// <summary>
+        /// Order-independent fingerprint of a verdict set for one peer (m13). Two snapshots that
+        /// produce the same guids-and-kinds are "the same news" and must not re-notify sibling mods.
+        /// </summary>
+        private static string BuildVerdictSignature(ParityVerdict[] verdicts)
+        {
+            if (verdicts == null || verdicts.Length == 0) return string.Empty;
+            List<string> rows = new List<string>(verdicts.Length);
+            for (int i = 0; i < verdicts.Length; i++)
+            {
+                ParityVerdict v = verdicts[i];
+                if (v == null) continue;
+                rows.Add(v.Guid + "=" + v.Kind + ":" + v.LocalValue + "|" + v.RemoteValue);
+            }
+            rows.Sort(StringComparer.Ordinal);
+            return string.Join("\n", rows.ToArray());
         }
 
         private static ParityMismatchPolicy GetPolicyEnum()

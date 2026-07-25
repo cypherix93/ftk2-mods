@@ -1,0 +1,17 @@
+{
+  "CF_EOR_TESTKNIGHT": {
+    "EorId": "EOR_TESTKNIGHT",
+    "PackageVersion": "9.9.9-test",
+    "Source": "eor-import"
+  },
+  "CF_EOR_TESTMAGE": {
+    "EorId": "EOR_TESTMAGE",
+    "PackageVersion": "9.9.9-test",
+    "Source": "eor-import"
+  },
+  "_vocab_snapshot": {
+    "VocabAllIdsCount": 19,
+    "VocabItemIdsCount": 9,
+    "VocabSha256": "972403354662018c1c40123050da4912625824d637e7d859585a8e73b15b2470"
+  }
+}

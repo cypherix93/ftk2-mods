@@ -32,6 +32,8 @@ namespace Summoner.Core.Tests
                 ("MergePlanner_IsIdempotent_SamePlanTwiceIsNoOp", MergePlannerTests.IsIdempotent_SamePlanTwiceIsNoOp),
 
                 ("DataHasher_IsStableAcrossFileOrder_AndExcludesLocalization", DataHasherTests.IsStableAcrossFileOrder_AndExcludesLocalization),
+                ("DataHasher_EmitsSha256PrefixedHash_AndIsWellFormed", DataHasherTests.EmitsSha256PrefixedHash_AndIsWellFormed),
+                ("DataHasher_NonTextExtension_HashedAsRawBytes_NotNewlineNormalized", DataHasherTests.NonTextExtension_HashedAsRawBytes_NotNewlineNormalized),
             };
 
             int passed = 0, failed = 0;
