@@ -1,10 +1,10 @@
 {
   "author": "ftk2mods",
   "dependencies": [],
-  "description": "EOR's 31 EOR_* player classes, re-hosted with CF_EOR_ ids.",
+  "description": "EOR's 31 EOR_* player classes (CF_EOR_ ids) plus its 20 selectable loadout traits (TRAIT_ ids) and their signature-skill/trait-effect recipes, re-hosted per SPEC-DELTA-v1.1 and docs/research/eor-rehost-coverage-matrix.md.",
   "enabled": true,
   "id": "CF_PACK_EOR_CLASSES",
   "loadOrder": 100,
   "name": "Enhanced Overhaul Classes (re-hosted)",
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

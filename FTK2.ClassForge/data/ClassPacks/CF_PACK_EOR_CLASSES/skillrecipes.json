@@ -1,0 +1,797 @@
+{
+  "SKILL_CF_ARCANIST_OVERFLOW": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Arcane Overflow",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "ABILITY_STAT", "Value": "INT" }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "StatusOneOf": ["STATUS_FIRE_00", "STATUS_ICE_00", "STATUS_SHOCK_00"], "Duration": 1 }
+    ],
+    "ProcChance": 20,
+    "AiProcChance": 20,
+    "VerboseLogTag": "Arcane Overflow",
+    "_source": "coverage-matrix §1 row 1; BM T1 ARCANIST L6192-6197, PickArcaneOverflowStatus L6760 (random pick only; EOR's substring-match branch is not ported, matrix-authorized determinism improvement)"
+  },
+  "SKILL_CF_ASSASSIN_DEATHBLOW": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Deathblow",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "HP_THRESHOLD", "Of": "TRIGGER_TARGET", "Comparator": "LTE", "Percent": 15 }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 100,
+        "Conditions": [ { "Type": "CHARACTER_TYPE", "Of": "TRIGGER_TARGET", "Value": "BOSS", "Negate": true } ] },
+      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 25,
+        "Conditions": [ { "Type": "CHARACTER_TYPE", "Of": "TRIGGER_TARGET", "Value": "BOSS" } ] }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Deathblow",
+    "_source": "coverage-matrix §1 row 2; BM T1 ASSASSIN L6093-6098"
+  },
+  "SKILL_CF_BARD_CRESCENDO_RESET": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Crescendo (reset)",
+    "Trigger": "ON_ABILITY_USED",
+    "Priority": 0,
+    "Conditions": [
+      { "Type": "ABILITY_STAT", "Value": "TAL" },
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "CRIT_FAIL" }
+    ],
+    "Effects": [
+      { "Type": "COUNTER_SET", "Name": "CRESCENDO", "Value": 0 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Crescendo reset",
+    "_source": "coverage-matrix §1 row 3; BM T1 BARD HandleBardCrescendo L6492-6515"
+  },
+  "SKILL_CF_BARD_CRESCENDO": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Crescendo",
+    "Trigger": "ON_ABILITY_USED",
+    "Priority": 1,
+    "Conditions": [
+      { "Type": "ABILITY_STAT", "Value": "TAL" },
+      { "Type": "ROLL_TIER", "Comparator": "GTE", "Value": "SUCCESS" }
+    ],
+    "Effects": [
+      { "Type": "COUNTER_ADD", "Name": "CRESCENDO", "Delta": 1, "Max": 3 },
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_00", "Duration": 2,
+        "Conditions": [ { "Type": "COUNTER", "Name": "CRESCENDO", "Comparator": "EQ", "Value": 1 } ] },
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_01", "Duration": 2,
+        "Conditions": [ { "Type": "COUNTER", "Name": "CRESCENDO", "Comparator": "EQ", "Value": 2 } ] },
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_02", "Duration": 2,
+        "Conditions": [ { "Type": "COUNTER", "Name": "CRESCENDO", "Comparator": "GTE", "Value": 3 } ] }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Crescendo",
+    "_source": "coverage-matrix §1 row 3; BM T1 BARD HandleBardCrescendo L6492-6515"
+  },
+  "SKILL_CF_BEASTMASTER_QUARRY": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Pack Tactics (quarry)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "GTE", "Value": "SUCCESS" },
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_MARKED_00", "Duration": 1 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Pack Tactics",
+    "_source": "coverage-matrix §1 row 4; BM T1 BEASTMASTER L6201-6207 (quarry now a real STATUS_MARKED_00, replaces CROSS_ENTITY_COORDINATION per SPEC-DELTA §7.7)"
+  },
+  "SKILL_CF_BEASTMASTER_PACK_TACTICS": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Pack Tactics (pet)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "HAS_STATUS", "Of": "TRIGGER_TARGET", "Value": "STATUS_MARKED_00" }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_BLEED_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Pack Tactics (pet)",
+    "_source": "coverage-matrix §1 row 4; BM T1 BEASTMASTER HandlePackTactics L6468-6490. Authored for attachment onto a pack pet Character's Passives; CF_PACK_EOR_CLASSES owns no pet Character config (pets are Summoner's domain per matrix §5 note 7), so this recipe is currently unattached — see expressiveness_gaps."
+  },
+  "SKILL_CF_BLADEDANCER_FLOWING_STEP": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Flowing Step",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_EVADEUP_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_HASTE_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Flowing Step",
+    "_source": "coverage-matrix §1 row 5; BM T1 BLADEDANCER L6208-6215"
+  },
+  "SKILL_CF_CHRONOMANCER_TIME_SLIP": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Time Slip",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
+      { "Type": "ABILITY_STAT", "Value": "INT" }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "ALLY_BY_RANK", "Status": "STATUS_HASTE_00", "Duration": 1,
+        "Rank": { "Stat": "SPD", "Order": "LOWEST" } }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "ProcChance": 15,
+    "AiProcChance": 15,
+    "VerboseLogTag": "Time Slip",
+    "_source": "coverage-matrix §1 row 6; BM T1 CHRONOMANCER L6216-6225 (ALLY_BY_RANK's Guid tiebreak reproduces EOR's OrderBy(SPD).ThenBy(Guid))"
+  },
+  "SKILL_CF_CORSAIR_BOARDING_ATK": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Boarding Action (attack)",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "MOVED_THIS_ROUND", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 20 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Boarding Action",
+    "_source": "coverage-matrix §1 row 7; BM T1 CORSAIR L6099-6104"
+  },
+  "SKILL_CF_CORSAIR_BOARDING_CTRL": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Boarding Action (control)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "MOVED_THIS_ROUND", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_DAZE_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC", "Key": "CF_CORSAIR_BOARDING" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Boarding Action",
+    "_source": "coverage-matrix §1 row 7; BM T1 CORSAIR L6226-6232 (ONCE_PER_ROUND budget replaces EOR's MovedRound=int.MinValue consume; identical unless Corsair moves twice in one round)"
+  },
+  "SKILL_CF_DRUID_REPRISAL": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Nature's Reprisal",
+    "Trigger": "ON_DAMAGE_TAKEN",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_ENTANGLE_ROOTS_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "ProcChance": 20,
+    "AiProcChance": 20,
+    "VerboseLogTag": "Nature's Reprisal",
+    "_source": "coverage-matrix §1 row 8; BM T1 DRUID HandleClassSkillResponses L6416-6422"
+  },
+  "SKILL_CF_FORTUNEBORN_LUCKY_BREAK": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Lucky Break",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "CRIT_FAIL" }
+    ],
+    "Effects": [
+      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValue": 1, "Blockable": false,
+        "Conditions": [ { "Type": "FOCUS_SPENT", "Comparator": "GTE", "Value": 1 } ] },
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_EVADEUP_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "EVALUATION" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Lucky Break",
+    "_source": "coverage-matrix §1 row 10; BM T1 FORTUNEBORN L6233-6243 (refund exactly 1, not FocusUsed; the EVADEUP is unconditional, both reproduced via per-effect Conditions)"
+  },
+  "SKILL_CF_GAMBLER_DOUBLE_WIN": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Double or Nothing (win)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "FOCUS_SPENT", "Comparator": "GTE", "Value": 2 }
+    ],
+    "Effects": [
+      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValueFrom": "FOCUS_SPENT", "Blockable": false }
+    ],
+    "ProcChance": 25,
+    "AiProcChance": 25,
+    "VerboseLogTag": "Double or Nothing",
+    "_source": "coverage-matrix §1 row 11; BM T1 GAMBLER L6244-6256. v1.1 rolls both branches independently (25% x 10% = 10% loss, vs EOR's chained 7.5%) — matrix-authorized probability shift, recorded deliberately"
+  },
+  "SKILL_CF_GAMBLER_DOUBLE_LOSS": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Double or Nothing (loss)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "FOCUS_SPENT", "Comparator": "GTE", "Value": 2 }
+    ],
+    "Effects": [
+      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValue": -1, "Blockable": false,
+        "Conditions": [ { "Type": "FOCUS_CURRENT", "Comparator": "GTE", "Value": 1 } ] }
+    ],
+    "ProcChance": 10,
+    "AiProcChance": 10,
+    "VerboseLogTag": "Double or Nothing",
+    "_source": "coverage-matrix §1 row 11; BM T1 GAMBLER L6244-6256"
+  },
+  "SKILL_CF_GLADIATOR_SHOWMANSHIP_CRIT": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Showmanship",
+    "Trigger": "ON_CRIT",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_TAUNT_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ARMORUP_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_RESISTANCEUP_GROUP_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC", "Key": "CF_GLADIATOR_SHOWMANSHIP" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Showmanship",
+    "_source": "coverage-matrix §1 row 12; BM T1 GLADIATOR L6257-6265"
+  },
+  "SKILL_CF_GLADIATOR_SHOWMANSHIP_KILL": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Showmanship",
+    "Trigger": "ON_KILL",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_TAUNT_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ARMORUP_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_RESISTANCEUP_GROUP_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC", "Key": "CF_GLADIATOR_SHOWMANSHIP" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Showmanship",
+    "_source": "coverage-matrix §1 row 12; BM T1 GLADIATOR L6257-6265. ON_KILL is origin-attributed (SPEC-DELTA §2.1) — fixes EOR's any-DIED-result bug, fewer procs in AoE-death rounds"
+  },
+  "SKILL_CF_HEXBLADE_MALEDICTION": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Malediction",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "StatusOneOf": ["STATUS_SHOCK_00", "STATUS_BLEED_00", "STATUS_ATTACKDOWN_00", "STATUS_RESISTANCEDOWN_00"], "Duration": 1 }
+    ],
+    "ProcChance": 25,
+    "AiProcChance": 25,
+    "VerboseLogTag": "Malediction",
+    "_source": "coverage-matrix §1 row 13; BM T1 HEXBLADE L6266-6272"
+  },
+  "SKILL_CF_JESTER_PUNCHLINE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Punchline",
+    "Trigger": "ON_ENEMY_ABILITY_RESOLVED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "CRIT_FAIL" }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_ATTACKDOWN_00", "Duration": 1,
+        "Conditions": [ { "Type": "CHARACTER_TYPE", "Of": "TRIGGER_SOURCE", "Value": "BOSS" } ] },
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_CONFUSE_00", "Duration": 1,
+        "Conditions": [ { "Type": "CHARACTER_TYPE", "Of": "TRIGGER_SOURCE", "Value": "BOSS", "Negate": true } ] }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "ProcChance": 20,
+    "AiProcChance": 20,
+    "VerboseLogTag": "Punchline",
+    "_source": "coverage-matrix §1 row 14; BM T1 JESTER HandleClassSkillResponses L6432-6438 (ON_CRIT_FAIL_ENEMY subsumed by ON_ENEMY_ABILITY_RESOLVED + ROLL_TIER)"
+  },
+  "SKILL_CF_KNIGHT_CHIVALRY": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Chivalry",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "ALLY_BY_RANK", "Status": "STATUS_PROTECT_00", "Duration": 1,
+        "Rank": { "Stat": "HP_PCT", "Order": "LOWEST", "ExcludeSelf": true,
+          "Where": [ { "Type": "HP_THRESHOLD", "Comparator": "LTE", "Percent": 25 } ] } },
+      { "Type": "ADD_STATUS", "Target": "ALLY_BY_RANK", "Status": "STATUS_ARMORUP_00", "Duration": 1,
+        "Rank": { "Stat": "HP_PCT", "Order": "LOWEST", "ExcludeSelf": true,
+          "Where": [ { "Type": "HP_THRESHOLD", "Comparator": "LTE", "Percent": 25 } ] } }
+    ],
+    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "EFFECT_APPLIED" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Chivalry",
+    "_source": "coverage-matrix §1 row 15; BM T1 KNIGHT L6273-6286; reused verbatim from ClassForge.Recipes.Tests/fixtures/knight.json"
+  },
+  "SKILL_CF_MARSHAL_RALLY_CRIT": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Rally",
+    "Trigger": "ON_CRIT",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_HASTE_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC", "Key": "CF_MARSHAL_RALLY" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Rally",
+    "_source": "coverage-matrix §1 row 16; BM T1 MARSHAL L6287-6298"
+  },
+  "SKILL_CF_MARSHAL_RALLY_KILL": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Rally",
+    "Trigger": "ON_KILL",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_HASTE_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC", "Key": "CF_MARSHAL_RALLY" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Rally",
+    "_source": "coverage-matrix §1 row 16; BM T1 MARSHAL L6287-6298; ON_KILL is origin-attributed, same note as GLADIATOR"
+  },
+  "SKILL_CF_ORACLE_PREMONITION": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Premonition",
+    "Trigger": "ON_ENEMY_ABILITY_RESOLVED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_ATTACKDOWN_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_EVADEUP_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "PROC" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Premonition",
+    "_source": "coverage-matrix §1 row 17; BM T1 ORACLE HandleClassSkillResponses L6439-6450; reused verbatim from ClassForge.Recipes.Tests/fixtures/oracle.json"
+  },
+  "SKILL_CF_PEASANT_WAIT_ATK": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Wait Your Turn (attack)",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "ALL_ALLIES_ACTED", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 10 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Wait Your Turn",
+    "_source": "coverage-matrix §1 row 19; BM T1 PEASANT L6112-6117"
+  },
+  "SKILL_CF_PEASANT_WAIT_STATUS": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Wait Your Turn (status)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "ALL_ALLIES_ACTED", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ATTACKUP_00", "Duration": 1 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Wait Your Turn",
+    "_source": "coverage-matrix §1 row 19; BM T1 PEASANT L6305-6310"
+  },
+  "SKILL_CF_PRIEST_BENEDICTION": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Benediction",
+    "Trigger": "ON_HEAL",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_ARMORUP_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_RESISTANCEUP_GROUP_00", "Duration": 1 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Benediction",
+    "_source": "coverage-matrix §1 row 20; BM T1 PRIEST L6311-6318. EXPRESSIVENESS GAP: the matrix's sketch gates the _01-tier status pair on ROLL_TIER(EQ PERFECT), but ClassForge.Recipes' HealEvent (Runtime/TriggerEvents.cs) carries no roll-tier field under ON_HEAL — that condition would always read the RollTier.SUCCESS default and never be true, silently downgrading the recipe to always-_00. Ships the honestly-expressible always-_00 behavior instead of an improvised roll-tier gate; see provenance.json expressiveness_gaps."
+  },
+  "SKILL_CF_RANCHER_ROUND_UP": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Round Up",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_ENTANGLE_ROOTS_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Round Up",
+    "_source": "coverage-matrix §1 row 21; BM T1 RANCHER L6319-6324. Code-authoritative: single ATTACKDOWN fallback, no Daze branch — flavor-text mismatch"
+  },
+  "SKILL_CF_RANGER_QUARRY_MARK": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Quarry (mark)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "ROLL_TIER", "Comparator": "GTE", "Value": "SUCCESS" },
+      { "Type": "LACKS_STATUS", "Of": "TRIGGER_TARGET", "Value": "STATUS_MARKED_00" }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_MARKED_00", "Duration": 2 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Quarry",
+    "_source": "coverage-matrix §1 row 22; BM T1 RANGER L6325-6335. Quarry is now the status EOR already applied in parallel, not a private TargetGuid (TARGET_TRACKING subsumed, SPEC-DELTA §7.8) — mark expires after 2 rounds and is dispellable/re-targetable, unlike EOR's GUID lock"
+  },
+  "SKILL_CF_RANGER_QUARRY_BONUS": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Quarry (bonus)",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "HAS_STATUS", "Of": "TRIGGER_TARGET", "Value": "STATUS_MARKED_00" }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 10 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Quarry",
+    "_source": "coverage-matrix §1 row 22; BM T1 RANGER L6118-6123"
+  },
+  "SKILL_CF_RUNEMAGE_DETONATE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Runic Detonation (detonate)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "ABILITY_STAT", "Value": "INT" },
+      { "Type": "HAS_STATUS", "Of": "TRIGGER_TARGET", "Value": "STATUS_MARKED_00" }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "ENEMY_ALL", "Status": "STATUS_RESISTANCEDOWN_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "ENEMY_ALL", "Status": "STATUS_ATTACKDOWN_00", "Duration": 1 },
+      { "Type": "REMOVE_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_MARKED_00" }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Runic Detonation",
+    "_source": "coverage-matrix §1 row 23; BM T1 RUNEMAGE L6336-6355"
+  },
+  "SKILL_CF_RUNEMAGE_MARK": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Runic Detonation (mark)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "ABILITY_STAT", "Value": "INT" },
+      { "Type": "LACKS_STATUS", "Of": "TRIGGER_TARGET", "Value": "STATUS_MARKED_00" }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_MARKED_00", "Duration": 2 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Runic Detonation",
+    "_source": "coverage-matrix §1 row 23; BM T1 RUNEMAGE L6336-6355. Same status-as-mark substitution as RANGER (mark now expires in 2 rounds)"
+  },
+  "SKILL_CF_SCOUT_OPENING_ATK": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Exploit Opening (first hit)",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 10 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_TARGET_PER_COMBAT", "ConsumeOn": "EVALUATION" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Exploit Opening",
+    "_source": "coverage-matrix §1 row 24; BM T1 SCOUT L6124-6129. Deliberately no roll-tier gate, matching code (not flavor text)"
+  },
+  "SKILL_CF_SCOUT_OPENING_EVADE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Exploit Opening (evade down)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_EVADEDOWN_00", "Duration": 1 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Exploit Opening",
+    "_source": "coverage-matrix §1 row 24; BM T1 SCOUT L6356-6361. No first-hit gate, matching code — applies on every perfect direct hit, not just the opening hit (flavor-text mismatch, code is authoritative)"
+  },
+  "SKILL_CF_SENTINEL_BRACE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Brace",
+    "Trigger": "ON_DAMAGE_TAKEN",
+    "Conditions": [
+      { "Type": "ABILITY_RANGED", "Value": false }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_DAZE_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "ProcChance": 25,
+    "AiProcChance": 25,
+    "VerboseLogTag": "Brace",
+    "_source": "coverage-matrix §1 row 25; BM T1 SENTINEL L6451-6457; reused verbatim from ClassForge.Recipes.Tests/fixtures/sentinel.json"
+  },
+  "SKILL_CF_TEMPLAR_ZEAL": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Zeal",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "PercentFrom": "STATUS_COUNT:HARMFUL", "PerUnit": 5, "Max": 20 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Zeal",
+    "_source": "coverage-matrix §1 row 26; BM T1 TEMPLAR L6130-6132, CountHarmfulStatuses L6699-6725; reused verbatim from ClassForge.Recipes.Tests/fixtures/templar.json"
+  },
+  "SKILL_CF_TRICKSHOT_PINNING_SHOT": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Pinning Shot",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "ABILITY_RANGED", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_ENTANGLE_ROOTS_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_TARGET_PER_ROUND", "ConsumeOn": "EVALUATION" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Pinning Shot",
+    "_source": "coverage-matrix §1 row 28; BM T1 TRICKSHOT L6368-6377. Code-authoritative: no Daze branch, fallback is Attack Down not Evasion Down (flavor-text mismatch)"
+  },
+  "SKILL_CF_WARDEN_ROOTS": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Roots of Protection",
+    "Trigger": "ON_TURN_END",
+    "Conditions": [
+      { "Type": "MOVED_THIS_ROUND", "Value": false }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL_OTHERS", "Status": "STATUS_ARMORUP_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL_OTHERS", "Status": "STATUS_RESISTANCEUP_GROUP_00", "Duration": 1 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Roots of Protection",
+    "_source": "coverage-matrix §1 row 29; BM T1 WARDEN L6378-6390. ON_TURN_END is broader than EOR's IsEndTurnAbility name-substring gate, matched only by MOVED_THIS_ROUND(false); self-exclusion matches code, not flavor text"
+  },
+  "SKILL_CF_WARRIOR_RAGE_BUILD": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Battle Rage (build)",
+    "Trigger": "ON_DAMAGE_TAKEN",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "COUNTER_ADD", "Name": "RAGE", "Delta": 1, "Max": 3 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Battle Rage",
+    "_source": "coverage-matrix §1 row 30; BM T1 WARRIOR HandleClassSkillResponses L6458-6463"
+  },
+  "SKILL_CF_WARRIOR_RAGE_CONSUME": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Battle Rage (consume)",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "COUNTER", "Name": "RAGE", "Comparator": "GTE", "Value": 1 }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "PercentFrom": "COUNTER:RAGE", "PerUnit": 10, "Max": 30 },
+      { "Type": "COUNTER_SET", "Name": "RAGE", "Value": 0 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Battle Rage",
+    "_source": "coverage-matrix §1 row 30; BM T1 WARRIOR L6133-6139"
+  },
+  "SKILL_CF_WIZARD_VERSATILITY": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Arcane Versatility",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "ABILITY_STAT", "Value": "INT" },
+      { "Type": "ABILITY_REPEATED", "Value": false }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 15 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Arcane Versatility",
+    "_source": "coverage-matrix §1 row 31; BM T1 WIZARD L6391-6396, L6140-6148"
+  },
+  "SKILL_CF_PREPARED": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Prepared",
+    "Enabled": true,
+    "Trigger": "ON_COMBAT_START",
+    "Conditions": [
+      { "Type": "FOCUS_CURRENT", "Comparator": "LT", "Value": "MAX" }
+    ],
+    "Effects": [
+      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValue": 1, "Blockable": false }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "Cooldown": 0,
+    "Priority": 0,
+    "VerboseLogTag": "Prepared",
+    "_source": "coverage-matrix §2 row 10; BM T2 PREPARED L22830/L22849; reused verbatim from ClassForge.Recipes.Tests/fixtures/prepared.json"
+  },
+  "SKILL_CF_STEADY_AIM": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Steady Aim",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "ABILITY_RANGED", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "CRT", "Flat": 10 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "PROC" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Steady Aim",
+    "_source": "coverage-matrix §2 row 7; BM T2 STEADY_AIM L22876-22905; reused verbatim from ClassForge.Recipes.Tests/fixtures/steady_aim.json. Also serves affix OF_FOCUS's PREPARED analogue is separate; this recipe alone is the STEADY_AIM grantor"
+  },
+  "SKILL_CF_WARDBOUND_CURSE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Wardbound (curse)",
+    "Trigger": "ON_STATUS_APPLIED",
+    "Conditions": [
+      { "Type": "STATUS_TYPE", "Value": "CURSE" }
+    ],
+    "Effects": [
+      { "Type": "REMOVE_STATUS", "Target": "SELF", "Status": "TRIGGER_STATUS" }
+    ],
+    "Budget": { "Scope": "NONE", "Key": "CF_WARDBOUND" },
+    "ProcChance": 20,
+    "AiProcChance": 20,
+    "Priority": 0,
+    "VerboseLogTag": "Wardbound",
+    "_source": "coverage-matrix §2 row 8 / §3 row 13; BM T2 WARDBOUND L24780-24788, BM T3 OF_STABILITY L24780; reused verbatim from ClassForge.Recipes.Tests/fixtures/wardbound.json. Also the OF_STABILITY affix's grantor recipe (alternate grantor, not a duplicate implementation — SPEC-DELTA §3 preamble)"
+  },
+  "SKILL_CF_WARDBOUND_DEBUFF": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Wardbound (debuff)",
+    "Trigger": "ON_STATUS_APPLIED",
+    "Conditions": [
+      { "Type": "STATUS_TYPE", "Value": "DEBUFF" }
+    ],
+    "Effects": [
+      { "Type": "REMOVE_STATUS", "Target": "SELF", "Status": "TRIGGER_STATUS" }
+    ],
+    "Budget": { "Scope": "NONE", "Key": "CF_WARDBOUND" },
+    "ProcChance": 20,
+    "AiProcChance": 20,
+    "Priority": 1,
+    "VerboseLogTag": "Wardbound",
+    "_source": "coverage-matrix §2 row 8 / §3 row 13; BM T2 WARDBOUND L24780-24788, BM T3 OF_STABILITY L24780; reused verbatim from ClassForge.Recipes.Tests/fixtures/wardbound.json. Also the OF_STABILITY affix's grantor recipe"
+  },
+  "SKILL_CF_MOMENTUM": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Momentum",
+    "Trigger": "ON_KILL",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ATTACKUP_00" }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Momentum",
+    "_source": "coverage-matrix §2 row 18 / §3 row 3; BM T2 MOMENTUM L24565-24573, BM T3 OF_MOMENTUM L24565; reused verbatim from ClassForge.Recipes.Tests/fixtures/momentum.json. Also the OF_MOMENTUM affix's grantor recipe (alternate grantor, not a duplicate implementation)"
+  },
+  "SKILL_CF_BATTLE_RHYTHM": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Battle Rhythm",
+    "Trigger": "ON_DAMAGE_DEALT",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_EVADEUP_00" }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Battle Rhythm",
+    "_source": "coverage-matrix §2 row 13; BM T2 BATTLE_RHYTHM L24541-24564; reused verbatim from ClassForge.Recipes.Tests/fixtures/battle_rhythm.json"
+  },
+  "SKILL_CF_FIELDMEDIC": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Field Medic",
+    "Trigger": "ON_HEAL_PENDING",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "HEAL_MODIFIER", "Scope": "RECEIVED", "Percent": 25, "MinDelta": 1 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Field Medic",
+    "_source": "coverage-matrix §2 row 16; BM T2 FIELDMEDIC L24486-24501; reused verbatim from ClassForge.Recipes.Tests/fixtures/fieldmedic.json"
+  },
+  "SKILL_CF_MENDERS_TOUCH": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Mender's Touch",
+    "Trigger": "ON_HEAL_PENDING",
+    "Conditions": [
+      { "Type": "ITEM_CONSUMABLE", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "HEAL_MODIFIER", "Scope": "GIVEN", "Flat": 10 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Mender's Touch",
+    "_source": "coverage-matrix §2 row 20; BM T2 MENDERS_TOUCH L24502-24509; reused verbatim from ClassForge.Recipes.Tests/fixtures/fieldmedic.json"
+  },
+  "SKILL_CF_DRUNKEN_COURAGE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Drunken Courage",
+    "Trigger": "ON_CONSUMABLE_USED",
+    "Conditions": [
+      { "Type": "ITEM_CLASS", "Value": "DRINK" },
+      { "Type": "ITEM_CONSUMABLE", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ATTACKUP_00" }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Drunken Courage",
+    "_source": "coverage-matrix §2 row 19; BM T2 DRUNKEN_COURAGE L24628-24632; reused verbatim from ClassForge.Recipes.Tests/fixtures/drunken_courage.json. Gate is the vanilla ThingConfig.Class == 'DRINK' rather than EOR's ConfigName.StartsWith('DRINK_') prefix match"
+  }
+}

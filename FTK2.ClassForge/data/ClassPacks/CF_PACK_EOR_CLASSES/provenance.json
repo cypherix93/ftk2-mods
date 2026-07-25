@@ -153,5 +153,170 @@
     "EorId": "EOR_WIZARD",
     "PackageVersion": "0.7.0.60",
     "Source": "eor-import"
+  },
+  "_authored_content": {
+    "_note": "Added by the traits.json/skillrecipes.json authoring pass. Authority: docs/research/eor-rehost-coverage-matrix.md (dispositions) + docs/research/eor-behavior-matrix.md (BM, exact numbers) + FTK2.ClassForge/SPEC-DELTA-v1.1.md (recipe vocabulary). Every recipe also carries an inline \"_source\" field citing its coverage-matrix row and BM line range.",
+    "class_skill_recipes": {
+      "SKILL_CF_ARCANIST_OVERFLOW": "coverage-matrix §1 row 1 (PORT-MODIFIED) / BM T1 ARCANIST L6192-6197,6760",
+      "SKILL_CF_ASSASSIN_DEATHBLOW": "coverage-matrix §1 row 2 (PORT) / BM T1 ASSASSIN L6093-6098",
+      "SKILL_CF_BARD_CRESCENDO_RESET": "coverage-matrix §1 row 3 (PORT) / BM T1 BARD L6492-6515",
+      "SKILL_CF_BARD_CRESCENDO": "coverage-matrix §1 row 3 (PORT) / BM T1 BARD L6492-6515",
+      "SKILL_CF_BEASTMASTER_QUARRY": "coverage-matrix §1 row 4 (PORT-MODIFIED) / BM T1 BEASTMASTER L6201-6207",
+      "SKILL_CF_BEASTMASTER_PACK_TACTICS": "coverage-matrix §1 row 4 (PORT-MODIFIED) / BM T1 BEASTMASTER L6468-6490; authored but not attached to any pack pet config (no pet Character in this pack) — see expressiveness_gaps",
+      "SKILL_CF_BLADEDANCER_FLOWING_STEP": "coverage-matrix §1 row 5 (PORT) / BM T1 BLADEDANCER L6208-6215",
+      "SKILL_CF_CHRONOMANCER_TIME_SLIP": "coverage-matrix §1 row 6 (PORT) / BM T1 CHRONOMANCER L6216-6225",
+      "SKILL_CF_CORSAIR_BOARDING_ATK": "coverage-matrix §1 row 7 (PORT-MODIFIED) / BM T1 CORSAIR L6099-6104",
+      "SKILL_CF_CORSAIR_BOARDING_CTRL": "coverage-matrix §1 row 7 (PORT-MODIFIED) / BM T1 CORSAIR L6226-6232",
+      "SKILL_CF_DRUID_REPRISAL": "coverage-matrix §1 row 8 (PORT) / BM T1 DRUID L6416-6422",
+      "SKILL_CF_FORTUNEBORN_LUCKY_BREAK": "coverage-matrix §1 row 10 (PORT) / BM T1 FORTUNEBORN L6233-6243",
+      "SKILL_CF_GAMBLER_DOUBLE_WIN": "coverage-matrix §1 row 11 (PORT-MODIFIED) / BM T1 GAMBLER L6244-6256",
+      "SKILL_CF_GAMBLER_DOUBLE_LOSS": "coverage-matrix §1 row 11 (PORT-MODIFIED) / BM T1 GAMBLER L6244-6256",
+      "SKILL_CF_GLADIATOR_SHOWMANSHIP_CRIT": "coverage-matrix §1 row 12 (PORT-MODIFIED) / BM T1 GLADIATOR L6257-6265",
+      "SKILL_CF_GLADIATOR_SHOWMANSHIP_KILL": "coverage-matrix §1 row 12 (PORT-MODIFIED) / BM T1 GLADIATOR L6257-6265",
+      "SKILL_CF_HEXBLADE_MALEDICTION": "coverage-matrix §1 row 13 (PORT) / BM T1 HEXBLADE L6266-6272",
+      "SKILL_CF_JESTER_PUNCHLINE": "coverage-matrix §1 row 14 (PORT) / BM T1 JESTER L6432-6438",
+      "SKILL_CF_KNIGHT_CHIVALRY": "coverage-matrix §1 row 15 (PORT) / BM T1 KNIGHT L6273-6286",
+      "SKILL_CF_MARSHAL_RALLY_CRIT": "coverage-matrix §1 row 16 (PORT-MODIFIED) / BM T1 MARSHAL L6287-6298",
+      "SKILL_CF_MARSHAL_RALLY_KILL": "coverage-matrix §1 row 16 (PORT-MODIFIED) / BM T1 MARSHAL L6287-6298",
+      "SKILL_CF_ORACLE_PREMONITION": "coverage-matrix §1 row 17 (PORT) / BM T1 ORACLE L6439-6450",
+      "SKILL_CF_PEASANT_WAIT_ATK": "coverage-matrix §1 row 19 (PORT) / BM T1 PEASANT L6112-6117",
+      "SKILL_CF_PEASANT_WAIT_STATUS": "coverage-matrix §1 row 19 (PORT) / BM T1 PEASANT L6305-6310",
+      "SKILL_CF_PRIEST_BENEDICTION": "coverage-matrix §1 row 20 (PORT) / BM T1 PRIEST L6311-6318",
+      "SKILL_CF_RANCHER_ROUND_UP": "coverage-matrix §1 row 21 (PORT) / BM T1 RANCHER L6319-6324",
+      "SKILL_CF_RANGER_QUARRY_MARK": "coverage-matrix §1 row 22 (PORT-MODIFIED) / BM T1 RANGER L6325-6335",
+      "SKILL_CF_RANGER_QUARRY_BONUS": "coverage-matrix §1 row 22 (PORT-MODIFIED) / BM T1 RANGER L6118-6123",
+      "SKILL_CF_RUNEMAGE_DETONATE": "coverage-matrix §1 row 23 (PORT-MODIFIED) / BM T1 RUNEMAGE L6336-6355",
+      "SKILL_CF_RUNEMAGE_MARK": "coverage-matrix §1 row 23 (PORT-MODIFIED) / BM T1 RUNEMAGE L6336-6355",
+      "SKILL_CF_SCOUT_OPENING_ATK": "coverage-matrix §1 row 24 (PORT) / BM T1 SCOUT L6124-6129",
+      "SKILL_CF_SCOUT_OPENING_EVADE": "coverage-matrix §1 row 24 (PORT) / BM T1 SCOUT L6356-6361",
+      "SKILL_CF_SENTINEL_BRACE": "coverage-matrix §1 row 25 (PORT) / BM T1 SENTINEL L6451-6457",
+      "SKILL_CF_TEMPLAR_ZEAL": "coverage-matrix §1 row 26 (PORT) / BM T1 TEMPLAR L6130-6132,6699-6725",
+      "SKILL_CF_TRICKSHOT_PINNING_SHOT": "coverage-matrix §1 row 28 (PORT) / BM T1 TRICKSHOT L6368-6377",
+      "SKILL_CF_WARDEN_ROOTS": "coverage-matrix §1 row 29 (PORT-MODIFIED) / BM T1 WARDEN L6378-6390",
+      "SKILL_CF_WARRIOR_RAGE_BUILD": "coverage-matrix §1 row 30 (PORT) / BM T1 WARRIOR L6458-6463",
+      "SKILL_CF_WARRIOR_RAGE_CONSUME": "coverage-matrix §1 row 30 (PORT) / BM T1 WARRIOR L6133-6139",
+      "SKILL_CF_WIZARD_VERSATILITY": "coverage-matrix §1 row 31 (PORT) / BM T1 WIZARD L6391-6396,6140-6148"
+    },
+    "trait_effect_recipes": {
+      "SKILL_CF_PREPARED": "coverage-matrix §2 row 10 (PORT) / BM T2 PREPARED L22830,22849 — also OF_FOCUS's grantor (alternate grantor, not authored as a separate recipe)",
+      "SKILL_CF_STEADY_AIM": "coverage-matrix §2 row 7 (PORT) / BM T2 STEADY_AIM L22876-22905",
+      "SKILL_CF_WARDBOUND_CURSE": "coverage-matrix §2 row 8 (PORT-MODIFIED) / BM T2 WARDBOUND L24780-24788 — also OF_STABILITY's grantor",
+      "SKILL_CF_WARDBOUND_DEBUFF": "coverage-matrix §2 row 8 (PORT-MODIFIED) / BM T2 WARDBOUND L24780-24788 — also OF_STABILITY's grantor",
+      "SKILL_CF_MOMENTUM": "coverage-matrix §2 row 18 (PORT) / BM T2 MOMENTUM L24565-24573 — also OF_MOMENTUM's grantor (alternate grantor, not authored as a separate recipe)",
+      "SKILL_CF_BATTLE_RHYTHM": "coverage-matrix §2 row 13 (PORT) / BM T2 BATTLE_RHYTHM L24541-24564",
+      "SKILL_CF_FIELDMEDIC": "coverage-matrix §2 row 16 (PORT) / BM T2 FIELDMEDIC L24486-24501",
+      "SKILL_CF_MENDERS_TOUCH": "coverage-matrix §2 row 20 (PORT) / BM T2 MENDERS_TOUCH L24502-24509",
+      "SKILL_CF_DRUNKEN_COURAGE": "coverage-matrix §2 row 19 (PORT-MODIFIED) / BM T2 DRUNKEN_COURAGE L24628-24632"
+    },
+    "trait_stats": {
+      "TRAIT_LIGHT_FOOTED": "coverage-matrix §2 row 1 (PORT, stat-only) / EOR Plugin.cs L18704 EVD+10",
+      "TRAIT_TOUGHENED": "coverage-matrix §2 row 2 (PORT, stat-only) / EOR Plugin.cs L18710-18711 HP+10,DEF+2",
+      "TRAIT_STREETWISE": "coverage-matrix §2 row 3 (PORT, stat-only) / EOR Plugin.cs L18717 TAL+10",
+      "TRAIT_GOLD_INSTINCT": "coverage-matrix §2 row 4 (PORT, stat-only) / EOR Plugin.cs L18726 GLD+15",
+      "TRAIT_KNIFE_EDGE": "coverage-matrix §2 row 5 (PORT, stat-only) / EOR Plugin.cs L18729-18730 CRT+10,HP-3",
+      "TRAIT_TREASURE_SENSE": "coverage-matrix §2 row 6 (PORT-MODIFIED, stat half only) / EOR Plugin.cs L18707 LCK+10; loot half (20% post-combat gold) parked — see parked list",
+      "TRAIT_STEADY_AIM": "coverage-matrix §2 row 7 (PORT) / EOR Plugin.cs L18714 AWR+10, code half via SKILL_CF_STEADY_AIM",
+      "TRAIT_WARDBOUND": "coverage-matrix §2 row 8 (PORT-MODIFIED) / EOR Plugin.cs L18720 RES+2, code half via SKILL_CF_WARDBOUND_CURSE/DEBUFF",
+      "TRAIT_SCHOLARS_HABIT": "coverage-matrix §2 row 9 (PORT-MODIFIED, stat half only) / EOR Plugin.cs L18723 INT+10; loot half (20% post-combat scroll) parked — see parked list",
+      "TRAIT_PREPARED": "coverage-matrix §2 row 10 (PORT, no stat) / code effect via SKILL_CF_PREPARED",
+      "TRAIT_PACK_TACTICS": "coverage-matrix §2 row 11 (PORT-MODIFIED) / EOR conditional +2 PHY (CONDITIONAL_STAT_MODIFIER parked, SPEC-DELTA §7.10) halved and made unconditional: PHY+1",
+      "TRAIT_SCAVENGER": "coverage-matrix §2 row 12 (PARK) — see parked list",
+      "TRAIT_BATTLE_RHYTHM": "coverage-matrix §2 row 13 (PORT, no stat) / code effect via SKILL_CF_BATTLE_RHYTHM",
+      "TRAIT_ARCANE_MEMORY": "coverage-matrix §2 row 14 (PARK) — see parked list",
+      "TRAIT_SHIELDBEARER": "coverage-matrix §2 row 15 (PORT-MODIFIED) / EOR 25% chance -2 physical damage (DAMAGE_TAKEN_MULT parked, SPEC-DELTA §7.4) replaced with flat DEF+1 stat trait; balance flag: ~2x stronger than EOR's expected 0.5/hit",
+      "TRAIT_FIELDMEDIC": "coverage-matrix §2 row 16 (PORT, no stat) / code effect via SKILL_CF_FIELDMEDIC",
+      "TRAIT_ARCANE_FOCUS": "coverage-matrix §2 row 17 (PORT-MODIFIED) / EOR conditional +2 MAG (CONDITIONAL_STAT_MODIFIER parked) halved and made unconditional: MAG+1",
+      "TRAIT_MOMENTUM": "coverage-matrix §2 row 18 (PORT, no stat) / code effect via SKILL_CF_MOMENTUM",
+      "TRAIT_DRUNKEN_COURAGE": "coverage-matrix §2 row 19 (PORT-MODIFIED, no stat) / code effect via SKILL_CF_DRUNKEN_COURAGE",
+      "TRAIT_MENDERS_TOUCH": "coverage-matrix §2 row 20 (PORT, no stat) / code effect via SKILL_CF_MENDERS_TOUCH"
+    },
+    "affixes": {
+      "_note": "Affix item ThingConfigs (OF_* pre-minted _PLUS{N} variants, coverage-matrix §3) are Armory's domain (data/ClassPacks item content), not authored in this pack. Recorded here only where the coverage matrix ties an affix's coded effect to a trait recipe this pack owns.",
+      "OF_MOMENTUM": "coverage-matrix §3 row 3 (PORT) — shares SKILL_CF_MOMENTUM as an alternate grantor condition, not a duplicate recipe",
+      "OF_FOCUS": "coverage-matrix §3 row 8 (PORT) — shares SKILL_CF_PREPARED as an alternate grantor condition, not a duplicate recipe",
+      "OF_STABILITY": "coverage-matrix §3 row 13 (PORT-MODIFIED) — shares SKILL_CF_WARDBOUND_CURSE/SKILL_CF_WARDBOUND_DEBUFF as an alternate grantor condition, one shared 20% roll with TRAIT_WARDBOUND, not a duplicate recipe",
+      "OF_SPELLKEEPING": "coverage-matrix §3 row 7 (PORT-MODIFIED) — code half parked with SUPPRESS_CONSUME (same reason as TRAIT_ARCANE_MEMORY); stat half (INT+1) is an Armory item concern, out of this pack's scope",
+      "OF_SCAVENGING": "coverage-matrix §3 row 16 (PORT-MODIFIED) — loot half parked with GOLD_GRANT/ITEM_TAG_GRANT (same reason as TRAIT_SCAVENGER); stat half (LCK+2) is an Armory item concern, out of this pack's scope"
+    },
+    "parked": [
+      {
+        "id": "CF_EOR_DUELIST",
+        "kind": "class_signature_skill",
+        "citation": "coverage-matrix §1 row 9 (PARK) / BM T1 DUELIST L6423-6431,6105-6111",
+        "reason": "Requires ON_DODGE; no dodge signal exists in the verified patch surface (SPEC-DELTA §7.9). Unlock: verbatim eAbilityResults list in PSN with a confirmed dodge value."
+      },
+      {
+        "id": "CF_EOR_PALADIN",
+        "kind": "class_signature_skill",
+        "citation": "coverage-matrix §1 row 18 (PARK) / BM T1 PALADIN L6299-6304",
+        "reason": "Requires CLEANSE_RANDOM_STATUS, a cross-entity status selector distinct from ALLY_BY_RANK (SPEC-DELTA §7.6). Unlock: a StatusSelector sub-schema."
+      },
+      {
+        "id": "CF_EOR_THIEF",
+        "kind": "class_signature_skill",
+        "citation": "coverage-matrix §1 row 27 (PARK) / BM T1 THIEF L6362-6367",
+        "reason": "Requires STEAL_STATUS: ordered allowlist selector + bound same-status reference + not-found fallback branch (SPEC-DELTA §7.5). Unlock: the StatusSelector sub-schema shared with PALADIN."
+      },
+      {
+        "id": "TRAIT_SCAVENGER",
+        "kind": "trait_effect",
+        "citation": "coverage-matrix §2 row 12 (PARK) / BM T2 SCAVENGER L16357-16378",
+        "reason": "25% post-combat gold-or-herb, no stat half to fall back on. Needs GOLD_GRANT and ITEM_TAG_GRANT (SPEC-DELTA §7.1, loot hook absent from PSN + per-client loot-list mutation hazard). Thing still authored (empty stats, no recipe) so selection/storage ports for free per matrix §2 preamble; effect is inert until unlocked."
+      },
+      {
+        "id": "TRAIT_ARCANE_MEMORY",
+        "kind": "trait_effect",
+        "citation": "coverage-matrix §2 row 14 (PARK) / BM T2 ARCANE_MEMORY L24454-24462",
+        "reason": "30% chance not to consume a scroll. Needs SUPPRESS_CONSUME (SPEC-DELTA §7.2); scroll use is normally out-of-combat where CombatState.Random is null, and invariant 5.2#2 forbids a fallback seeded RNG (EOR's exact non-lockstep bug). Thing still authored (empty stats, no recipe); effect is inert until unlocked."
+      },
+      {
+        "id": "TRAIT_TREASURE_SENSE (loot half)",
+        "kind": "trait_effect_partial",
+        "citation": "coverage-matrix §2 row 6 (PORT-MODIFIED) / BM T2 TREASURE_SENSE L16379-16388",
+        "reason": "20% post-combat gold parked with GOLD_GRANT (SPEC-DELTA §7.1); stat half (LCK+10) ships."
+      },
+      {
+        "id": "TRAIT_SCHOLARS_HABIT (loot half)",
+        "kind": "trait_effect_partial",
+        "citation": "coverage-matrix §2 row 9 (PORT-MODIFIED) / BM T2 SCHOLARS_HABIT L16389-16396",
+        "reason": "20% post-combat random scroll parked with ITEM_TAG_GRANT (SPEC-DELTA §7.1); stat half (INT+10) ships."
+      },
+      {
+        "id": "OF_SPELLKEEPING (code half)",
+        "kind": "affix_effect_partial",
+        "citation": "coverage-matrix §3 row 7 (PORT-MODIFIED) / BM T3 OF_SPELLKEEPING L24463",
+        "reason": "10% not-consume-scroll parked with SUPPRESS_CONSUME, same reason as TRAIT_ARCANE_MEMORY."
+      },
+      {
+        "id": "OF_SCAVENGING (loot half)",
+        "kind": "affix_effect_partial",
+        "citation": "coverage-matrix §3 row 16 (PORT-MODIFIED) / BM T3 OF_SCAVENGING L16397-16418",
+        "reason": "10% post-combat gold-or-herb parked with GOLD_GRANT/ITEM_TAG_GRANT, same reason as TRAIT_SCAVENGER."
+      },
+      {
+        "id": "Affix drop-time rolling [system]",
+        "kind": "affix_system",
+        "citation": "coverage-matrix §3 row 22 (PARK) / AUD §2.5,§3.2",
+        "reason": "Loot hook absent from PSN; extra shared-stream draws on an asymmetric-execution path. Out of this pack's scope (items/loot are Armory's domain)."
+      },
+      {
+        "id": "Class mastery meta-progression [system]",
+        "kind": "system",
+        "citation": "coverage-matrix §4 row 1 (PARK) / AUD §2.1",
+        "reason": "Profile-persisted meta-progression, offline-only in EOR itself, not a data-driven primitive. Out of ClassForge's scope entirely; no home in any current SPEC."
+      }
+    ],
+    "expressiveness_gaps": [
+      "SKILL_CF_BEASTMASTER_PACK_TACTICS (the pet half of Pack Tactics) is authored per the coverage matrix's sketch but has no pack-owned pet Character config to attach it to in CF_PACK_EOR_CLASSES — pets/mercs are Summoner's domain (matrix §5 note 7). The recipe is valid and PackCheck-clean but currently unreachable in-game until a pet config references it in its own Passives[].",
+      "SKILL_CF_PRIEST_BENEDICTION: the coverage matrix's sketch (§1 row 20) gates PRIEST's _01-tier status pair on ROLL_TIER(EQ PERFECT) under ON_HEAL, closing BM's 'tiered status choice by roll grade' gap via per-effect Conditions. The shipped ClassForge.Recipes engine's HealEvent (Runtime/TriggerEvents.cs) does not carry a roll-tier field for ON_HEAL (only Healer/Healed/AbilityId/Amount) — RecipeValidator confirms this with a W_NO_ROLL_DATA finding ('ON_HEAL carries no pRollData; ROLL_TIER reads the default tier'). A ROLL_TIER condition there would always read the RollTier.SUCCESS default, so it can never distinguish PERFECT and would silently always resolve to the non-perfect branch. Rather than ship a recipe whose Conditions look meaningful but are dead code, this pack authors PRIEST as always-_00 (the honestly-expressible subset) and records the tier split as unported pending an engine change that threads pRollData through ON_HEAL."
+    ],
+    "balance_flags_carried_forward": [
+      "PACK_TACTICS +2 -> +1 PHY (CONDITIONAL_STAT_MODIFIER parked)",
+      "ARCANE_FOCUS +2 -> +1 MAG (CONDITIONAL_STAT_MODIFIER parked)",
+      "SHIELDBEARER -> DEF+1 flat stat, roughly 2x stronger than EOR's expected 0.5/hit average (DAMAGE_TAKEN_MULT parked)",
+      "TRAIT_TREASURE_SENSE / TRAIT_SCHOLARS_HABIT / OF_SCAVENGING lose their loot halves (GOLD_GRANT/ITEM_TAG_GRANT parked)",
+      "BEASTMASTER's ported quarry link (STATUS_MARKED_00) newly inherits that status's vanilla +30 crit-chance bonus",
+      "GAMBLER's loss chance changes from EOR's chained 7.5% to v1.1's independent-rolls 10% (deliberate, SPEC-DELTA §5.1 ProcChance semantics)"
+    ]
   }
 }

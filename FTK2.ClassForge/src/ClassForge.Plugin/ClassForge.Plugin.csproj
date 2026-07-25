@@ -16,10 +16,23 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <!-- net472 has no built-in ReadOnlySpan<T>. System.Text.Json's Deserialize overload set names it,
+         so the compiler needs the type present for overload resolution at every JsonSerializer call
+         (ConfigMergePatches). NOTE: the game's Managed\System.Memory.dll is a 4.6 KB *type-forwarding
+         facade* (its Span/ReadOnlySpan live in Unity's own mscorlib), so HintPath-ing it yields
+         CS0518 "predefined type not defined" — the real reference assembly must come from NuGet.
+         Compile-time only: PrivateAssets="all" + ExcludeAssets="runtime" copies nothing into the
+         plugin output; the game's facade + Unity mscorlib serve at runtime, exactly like every
+         other <Reference> here (all Private=false).
+         System.Runtime.CompilerServices.Unsafe is pinned to 6.0.0 purely to unify against the
+         version the game's System.Text.Json binds to, which keeps the build at 0 warnings. -->
+    <PackageReference Include="System.Memory" Version="4.5.5" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ClassForge.Core\ClassForge.Core.csproj" />
+    <ProjectReference Include="..\ClassForge.Recipes\ClassForge.Recipes.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +54,14 @@
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule">
+      <HintPath>$(ManagedDir)\UnityEngine.UIElementsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(ManagedDir)\UnityEngine.ImageConversionModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="System.Text.Json">

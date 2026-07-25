@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <RootNamespace>ClassForge.PackCheck</RootNamespace>
+    <AssemblyName>ClassForge.PackCheck</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <!-- Console verification tool: loads a ClassPack via ClassForge.Core's real PackLoader (classes/traits/
+         items/abilities/localization/icons/portraits), then parses+validates its skillrecipes.json through
+         ClassForge.Recipes' RecipeParser/RecipeValidator. Prints per-file counts and every Finding; exits 0
+         only when zero Errors were produced by either layer. No xunit, no NuGet, no game refs — mirrors
+         ClassForge.Recipes.Tests' console-runner pattern. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClassForge.Core\ClassForge.Core.csproj" />
+    <ProjectReference Include="..\ClassForge.Recipes\ClassForge.Recipes.csproj" />
+  </ItemGroup>
+
+</Project>

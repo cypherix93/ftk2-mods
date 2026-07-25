@@ -33,12 +33,32 @@ namespace ClassForge.Plugin
         internal static ConfigEntry<bool> VerboseLogging;
         internal static ConfigEntry<string> AdditionalRoots;
 
-        /// <summary>Bind-only in M1 — the CharacterCustomizationViewHelper.RenderClassList patch itself is a
-        /// later unit (see ClassSelectPatches). Bound now so the config key/section is stable across versions.</summary>
+        /// <summary>Gates the <c>CharacterCustomizationViewHelper.RenderClassList</c> pack-class injection
+        /// (see <see cref="ClassSelectPatches"/>).</summary>
         internal static ConfigEntry<bool> EnableClassSelectInjection;
 
-        /// <summary>Bind-only in M1 — the AssetLoader.GetImage/GetRender patch itself is a later unit (see AssetPatches).</summary>
+        /// <summary>Gates the <c>AssetLoader.GetImage</c>/<c>GetRender</c> icon+portrait fallback
+        /// (see <see cref="AssetPatches"/>).</summary>
         internal static ConfigEntry<bool> EnableIconFallback;
+
+        /// <summary>Gates the <c>LootDropHelper.GetAdventureLoadOut</c> trait-pool injection
+        /// (see <see cref="TraitLoadoutPatches"/>).</summary>
+        internal static ConfigEntry<bool> EnableTraitLoadoutInjection;
+
+        /// <summary>Gates the whole skill-recipe engine (see <c>Recipes/</c>). All-or-nothing by design:
+        /// SPEC-DELTA-v1.1 §5.3 forbids a partial recipe subset.</summary>
+        internal static ConfigEntry<bool> EnableRecipeEngine;
+
+        /// <summary>
+        /// The one gate every patch body consults. False when the master switch is off <b>or</b> when a
+        /// multiplayer parity mismatch has latched ClassForge's <c>Block</c> policy
+        /// (<see cref="ParityBridge.Blocked"/>, SPEC.md §9.5 / SPEC-DELTA-v1.1 §5.3 — whole engine off,
+        /// there is no presentation-only subset).
+        /// </summary>
+        internal static bool FeaturesActive
+        {
+            get { return Enabled != null && Enabled.Value && !ParityBridge.Blocked; }
+        }
 
         private static readonly Dictionary<string, ConfigEntry<bool>> PackEnabledKnobs = new Dictionary<string, ConfigEntry<bool>>(StringComparer.Ordinal);
 
@@ -58,12 +78,22 @@ namespace ClassForge.Plugin
             AdditionalRoots = Config.Bind("Packs", "AdditionalRoots", "",
                 "Comma-separated absolute paths to additional directories to scan for ClassPacks/<PackName>/ folders.");
             EnableClassSelectInjection = Config.Bind("UI", "EnableClassSelectInjection", true,
-                "Class-select UI integration toggle. M1 NOTE: this only binds the knob — the RenderClassList " +
-                "injection patch itself ships in a later unit; pack classes exist in Configs.Characters and are " +
-                "already usable via console/dev tools regardless of this setting.");
+                "Inject PLAYER-tagged pack classes into the character-creation class list " +
+                "(CharacterCustomizationViewHelper.RenderClassList). Turn off to keep pack classes usable via " +
+                "console/dev tools and LoadOuts.json only.");
             EnableIconFallback = Config.Bind("UI", "EnableIconFallback", true,
-                "AssetLoader.GetImage/GetRender icon+portrait fallback toggle. M1 NOTE: this only binds the " +
-                "knob — the fallback patch itself ships in a later unit.");
+                "Serve pack icons/portraits from the pack's icons//portraits/ folders via " +
+                "AssetLoader.GetImage/GetRender. Purely presentational: with this off, pack content shows the " +
+                "vanilla missing-asset result (a blank icon), nothing breaks.");
+            EnableTraitLoadoutInjection = Config.Bind("Traits", "EnableTraitLoadoutInjection", true,
+                "Append pack TRAIT_-prefixed traits to the adventure loadout pool " +
+                "(LootDropHelper.GetAdventureLoadOut), so they can be picked on the party-setup screen. " +
+                "Only ids that literally start with 'TRAIT_' are injected — that prefix IS the native trait " +
+                "mechanism, not a naming convention.");
+            EnableRecipeEngine = Config.Bind("Skills", "EnableRecipeEngine", true,
+                "Master switch for the skill-recipe engine (skillrecipes.json). All-or-nothing by design: " +
+                "SPEC-DELTA-v1.1 §5.3 forbids running a subset, because every recipe primitive either mutates " +
+                "combat state or feeds something that does.");
 
             ApplyPatches();
 
@@ -75,30 +105,140 @@ namespace ClassForge.Plugin
         {
             var harmony = new HarmonyLib.Harmony(Guid);
 
+            // ---- content merge + localization (M1) ----
             Patch(harmony, typeof(ConfigsHelper), "LoadConfigs",
-                postfix: new HarmonyMethod(typeof(ConfigMergePatches), nameof(ConfigMergePatches.LoadConfigs_Postfix)));
+                postfix: M(typeof(ConfigMergePatches), nameof(ConfigMergePatches.LoadConfigs_Postfix)));
             Patch(harmony, typeof(ConfigsHelper), "ReloadConfigs",
-                postfix: new HarmonyMethod(typeof(ConfigMergePatches), nameof(ConfigMergePatches.ReloadConfigs_Postfix)));
+                postfix: M(typeof(ConfigMergePatches), nameof(ConfigMergePatches.ReloadConfigs_Postfix)));
             Patch(harmony, typeof(Lang), "SetLanguage",
-                postfix: new HarmonyMethod(typeof(LocalizationPatches), nameof(LocalizationPatches.SetLanguage_Postfix)));
+                postfix: M(typeof(LocalizationPatches), nameof(LocalizationPatches.SetLanguage_Postfix)));
 
-            // --- Later-unit wiring points (M2 class-select/icon polish) — deliberately NOT Harmony-patched yet.
-            // Knobs above are already bound so their config keys are stable when the real patches land.
-            AssetPatches.LogWiringPointOnly(Log);
-            ClassSelectPatches.LogWiringPointOnly(Log);
+            // ---- class-select UI ----
+            Patch(harmony, typeof(CharacterCustomizationViewHelper), "RenderClassList",
+                prefix: M(typeof(ClassSelectPatches), nameof(ClassSelectPatches.RenderClassList_Prefix)),
+                argumentTypes: new[]
+                {
+                    typeof(Entity), typeof(List<string>),
+                    typeof(Func<Entity, string, bool, bool, System.Threading.Tasks.Task>),
+                    typeof(UnityEngine.UIElements.VisualElement)
+                });
+
+            // ---- icon / portrait fallback ----
+            // `out Color` MUST be declared as MakeByRefType() or AccessTools returns null and the patch
+            // silently never applies.
+            Patch(harmony, typeof(AssetLoader), "GetImage",
+                prefix: M(typeof(AssetPatches), nameof(AssetPatches.GetImage_Prefix)),
+                argumentTypes: new[] { typeof(object), typeof(eTextureAtlas), typeof(UnityEngine.Color).MakeByRefType() });
+            Patch(harmony, typeof(AssetLoader), "GetRender",
+                prefix: M(typeof(AssetPatches), nameof(AssetPatches.GetRender_Prefix)),
+                argumentTypes: new[] { typeof(string), typeof(bool), typeof(bool) });
+
+            // ---- trait selection ----
+            Patch(harmony, typeof(LootDropHelper), "GetAdventureLoadOut",
+                postfix: M(typeof(TraitLoadoutPatches), nameof(TraitLoadoutPatches.GetAdventureLoadOut_Postfix)),
+                argumentTypes: new[] { typeof(string), typeof(GameRandom) });
+
+            ApplyRecipeEnginePatches(harmony);
         }
 
-        private static void Patch(HarmonyLib.Harmony harmony, Type type, string method,
+        /// <summary>
+        /// The SPEC-DELTA-v1.1 §2 trigger hooks. Each target is resolved by <c>AccessTools</c> and logged
+        /// found/not-found; a missing target disables only the trigger(s) riding it, never the rest.
+        /// </summary>
+        private void ApplyRecipeEnginePatches(HarmonyLib.Harmony harmony)
+        {
+            var resultsList = typeof(List<(eAbilityResults, object)>);
+
+            // T1 ON_COMBAT_START
+            Patch(harmony, typeof(CombatHelper), "SetInitiative",
+                postfix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.SetInitiative_Postfix)));
+
+            // T2 ON_ABILITY_DECLARED (+ E1 ROLL_STAT_BONUS delegate swap) and
+            // ON_ABILITY_USED + T7 ON_ENEMY_ABILITY_RESOLVED
+            Patch(harmony, typeof(CombatHelper), "PerformAbility",
+                prefix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.PerformAbility_Prefix)),
+                postfix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.PerformAbility_Postfix)));
+
+            // C12 MOVED_THIS_ROUND observer (pAction == eCombatActions.MOVE)
+            Patch(harmony, typeof(CombatHelper), "ApplyAction",
+                postfix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.ApplyAction_Postfix)));
+
+            // ON_CRIT / ON_KILL / T3 ON_DAMAGE_DEALT / T4 ON_DAMAGE_TAKEN / ON_HEAL
+            Patch(harmony, typeof(InteractableHelper), "ApplyStatChange",
+                prefix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.ApplyStatChange_Prefix)),
+                postfix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.ApplyStatChange_Postfix)));
+
+            // T5 ON_STATUS_APPLIED — single-target overload only (the party-broadcast overload at L1128 has a
+            // List<Entity> target and cannot bind this trigger's single-entity owner).
+            Patch(harmony, typeof(InteractableHelper), "ApplyStatus",
+                postfix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.ApplyStatus_Postfix)),
+                argumentTypes: new[]
+                {
+                    typeof(Entity), typeof(Entity), typeof(Thing), typeof(string), typeof(string),
+                    typeof(GameRandom), resultsList, typeof(bool), typeof(bool), typeof(int?)
+                });
+
+            // T6 ON_CONSUMABLE_USED
+            Patch(harmony, typeof(InteractableHelper), "PerformConsumableAbility",
+                postfix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.PerformConsumableAbility_Postfix)));
+
+            // T8 ON_HEAL_PENDING (+ E2 HEAL_MODIFIER ref-int mutation). Four AddHealth overloads exist; this
+            // is the terminal implementation (CharacterHelper.cs L1357) the other three funnel into, so
+            // patching it alone catches every heal without double-firing.
+            Patch(harmony, typeof(CharacterHelper), "AddHealth",
+                prefix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.AddHealth_Prefix)),
+                argumentTypes: new[]
+                {
+                    typeof(Entity), typeof(int).MakeByRefType(), typeof(bool), resultsList,
+                    typeof(StatChangedResultsData), typeof(bool)
+                });
+
+            // ON_TURN_START / ON_TURN_END — private async method, hence the explicit fail-safe.
+            // (SPEC-DELTA-v1.1 §2.1 named CombatHelper._onCombatSkillProc, which carries no turn phase at all;
+            //  see CombatHookPatches.PerformSkillAbilityProcs_Prefix for the full re-anchoring rationale.)
+            if (!Patch(harmony, typeof(CombatPhase), "_performSkillAbilityProcs",
+                    prefix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.PerformSkillAbilityProcs_Prefix)),
+                    argumentTypes: new[] { typeof(Entity), typeof(eSkillEventProcs) }))
+            {
+                CombatHookPatches.WarnTurnHookMissing();
+            }
+        }
+
+        private static HarmonyMethod M(Type owner, string method)
+        {
+            return new HarmonyMethod(owner, method);
+        }
+
+        /// <summary>
+        /// Installs one patch, logging <c>Target found:</c>/<c>Target NOT found:</c> per
+        /// docs/CONVENTIONS.md so breakage after a game update is diagnosable from the BepInEx console
+        /// without a debugger. Returns false when the target could not be resolved (fail-safe: that feature
+        /// is simply off, everything else still installs).
+        /// </summary>
+        private static bool Patch(HarmonyLib.Harmony harmony, Type type, string method,
             HarmonyMethod prefix = null, HarmonyMethod postfix = null, Type[] argumentTypes = null)
         {
-            var target = argumentTypes == null ? AccessTools.Method(type, method) : AccessTools.Method(type, method, argumentTypes);
-            if (target == null)
+            try
             {
-                Log.LogError($"Target NOT found: {type.Name}.{method} — this feature is disabled (fail-safe).");
-                return;
+                var target = argumentTypes == null
+                    ? AccessTools.Method(type, method)
+                    : AccessTools.Method(type, method, argumentTypes);
+
+                if (target == null)
+                {
+                    Log.LogError($"Target NOT found: {type.Name}.{method} — this feature is disabled (fail-safe).");
+                    return false;
+                }
+
+                harmony.Patch(target, prefix: prefix, postfix: postfix);
+                Log.LogInfo($"Target found: {type.Name}.{method}");
+                return true;
             }
-            harmony.Patch(target, prefix: prefix, postfix: postfix);
-            Log.LogInfo($"Target found: {type.Name}.{method}");
+            catch (Exception ex)
+            {
+                Log.LogError($"Target NOT found: {type.Name}.{method} — patch installation threw, feature disabled (fail-safe): {ex}");
+                return false;
+            }
         }
 
         /// <summary>
@@ -147,52 +287,12 @@ namespace ClassForge.Plugin
         internal static bool IsPackEnabled(string packId)
             => !PackEnabledKnobs.TryGetValue(packId, out var knob) || knob.Value;
 
-        // ---- FTK2.DevKit ParityService registration (SPEC.md §3, §6, §9.6) ----
-        // Surface (no compile-time dependency, resolved by name):
-        //   static class FTK2Mods.DevKit.Core.ParityRegistry
-        //   static void Register(string guid, string version, string dataHash, string[] enabledFeatures)
-        private static bool _loggedDevKitAbsent;
-
+        // ---- FTK2.DevKit ParityService registration (SPEC.md §3, §6, §9.5, §9.6) ----
+        // Resolved by name with no compile-time dependency; see ParityBridge for the full contract,
+        // including the Block policy that latches FeaturesActive to false on any mismatch.
         internal static void RegisterParity(ParityRegistration payload)
         {
-            try
-            {
-                Type registryType = null;
-                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    Type candidate;
-                    try { candidate = asm.GetType("FTK2Mods.DevKit.Core.ParityRegistry", false); }
-                    catch { continue; }
-                    if (candidate != null) { registryType = candidate; break; }
-                }
-
-                if (registryType == null)
-                {
-                    if (!_loggedDevKitAbsent)
-                    {
-                        Log.LogInfo("[ClassForge] FTK2.DevKit not present — skipping ParityService registration (no-op, fail-safe).");
-                        _loggedDevKitAbsent = true;
-                    }
-                    return;
-                }
-
-                var method = registryType.GetMethod("Register", BindingFlags.Public | BindingFlags.Static,
-                    null, new[] { typeof(string), typeof(string), typeof(string), typeof(string[]) }, null);
-                if (method == null)
-                {
-                    Log.LogWarning("[ClassForge] FTK2.DevKit.Core.ParityRegistry found but has no matching " +
-                                   "Register(string,string,string,string[]) — skipping registration (fail-safe).");
-                    return;
-                }
-
-                method.Invoke(null, new object[] { payload.Guid, payload.Version, payload.DataHash, payload.EnabledFeatures });
-                Log.LogInfo($"[ClassForge] Registered with FTK2.DevKit ParityService: dataHash={payload.DataHash}, " +
-                            $"enabledFeatures=[{string.Join(",", payload.EnabledFeatures)}].");
-            }
-            catch (Exception ex)
-            {
-                Log.LogWarning($"[ClassForge] ParityService registration failed (non-fatal, fail-safe): {ex}");
-            }
+            ParityBridge.Register(payload);
         }
     }
 }

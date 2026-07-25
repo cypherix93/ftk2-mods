@@ -7,7 +7,8 @@
     "LocKey": "CF_EOR_ARCANIST",
     "Passives": [
       "SKILL_BLACKHOLE",
-      "SKILL_REFOCUS"
+      "SKILL_REFOCUS",
+      "SKILL_CF_ARCANIST_OVERFLOW"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -46,7 +47,8 @@
     "LocKey": "CF_EOR_ASSASSIN",
     "Passives": [
       "SKILL_ELITESNEAK",
-      "SKILL_CALLEDSHOT"
+      "SKILL_CALLEDSHOT",
+      "SKILL_CF_ASSASSIN_DEATHBLOW"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -85,7 +87,9 @@
     "LocKey": "CF_EOR_BARD",
     "Passives": [
       "SKILL_INSPIRE",
-      "SKILL_ENCOURAGE"
+      "SKILL_ENCOURAGE",
+      "SKILL_CF_BARD_CRESCENDO_RESET",
+      "SKILL_CF_BARD_CRESCENDO"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -122,7 +126,8 @@
     "LocKey": "CF_EOR_BEASTMASTER",
     "Passives": [
       "SKILL_HERD",
-      "SKILL_NAVIGATOR"
+      "SKILL_NAVIGATOR",
+      "SKILL_CF_BEASTMASTER_QUARRY"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -162,7 +167,8 @@
     "LocKey": "CF_EOR_BLADEDANCER",
     "Passives": [
       "SKILL_CHARGEATTACK",
-      "SKILL_SMOKEFLEE"
+      "SKILL_SMOKEFLEE",
+      "SKILL_CF_BLADEDANCER_FLOWING_STEP"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -202,7 +208,8 @@
     "LocKey": "CF_EOR_CHRONOMANCER",
     "Passives": [
       "SKILL_EAGER",
-      "SKILL_ENERGYBOOST"
+      "SKILL_ENERGYBOOST",
+      "SKILL_CF_CHRONOMANCER_TIME_SLIP"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -241,7 +248,9 @@
     "LocKey": "CF_EOR_CORSAIR",
     "Passives": [
       "SKILL_ELITEAMBUSH",
-      "SKILL_BOUNTY"
+      "SKILL_BOUNTY",
+      "SKILL_CF_CORSAIR_BOARDING_ATK",
+      "SKILL_CF_CORSAIR_BOARDING_CTRL"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -281,7 +290,8 @@
     "LocKey": "CF_EOR_DRUID",
     "Passives": [
       "SKILL_FINDHERB",
-      "SKILL_NAVIGATOR"
+      "SKILL_NAVIGATOR",
+      "SKILL_CF_DRUID_REPRISAL"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -360,7 +370,8 @@
     "LocKey": "CF_EOR_FORTUNEBORN",
     "Passives": [
       "SKILL_FORTUNE",
-      "SKILL_BOUNTY"
+      "SKILL_BOUNTY",
+      "SKILL_CF_FORTUNEBORN_LUCKY_BREAK"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -399,7 +410,9 @@
     "LocKey": "CF_EOR_GAMBLER",
     "Passives": [
       "SKILL_FORTUNE",
-      "SKILL_NICEDAY"
+      "SKILL_NICEDAY",
+      "SKILL_CF_GAMBLER_DOUBLE_WIN",
+      "SKILL_CF_GAMBLER_DOUBLE_LOSS"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -438,7 +451,9 @@
     "LocKey": "CF_EOR_GLADIATOR",
     "Passives": [
       "SKILL_PARRY",
-      "SKILL_STEADFAST"
+      "SKILL_STEADFAST",
+      "SKILL_CF_GLADIATOR_SHOWMANSHIP_CRIT",
+      "SKILL_CF_GLADIATOR_SHOWMANSHIP_KILL"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -478,7 +493,8 @@
     "LocKey": "CF_EOR_HEXBLADE",
     "Passives": [
       "SKILL_FATE",
-      "SKILL_ANNOYING"
+      "SKILL_ANNOYING",
+      "SKILL_CF_HEXBLADE_MALEDICTION"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -518,7 +534,8 @@
     "LocKey": "CF_EOR_JESTER",
     "Passives": [
       "SKILL_ENTERTAIN",
-      "SKILL_DISTRACT"
+      "SKILL_DISTRACT",
+      "SKILL_CF_JESTER_PUNCHLINE"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -555,7 +572,8 @@
     "LocKey": "CF_EOR_KNIGHT",
     "Passives": [
       "SKILL_KNIGHTSOATH",
-      "SKILL_PARRY"
+      "SKILL_PARRY",
+      "SKILL_CF_KNIGHT_CHIVALRY"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -595,7 +613,9 @@
     "LocKey": "CF_EOR_MARSHAL",
     "Passives": [
       "SKILL_JUSTICE",
-      "SKILL_TACTICS"
+      "SKILL_TACTICS",
+      "SKILL_CF_MARSHAL_RALLY_CRIT",
+      "SKILL_CF_MARSHAL_RALLY_KILL"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -635,7 +655,8 @@
     "LocKey": "CF_EOR_ORACLE",
     "Passives": [
       "SKILL_FATE",
-      "SKILL_FINDSCROLL"
+      "SKILL_FINDSCROLL",
+      "SKILL_CF_ORACLE_PREMONITION"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -715,7 +736,9 @@
     "LocKey": "CF_EOR_PEASANT",
     "Passives": [
       "SKILL_FINDSTUFF",
-      "SKILL_HARDWORK"
+      "SKILL_HARDWORK",
+      "SKILL_CF_PEASANT_WAIT_ATK",
+      "SKILL_CF_PEASANT_WAIT_STATUS"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -754,7 +777,8 @@
     "LocKey": "CF_EOR_PRIEST",
     "Passives": [
       "SKILL_PARTYHEAL",
-      "SKILL_REFOCUS"
+      "SKILL_REFOCUS",
+      "SKILL_CF_PRIEST_BENEDICTION"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -794,7 +818,8 @@
     "LocKey": "CF_EOR_RANCHER",
     "Passives": [
       "SKILL_HERD",
-      "SKILL_NAVIGATOR"
+      "SKILL_NAVIGATOR",
+      "SKILL_CF_RANCHER_ROUND_UP"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -833,7 +858,9 @@
     "LocKey": "CF_EOR_RANGER",
     "Passives": [
       "SKILL_CALLEDSHOT",
-      "SKILL_BOUNTY"
+      "SKILL_BOUNTY",
+      "SKILL_CF_RANGER_QUARRY_MARK",
+      "SKILL_CF_RANGER_QUARRY_BONUS"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -873,7 +900,9 @@
     "LocKey": "CF_EOR_RUNEMAGE",
     "Passives": [
       "SKILL_BLACKHOLE",
-      "SKILL_MEDIC"
+      "SKILL_MEDIC",
+      "SKILL_CF_RUNEMAGE_DETONATE",
+      "SKILL_CF_RUNEMAGE_MARK"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -912,7 +941,9 @@
     "LocKey": "CF_EOR_SCOUT",
     "Passives": [
       "SKILL_SURVEY",
-      "SKILL_SCOUT"
+      "SKILL_SCOUT",
+      "SKILL_CF_SCOUT_OPENING_ATK",
+      "SKILL_CF_SCOUT_OPENING_EVADE"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -952,7 +983,8 @@
     "LocKey": "CF_EOR_SENTINEL",
     "Passives": [
       "SKILL_REDIRECT",
-      "SKILL_STEADFAST"
+      "SKILL_STEADFAST",
+      "SKILL_CF_SENTINEL_BRACE"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -992,7 +1024,8 @@
     "LocKey": "CF_EOR_TEMPLAR",
     "Passives": [
       "SKILL_PARTYHEAL",
-      "SKILL_GUARD"
+      "SKILL_GUARD",
+      "SKILL_CF_TEMPLAR_ZEAL"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -1071,7 +1104,8 @@
     "LocKey": "CF_EOR_TRICKSHOT",
     "Passives": [
       "SKILL_CALLEDSHOT",
-      "SKILL_SCOUT"
+      "SKILL_SCOUT",
+      "SKILL_CF_TRICKSHOT_PINNING_SHOT"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -1110,7 +1144,8 @@
     "LocKey": "CF_EOR_WARDEN",
     "Passives": [
       "SKILL_SUPPORTRANGE",
-      "SKILL_TACTICS"
+      "SKILL_TACTICS",
+      "SKILL_CF_WARDEN_ROOTS"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -1150,7 +1185,9 @@
     "LocKey": "CF_EOR_WARRIOR",
     "Passives": [
       "SKILL_JUSTICE",
-      "SKILL_GUARD"
+      "SKILL_GUARD",
+      "SKILL_CF_WARRIOR_RAGE_BUILD",
+      "SKILL_CF_WARRIOR_RAGE_CONSUME"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -1190,7 +1227,8 @@
     "LocKey": "CF_EOR_WIZARD",
     "Passives": [
       "SKILL_BLACKHOLE",
-      "SKILL_REFOCUS"
+      "SKILL_REFOCUS",
+      "SKILL_CF_WIZARD_VERSATILITY"
     ],
     "Rarity": "COMMON",
     "Stats": {

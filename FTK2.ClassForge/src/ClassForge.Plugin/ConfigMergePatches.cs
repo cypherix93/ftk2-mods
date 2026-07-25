@@ -36,6 +36,17 @@ namespace ClassForge.Plugin
                 return;
             }
 
+            // SPEC.md §9.5 / SPEC-DELTA-v1.1 §5.3: a Block-policy parity mismatch turns EVERY feature off,
+            // including the content merge. Content already merged earlier in the session stays merged (it is
+            // in a Configs object we no longer own), but nothing further is added.
+            if (ParityBridge.Blocked)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    $"[ClassForge] {caller}: skipped — ClassForge is BLOCKED by a multiplayer parity mismatch " +
+                    "([Multiplayer] OnParityMismatch=Block). Restart with identical packs on every peer.");
+                return;
+            }
+
             try
             {
                 ClassForgePlugin.EnsurePackKnobsBound();
@@ -52,6 +63,15 @@ namespace ClassForge.Plugin
 
                 ClassForgePlugin.CurrentMergePlan = result.MergePlan;
                 ClassForgePlugin.CurrentDataHash = result.DataHash;
+
+                // Icon/portrait paths may have changed (or their PNGs been edited) — drop the texture cache
+                // so a hot-reload actually shows the new art.
+                AssetPatches.InvalidateCache();
+
+                // Rebuild the skill-recipe book from every enabled pack's skillrecipes.json. Full rebuild,
+                // never incremental, so a hot-reload cannot leave a stale recipe behind; this also drops the
+                // per-battle recipe runtime (budgets/cooldowns keyed to the old book).
+                RecipeEngineHost.LoadBook(result);
 
                 ClassForgePlugin.Log.LogInfo(
                     $"[ClassForge] {caller}: merged {result.EnabledOrderedPacks.Count} pack(s) " +
