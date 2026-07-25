@@ -1,0 +1,502 @@
+{
+  "SMN_FOL_GHOST_GENERIC_00": {
+    "EorId": "COMPANION_PLUS_GHOST_GENERIC_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOST_GENERIC_01": {
+    "EorId": "COMPANION_PLUS_GHOST_GENERIC_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOST_GENERIC_02": {
+    "EorId": "COMPANION_PLUS_GHOST_GENERIC_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOST_GENERIC_03": {
+    "EorId": "COMPANION_PLUS_GHOST_GENERIC_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOST_GENERIC_04": {
+    "EorId": "COMPANION_PLUS_GHOST_GENERIC_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOST_GENERIC_05": {
+    "EorId": "COMPANION_PLUS_GHOST_GENERIC_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOST_GENERIC_06": {
+    "EorId": "COMPANION_PLUS_GHOST_GENERIC_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOST_GENERIC_07": {
+    "EorId": "COMPANION_PLUS_GHOST_GENERIC_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOUL_GENERIC_00": {
+    "EorId": "COMPANION_PLUS_GHOUL_GENERIC_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOUL_GENERIC_01": {
+    "EorId": "COMPANION_PLUS_GHOUL_GENERIC_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOUL_GENERIC_02": {
+    "EorId": "COMPANION_PLUS_GHOUL_GENERIC_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOUL_GENERIC_03": {
+    "EorId": "COMPANION_PLUS_GHOUL_GENERIC_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOUL_GENERIC_04": {
+    "EorId": "COMPANION_PLUS_GHOUL_GENERIC_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOUL_GENERIC_05": {
+    "EorId": "COMPANION_PLUS_GHOUL_GENERIC_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOUL_GENERIC_06": {
+    "EorId": "COMPANION_PLUS_GHOUL_GENERIC_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_GHOUL_GENERIC_07": {
+    "EorId": "COMPANION_PLUS_GHOUL_GENERIC_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_00": {
+    "EorId": "COMPANION_PLUS_MINDBENDER_GENERIC_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_01": {
+    "EorId": "COMPANION_PLUS_MINDBENDER_GENERIC_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_02": {
+    "EorId": "COMPANION_PLUS_MINDBENDER_GENERIC_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_03": {
+    "EorId": "COMPANION_PLUS_MINDBENDER_GENERIC_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_04": {
+    "EorId": "COMPANION_PLUS_MINDBENDER_GENERIC_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_05": {
+    "EorId": "COMPANION_PLUS_MINDBENDER_GENERIC_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_06": {
+    "EorId": "COMPANION_PLUS_MINDBENDER_GENERIC_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_07": {
+    "EorId": "COMPANION_PLUS_MINDBENDER_GENERIC_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_00": {
+    "EorId": "COMPANION_PLUS_MINDSLAYER_ELITE_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_01": {
+    "EorId": "COMPANION_PLUS_MINDSLAYER_ELITE_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_02": {
+    "EorId": "COMPANION_PLUS_MINDSLAYER_ELITE_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_03": {
+    "EorId": "COMPANION_PLUS_MINDSLAYER_ELITE_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_04": {
+    "EorId": "COMPANION_PLUS_MINDSLAYER_ELITE_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_05": {
+    "EorId": "COMPANION_PLUS_MINDSLAYER_ELITE_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_06": {
+    "EorId": "COMPANION_PLUS_MINDSLAYER_ELITE_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_07": {
+    "EorId": "COMPANION_PLUS_MINDSLAYER_ELITE_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PIXIE_GENERIC_00": {
+    "EorId": "COMPANION_PLUS_PIXIE_GENERIC_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PIXIE_GENERIC_01": {
+    "EorId": "COMPANION_PLUS_PIXIE_GENERIC_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PIXIE_GENERIC_02": {
+    "EorId": "COMPANION_PLUS_PIXIE_GENERIC_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PIXIE_GENERIC_03": {
+    "EorId": "COMPANION_PLUS_PIXIE_GENERIC_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PIXIE_GENERIC_04": {
+    "EorId": "COMPANION_PLUS_PIXIE_GENERIC_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PIXIE_GENERIC_05": {
+    "EorId": "COMPANION_PLUS_PIXIE_GENERIC_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PIXIE_GENERIC_06": {
+    "EorId": "COMPANION_PLUS_PIXIE_GENERIC_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PIXIE_GENERIC_07": {
+    "EorId": "COMPANION_PLUS_PIXIE_GENERIC_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_GENERIC_00": {
+    "EorId": "COMPANION_PLUS_PLANT_GENERIC_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_GENERIC_01": {
+    "EorId": "COMPANION_PLUS_PLANT_GENERIC_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_GENERIC_02": {
+    "EorId": "COMPANION_PLUS_PLANT_GENERIC_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_GENERIC_03": {
+    "EorId": "COMPANION_PLUS_PLANT_GENERIC_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_GENERIC_04": {
+    "EorId": "COMPANION_PLUS_PLANT_GENERIC_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_GENERIC_05": {
+    "EorId": "COMPANION_PLUS_PLANT_GENERIC_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_GENERIC_06": {
+    "EorId": "COMPANION_PLUS_PLANT_GENERIC_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_GENERIC_07": {
+    "EorId": "COMPANION_PLUS_PLANT_GENERIC_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_SWAMP_00": {
+    "EorId": "COMPANION_PLUS_PLANT_SWAMP_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_SWAMP_01": {
+    "EorId": "COMPANION_PLUS_PLANT_SWAMP_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_SWAMP_02": {
+    "EorId": "COMPANION_PLUS_PLANT_SWAMP_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_SWAMP_03": {
+    "EorId": "COMPANION_PLUS_PLANT_SWAMP_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_SWAMP_04": {
+    "EorId": "COMPANION_PLUS_PLANT_SWAMP_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_SWAMP_05": {
+    "EorId": "COMPANION_PLUS_PLANT_SWAMP_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_SWAMP_06": {
+    "EorId": "COMPANION_PLUS_PLANT_SWAMP_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_PLANT_SWAMP_07": {
+    "EorId": "COMPANION_PLUS_PLANT_SWAMP_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SHADOW_GENERIC_00": {
+    "EorId": "COMPANION_PLUS_SHADOW_GENERIC_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SHADOW_GENERIC_01": {
+    "EorId": "COMPANION_PLUS_SHADOW_GENERIC_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SHADOW_GENERIC_02": {
+    "EorId": "COMPANION_PLUS_SHADOW_GENERIC_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SHADOW_GENERIC_03": {
+    "EorId": "COMPANION_PLUS_SHADOW_GENERIC_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SHADOW_GENERIC_04": {
+    "EorId": "COMPANION_PLUS_SHADOW_GENERIC_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SHADOW_GENERIC_05": {
+    "EorId": "COMPANION_PLUS_SHADOW_GENERIC_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SHADOW_GENERIC_06": {
+    "EorId": "COMPANION_PLUS_SHADOW_GENERIC_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SHADOW_GENERIC_07": {
+    "EorId": "COMPANION_PLUS_SHADOW_GENERIC_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_00": {
+    "EorId": "COMPANION_PLUS_SKRAEVIN_CHAOS_MELEE_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_01": {
+    "EorId": "COMPANION_PLUS_SKRAEVIN_CHAOS_MELEE_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_02": {
+    "EorId": "COMPANION_PLUS_SKRAEVIN_CHAOS_MELEE_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_03": {
+    "EorId": "COMPANION_PLUS_SKRAEVIN_CHAOS_MELEE_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_04": {
+    "EorId": "COMPANION_PLUS_SKRAEVIN_CHAOS_MELEE_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_05": {
+    "EorId": "COMPANION_PLUS_SKRAEVIN_CHAOS_MELEE_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_06": {
+    "EorId": "COMPANION_PLUS_SKRAEVIN_CHAOS_MELEE_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_07": {
+    "EorId": "COMPANION_PLUS_SKRAEVIN_CHAOS_MELEE_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_00": {
+    "EorId": "COMPANION_PLUS_SPIRIT_GENERIC_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_01": {
+    "EorId": "COMPANION_PLUS_SPIRIT_GENERIC_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_02": {
+    "EorId": "COMPANION_PLUS_SPIRIT_GENERIC_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_03": {
+    "EorId": "COMPANION_PLUS_SPIRIT_GENERIC_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_04": {
+    "EorId": "COMPANION_PLUS_SPIRIT_GENERIC_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_05": {
+    "EorId": "COMPANION_PLUS_SPIRIT_GENERIC_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_06": {
+    "EorId": "COMPANION_PLUS_SPIRIT_GENERIC_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_07": {
+    "EorId": "COMPANION_PLUS_SPIRIT_GENERIC_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_CRAGS_00": {
+    "EorId": "COMPANION_PLUS_WOLF_CRAGS_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_CRAGS_01": {
+    "EorId": "COMPANION_PLUS_WOLF_CRAGS_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_CRAGS_02": {
+    "EorId": "COMPANION_PLUS_WOLF_CRAGS_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_CRAGS_03": {
+    "EorId": "COMPANION_PLUS_WOLF_CRAGS_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_CRAGS_04": {
+    "EorId": "COMPANION_PLUS_WOLF_CRAGS_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_CRAGS_05": {
+    "EorId": "COMPANION_PLUS_WOLF_CRAGS_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_CRAGS_06": {
+    "EorId": "COMPANION_PLUS_WOLF_CRAGS_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_CRAGS_07": {
+    "EorId": "COMPANION_PLUS_WOLF_CRAGS_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_FOREST_00": {
+    "EorId": "COMPANION_PLUS_WOLF_FOREST_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_FOREST_01": {
+    "EorId": "COMPANION_PLUS_WOLF_FOREST_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_FOREST_02": {
+    "EorId": "COMPANION_PLUS_WOLF_FOREST_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_FOREST_03": {
+    "EorId": "COMPANION_PLUS_WOLF_FOREST_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_FOREST_04": {
+    "EorId": "COMPANION_PLUS_WOLF_FOREST_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_FOREST_05": {
+    "EorId": "COMPANION_PLUS_WOLF_FOREST_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_FOREST_06": {
+    "EorId": "COMPANION_PLUS_WOLF_FOREST_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_FOREST_07": {
+    "EorId": "COMPANION_PLUS_WOLF_FOREST_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_GRASS_00": {
+    "EorId": "COMPANION_PLUS_WOLF_GRASS_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_GRASS_01": {
+    "EorId": "COMPANION_PLUS_WOLF_GRASS_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_GRASS_02": {
+    "EorId": "COMPANION_PLUS_WOLF_GRASS_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_FOL_WOLF_GRASS_03": {
+    "EorId": "COMPANION_PLUS_WOLF_GRASS_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  }
+}

@@ -1,0 +1,25 @@
+// TRAIT_STEADY_AIM (code half) — coverage matrix row §2.7 (PORT).
+// EOR: PerformAbility prefix, delegate-wraps the CRT getter for +10 on the first ranged
+// enemy-targeted ability per combat; budget lived in a process-global HashSet that was never
+// cleared on a new run (TM §6 hazard 3).
+// v1.1: ON_ABILITY_DECLARED (T2) + HOSTILE_ACTION (C2) + ABILITY_RANGED (C4)
+//       + Budget{ONCE_PER_COMBAT} -> ROLL_STAT_BONUS{CRT, Flat 10} (E1).
+// The budget lives in the CombatKey-invalidated single-slot runtime (§6) and cannot leak.
+{
+  "SKILL_CF_STEADY_AIM": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Steady Aim",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true },
+      { "Type": "ABILITY_RANGED", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "CRT", "Flat": 10 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "PROC" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Steady Aim"
+  }
+}

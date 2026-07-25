@@ -1,0 +1,19 @@
+{
+  "SMN_FOL_GOOD_ONE": {
+    "Type": "COMPANION",
+    "ConfigName": "COMPANION_GOOD_GENERIC_00",
+    "ClassName": "SMN_FOL_GOOD_ONE",
+    "ContractRounds": 0,
+    "MinTier": 0,
+    "MaxTier": 3,
+    "Rarity": "COMMON",
+    "ContractPrice": "VERY_LOW",
+    "Behaviour": "DEFAULT",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "Tags": ["COMPANION"],
+    "CaravanStatValue": 0,
+    "Expansion": "BASE"
+  }
+}

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Summoner.Core.Tests</RootNamespace>
+    <Nullable>disable</Nullable>
+    <!-- Plain console-runner, not an xunit project: no NuGet packages (build rule: BCL only).
+         System.Text.Json is part of the net8.0 shared framework, so the test IJsonCodec below
+         needs no package reference. References ONLY Summoner.Core. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Summoner.Core\Summoner.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="fixtures\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

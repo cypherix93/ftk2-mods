@@ -1,0 +1,58 @@
+{
+  "EOR_STARTER_TESTMAGE_BASIC_WAND": {
+    "ConsumableType": "NONE",
+    "Value": 5,
+    "MinTier": -1,
+    "MaxTier": -1,
+    "Class": "WAND",
+    "Rarity": "COMMON",
+    "Material": "WOOD",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": {"ATK": 6},
+      "MaxCharges": -1
+    },
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_BASIC_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "INT", "Rolls": 2, "Ammo": 0}
+      },
+      "AbilityBag": ["MAGIC_BASIC_ATTACK"],
+      "AbilityFillBag": ["MAGIC_BASIC_ATTACK"],
+      "ShuffleAbilityBag": false
+    },
+    "Tags": ["EOR_CUSTOM", "EOR_STARTER_WEAPON", "INT", "COMMON", "WEAPON", "HAND_EQUIP",
+             "WEAPON_ONE_HAND", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET"],
+    "Expansion": "BASE"
+  },
+  "EOR_STARTER_ORACLE_TEST_ORB": {
+    "ConsumableType": "NONE",
+    "Value": 5,
+    "MinTier": -1,
+    "MaxTier": -1,
+    "Class": "ORB",
+    "Rarity": "COMMON",
+    "Material": "WOOD",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": {"ATK": 5},
+      "MaxCharges": -1
+    },
+    "Interactable": {
+      "Abilities": {
+        "ORB_BASIC_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "INT", "Rolls": 1, "Ammo": 0}
+      },
+      "AbilityBag": ["ORB_BASIC_ATTACK"],
+      "AbilityFillBag": ["ORB_BASIC_ATTACK"],
+      "ShuffleAbilityBag": false
+    },
+    "Tags": ["EOR_CUSTOM", "EOR_STARTER_WEAPON", "INT", "COMMON", "WEAPON", "HAND_EQUIP",
+             "WEAPON_ONE_HAND", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET"],
+    "Expansion": "BASE"
+  }
+}

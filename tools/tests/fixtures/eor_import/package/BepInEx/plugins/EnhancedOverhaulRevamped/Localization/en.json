@@ -1,0 +1,19 @@
+{
+  "EORR_ASH_TEST_KNIFE": "Ash Test Knife",
+  "EORR_ASH_TEST_KNIFE_DESCRIPTION": "A worn practice blade.",
+  "EORR_NIGHT_SHADOW_BLADE": "Night Shadow Blade",
+  "EORR_NIGHT_SHADOW_BLADE_DESCRIPTION": "Cuts a shadow across the field.",
+  "EORR_OLD_TOWER_SHIELD": "Old Tower Shield",
+  "EORR_OLD_TOWER_SHIELD_DESCRIPTION": "A dented remnant of a forgotten keep.",
+  "EORR_RUSTY_OLD_SWORD": "Rusty Old Sword",
+  "EORR_RUSTY_OLD_SWORD_DESCRIPTION": "It has seen better decades.",
+  "EOR_STARTER_TESTMAGE_BASIC_WAND": "Testmage's Basic Wand",
+  "EOR_STARTER_TESTMAGE_BASIC_WAND_DESCRIPTION": "A starting focus for the fledgling arcanist.",
+  "EOR_STARTER_ORACLE_TEST_ORB": "Oracle's Test Orb",
+  "EOR_STARTER_ORACLE_TEST_ORB_DESCRIPTION": "Cloudy glass that hums faintly.",
+  "MERC_PLUS_TEST_BANDIT_HEAVY_00": "Test Bandit",
+  "EOR_TESTMAGE": "Testmage",
+  "EOR_TESTMAGE_DESCRIPTION": "A synthetic test class with a power-crept LCK stat.",
+  "EOR_TESTKNIGHT": "Testknight",
+  "EOR_TESTKNIGHT_DESCRIPTION": "A synthetic test class within the vanilla stat envelope."
+}

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <RootNamespace>ClassForge.Recipes.Tests</RootNamespace>
+    <AssemblyName>ClassForge.Recipes.Tests</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <!-- Console test runner. No xunit/nunit, no NuGet, no game refs — mirrors WarBrain's
+         sandbox-console verification harness (docs/research/build-template-notes.md §5). -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClassForge.Recipes\ClassForge.Recipes.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

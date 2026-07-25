@@ -1,0 +1,1902 @@
+{
+  "SMN_MRC_BANDIT_HEAVY_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_HEAVY_00",
+    "ConfigName": "BANDIT_HEAVY_00",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_HEAVY_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_HEAVY_01",
+    "ConfigName": "BANDIT_HEAVY_01",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_HEAVY_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_HEAVY_02",
+    "ConfigName": "BANDIT_HEAVY_02",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_HEAVY_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_HEAVY_03",
+    "ConfigName": "BANDIT_HEAVY_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_HEAVY_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_HEAVY_04",
+    "ConfigName": "BANDIT_HEAVY_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_HEAVY_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_HEAVY_05",
+    "ConfigName": "BANDIT_HEAVY_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_HEAVY_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_HEAVY_06",
+    "ConfigName": "BANDIT_HEAVY_06",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_HEAVY_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_HEAVY_07",
+    "ConfigName": "BANDIT_HEAVY_07",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_MELEE_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_MELEE_00",
+    "ConfigName": "BANDIT_MELEE_00",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_MELEE_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_MELEE_01",
+    "ConfigName": "BANDIT_MELEE_01",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_MELEE_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_MELEE_02",
+    "ConfigName": "BANDIT_MELEE_02",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_MELEE_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_MELEE_03",
+    "ConfigName": "BANDIT_MELEE_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_MELEE_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_MELEE_04",
+    "ConfigName": "BANDIT_MELEE_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_MELEE_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_MELEE_05",
+    "ConfigName": "BANDIT_MELEE_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_MELEE_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_MELEE_06",
+    "ConfigName": "BANDIT_MELEE_06",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_MELEE_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_MELEE_07",
+    "ConfigName": "BANDIT_MELEE_07",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_RANGED_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_RANGED_00",
+    "ConfigName": "BANDIT_RANGED_00",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_RANGED_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_RANGED_01",
+    "ConfigName": "BANDIT_RANGED_01",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_RANGED_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_RANGED_02",
+    "ConfigName": "BANDIT_RANGED_02",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_RANGED_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_RANGED_03",
+    "ConfigName": "BANDIT_RANGED_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_RANGED_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_RANGED_04",
+    "ConfigName": "BANDIT_RANGED_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_RANGED_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_RANGED_05",
+    "ConfigName": "BANDIT_RANGED_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_RANGED_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_RANGED_06",
+    "ConfigName": "BANDIT_RANGED_06",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_BANDIT_RANGED_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_BANDIT_RANGED_07",
+    "ConfigName": "BANDIT_RANGED_07",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_00",
+    "ConfigName": "CULTIST_HEAVY_00",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_01",
+    "ConfigName": "CULTIST_HEAVY_01",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_02",
+    "ConfigName": "CULTIST_HEAVY_02",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_03",
+    "ConfigName": "CULTIST_HEAVY_03",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_04",
+    "ConfigName": "CULTIST_HEAVY_04",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_05",
+    "ConfigName": "CULTIST_HEAVY_05",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_06",
+    "ConfigName": "CULTIST_HEAVY_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_07",
+    "ConfigName": "CULTIST_HEAVY_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_ELITE_00",
+    "ConfigName": "CULTIST_HEAVY_ELITE_00",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_ELITE_01",
+    "ConfigName": "CULTIST_HEAVY_ELITE_01",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_ELITE_02",
+    "ConfigName": "CULTIST_HEAVY_ELITE_02",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_ELITE_03",
+    "ConfigName": "CULTIST_HEAVY_ELITE_03",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_ELITE_04",
+    "ConfigName": "CULTIST_HEAVY_ELITE_04",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_ELITE_05",
+    "ConfigName": "CULTIST_HEAVY_ELITE_05",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_ELITE_06",
+    "ConfigName": "CULTIST_HEAVY_ELITE_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_HEAVY_ELITE_07",
+    "ConfigName": "CULTIST_HEAVY_ELITE_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_00",
+    "ConfigName": "CULTIST_MAGIC_00",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_01",
+    "ConfigName": "CULTIST_MAGIC_01",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_02",
+    "ConfigName": "CULTIST_MAGIC_02",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_03",
+    "ConfigName": "CULTIST_MAGIC_03",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_04",
+    "ConfigName": "CULTIST_MAGIC_04",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_05",
+    "ConfigName": "CULTIST_MAGIC_05",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_06",
+    "ConfigName": "CULTIST_MAGIC_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_07",
+    "ConfigName": "CULTIST_MAGIC_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_ELITE_00",
+    "ConfigName": "CULTIST_MAGIC_ELITE_00",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_ELITE_01",
+    "ConfigName": "CULTIST_MAGIC_ELITE_01",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_ELITE_02",
+    "ConfigName": "CULTIST_MAGIC_ELITE_02",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_ELITE_03",
+    "ConfigName": "CULTIST_MAGIC_ELITE_03",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_ELITE_04",
+    "ConfigName": "CULTIST_MAGIC_ELITE_04",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_ELITE_05",
+    "ConfigName": "CULTIST_MAGIC_ELITE_05",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_ELITE_06",
+    "ConfigName": "CULTIST_MAGIC_ELITE_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MAGIC_ELITE_07",
+    "ConfigName": "CULTIST_MAGIC_ELITE_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_00",
+    "ConfigName": "CULTIST_MELEE_00",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_01",
+    "ConfigName": "CULTIST_MELEE_01",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_02",
+    "ConfigName": "CULTIST_MELEE_02",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_03",
+    "ConfigName": "CULTIST_MELEE_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_04",
+    "ConfigName": "CULTIST_MELEE_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_05",
+    "ConfigName": "CULTIST_MELEE_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_06",
+    "ConfigName": "CULTIST_MELEE_06",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_07",
+    "ConfigName": "CULTIST_MELEE_07",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_ELITE_00",
+    "ConfigName": "CULTIST_MELEE_ELITE_00",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_ELITE_01",
+    "ConfigName": "CULTIST_MELEE_ELITE_01",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_ELITE_02",
+    "ConfigName": "CULTIST_MELEE_ELITE_02",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_ELITE_03",
+    "ConfigName": "CULTIST_MELEE_ELITE_03",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_ELITE_04",
+    "ConfigName": "CULTIST_MELEE_ELITE_04",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_ELITE_05",
+    "ConfigName": "CULTIST_MELEE_ELITE_05",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_ELITE_06",
+    "ConfigName": "CULTIST_MELEE_ELITE_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_CULTIST_MELEE_ELITE_07",
+    "ConfigName": "CULTIST_MELEE_ELITE_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_ALCHEMIST_00",
+    "ConfigName": "DESERT_BANDIT_ALCHEMIST_00",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_ALCHEMIST_01",
+    "ConfigName": "DESERT_BANDIT_ALCHEMIST_01",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_ALCHEMIST_02",
+    "ConfigName": "DESERT_BANDIT_ALCHEMIST_02",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_ALCHEMIST_03",
+    "ConfigName": "DESERT_BANDIT_ALCHEMIST_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_ALCHEMIST_04",
+    "ConfigName": "DESERT_BANDIT_ALCHEMIST_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_ALCHEMIST_05",
+    "ConfigName": "DESERT_BANDIT_ALCHEMIST_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_ALCHEMIST_06",
+    "ConfigName": "DESERT_BANDIT_ALCHEMIST_06",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_ALCHEMIST_07",
+    "ConfigName": "DESERT_BANDIT_ALCHEMIST_07",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_MELEE_00",
+    "ConfigName": "DESERT_BANDIT_MELEE_00",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_MELEE_01",
+    "ConfigName": "DESERT_BANDIT_MELEE_01",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_MELEE_02",
+    "ConfigName": "DESERT_BANDIT_MELEE_02",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_MELEE_03",
+    "ConfigName": "DESERT_BANDIT_MELEE_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_MELEE_04",
+    "ConfigName": "DESERT_BANDIT_MELEE_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_MELEE_05",
+    "ConfigName": "DESERT_BANDIT_MELEE_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_MELEE_06",
+    "ConfigName": "DESERT_BANDIT_MELEE_06",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_MELEE_07",
+    "ConfigName": "DESERT_BANDIT_MELEE_07",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_RANGED_00",
+    "ConfigName": "DESERT_BANDIT_RANGED_00",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_RANGED_01",
+    "ConfigName": "DESERT_BANDIT_RANGED_01",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_RANGED_02",
+    "ConfigName": "DESERT_BANDIT_RANGED_02",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_RANGED_03",
+    "ConfigName": "DESERT_BANDIT_RANGED_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_04": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_RANGED_04",
+    "ConfigName": "DESERT_BANDIT_RANGED_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_05": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_RANGED_05",
+    "ConfigName": "DESERT_BANDIT_RANGED_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_06": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_RANGED_06",
+    "ConfigName": "DESERT_BANDIT_RANGED_06",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_07": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_DESERT_BANDIT_RANGED_07",
+    "ConfigName": "DESERT_BANDIT_RANGED_07",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_EVILBARD_MUSIC_00": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_EVILBARD_MUSIC_00",
+    "ConfigName": "EVILBARD_MUSIC_00",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_EVILBARD_MUSIC_01": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_EVILBARD_MUSIC_01",
+    "ConfigName": "EVILBARD_MUSIC_01",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_EVILBARD_MUSIC_02": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_EVILBARD_MUSIC_02",
+    "ConfigName": "EVILBARD_MUSIC_02",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  },
+  "SMN_MRC_EVILBARD_MUSIC_03": {
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_MRC_EVILBARD_MUSIC_03",
+    "ConfigName": "EVILBARD_MUSIC_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 999,
+    "Expansion": "BASE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "Tags": [
+      "MERCENARY"
+    ],
+    "Type": "MERCENARY"
+  }
+}

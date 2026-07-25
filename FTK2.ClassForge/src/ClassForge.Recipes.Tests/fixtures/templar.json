@@ -1,0 +1,21 @@
+// TEMPLAR (Zeal) — behavior matrix Table 1 TEMPLAR (L6130-6132).
+// EOR: no roll-tier gate; ATK bonus = min(20, harmfulStatusCount * 5)% on the current roll only.
+// v1.1: ON_ABILITY_DECLARED (T2) + HOSTILE_ACTION (C2) -> ROLL_STAT_BONUS with the
+//       PercentFrom "STATUS_COUNT:HARMFUL" dynamic value source, PerUnit 5, Max 20 — verbatim
+//       the worked example in SPEC-DELTA-v1.1 §4.1.
+{
+  "SKILL_CF_TEMPLAR_ZEAL": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Zeal",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "PercentFrom": "STATUS_COUNT:HARMFUL", "PerUnit": 5, "Max": 20 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Zeal"
+  }
+}

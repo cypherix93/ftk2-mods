@@ -1,0 +1,25 @@
+// ORACLE (Premonition) — behavior matrix Table 1 ORACLE (L6439-6450).
+// EOR: opponent-reaction pass; the FIRST perfect action by ANY opponent this combat;
+// no target/hostility filter -> ATTACKDOWN on that opponent + EVADEUP on every living ally.
+// v1.1: ON_ENEMY_ABILITY_RESOLVED (T7) + ROLL_TIER{EQ, PERFECT} (C1)
+//       + Budget{ONCE_PER_COMBAT} -> ADD_STATUS{TRIGGER_SOURCE,...} + ADD_STATUS{ALLY_ALL,...}.
+// T7 iterates owners in ascending ordinal Entity.Guid (§2 T7 determinism note); ProcChance 100
+// takes zero draws, which is why the delta calls this the safe shape for a multi-owner trigger.
+{
+  "SKILL_CF_ORACLE_PREMONITION": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Premonition",
+    "Trigger": "ON_ENEMY_ABILITY_RESOLVED",
+    "Conditions": [
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_ATTACKDOWN_00", "Duration": 1 },
+      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_EVADEUP_00", "Duration": 1 }
+    ],
+    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "PROC" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Premonition"
+  }
+}

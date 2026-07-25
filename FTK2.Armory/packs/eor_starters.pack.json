@@ -1,0 +1,2299 @@
+{
+  "Items": [
+    {
+      "Id": "ARM_EOR_STARTER_ARCANIST_PRISM_WAND",
+      "Loc": {
+        "Description": "A cracked student wand that splits simple magic into a faint splash.",
+        "Name": "Prism Wand"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_ARCANIST_PRISM_WAND",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "WAND",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_SPLASH_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_BASIC_ATTACK",
+            "MAGIC_SPLASH_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "MAGIC_BASIC_ATTACK",
+            "MAGIC_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "WOOD",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "ORB_MINDBENDER_LIGHT_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_ASSASSIN_QUIET_FANG",
+      "Loc": {
+        "Description": "A small blade made for quick openings and dirty poison cuts.",
+        "Name": "Quiet Fang"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_ASSASSIN_QUIET_FANG",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "DAGGER",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "KNIFE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            },
+            "KNIFE_POISON_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.7,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_POISON_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "KNIFE_BASIC_ATTACK",
+            "KNIFE_POISON_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BLADE_BAELYNSEMBRACE_TINY_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_BARD_TRAVELERS_LUTE",
+      "Loc": {
+        "Description": "A road-worn lute for simple songs and steadying party rhythms.",
+        "Name": "Traveleru0027s Lute"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_BARD_TRAVELERS_LUTE",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "LUTE_2H",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "MUSIC_BASIC_SPLASH_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.85,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "MUSIC_RESISTANCEUP_SPLASH_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [
+            "MUSIC_BASIC_SPLASH_ATTACK",
+            "MUSIC_RESISTANCEUP_SPLASH_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "MUSIC_BASIC_SPLASH_ATTACK",
+            "MUSIC_RESISTANCEUP_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "WOOD",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "LUTE_BONE_HEAVY_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_BEASTMASTER_TAMERS_BOW",
+      "Loc": {
+        "Description": "A practical hunting bow with barbed arrows for keeping prey marked.",
+        "Name": "Tameru0027s Bow"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_BEASTMASTER_TAMERS_BOW",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "HANDBOW",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 7
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BOW_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            },
+            "BOW_BLEED_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.75,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "BOW_BASIC_ATTACK",
+            "BOW_BLEED_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "BOW_BASIC_ATTACK",
+            "BOW_BLEED_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "WOOD",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "HANDBOW_FORTUNETELLER_BASIC_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_BLADEDANCER_RIBBON_SABRE",
+      "Loc": {
+        "Description": "A light sabre balanced for fast cuts and evasive footwork.",
+        "Name": "Ribbon Sabre"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_BLADEDANCER_RIBBON_SABRE",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "BLADE",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BLADE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "SPD"
+            },
+            "BLADE_EVADE_UP_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "BLADE_BASIC_ATTACK",
+            "BLADE_EVADE_UP_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "BLADE_BASIC_ATTACK",
+            "BLADE_EVADE_UP_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BLADE_CULTIST_MEDIUM_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_CHRONOMANCER_HOURGLASS_DIRK",
+      "Loc": {
+        "Description": "A quick dagger used to steal tempo rather than win by force.",
+        "Name": "Hourglass Dirk"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_CHRONOMANCER_HOURGLASS_DIRK",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "DAGGER",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 5
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BLUNT_DEBUFF_SPEED_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "SPD"
+            },
+            "KNIFE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KNIFE_BASIC_ATTACK",
+            "BLUNT_DEBUFF_SPEED_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "KNIFE_BASIC_ATTACK",
+            "BLUNT_DEBUFF_SPEED_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BLADE_BAELYNSEMBRACE_TINY_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_CORSAIR_SALTWORN_PISTOL",
+      "Loc": {
+        "Description": "A battered pistol fit for close shots and opportunistic pierces.",
+        "Name": "Saltworn Pistol"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_CORSAIR_SALTWORN_PISTOL",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "GUN",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 7
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "GUN_LIGHT_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            },
+            "GUN_LIGHT_PIERCE_ATTACK": {
+              "ACC": -5,
+              "Ammo": 1,
+              "MaxValue": 0.8,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "GUN_LIGHT_BASIC_ATTACK",
+            "GUN_LIGHT_PIERCE_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "GUN_LIGHT_BASIC_ATTACK",
+            "GUN_LIGHT_PIERCE_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "GUN_GOLDEN_TINY_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_DRUID_GROVE_SLING",
+      "Loc": {
+        "Description": "A simple wilds weapon that batters targets and weakens their footing.",
+        "Name": "Grove Sling"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_DRUID_GROVE_SLING",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "BOOMERANG",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BOOMERANG_ATTACKDOWN_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.55,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            },
+            "BOOMERANG_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "BOOMERANG_BASIC_ATTACK",
+            "BOOMERANG_ATTACKDOWN_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "BOOMERANG_BASIC_ATTACK",
+            "BOOMERANG_ATTACKDOWN_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BOOMERANG_BOGLING_MEDIUM_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_DUELIST_PRACTICE_RAPIER",
+      "Loc": {
+        "Description": "A blunted practice rapier that still rewards clean timing.",
+        "Name": "Practice Rapier"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_DUELIST_PRACTICE_RAPIER",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "RAPIER",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "RAPIER_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "SPD"
+            },
+            "RAPIER_BASIC_PIERCE_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.8,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "RAPIER_BASIC_ATTACK",
+            "RAPIER_BASIC_PIERCE_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "RAPIER_BASIC_ATTACK",
+            "RAPIER_BASIC_PIERCE_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "RAPIER_BEEKEEPER_BASIC_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_FORTUNEBORN_LUCKY_NAIL",
+      "Loc": {
+        "Description": "A dubious lucky charm that fires when fortune feels generous.",
+        "Name": "Lucky Nail"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_FORTUNEBORN_LUCKY_NAIL",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "GUN",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 5
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "GUN_BAP_MELEE_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "LCK"
+            },
+            "GUN_CHECKER_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 0.5,
+              "MinValue": 0,
+              "Rolls": 4,
+              "Stat": "LCK"
+            }
+          },
+          "AbilityBag": [
+            "GUN_BAP_MELEE_ATTACK",
+            "GUN_CHECKER_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "GUN_BAP_MELEE_ATTACK",
+            "GUN_CHECKER_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "GUN_GOLDEN_TINY_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_GAMBLER_LOADED_DICE",
+      "Loc": {
+        "Description": "A rigged table piece with uneven but talent-driven payoffs.",
+        "Name": "Loaded Dice"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_GAMBLER_LOADED_DICE",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "LUTE_2H",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "MUSIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "MUSIC_HEAVY_ATTACK": {
+              "ACC": -15,
+              "Ammo": 0,
+              "MaxValue": 1.25,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [
+            "MUSIC_BASIC_ATTACK",
+            "MUSIC_HEAVY_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "MUSIC_BASIC_ATTACK",
+            "MUSIC_HEAVY_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "WOOD",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "LUTE_BONE_HEAVY_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_GLADIATOR_ARENA_MAUL",
+      "Loc": {
+        "Description": "A chipped arena hammer made for blunt force and crude sweeping blows.",
+        "Name": "Arena Maul"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_GLADIATOR_ARENA_MAUL",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "BLUNT",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 7
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BLUNT_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "STR"
+            },
+            "BLUNT_LEFT_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.65,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_LEFT_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_LEFT_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BLUNT_BEASTMAN_MEDIUM_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_HEXBLADE_DULL_HEXSABER",
+      "Loc": {
+        "Description": "A tarnished blade that can cut flesh or channel a weak hex.",
+        "Name": "Dull Hexsaber"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_HEXBLADE_DULL_HEXSABER",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "BLADE",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BLADE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "STR"
+            },
+            "BLADE_BASIC_MAGIC_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.7,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "BLADE_BASIC_ATTACK",
+            "BLADE_BASIC_MAGIC_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "BLADE_BASIC_ATTACK",
+            "BLADE_BASIC_MAGIC_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BLADE_CULTIST_MEDIUM_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_JESTER_MOCKING_MANDOLIN",
+      "Loc": {
+        "Description": "A cheap instrument that turns bad jokes into worse distractions.",
+        "Name": "Mocking Mandolin"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_JESTER_MOCKING_MANDOLIN",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "LUTE_2H",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "MUSIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            },
+            "MUSIC_CONFUSE_SPLASH_ATTACK": {
+              "ACC": -10,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 3,
+              "Stat": "TAL"
+            }
+          },
+          "AbilityBag": [
+            "MUSIC_BASIC_ATTACK",
+            "MUSIC_CONFUSE_SPLASH_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "MUSIC_BASIC_ATTACK",
+            "MUSIC_CONFUSE_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "WOOD",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "LUTE_BONE_HEAVY_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_KNIGHT_SQUIRES_SHIELDBLADE",
+      "Loc": {
+        "Description": "A training blade used with shield drills and defensive taunts.",
+        "Name": "Squireu0027s Shieldblade"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_KNIGHT_SQUIRES_SHIELDBLADE",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "BLADE",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BLADE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.9,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            },
+            "BLADE_PIERCE_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.6,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "BLADE_BASIC_ATTACK",
+            "BLADE_PIERCE_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "BLADE_BASIC_ATTACK",
+            "BLADE_PIERCE_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BLADE_CULTIST_MEDIUM_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_MARSHAL_MILITIA_HALBERD",
+      "Loc": {
+        "Description": "A drilled militia polearm for formation strikes and drawing attention.",
+        "Name": "Militia Halberd"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_MARSHAL_MILITIA_HALBERD",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "SPEAR",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 7
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "LANCE_TAUNT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "STR"
+            },
+            "POLEARM_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "POLEARM_BASIC_ATTACK",
+            "LANCE_TAUNT_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "POLEARM_BASIC_ATTACK",
+            "LANCE_TAUNT_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "POLEARM_BEASTMAN_LIGHT_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_ORACLE_CLOUDED_EYE_SLING",
+      "Loc": {
+        "Description": "A fortune-telleru0027s focus used to strike and cloud an enemyu0027s approach.",
+        "Name": "Clouded Eye Sling"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_ORACLE_CLOUDED_EYE_SLING",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "ORB",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BOW_DAZE_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.55,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            },
+            "HANDBOW_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "HANDBOW_BASIC_ATTACK",
+            "BOW_DAZE_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "HANDBOW_BASIC_ATTACK",
+            "BOW_DAZE_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "ORB_CRACKED_LIGHT_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_PALADIN_INITIATES_BULWARK",
+      "Loc": {
+        "Description": "A noviceu0027s mace weighted for protection before punishment.",
+        "Name": "Initiateu0027s Bulwark"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_PALADIN_INITIATES_BULWARK",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "BLUNT",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BLUNT_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.9,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            },
+            "BLUNT_RESISTANCE_UP_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_RESISTANCE_UP_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_RESISTANCE_UP_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BLUNT_BEASTMAN_MEDIUM_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_PEASANT_FARMHAND_PITCHFORK",
+      "Loc": {
+        "Description": "A farm tool turned defensive weapon by necessity.",
+        "Name": "Farmhand Pitchfork"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_PEASANT_FARMHAND_PITCHFORK",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "SPEAR",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 5
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "LANCE_TAUNT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            },
+            "POLEARM_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.85,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "POLEARM_BASIC_ATTACK",
+            "LANCE_TAUNT_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "POLEARM_BASIC_ATTACK",
+            "LANCE_TAUNT_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "POLEARM_BEASTMAN_LIGHT_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_PRIEST_CHAPLAINS_STAFF",
+      "Loc": {
+        "Description": "A modest staff for warding off foes and keeping allies upright.",
+        "Name": "Chaplainu0027s Staff"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_PRIEST_CHAPLAINS_STAFF",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "STAFF",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.9,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_HEAL_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_BASIC_ATTACK",
+            "MAGIC_HEAL_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "MAGIC_BASIC_ATTACK",
+            "MAGIC_HEAL_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "WOOD",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "STAFF_HAG_CURSE_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_RANCHER_CATTLE_WHIP",
+      "Loc": {
+        "Description": "A ranch tool that snaps targets into line or drags them off balance.",
+        "Name": "Cattle Whip"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_RANCHER_CATTLE_WHIP",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "WHIP",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "WHIP_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            },
+            "WHIP_PULL_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.55,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "WHIP_BASIC_ATTACK",
+            "WHIP_PULL_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "WHIP_BASIC_ATTACK",
+            "WHIP_PULL_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "WHIP_CHAIN_MEDIUM_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_RANGER_FIELD_BOW",
+      "Loc": {
+        "Description": "A dependable field bow for aimed shots and pressure fire.",
+        "Name": "Field Bow"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_RANGER_FIELD_BOW",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "HANDBOW",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 7
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BOW_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            },
+            "BOW_DAZE_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.7,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "BOW_BASIC_ATTACK",
+            "BOW_DAZE_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "BOW_BASIC_ATTACK",
+            "BOW_DAZE_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "WOOD",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "HANDBOW_FORTUNETELLER_BASIC_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_RUNEMAGE_CHALK_RUNE_STAFF",
+      "Loc": {
+        "Description": "A rune-marked staff for simple bolts and unstable focus work.",
+        "Name": "Chalk Rune Staff"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_RUNEMAGE_CHALK_RUNE_STAFF",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "STAFF",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_FOCUS_ADD_ATTACK_00": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_BASIC_ATTACK",
+            "MAGIC_FOCUS_ADD_ATTACK_00"
+          ],
+          "AbilityFillBag": [
+            "MAGIC_BASIC_ATTACK",
+            "MAGIC_FOCUS_ADD_ATTACK_00"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "CLOTH",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "STAFF_HAG_CURSE_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_SCOUT_TRAIL_KNIFE",
+      "Loc": {
+        "Description": "A light trail knife for fast stabs and quick evasive movement.",
+        "Name": "Trail Knife"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_SCOUT_TRAIL_KNIFE",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "BLADE",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BLADE_EVADE_UP_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "SPD"
+            },
+            "KNIFE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KNIFE_BASIC_ATTACK",
+            "BLADE_EVADE_UP_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "KNIFE_BASIC_ATTACK",
+            "BLADE_EVADE_UP_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BLADE_CULTIST_MEDIUM_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_SENTINEL_GUARD_SPEAR",
+      "Loc": {
+        "Description": "A watch spear used to hold ground and force enemies to engage.",
+        "Name": "Guard Spear"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_SENTINEL_GUARD_SPEAR",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "SPEAR",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "LANCE_TAUNT_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            },
+            "POLEARM_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.9,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "POLEARM_BASIC_ATTACK",
+            "LANCE_TAUNT_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "POLEARM_BASIC_ATTACK",
+            "LANCE_TAUNT_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "POLEARM_BEASTMAN_LIGHT_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_TEMPLAR_OATHBOUND_MACE",
+      "Loc": {
+        "Description": "A plain mace carried with defensive vows and warding rites.",
+        "Name": "Oathbound Mace"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_TEMPLAR_OATHBOUND_MACE",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "BLUNT",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "BLUNT_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.9,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            },
+            "BLUNT_RESISTANCE_UP_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_RESISTANCE_UP_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "BLUNT_BASIC_ATTACK",
+            "BLUNT_RESISTANCE_UP_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BLUNT_BEASTMAN_MEDIUM_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_THIEF_CUTPURSE_DAGGER",
+      "Loc": {
+        "Description": "A quick knife for stabbing first and stealing when the mark slips.",
+        "Name": "Cutpurse Dagger"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_THIEF_CUTPURSE_DAGGER",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "DAGGER",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "KNIFE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            },
+            "MELEE_STEAL_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0,
+              "MinValue": 0,
+              "Rolls": 1,
+              "Stat": "SPD"
+            }
+          },
+          "AbilityBag": [
+            "KNIFE_BASIC_ATTACK",
+            "MELEE_STEAL_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "KNIFE_BASIC_ATTACK",
+            "MELEE_STEAL_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "BLADE_BAELYNSEMBRACE_TINY_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_TRICKSHOT_BENT_PISTOL",
+      "Loc": {
+        "Description": "A crooked pistol that rewards careful aim more than raw power.",
+        "Name": "Bent Pistol"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_TRICKSHOT_BENT_PISTOL",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "GUN",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 7
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "GUN_LIGHT_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 1,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            },
+            "GUN_LIGHT_PIERCE_ATTACK": {
+              "ACC": -5,
+              "Ammo": 1,
+              "MaxValue": 0.8,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "AWR"
+            }
+          },
+          "AbilityBag": [
+            "GUN_LIGHT_BASIC_ATTACK",
+            "GUN_LIGHT_PIERCE_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "GUN_LIGHT_BASIC_ATTACK",
+            "GUN_LIGHT_PIERCE_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "GUN_GOLDEN_TINY_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_WARDEN_BRIAR_GUARD_SPEAR",
+      "Loc": {
+        "Description": "A thorn-wrapped guard spear for defensive pokes and controlling space.",
+        "Name": "Briar Guard Spear"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_WARDEN_BRIAR_GUARD_SPEAR",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "SPEAR",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "POLEARM_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 0.9,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            },
+            "POLEARM_EVADEDOWN_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "VIT"
+            }
+          },
+          "AbilityBag": [
+            "POLEARM_BASIC_ATTACK",
+            "POLEARM_EVADEDOWN_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "POLEARM_BASIC_ATTACK",
+            "POLEARM_EVADEDOWN_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "POLEARM_BEASTMAN_LIGHT_00"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_WARRIOR_CHIPPED_AXE",
+      "Loc": {
+        "Description": "A battered axe that still chops cleanly enough for a first fight.",
+        "Name": "Chipped Axe"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_WARRIOR_CHIPPED_AXE",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "AXE",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 7
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "AXE_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "STR"
+            },
+            "AXE_BLEED_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.7,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "STR"
+            }
+          },
+          "AbilityBag": [
+            "AXE_BASIC_ATTACK",
+            "AXE_BLEED_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "AXE_BASIC_ATTACK",
+            "AXE_BLEED_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "METAL",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "AXE_BANDIT_LIGHT_01"
+    },
+    {
+      "Id": "ARM_EOR_STARTER_WIZARD_APPRENTICE_STAFF",
+      "Loc": {
+        "Description": "A simple staff for basic bolts and weak splash magic.",
+        "Name": "Apprentice Staff"
+      },
+      "Provenance": {
+        "EorId": "EOR_STARTER_WIZARD_APPRENTICE_STAFF",
+        "PackageVersion": "0.7.0.60",
+        "Source": "eor-import"
+      },
+      "Thing": {
+        "Ammo": 0,
+        "Class": "STAFF",
+        "ConsumableType": "NONE",
+        "Equippable": {
+          "MaxCharges": -1,
+          "Slots": [
+            "MAIN_HAND"
+          ],
+          "Stats": {
+            "ATK": 6
+          }
+        },
+        "Expansion": "BASE",
+        "Hidden": false,
+        "Interactable": {
+          "Abilities": {
+            "MAGIC_BASIC_ATTACK": {
+              "ACC": 0,
+              "Ammo": 0,
+              "MaxValue": 1,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            },
+            "MAGIC_SPLASH_ATTACK": {
+              "ACC": -5,
+              "Ammo": 0,
+              "MaxValue": 0.45,
+              "MinValue": 0,
+              "Rolls": 2,
+              "Stat": "INT"
+            }
+          },
+          "AbilityBag": [
+            "MAGIC_BASIC_ATTACK",
+            "MAGIC_SPLASH_ATTACK"
+          ],
+          "AbilityFillBag": [
+            "MAGIC_BASIC_ATTACK",
+            "MAGIC_SPLASH_ATTACK"
+          ],
+          "ShuffleAbilityBag": false
+        },
+        "Material": "WOOD",
+        "MaxTier": -1,
+        "MinTier": -1,
+        "Rarity": "COMMON",
+        "Stacks": false,
+        "Tags": [
+          "ARM_STARTER_WEAPON",
+          "COMMON",
+          "WEAPON",
+          "HAND_EQUIP",
+          "WEAPON_ONE_HAND",
+          "DROPPABLE",
+          "TOWN_MARKET",
+          "DUNGEON_MARKET"
+        ],
+        "Value": 5
+      },
+      "VisualFallback": "STAFF_HAG_CURSE_00"
+    }
+  ],
+  "PackId": "ARM_EOR_STARTERS"
+}

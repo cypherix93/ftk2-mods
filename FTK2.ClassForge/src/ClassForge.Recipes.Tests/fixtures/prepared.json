@@ -1,0 +1,24 @@
+// TRAIT_PREPARED / OF_FOCUS — coverage matrix row §2.10 (PORT).
+// EOR: CombatHelper.SetInitiative postfix, +1 Focus at combat start if GetFocusMissing > 0.
+// v1.1: ON_COMBAT_START (T1) + FOCUS_CURRENT{LT,"MAX"} (C8) -> STAT_CHANGE{SELF, FOC, +1}.
+// No RNG at all: ProcChance 100 must take ZERO draws (§5.2 invariant 3).
+// EOR's ShouldDisablePreparedFocusForMultiplayer stub is deliberately NOT copied.
+{
+  "SKILL_CF_PREPARED": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Prepared",
+    "Enabled": true,
+    "Trigger": "ON_COMBAT_START",
+    "Conditions": [
+      { "Type": "FOCUS_CURRENT", "Comparator": "LT", "Value": "MAX" }
+    ],
+    "Effects": [
+      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValue": 1, "Blockable": false }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "Cooldown": 0,
+    "Priority": 0,
+    "VerboseLogTag": "Prepared"
+  }
+}

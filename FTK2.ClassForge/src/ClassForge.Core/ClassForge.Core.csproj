@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <RootNamespace>ClassForge.Core</RootNamespace>
+    <!-- Engine core is host-agnostic: no BepInEx, no Unity, no game refs, no NuGet packages.
+         JSON parsing is hand-rolled here (see Json/) because Core must build and run standalone
+         (e.g. from ClassForge.Core.Tests) without the game's System.Text.Json assembly. -->
+  </PropertyGroup>
+
+</Project>

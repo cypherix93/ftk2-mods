@@ -1,0 +1,20 @@
+// TRAIT_BATTLE_RHYTHM — coverage matrix row §2.13 (PORT).
+// EOR: ApplyStatChange postfix, Stat=="HP", origin/target opponents, target HP strictly
+// decreased vs the prefix capture -> STATUS_EVADEUP_00 on self.
+// v1.1: ON_DAMAGE_DEALT (T3) + HOSTILE_ACTION (C2) -> ADD_STATUS{SELF, STATUS_EVADEUP_00}.
+{
+  "SKILL_CF_BATTLE_RHYTHM": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Battle Rhythm",
+    "Trigger": "ON_DAMAGE_DEALT",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_EVADEUP_00" }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Battle Rhythm"
+  }
+}

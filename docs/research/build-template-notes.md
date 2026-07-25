@@ -1,10 +1,10 @@
 # Build template notes — reference assemblies + WarBrain project conventions
 
-*Written 2026-07-25. Status: **PARTIALLY BLOCKED** — see §0. Everything in §1–§5 that depends on
-the live game install is documented from the WarBrain `.csproj` files and from an actual
-`dotnet build` failure run against the (currently empty) game directory; it has **not** been
-verified end-to-end against real assemblies. Re-run §6 "Unblock checklist" once the game install
-finishes, then update this file.*
+*Written 2026-07-25. Status: **UNBLOCKED** — Steam download completed same day, §6 "Unblock
+checklist" run end-to-end against the real install. §2 and §4 below now hold real results (real
+DLL list, real build tails for all four plugin projects — WarBrain/DevKit/Summoner pass, ClassForge
+fails on a genuine source gap unrelated to refs). §0's narrative is left as-is (historical record
+of the blocked state); it is no longer current.*
 
 ## 0. Blocker: game install is not present on disk right now
 
@@ -66,34 +66,49 @@ in `Managed\FTK2.dll` after this install completes is the version to snapshot. (
 docs — `docs/research/game-code-reference.md`, `battle-ai-deep-dive.md` — were extracted
 2026-07-09/16 from a now-superseded install; expect drift.)
 
-## 2. What still needs copying into `tools\bin\refs\` (once the install completes)
+## 2. What still needs copying into `tools\bin\refs\` (RESULT — run 2026-07-25 against the completed install)
 
 Minimum set (confirmed load-bearing by WarBrain's csproj + build warnings):
 `FTK2.dll`, `UnityEngine.dll`, `UnityEngine.CoreModule.dll`, `System.Text.Json.dll`,
 `SerializedSortedDictionary.dll`, `BepInEx.dll`, `0Harmony.dll`.
 
-Task brief additionally asks to copy liberally for future ClassForge/Summoner/DevKit plugins,
-specifically UI Toolkit modules (the game uses UIElements/VisualElement) — e.g.
-`UnityEngine.UIElementsModule.dll`, `UnityEngine.UIElementsNativeModule.dll`,
-`UnityEngine.IMGUIModule.dll`, `UnityEngine.TextRenderingModule.dll`, plus any
-`netstandard.dll`/`mscorlib.dll` facades the Managed folder ships. **These names are typical
-Unity 2019+/2020+ module names, not verified against this game's actual Managed folder** — do
-not treat this list as final. The correct procedure once unblocked:
+**Important wrinkle found this run**: `BepInEx.dll`/`0Harmony.dll` do **not** exist anywhere under
+the game directory — this game install has no BepInEx layer installed into it at all (confirmed:
+`Test-Path "$GameDir\BepInEx\core"` → `False`). They were copied instead from the mod package
+(read-only, per task brief): `` D:\temp\mods\Release 29 0.7.0.60 2026-07-18T18-42Z H0bovQUbN\BepInEx\core ``
+(also grabbed `BepInEx.Harmony.dll` from there since it's referenced by name in some project
+conventions, even though no current `.csproj` HintPaths it). Version stamps: `0Harmony.dll` in that
+package is 204800 bytes, `BepInEx.dll` 128512 bytes — matches the BepInEx 5.4.23 expectation from §1
+(not independently re-verified via file version resource this session, just size sanity).
+
+The game's actual `Managed\` folder was inspected (`Get-ChildItem $managed -Filter *.dll`, 205
+files total). The UI Toolkit module naming guess in the previous version of this section was
+**close but not exact**: the game ships `UnityEngine.UIElementsModule.dll` but there is **no**
+`UnityEngine.UIElementsNativeModule.dll` (that name doesn't exist in this Unity version — don't
+copy it, it'll just no-op-skip). Confirmed present and copied: `UnityEngine.IMGUIModule.dll`,
+`UnityEngine.TextRenderingModule.dll`, `netstandard.dll`, `mscorlib.dll`, `Newtonsoft.Json.dll`
+(the game ships Newtonsoft alongside System.Text.Json — no plugin references it via HintPath today
+but it's cheap to snapshot for future engines).
+
+Real procedure run this session (BepInEx core from the mod package, not the game dir):
 
 ```powershell
 $managed = "E:\Games\Steam\steamapps\common\For The King II\For The King II_Data\Managed"
-$bepcore = "E:\Games\Steam\steamapps\common\For The King II\BepInEx\core"
-New-Item -ItemType Directory -Force "D:\src\mods\ftk2-mods\tools\bin\refs" | Out-Null
-# Minimum set used today:
-Copy-Item "$managed\FTK2.dll","$managed\UnityEngine.dll","$managed\UnityEngine.CoreModule.dll","$managed\System.Text.Json.dll","$managed\SerializedSortedDictionary.dll" "D:\src\mods\ftk2-mods\tools\bin\refs\"
-Copy-Item "$bepcore\BepInEx.dll","$bepcore\0Harmony.dll" "D:\src\mods\ftk2-mods\tools\bin\refs\"
-# Liberal set for future engines — copy every UnityEngine.*Module.dll + UI Toolkit + facades:
-Copy-Item "$managed\UnityEngine.*Module.dll" "D:\src\mods\ftk2-mods\tools\bin\refs\"
-Copy-Item "$managed\netstandard.dll" "D:\src\mods\ftk2-mods\tools\bin\refs\" -ErrorAction SilentlyContinue
-Copy-Item "$managed\Newtonsoft.Json.dll" "D:\src\mods\ftk2-mods\tools\bin\refs\" -ErrorAction SilentlyContinue
-# Then verify:
-Get-ChildItem "D:\src\mods\ftk2-mods\tools\bin\refs" | Measure-Object | Select Count
+$bepcore = "D:\temp\mods\Release 29 0.7.0.60 2026-07-18T18-42Z H0bovQUbN\BepInEx\core"
+$refs = "D:\src\mods\ftk2-mods\tools\bin\refs"
+New-Item -ItemType Directory -Force $refs | Out-Null
+Copy-Item "$managed\FTK2.dll","$managed\UnityEngine.dll","$managed\UnityEngine.CoreModule.dll","$managed\System.Text.Json.dll","$managed\SerializedSortedDictionary.dll" $refs -Force
+Copy-Item "$bepcore\BepInEx.dll","$bepcore\0Harmony.dll","$bepcore\BepInEx.Harmony.dll" $refs -Force
+Copy-Item "$managed\UnityEngine.*Module.dll" $refs -Force
+Copy-Item "$managed\UnityEngine.UI.dll" $refs -Force
+Copy-Item "$managed\netstandard.dll","$managed\mscorlib.dll","$managed\Newtonsoft.Json.dll","$managed\System.Core.dll","$managed\System.dll" $refs -Force -ErrorAction SilentlyContinue
 ```
+
+**Result: 80 files in `tools\bin\refs\`** (`Get-ChildItem ... | Measure-Object` → `Count: 80`),
+covering the minimum set for all 4 plugin projects plus every `UnityEngine.*Module.dll` (62 of
+them), `UnityEngine.UI.dll`, and the BCL/JSON facades above. Full listing not reproduced here
+(gitignored, rebuildable via the block above) — spot-checked sizes match the live `Managed\`
+folder exactly (e.g. `FTK2.dll` 6,572,544 bytes both places).
 
 `tools\bin\` is already gitignored (`tools/bin/` in root `.gitignore`, documented in
 `tools/README.md`'s "Machine-artifact contract": *"tools/bin/ — downloaded third-party binaries.
@@ -138,42 +153,112 @@ but a repo-root `Directory.Build.props` defining `FtkRefsDir` once would be the 
 if/when a second engine needs this — **not created here**, since the task scope is
 snapshot+documentation only and touching build config for other mods is out of scope.
 
-## 4. Build commands (exact, as run this session)
+## 4. Build commands (RESULT — real runs, 2026-07-25, against the completed install + `tools\bin\refs`)
 
 ```
-dotnet --version                                          # 10.0.109
-dotnet build FTK2.WarBrain/src/WarBrain.Core -c Release    # PASSED — no external refs
-dotnet build FTK2.WarBrain/src/WarBrain.Plugin -c Release  # FAILED today — game dir empty (see §0)
+dotnet --version   # 10.0.109
 ```
 
-`WarBrain.Core` build tail (real output, this session):
+**Mechanism used for the passing builds**: none of the four projects were built against the live
+game dir. All four resolved refs from the `tools\bin\refs` snapshot (§2), so future game updates
+don't reflow the build:
+
+- **WarBrain, DevKit** (both use `$(GameDir)` → `$(ManagedDir)`/`$(BepInExDir)`, no `FtkRefsDir`
+  knob in their `.csproj`): built with `-p:ManagedDir="D:\src\mods\ftk2-mods\tools\bin\refs"
+  -p:BepInExDir="D:\src\mods\ftk2-mods\tools\bin\refs"`. MSBuild global properties (`-p:`) override
+  the project's own unconditioned `<ManagedDir>`/`<BepInExDir>` assignments, so this works without
+  touching either `.csproj` and without needing a synthetic `<dir>\For The King II_Data\Managed\`
+  folder tree — `tools\bin\refs` is a flat folder and both properties can point at the same flat
+  folder since every `HintPath` is just `$(ManagedDir)\X.dll` / `$(BepInExDir)\Y.dll`.
+- **ClassForge**: same `$(GameDir)`-style csproj, same `-p:ManagedDir=...` / `-p:BepInExDir=...`
+  override — build reached the snapshot fine, then failed on an unrelated source issue (see below).
+- **Summoner**: its `.csproj` already defines `FtkRefsDir` defaulting to
+  `$(MSBuildThisFileDirectory)..\..\..\tools\bin\refs` (the §3 redirect pattern, pre-applied by
+  whoever wrote Summoner.Plugin.csproj) — built with a **plain** `dotnet build`, no `-p:` needed.
+
+Why not `-p:GameDir=<real game dir>` for all four: the real game dir has `Managed\` but has **no**
+`BepInEx\core\` (BepInEx isn't installed into this game install — see §2), so `GameDir` alone
+can't satisfy the BepInEx refs without also overriding `BepInExDir` to point elsewhere; overriding
+`ManagedDir`/`BepInExDir` directly and pointing both at the single `tools\bin\refs` snapshot was
+simpler than constructing a synthetic `GameDir` folder tree, and doubles as the "survives future
+game updates" snapshot the task asked for.
+
+### WarBrain.Plugin — PASS
 ```
-Restored D:\src\mods\ftk2-mods\FTK2.WarBrain\src\WarBrain.Core\WarBrain.Core.csproj (in 4.8 sec).
-WarBrain.Core -> D:\src\mods\ftk2-mods\FTK2.WarBrain\src\WarBrain.Core\bin\Release\netstandard2.0\WarBrain.Core.dll
+dotnet build FTK2.WarBrain/src/WarBrain.Plugin -c Release -p:ManagedDir="D:\src\mods\ftk2-mods\tools\bin\refs" -p:BepInExDir="D:\src\mods\ftk2-mods\tools\bin\refs"
+```
+```
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  WarBrain.Core -> D:\src\mods\ftk2-mods\FTK2.WarBrain\src\WarBrain.Core\bin\Release\netstandard2.0\WarBrain.Core.dll
+  WarBrain.Plugin -> D:\src\mods\ftk2-mods\FTK2.WarBrain\src\WarBrain.Plugin\bin\Release\net472\FTK2.WarBrain.dll
 
 Build succeeded.
     0 Warning(s)
     0 Error(s)
-Time Elapsed 00:00:07.04
+Time Elapsed 00:00:03.77
+```
+The 82 `CS0246` errors from the previous (blocked) run are gone — those were purely a symptom of
+the 7 unresolved HintPaths cascading into "game types don't exist," not a WarBrain code defect, as
+predicted in the prior version of this section.
+
+### DevKit.Plugin — PASS
+```
+dotnet build FTK2.DevKit/src/DevKit.Plugin -c Release -p:ManagedDir="D:\src\mods\ftk2-mods\tools\bin\refs" -p:BepInExDir="D:\src\mods\ftk2-mods\tools\bin\refs"
+```
+```
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  DevKit.Core -> D:\src\mods\ftk2-mods\FTK2.DevKit\src\DevKit.Core\bin\Release\netstandard2.0\ftk2mods.devkit.dll
+  DevKit.Plugin -> D:\src\mods\ftk2-mods\FTK2.DevKit\src\DevKit.Plugin\bin\Release\net472\FTK2.DevKit.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:01.02
 ```
 
-`WarBrain.Plugin` build tail (real output, this session — expected to pass once §0 unblocks and
-`-p:GameDir=...` or the live install resolves the 7 HintPaths):
+### Summoner.Plugin — PASS
 ```
-...GameStateAdapter.cs(304,41): error CS0246: The type or namespace name 'Entity' could not be found...
-...DamagePredictor.cs(27,43): error CS0246: The type or namespace name 'Entity' could not be found...
-    7 Warning(s)
-    82 Error(s)
+dotnet build FTK2.Summoner/src/Summoner.Plugin -c Release
 ```
-The 7 warnings are one `MSB3245: Could not resolve this reference` per missing dll (§1 table); the
-82 errors are downstream `CS0246`s in code that uses game types (`Entity`, `CombatState`,
-`CombatAbilityConfig`, `AbilityAction`, `CharacterComponent`, ...) — expected cascading failures,
-not a WarBrain code problem.
+```
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Summoner.Core -> D:\src\mods\ftk2-mods\FTK2.Summoner\src\Summoner.Core\bin\Release\netstandard2.0\Summoner.Core.dll
+  Summoner.Plugin -> D:\src\mods\ftk2-mods\FTK2.Summoner\src\Summoner.Plugin\bin\Release\net472\FTK2.Summoner.dll
 
-**When the game install completes**, re-run `dotnet build FTK2.WarBrain/src/WarBrain.Plugin -c
-Release` unmodified (uses the default `$(GameDir)`) to get the "actually passes" evidence the
-acceptance check requires, or `-p:GameDir=...` against a restored/verified install if the default
-path ever changes.
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:00.94
+```
+
+### ClassForge.Plugin — FAIL (genuine source gap, NOT a ref-path issue — not fixed, per task scope)
+```
+dotnet build FTK2.ClassForge/src/ClassForge.Plugin -c Release -p:ManagedDir="D:\src\mods\ftk2-mods\tools\bin\refs" -p:BepInExDir="D:\src\mods\ftk2-mods\tools\bin\refs"
+```
+```
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ClassForge.Core -> D:\src\mods\ftk2-mods\FTK2.ClassForge\src\ClassForge.Core\bin\Release\netstandard2.0\ClassForge.Core.dll
+D:\src\mods\ftk2-mods\FTK2.ClassForge\src\ClassForge.Plugin\ConfigMergePatches.cs(99,49): error CS0012: The type 'ReadOnlySpan<>' is defined in an assembly that is not referenced. You must add a reference to assembly 'System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51'. [D:\src\mods\ftk2-mods\FTK2.ClassForge\src\ClassForge.Plugin\ClassForge.Plugin.csproj]
+D:\src\mods\ftk2-mods\FTK2.ClassForge\src\ClassForge.Plugin\ConfigMergePatches.cs(109,45): error CS0012: The type 'ReadOnlySpan<>' is defined in an assembly that is not referenced. You must add a reference to assembly 'System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51'. [D:\src\mods\ftk2-mods\FTK2.ClassForge\src\ClassForge.Plugin\ClassForge.Plugin.csproj]
+D:\src\mods\ftk2-mods\FTK2.ClassForge\src\ClassForge.Plugin\ConfigMergePatches.cs(119,48): error CS0012: The type 'ReadOnlySpan<>' is defined in an assembly that is not referenced. You must add a reference to assembly 'System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51'. [D:\src\mods\ftk2-mods\FTK2.ClassForge\src\ClassForge.Plugin\ClassForge.Plugin.csproj]
+
+Build FAILED.
+    0 Warning(s)
+    3 Error(s)
+Time Elapsed 00:00:00.94
+```
+Root cause: `ConfigMergePatches.cs` uses `ReadOnlySpan<char>` directly (net472 has no built-in
+`ReadOnlySpan`; it needs `System.Memory.dll`, which the live `Managed\` folder does ship), but
+`ClassForge.Plugin.csproj` has **no** `<Reference Include="System.Memory">` entry at all — not a
+missing-file problem (the DLL exists both in the game's `Managed\` and could be copied to
+`tools\bin\refs`), and not a HintPath-resolution problem (`ClassForge.Core` restored and built
+fine as a dependency). This is a missing `<Reference>` item in the `.csproj` — fixing it means
+editing `.csproj` source, which is out of scope for this unit (task constraint: don't touch `.cs`/
+`.csproj`, capture and report instead). **Not fixed here** — flagged for the orchestrator.
 
 ## 5. Test / sim harness — exact commands (both ran clean this session, no game deps)
 
@@ -201,20 +286,33 @@ Args: `dotnet run -c Release -- [battles-per-cell] [outfile]` (defaults 2000 / `
 `tools/tests` (pytest) is unrelated — that's the Python content-generation tooling
 (`python -m pytest tools/tests -v`), not part of the C# build template.
 
-## 6. Unblock checklist (run this once the Steam download/install finishes)
+## 6. Unblock checklist — RESULT (run 2026-07-25 against the completed install)
 
-1. `Test-Path "E:\Games\Steam\steamapps\common\For The King II\For The King II_Data\Managed\FTK2.dll"` → confirm true.
-2. Run the copy commands in §2 into `tools\bin\refs\`.
-3. `Get-ChildItem "D:\src\mods\ftk2-mods\tools\bin\refs" | Measure-Object` → record count in this file.
-4. `dotnet build FTK2.WarBrain/src/WarBrain.Plugin -c Release` (unmodified — still points at
-   `$(GameDir)`, not the snapshot) → confirm it passes against the fresh install; paste the tail
-   here, replacing §4's failing tail.
-5. Spot-check the redirect mechanism in §3 by scaffolding one throwaway `.csproj` (not committed)
-   with `FtkRefsDir` pointed at `tools\bin\refs` and confirming `dotnet build` resolves all 7
-   references from the snapshot with **no game install present** (rename/hide the game folder
-   temporarily, or just trust the HintPath resolution — don't actually rename the live install).
-6. Update the reference table in §2 with the real Unity module DLL list once the Managed folder
-   is inspectable (`Get-ChildItem $managed -Filter *.dll | Sort Name`).
+1. **DONE.** `Test-Path .../Managed/FTK2.dll` → `True`. Additionally verified install completeness
+   beyond the checklist's ask: `appmanifest_1676840.acf` → `StateFlags 4`, `BytesDownloaded ==
+   BytesToDownload` (8,619,735,280 both), `InstalledDepots` populated (depot `1676841`, non-empty
+   manifest/size). `FTK2.dll` size (6,572,544 bytes) re-checked 30s apart, unchanged — install is
+   complete and stable, not still-writing.
+2. **DONE.** Copy commands run — see §2 for the exact commands and the BepInEx-source wrinkle
+   (core dlls came from the mod package, not the game dir, since the game dir has no BepInEx layer
+   installed).
+3. **DONE.** `Get-ChildItem tools\bin\refs | Measure-Object` → **Count: 80**.
+4. **DONE, with a mechanism change from the plan.** A plain `dotnet build
+   FTK2.WarBrain/src/WarBrain.Plugin -c Release` (unmodified, default `$(GameDir)`) was tried for
+   comparison and **fails** — 27 `CS0246`s rooted in unresolved `BepInEx`/`Harmony` types, because
+   the live game dir has `Managed\` but no `BepInEx\core\` (see §2). The passing build instead used
+   `-p:ManagedDir=...\tools\bin\refs -p:BepInExDir=...\tools\bin\refs` (both pointed at the same
+   snapshot folder) — see §4 for the full tail and rationale. This is arguably a *better* result
+   than the checklist's literal ask, since it's the snapshot-based build the task brief wanted
+   documented ("document which path you used for the passing builds").
+5. **Effectively done, via the real projects rather than a throwaway csproj.** Summoner.Plugin's
+   `.csproj` already implements the exact `FtkRefsDir` redirect pattern from §3 and built clean
+   with a plain `dotnet build` (no `-p:` flags, no game dir involved at all) — see §4. That's a
+   stronger proof than a scaffolded throwaway project would have been, since it's real shipped
+   source using the pattern end-to-end.
+6. **DONE.** §2 now has the real 205-file `Managed\` inventory summary and the corrected UI
+   Toolkit module name (`UnityEngine.UIElementsModule.dll` exists; the previously-guessed
+   `UnityEngine.UIElementsNativeModule.dll` does not).
 
 ## 7. WarBrain project-layout conventions (verified, no blocker — new engines should copy these)
 

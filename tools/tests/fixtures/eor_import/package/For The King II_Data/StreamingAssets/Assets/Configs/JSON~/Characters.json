@@ -1,0 +1,82 @@
+{
+  "TEST_GHOST_GENERIC_00": {
+    "Stats": {"HP": 20},
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "GHOST",
+    "DefaultBodyType": "M",
+    "Tags": [],
+    "Expansion": "BASE"
+  },
+  "TEST_BANDIT_HEAVY_00": {
+    "Stats": {"HP": 40},
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Tags": [],
+    "Expansion": "BASE"
+  },
+  "TEST_VANILLA_MERC_00": {
+    "Stats": {"HP": 35},
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Tags": [],
+    "Expansion": "BASE"
+  },
+  "TEST_VANILLA_CLASS_A": {
+    "Stats": {"STR": 50, "LCK": 50, "HP": 30},
+    "Things": {},
+    "Passives": [],
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Tags": ["PLAYER"],
+    "Expansion": "BASE"
+  },
+  "TEST_VANILLA_CLASS_B": {
+    "Stats": {"STR": 60, "LCK": 50, "HP": 34},
+    "Things": {},
+    "Passives": [],
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Tags": ["PLAYER"],
+    "Expansion": "BASE"
+  },
+  "EOR_TESTMAGE": {
+    "Stats": {"STR": 52, "LCK": 95, "HP": 30},
+    "Things": {"TEST_KATANA_DONOR_00": 1},
+    "Passives": ["SKILL_TEST_BLAST"],
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Tags": ["PLAYER", "RANGED"],
+    "Expansion": "BASE",
+    "LocKey": "EOR_TESTMAGE"
+  },
+  "EOR_TESTKNIGHT": {
+    "Stats": {"STR": 58, "LCK": 50, "HP": 32},
+    "Things": {"TEST_WAND_DONOR_00": 1},
+    "Passives": ["SKILL_TEST_GUARD"],
+    "Rarity": "COMMON",
+    "Level": -1,
+    "Threat": 0,
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Tags": ["PLAYER", "MELEE"],
+    "Expansion": "BASE",
+    "LocKey": "EOR_TESTKNIGHT"
+  }
+}

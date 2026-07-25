@@ -1,0 +1,10 @@
+{
+  "id": "SMN_PACK_BAD",
+  "name": "Bad pack -- malformed followers.json",
+  "version": "1.0.0",
+  "author": "ftk2mods",
+  "description": "pack.json itself is well-formed; followers.json is deliberately truncated JSON.",
+  "loadOrder": 100,
+  "dependencies": [],
+  "enabled": true
+}

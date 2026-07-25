@@ -1,0 +1,22 @@
+// TRAIT_DRUNKEN_COURAGE — behavior matrix Table 2 (L24628-24632).
+// EOR: PerformConsumableAbility postfix; DRINK_-prefixed consumable -> STATUS_ATTACKUP_00 on self.
+// v1.1: ON_CONSUMABLE_USED (T6) + ITEM_CLASS (C14) + ITEM_CONSUMABLE (C15)
+//       -> ADD_STATUS{SELF, STATUS_ATTACKUP_00}. Class comes from
+//       InventoryHelper.GetThingConfig(pThing.ConfigName).Class rather than a name prefix match.
+{
+  "SKILL_CF_DRUNKEN_COURAGE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Drunken Courage",
+    "Trigger": "ON_CONSUMABLE_USED",
+    "Conditions": [
+      { "Type": "ITEM_CLASS", "Value": "DRINK" },
+      { "Type": "ITEM_CONSUMABLE", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ATTACKUP_00" }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Drunken Courage"
+  }
+}

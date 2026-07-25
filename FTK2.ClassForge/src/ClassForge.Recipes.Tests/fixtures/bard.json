@@ -1,0 +1,52 @@
+// BARD (Crescendo) — behavior matrix Table 1 BARD (L6492-6515).
+// EOR: TAL-stat ability; CRIT_FAIL clears the stack, otherwise SUCCESS-or-better increments
+// (cap 3) and applies STATUS_ATTACKUP_ + (Stacks-1) to all living allies, duration 2.
+// v1.1: COUNTER_SET / COUNTER_ADD (E4/E3) replace ClassSkillRuntimeState.Stacks, and the
+//       escalating tier is expressed with per-effect Conditions (§4) reading COUNTER (C11).
+// Priority orders the reset recipe ahead of the build recipe deterministically (§5.1).
+{
+  "SKILL_CF_BARD_CRESCENDO_RESET": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Crescendo (reset)",
+    "Trigger": "ON_ABILITY_USED",
+    "Priority": 0,
+    "Conditions": [
+      { "Type": "ABILITY_STAT", "Value": "TAL" },
+      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "CRIT_FAIL" }
+    ],
+    "Effects": [
+      { "Type": "COUNTER_SET", "Name": "CRESCENDO", "Value": 0 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Crescendo reset"
+  },
+  "SKILL_CF_BARD_CRESCENDO": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Crescendo",
+    "Trigger": "ON_ABILITY_USED",
+    "Priority": 1,
+    "Conditions": [
+      { "Type": "ABILITY_STAT", "Value": "TAL" },
+      { "Type": "ROLL_TIER", "Comparator": "GTE", "Value": "SUCCESS" }
+    ],
+    "Effects": [
+      { "Type": "COUNTER_ADD", "Name": "CRESCENDO", "Delta": 1, "Max": 3 },
+      {
+        "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_00", "Duration": 2,
+        "Conditions": [ { "Type": "COUNTER", "Name": "CRESCENDO", "Comparator": "EQ", "Value": 1 } ]
+      },
+      {
+        "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_01", "Duration": 2,
+        "Conditions": [ { "Type": "COUNTER", "Name": "CRESCENDO", "Comparator": "EQ", "Value": 2 } ]
+      },
+      {
+        "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_02", "Duration": 2,
+        "Conditions": [ { "Type": "COUNTER", "Name": "CRESCENDO", "Comparator": "GTE", "Value": 3 } ]
+      }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Crescendo"
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "EORR_ASH_TEST_KNIFE": {
+    "ConsumableType": "NONE",
+    "Value": 12,
+    "MinTier": 0,
+    "MaxTier": 1,
+    "Class": "DAGGER",
+    "Rarity": "COMMON",
+    "Material": "METAL",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": {"ATK": 6, "CRT": 10, "SPD": 4},
+      "MaxCharges": -1
+    },
+    "Interactable": {
+      "Abilities": {
+        "KNIFE_BASIC_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "SPD", "Rolls": 1, "Ammo": 0}
+      },
+      "AbilityBag": ["KNIFE_BASIC_ATTACK"],
+      "AbilityFillBag": ["KNIFE_BASIC_ATTACK"],
+      "ShuffleAbilityBag": false
+    },
+    "Tags": ["PHYSICAL", "COMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "DAGGER", "MELEE",
+             "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "EORR_CUSTOM", "EOR_CUSTOM",
+             "ENDGAME_GEAR"],
+    "Expansion": "BASE"
+  },
+  "EORR_NIGHT_SHADOW_BLADE": {
+    "ConsumableType": "NONE",
+    "Value": 136,
+    "MinTier": 2,
+    "MaxTier": 3,
+    "Class": "DAGGER",
+    "Rarity": "COMMON",
+    "Material": "METAL",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": {"ATK": 17, "CRT": 16, "SPD": 6},
+      "MaxCharges": -1
+    },
+    "Interactable": {
+      "Abilities": {
+        "KNIFE_BASIC_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "SPD", "Rolls": 1, "Ammo": 0},
+        "BLADE_SHADOW_AOE": {"MinValue": 0, "MaxValue": 0.5, "ACC": -10, "Stat": "AWR", "Rolls": 3, "Ammo": 0}
+      },
+      "AbilityBag": ["KNIFE_BASIC_ATTACK", "KNIFE_BLEED_ATTACK"],
+      "ShuffleAbilityBag": true
+    },
+    "Tags": ["PHYSICAL", "BUFF", "COMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "DAGGER",
+             "MELEE", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "EORR_CUSTOM", "EOR_CUSTOM"],
+    "Expansion": "BASE",
+    "AbilityBag": ["KNIFE_BASIC_ATTACK", "BLADE_SHADOW_AOE"],
+    "AbilityFillBag": ["KNIFE_BASIC_ATTACK", "BLADE_SHADOW_AOE"],
+    "ShuffleAbilityBag": true
+  },
+  "EORR_LOST_SILVER_KATANA": {
+    "ConsumableType": "NONE",
+    "Value": 90,
+    "MinTier": 1,
+    "MaxTier": 2,
+    "Class": "KATANA",
+    "Rarity": "COMMON",
+    "Material": "METAL",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": {"ATK": 14, "CRT": 8},
+      "MaxCharges": -1
+    },
+    "Interactable": {
+      "Abilities": {
+        "KATANA_BASIC_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "SPD", "Rolls": 1, "Ammo": 0}
+      },
+      "AbilityBag": ["KATANA_BASIC_ATTACK"],
+      "ShuffleAbilityBag": false
+    },
+    "Tags": ["PHYSICAL", "COMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "KATANA", "MELEE",
+             "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "EORR_CUSTOM", "EOR_CUSTOM",
+             "STRONGER_GEAR"],
+    "Expansion": "BASE"
+  },
+  "EORR_OLD_TOWER_SHIELD": {
+    "ConsumableType": "NONE",
+    "Value": 22,
+    "MinTier": 0,
+    "MaxTier": 1,
+    "Class": "SHIELD",
+    "Rarity": "COMMON",
+    "Material": "NONE",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Equippable": {
+      "Slots": ["OFF_HAND"],
+      "Stats": {"DEF": 1, "PDEF": 1, "RES": 1},
+      "MaxCharges": -1
+    },
+    "Interactable": {
+      "Abilities": {
+        "SHIELD_TAUNT_ATTACK": {"MinValue": 0, "MaxValue": 0, "ACC": 0, "Stat": "VIT", "Rolls": 2, "Ammo": 0}
+      },
+      "AbilityBag": [],
+      "ShuffleAbilityBag": true
+    },
+    "Tags": ["TAUNT", "BUFF", "COMMON", "HAND_EQUIP", "PHYSICAL", "MAGICAL", "SHIELD",
+             "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "EORR_CUSTOM", "EOR_CUSTOM",
+             "WEAKER_GEAR"],
+    "Expansion": "BASE"
+  },
+  "EORR_RUSTY_OLD_SWORD": {
+    "ConsumableType": "NONE",
+    "Value": 40,
+    "MinTier": 0,
+    "MaxTier": 1,
+    "Class": "SWORD",
+    "Rarity": "COMMON",
+    "Material": "METAL",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": {"ATK": 9},
+      "MaxCharges": -1
+    },
+    "Interactable": {
+      "Abilities": {
+        "SWORD_BASIC_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "STR", "Rolls": 2, "Ammo": 0}
+      },
+      "AbilityBag": ["SWORD_BASIC_ATTACK"],
+      "ShuffleAbilityBag": false
+    },
+    "Tags": ["PHYSICAL", "COMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "MELEE",
+             "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "EORR_CUSTOM", "EOR_CUSTOM",
+             "UTILITY_GEAR", "MYSTERY_UNKNOWN_TAG"],
+    "Expansion": "BASE"
+  },
+  "EORR_BROKEN_WEIRD_MACE": {
+    "ConsumableType": "NONE",
+    "Value": 5,
+    "MinTier": 0,
+    "MaxTier": 1,
+    "Class": "FOOBAR",
+    "Rarity": "COMMON",
+    "Material": "METAL",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": {"ATK": 3},
+      "MaxCharges": -1
+    },
+    "Interactable": {
+      "Abilities": {
+        "MACE_BASIC_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "STR", "Rolls": 1, "Ammo": 0}
+      },
+      "AbilityBag": ["MACE_BASIC_ATTACK"],
+      "ShuffleAbilityBag": false
+    },
+    "Tags": ["PHYSICAL", "COMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "MELEE",
+             "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET", "EORR_CUSTOM", "EOR_CUSTOM"],
+    "Expansion": "BASE"
+  }
+}

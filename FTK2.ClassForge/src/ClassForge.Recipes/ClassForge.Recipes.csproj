@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <RootNamespace>ClassForge.Recipes</RootNamespace>
+    <AssemblyName>ClassForge.Recipes</AssemblyName>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- ClassForge skill-recipe engine (SPEC-DELTA-v1.1). Deliberately game-agnostic:
+         NO BepInEx, NO Unity, NO FTK2 game refs, NO NuGet PackageReference.
+         The Plugin unit adapts real game objects onto the abstractions in Abstractions/.
+         All arithmetic is int/decimal for cross-peer determinism (docs/MULTIPLAYER.md R2). -->
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <RootNamespace>FTK2Mods.DevKit</RootNamespace>
+    <!-- Assembly name is the plugin GUID on purpose: sibling mods resolve the parity API with
+         Type.GetType("FTK2Mods.DevKit.ParityService, ftk2mods.devkit") exactly as SPEC.md §3 documents.
+         Host-agnostic engine: no BepInEx, no Unity, no game refs, no NuGet package references. -->
+    <AssemblyName>ftk2mods.devkit</AssemblyName>
+    <Version>0.1.0</Version>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+</Project>

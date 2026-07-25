@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <RootNamespace>Summoner.Core</RootNamespace>
+    <!-- Engine core is host-agnostic: no BepInEx, no Unity, no game refs, no JSON library.
+         Filesystem access is supplied by the host through IPackFileSource; JSON deserialization
+         is supplied by the host through IJsonCodec (design §A4). Zero <Reference> and zero
+         <PackageReference> — mirrors WarBrain.Core.csproj exactly (build-template-notes.md §7). -->
+  </PropertyGroup>
+
+</Project>

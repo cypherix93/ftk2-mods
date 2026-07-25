@@ -1,0 +1,10 @@
+{
+  "author": "ftk2mods",
+  "dependencies": [],
+  "description": "EOR's COMPANION_PLUS_* followers, re-hosted with SMN_FOL_ ids.",
+  "enabled": true,
+  "id": "SMN_PACK_EOR_PETS",
+  "loadOrder": 100,
+  "name": "Enhanced Pets (re-hosted)",
+  "version": "1.0.0"
+}

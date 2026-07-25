@@ -1,0 +1,20 @@
+// TRAIT_MOMENTUM / OF_MOMENTUM — coverage matrix rows §2.18 / §3.3 (PORT).
+// EOR: ApplyStatChange prefix captures target HP, postfix fires when the target was alive
+// before and dead after -> STATUS_ATTACKUP_00 on self.
+// v1.1: ON_KILL re-anchored to exactly that prefix/postfix HP-before/after shape (§2.1), and
+// origin-attributed (EOR's HasKilledTarget was not filtered to the origin's own kill).
+// The retired STATUS_EOR_MOMENTUM custom id is deliberately not re-created.
+{
+  "SKILL_CF_MOMENTUM": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Momentum",
+    "Trigger": "ON_KILL",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ATTACKUP_00" }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Momentum"
+  }
+}

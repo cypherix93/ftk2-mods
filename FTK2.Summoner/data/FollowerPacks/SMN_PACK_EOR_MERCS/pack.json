@@ -1,0 +1,10 @@
+{
+  "author": "ftk2mods",
+  "dependencies": [],
+  "description": "EOR's MERC_PLUS_* followers, re-hosted with SMN_MRC_ ids.",
+  "enabled": true,
+  "id": "SMN_PACK_EOR_MERCS",
+  "loadOrder": 110,
+  "name": "Enhanced Mercenaries (re-hosted)",
+  "version": "1.0.0"
+}

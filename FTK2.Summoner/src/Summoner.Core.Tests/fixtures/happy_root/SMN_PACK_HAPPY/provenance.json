@@ -1,0 +1,4 @@
+{
+  "SMN_FOL_TEST_PIXIE": { "Source": "eor-import", "EorId": "COMPANION_PLUS_PIXIE_GENERIC_00", "PackageVersion": "0.7.0.60" },
+  "SMN_MRC_TEST_GUARD": { "Source": "eor-import", "EorId": "MERC_PLUS_TEST_GUARD_00", "PackageVersion": "0.7.0.60" }
+}

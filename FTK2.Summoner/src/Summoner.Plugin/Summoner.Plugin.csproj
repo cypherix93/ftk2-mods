@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <AssemblyName>FTK2.Summoner</AssemblyName>
+    <RootNamespace>Summoner.Plugin</RootNamespace>
+    <Version>0.1.0</Version>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <!-- tools/bin/refs is a flat folder: game Managed dlls + BepInEx core dlls together.
+         Override with -p:FtkRefsDir=... to point at a different snapshot or the live game
+         (build-template-notes.md §3). The plugin build is parked until this directory is
+         populated: it fails with MSB3245 for every reference below until then; that is the
+         expected result for this unit (charter: reference assemblies not yet snapshotted). -->
+    <FtkRefsDir Condition="'$(FtkRefsDir)' == ''">$(MSBuildThisFileDirectory)..\..\..\tools\bin\refs</FtkRefsDir>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Summoner.Core\Summoner.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BepInEx">
+      <HintPath>$(FtkRefsDir)\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(FtkRefsDir)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="FTK2">
+      <HintPath>$(FtkRefsDir)\FTK2.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(FtkRefsDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(FtkRefsDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.Text.Json">
+      <HintPath>$(FtkRefsDir)\System.Text.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SerializedSortedDictionary">
+      <HintPath>$(FtkRefsDir)\SerializedSortedDictionary.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

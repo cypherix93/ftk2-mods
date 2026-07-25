@@ -1,0 +1,2710 @@
+{
+  "SMN_FOL_GHOST_GENERIC_00": {
+    "AppendableStats": {
+      "CRT": 5,
+      "EVD": 18,
+      "HP": 48,
+      "MAG": 14,
+      "RES": 8
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOST_GENERIC_00",
+    "ConfigName": "GHOST_GENERIC_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOST_GENERIC_01": {
+    "AppendableStats": {
+      "CRT": 8,
+      "EVD": 27,
+      "HP": 54,
+      "MAG": 19,
+      "RES": 12
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOST_GENERIC_01",
+    "ConfigName": "GHOST_GENERIC_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOST_GENERIC_02": {
+    "AppendableStats": {
+      "CRT": 7,
+      "EVD": 26,
+      "HP": 60,
+      "MAG": 22,
+      "RES": 12
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOST_GENERIC_02",
+    "ConfigName": "GHOST_GENERIC_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOST_GENERIC_03": {
+    "AppendableStats": {
+      "CRT": 8,
+      "EVD": 30,
+      "HP": 66,
+      "MAG": 26,
+      "RES": 14
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOST_GENERIC_03",
+    "ConfigName": "GHOST_GENERIC_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOST_GENERIC_04": {
+    "AppendableStats": {
+      "CRT": 9,
+      "EVD": 34,
+      "HP": 72,
+      "MAG": 30,
+      "RES": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOST_GENERIC_04",
+    "ConfigName": "GHOST_GENERIC_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOST_GENERIC_05": {
+    "AppendableStats": {
+      "CRT": 10,
+      "EVD": 38,
+      "HP": 78,
+      "MAG": 34,
+      "RES": 18
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOST_GENERIC_05",
+    "ConfigName": "GHOST_GENERIC_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOST_GENERIC_06": {
+    "AppendableStats": {
+      "CRT": 11,
+      "EVD": 42,
+      "HP": 84,
+      "MAG": 38,
+      "RES": 20
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOST_GENERIC_06",
+    "ConfigName": "GHOST_GENERIC_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOST_GENERIC_07": {
+    "AppendableStats": {
+      "CRT": 13,
+      "EVD": 47,
+      "HP": 91,
+      "MAG": 43,
+      "RES": 23
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOST_GENERIC_07",
+    "ConfigName": "GHOST_GENERIC_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOUL_GENERIC_00": {
+    "AppendableStats": {
+      "CRT": 6,
+      "EVD": 7,
+      "HP": 51,
+      "MAG": 16,
+      "RES": 11
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOUL_GENERIC_00",
+    "ConfigName": "GHOUL_GENERIC_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOUL_GENERIC_01": {
+    "AppendableStats": {
+      "CRT": 6,
+      "EVD": 9,
+      "HP": 53,
+      "MAG": 21,
+      "RES": 12
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOUL_GENERIC_01",
+    "ConfigName": "GHOUL_GENERIC_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOUL_GENERIC_02": {
+    "AppendableStats": {
+      "CRT": 6,
+      "EVD": 13,
+      "HP": 61,
+      "MAG": 27,
+      "RES": 13
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOUL_GENERIC_02",
+    "ConfigName": "GHOUL_GENERIC_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOUL_GENERIC_03": {
+    "AppendableStats": {
+      "CRT": 8,
+      "EVD": 12,
+      "HP": 68,
+      "MAG": 32,
+      "RES": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOUL_GENERIC_03",
+    "ConfigName": "GHOUL_GENERIC_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOUL_GENERIC_04": {
+    "AppendableStats": {
+      "CRT": 8,
+      "EVD": 17,
+      "HP": 73,
+      "MAG": 35,
+      "RES": 17
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOUL_GENERIC_04",
+    "ConfigName": "GHOUL_GENERIC_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOUL_GENERIC_05": {
+    "AppendableStats": {
+      "CRT": 10,
+      "EVD": 17,
+      "HP": 77,
+      "MAG": 37,
+      "RES": 20
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOUL_GENERIC_05",
+    "ConfigName": "GHOUL_GENERIC_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOUL_GENERIC_06": {
+    "AppendableStats": {
+      "CRT": 12,
+      "EVD": 20,
+      "HP": 84,
+      "MAG": 42,
+      "RES": 23
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOUL_GENERIC_06",
+    "ConfigName": "GHOUL_GENERIC_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_GHOUL_GENERIC_07": {
+    "AppendableStats": {
+      "CRT": 13,
+      "EVD": 21,
+      "HP": 93,
+      "MAG": 44,
+      "RES": 25
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_GHOUL_GENERIC_07",
+    "ConfigName": "GHOUL_GENERIC_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_00": {
+    "AppendableStats": {
+      "CRT": 9,
+      "EVD": 12,
+      "HP": 52,
+      "MAG": 8,
+      "PHY": 14
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDBENDER_GENERIC_00",
+    "ConfigName": "MINDBENDER_GENERIC_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_01": {
+    "AppendableStats": {
+      "CRT": 9,
+      "EVD": 14,
+      "HP": 57,
+      "MAG": 9,
+      "PHY": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDBENDER_GENERIC_01",
+    "ConfigName": "MINDBENDER_GENERIC_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_02": {
+    "AppendableStats": {
+      "CRT": 10,
+      "EVD": 17,
+      "HP": 63,
+      "MAG": 11,
+      "PHY": 19
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDBENDER_GENERIC_02",
+    "ConfigName": "MINDBENDER_GENERIC_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_03": {
+    "AppendableStats": {
+      "CRT": 13,
+      "EVD": 22,
+      "HP": 71,
+      "MAG": 12,
+      "PHY": 24
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDBENDER_GENERIC_03",
+    "ConfigName": "MINDBENDER_GENERIC_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_04": {
+    "AppendableStats": {
+      "CRT": 13,
+      "EVD": 24,
+      "HP": 76,
+      "MAG": 16,
+      "PHY": 26
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDBENDER_GENERIC_04",
+    "ConfigName": "MINDBENDER_GENERIC_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_05": {
+    "AppendableStats": {
+      "CRT": 12,
+      "EVD": 25,
+      "HP": 80,
+      "MAG": 16,
+      "PHY": 27
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDBENDER_GENERIC_05",
+    "ConfigName": "MINDBENDER_GENERIC_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_06": {
+    "AppendableStats": {
+      "CRT": 13,
+      "EVD": 28,
+      "HP": 86,
+      "MAG": 18,
+      "PHY": 30
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDBENDER_GENERIC_06",
+    "ConfigName": "MINDBENDER_GENERIC_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDBENDER_GENERIC_07": {
+    "AppendableStats": {
+      "CRT": 16,
+      "EVD": 33,
+      "HP": 94,
+      "MAG": 22,
+      "PHY": 35
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDBENDER_GENERIC_07",
+    "ConfigName": "MINDBENDER_GENERIC_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_00": {
+    "AppendableStats": {
+      "CRT": 7,
+      "EVD": 10,
+      "HP": 54,
+      "MAG": 7,
+      "PHY": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDSLAYER_ELITE_00",
+    "ConfigName": "MINDSLAYER_ELITE_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_01": {
+    "AppendableStats": {
+      "CRT": 9,
+      "EVD": 14,
+      "HP": 57,
+      "MAG": 9,
+      "PHY": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDSLAYER_ELITE_01",
+    "ConfigName": "MINDSLAYER_ELITE_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_02": {
+    "AppendableStats": {
+      "CRT": 9,
+      "EVD": 16,
+      "HP": 66,
+      "MAG": 11,
+      "PHY": 22
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDSLAYER_ELITE_02",
+    "ConfigName": "MINDSLAYER_ELITE_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_03": {
+    "AppendableStats": {
+      "CRT": 11,
+      "EVD": 20,
+      "HP": 69,
+      "MAG": 13,
+      "PHY": 22
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDSLAYER_ELITE_03",
+    "ConfigName": "MINDSLAYER_ELITE_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_04": {
+    "AppendableStats": {
+      "CRT": 13,
+      "EVD": 24,
+      "HP": 74,
+      "MAG": 14,
+      "PHY": 25
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDSLAYER_ELITE_04",
+    "ConfigName": "MINDSLAYER_ELITE_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_05": {
+    "AppendableStats": {
+      "CRT": 15,
+      "EVD": 28,
+      "HP": 83,
+      "MAG": 16,
+      "PHY": 30
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDSLAYER_ELITE_05",
+    "ConfigName": "MINDSLAYER_ELITE_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_06": {
+    "AppendableStats": {
+      "CRT": 13,
+      "EVD": 28,
+      "HP": 90,
+      "MAG": 19,
+      "PHY": 34
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDSLAYER_ELITE_06",
+    "ConfigName": "MINDSLAYER_ELITE_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_MINDSLAYER_ELITE_07": {
+    "AppendableStats": {
+      "CRT": 15,
+      "EVD": 32,
+      "HP": 93,
+      "MAG": 21,
+      "PHY": 34
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_MINDSLAYER_ELITE_07",
+    "ConfigName": "MINDSLAYER_ELITE_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PIXIE_GENERIC_00": {
+    "AppendableStats": {
+      "CRT": 5,
+      "EVD": 7,
+      "HP": 47,
+      "MAG": 17,
+      "RES": 10
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PIXIE_GENERIC_00",
+    "ConfigName": "PIXIE_GENERIC_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PIXIE_GENERIC_01": {
+    "AppendableStats": {
+      "CRT": 7,
+      "EVD": 10,
+      "HP": 54,
+      "MAG": 22,
+      "RES": 13
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PIXIE_GENERIC_01",
+    "ConfigName": "PIXIE_GENERIC_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PIXIE_GENERIC_02": {
+    "AppendableStats": {
+      "CRT": 8,
+      "EVD": 12,
+      "HP": 60,
+      "MAG": 26,
+      "RES": 15
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PIXIE_GENERIC_02",
+    "ConfigName": "PIXIE_GENERIC_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PIXIE_GENERIC_03": {
+    "AppendableStats": {
+      "CRT": 8,
+      "EVD": 12,
+      "HP": 68,
+      "MAG": 32,
+      "RES": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PIXIE_GENERIC_03",
+    "ConfigName": "PIXIE_GENERIC_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PIXIE_GENERIC_04": {
+    "AppendableStats": {
+      "CRT": 9,
+      "EVD": 14,
+      "HP": 74,
+      "MAG": 36,
+      "RES": 18
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PIXIE_GENERIC_04",
+    "ConfigName": "PIXIE_GENERIC_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PIXIE_GENERIC_05": {
+    "AppendableStats": {
+      "CRT": 10,
+      "EVD": 16,
+      "HP": 80,
+      "MAG": 40,
+      "RES": 20
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PIXIE_GENERIC_05",
+    "ConfigName": "PIXIE_GENERIC_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PIXIE_GENERIC_06": {
+    "AppendableStats": {
+      "CRT": 11,
+      "EVD": 18,
+      "HP": 86,
+      "MAG": 44,
+      "RES": 22
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PIXIE_GENERIC_06",
+    "ConfigName": "PIXIE_GENERIC_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PIXIE_GENERIC_07": {
+    "AppendableStats": {
+      "CRT": 13,
+      "EVD": 21,
+      "HP": 93,
+      "MAG": 44,
+      "RES": 25
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PIXIE_GENERIC_07",
+    "ConfigName": "PIXIE_GENERIC_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_GENERIC_00": {
+    "AppendableStats": {
+      "DEF": 10,
+      "HP": 65,
+      "PHY": 13,
+      "RES": 8,
+      "THRN": 11
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_GENERIC_00",
+    "ConfigName": "PLANT_GENERIC_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_GENERIC_01": {
+    "AppendableStats": {
+      "DEF": 15,
+      "HP": 72,
+      "PHY": 14,
+      "RES": 12,
+      "THRN": 12
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_GENERIC_01",
+    "ConfigName": "PLANT_GENERIC_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_GENERIC_02": {
+    "AppendableStats": {
+      "DEF": 18,
+      "HP": 80,
+      "PHY": 16,
+      "RES": 14,
+      "THRN": 14
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_GENERIC_02",
+    "ConfigName": "PLANT_GENERIC_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_GENERIC_03": {
+    "AppendableStats": {
+      "DEF": 20,
+      "HP": 90,
+      "PHY": 16,
+      "RES": 15,
+      "THRN": 18
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_GENERIC_03",
+    "ConfigName": "PLANT_GENERIC_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_GENERIC_04": {
+    "AppendableStats": {
+      "DEF": 22,
+      "HP": 94,
+      "PHY": 18,
+      "RES": 16,
+      "THRN": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_GENERIC_04",
+    "ConfigName": "PLANT_GENERIC_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_GENERIC_05": {
+    "AppendableStats": {
+      "DEF": 26,
+      "HP": 103,
+      "PHY": 21,
+      "RES": 19,
+      "THRN": 19
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_GENERIC_05",
+    "ConfigName": "PLANT_GENERIC_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_GENERIC_06": {
+    "AppendableStats": {
+      "DEF": 30,
+      "HP": 115,
+      "PHY": 23,
+      "RES": 22,
+      "THRN": 20
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_GENERIC_06",
+    "ConfigName": "PLANT_GENERIC_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_GENERIC_07": {
+    "AppendableStats": {
+      "DEF": 31,
+      "HP": 118,
+      "PHY": 24,
+      "RES": 22,
+      "THRN": 22
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_GENERIC_07",
+    "ConfigName": "PLANT_GENERIC_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_SWAMP_00": {
+    "AppendableStats": {
+      "DEF": 10,
+      "HP": 62,
+      "PHY": 10,
+      "RES": 8,
+      "THRN": 8
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_SWAMP_00",
+    "ConfigName": "PLANT_SWAMP_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_SWAMP_01": {
+    "AppendableStats": {
+      "DEF": 14,
+      "HP": 71,
+      "PHY": 13,
+      "RES": 11,
+      "THRN": 11
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_SWAMP_01",
+    "ConfigName": "PLANT_SWAMP_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_SWAMP_02": {
+    "AppendableStats": {
+      "DEF": 16,
+      "HP": 78,
+      "PHY": 16,
+      "RES": 12,
+      "THRN": 13
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_SWAMP_02",
+    "ConfigName": "PLANT_SWAMP_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_SWAMP_03": {
+    "AppendableStats": {
+      "DEF": 19,
+      "HP": 86,
+      "PHY": 18,
+      "RES": 14,
+      "THRN": 15
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_SWAMP_03",
+    "ConfigName": "PLANT_SWAMP_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_SWAMP_04": {
+    "AppendableStats": {
+      "DEF": 22,
+      "HP": 94,
+      "PHY": 18,
+      "RES": 16,
+      "THRN": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_SWAMP_04",
+    "ConfigName": "PLANT_SWAMP_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_SWAMP_05": {
+    "AppendableStats": {
+      "DEF": 25,
+      "HP": 105,
+      "PHY": 23,
+      "RES": 18,
+      "THRN": 21
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_SWAMP_05",
+    "ConfigName": "PLANT_SWAMP_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_SWAMP_06": {
+    "AppendableStats": {
+      "DEF": 30,
+      "HP": 115,
+      "PHY": 23,
+      "RES": 22,
+      "THRN": 20
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_SWAMP_06",
+    "ConfigName": "PLANT_SWAMP_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_PLANT_SWAMP_07": {
+    "AppendableStats": {
+      "DEF": 31,
+      "HP": 118,
+      "PHY": 24,
+      "RES": 22,
+      "THRN": 22
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_PLANT_SWAMP_07",
+    "ConfigName": "PLANT_SWAMP_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SHADOW_GENERIC_00": {
+    "AppendableStats": {
+      "CRT": 5,
+      "EVD": 18,
+      "HP": 48,
+      "MAG": 14,
+      "RES": 8
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SHADOW_GENERIC_00",
+    "ConfigName": "SHADOW_GENERIC_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SHADOW_GENERIC_01": {
+    "AppendableStats": {
+      "CRT": 7,
+      "EVD": 23,
+      "HP": 55,
+      "MAG": 19,
+      "RES": 11
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SHADOW_GENERIC_01",
+    "ConfigName": "SHADOW_GENERIC_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SHADOW_GENERIC_02": {
+    "AppendableStats": {
+      "CRT": 9,
+      "EVD": 28,
+      "HP": 62,
+      "MAG": 24,
+      "RES": 14
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SHADOW_GENERIC_02",
+    "ConfigName": "SHADOW_GENERIC_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SHADOW_GENERIC_03": {
+    "AppendableStats": {
+      "CRT": 9,
+      "EVD": 31,
+      "HP": 67,
+      "MAG": 27,
+      "RES": 15
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SHADOW_GENERIC_03",
+    "ConfigName": "SHADOW_GENERIC_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SHADOW_GENERIC_04": {
+    "AppendableStats": {
+      "CRT": 10,
+      "EVD": 38,
+      "HP": 76,
+      "MAG": 30,
+      "RES": 17
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SHADOW_GENERIC_04",
+    "ConfigName": "SHADOW_GENERIC_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SHADOW_GENERIC_05": {
+    "AppendableStats": {
+      "CRT": 10,
+      "EVD": 38,
+      "HP": 79,
+      "MAG": 36,
+      "RES": 18
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SHADOW_GENERIC_05",
+    "ConfigName": "SHADOW_GENERIC_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SHADOW_GENERIC_06": {
+    "AppendableStats": {
+      "CRT": 13,
+      "EVD": 47,
+      "HP": 84,
+      "MAG": 39,
+      "RES": 22
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SHADOW_GENERIC_06",
+    "ConfigName": "SHADOW_GENERIC_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SHADOW_GENERIC_07": {
+    "AppendableStats": {
+      "CRT": 13,
+      "EVD": 47,
+      "HP": 91,
+      "MAG": 43,
+      "RES": 23
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SHADOW_GENERIC_07",
+    "ConfigName": "SHADOW_GENERIC_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_00": {
+    "AppendableStats": {
+      "CRT": 6,
+      "DEF": 7,
+      "EVD": 9,
+      "HP": 56,
+      "MAG": 10,
+      "PHY": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SKRAEVIN_CHAOS_MELEE_00",
+    "ConfigName": "SKRAEVIN_CHAOS_MELEE_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "ARTIFACT",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_01": {
+    "AppendableStats": {
+      "CRT": 7,
+      "DEF": 9,
+      "EVD": 12,
+      "HP": 63,
+      "MAG": 13,
+      "PHY": 19
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SKRAEVIN_CHAOS_MELEE_01",
+    "ConfigName": "SKRAEVIN_CHAOS_MELEE_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "ARTIFACT",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_02": {
+    "AppendableStats": {
+      "CRT": 8,
+      "DEF": 10,
+      "EVD": 15,
+      "HP": 66,
+      "MAG": 16,
+      "PHY": 18
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SKRAEVIN_CHAOS_MELEE_02",
+    "ConfigName": "SKRAEVIN_CHAOS_MELEE_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_03": {
+    "AppendableStats": {
+      "CRT": 10,
+      "DEF": 14,
+      "EVD": 19,
+      "HP": 78,
+      "MAG": 20,
+      "PHY": 21
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SKRAEVIN_CHAOS_MELEE_03",
+    "ConfigName": "SKRAEVIN_CHAOS_MELEE_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_04": {
+    "AppendableStats": {
+      "CRT": 13,
+      "DEF": 14,
+      "EVD": 24,
+      "HP": 83,
+      "MAG": 25,
+      "PHY": 27
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SKRAEVIN_CHAOS_MELEE_04",
+    "ConfigName": "SKRAEVIN_CHAOS_MELEE_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_05": {
+    "AppendableStats": {
+      "CRT": 13,
+      "DEF": 18,
+      "EVD": 26,
+      "HP": 89,
+      "MAG": 27,
+      "PHY": 29
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SKRAEVIN_CHAOS_MELEE_05",
+    "ConfigName": "SKRAEVIN_CHAOS_MELEE_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_06": {
+    "AppendableStats": {
+      "CRT": 13,
+      "DEF": 19,
+      "EVD": 28,
+      "HP": 95,
+      "MAG": 29,
+      "PHY": 31
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SKRAEVIN_CHAOS_MELEE_06",
+    "ConfigName": "SKRAEVIN_CHAOS_MELEE_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SKRAEVIN_CHAOS_MELEE_07": {
+    "AppendableStats": {
+      "CRT": 14,
+      "DEF": 21,
+      "EVD": 31,
+      "HP": 102,
+      "MAG": 32,
+      "PHY": 34
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SKRAEVIN_CHAOS_MELEE_07",
+    "ConfigName": "SKRAEVIN_CHAOS_MELEE_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_00": {
+    "AppendableStats": {
+      "CRT": 6,
+      "EVD": 22,
+      "HP": 52,
+      "MAG": 14,
+      "RES": 9
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SPIRIT_GENERIC_00",
+    "ConfigName": "SPIRIT_GENERIC_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_01": {
+    "AppendableStats": {
+      "CRT": 7,
+      "EVD": 26,
+      "HP": 58,
+      "MAG": 18,
+      "RES": 11
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SPIRIT_GENERIC_01",
+    "ConfigName": "SPIRIT_GENERIC_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_02": {
+    "AppendableStats": {
+      "CRT": 7,
+      "EVD": 26,
+      "HP": 60,
+      "MAG": 22,
+      "RES": 12
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SPIRIT_GENERIC_02",
+    "ConfigName": "SPIRIT_GENERIC_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_03": {
+    "AppendableStats": {
+      "CRT": 10,
+      "EVD": 35,
+      "HP": 66,
+      "MAG": 27,
+      "RES": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SPIRIT_GENERIC_03",
+    "ConfigName": "SPIRIT_GENERIC_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_04": {
+    "AppendableStats": {
+      "CRT": 9,
+      "EVD": 34,
+      "HP": 72,
+      "MAG": 30,
+      "RES": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SPIRIT_GENERIC_04",
+    "ConfigName": "SPIRIT_GENERIC_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_05": {
+    "AppendableStats": {
+      "CRT": 11,
+      "EVD": 42,
+      "HP": 82,
+      "MAG": 34,
+      "RES": 19
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SPIRIT_GENERIC_05",
+    "ConfigName": "SPIRIT_GENERIC_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "RARE",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_06": {
+    "AppendableStats": {
+      "CRT": 12,
+      "EVD": 46,
+      "HP": 88,
+      "MAG": 38,
+      "RES": 21
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SPIRIT_GENERIC_06",
+    "ConfigName": "SPIRIT_GENERIC_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_SPIRIT_GENERIC_07": {
+    "AppendableStats": {
+      "CRT": 14,
+      "EVD": 48,
+      "HP": 92,
+      "MAG": 44,
+      "RES": 24
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_SPIRIT_GENERIC_07",
+    "ConfigName": "SPIRIT_GENERIC_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_CRAGS_00": {
+    "AppendableStats": {
+      "CRT": 7,
+      "DEF": 8,
+      "EVD": 9,
+      "HP": 60,
+      "PHY": 14
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_CRAGS_00",
+    "ConfigName": "WOLF_CRAGS_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_CRAGS_01": {
+    "AppendableStats": {
+      "CRT": 9,
+      "DEF": 10,
+      "EVD": 12,
+      "HP": 64,
+      "PHY": 20
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_CRAGS_01",
+    "ConfigName": "WOLF_CRAGS_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_CRAGS_02": {
+    "AppendableStats": {
+      "CRT": 10,
+      "DEF": 12,
+      "EVD": 14,
+      "HP": 71,
+      "PHY": 24
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_CRAGS_02",
+    "ConfigName": "WOLF_CRAGS_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_CRAGS_03": {
+    "AppendableStats": {
+      "CRT": 11,
+      "DEF": 12,
+      "EVD": 16,
+      "HP": 76,
+      "PHY": 27
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_CRAGS_03",
+    "ConfigName": "WOLF_CRAGS_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_CRAGS_04": {
+    "AppendableStats": {
+      "CRT": 10,
+      "DEF": 14,
+      "EVD": 16,
+      "HP": 83,
+      "PHY": 30
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_CRAGS_04",
+    "ConfigName": "WOLF_CRAGS_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_CRAGS_05": {
+    "AppendableStats": {
+      "CRT": 11,
+      "DEF": 16,
+      "EVD": 18,
+      "HP": 90,
+      "PHY": 34
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_CRAGS_05",
+    "ConfigName": "WOLF_CRAGS_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_CRAGS_06": {
+    "AppendableStats": {
+      "CRT": 12,
+      "DEF": 18,
+      "EVD": 20,
+      "HP": 97,
+      "PHY": 38
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_CRAGS_06",
+    "ConfigName": "WOLF_CRAGS_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_CRAGS_07": {
+    "AppendableStats": {
+      "CRT": 14,
+      "DEF": 21,
+      "EVD": 23,
+      "HP": 105,
+      "PHY": 43
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_CRAGS_07",
+    "ConfigName": "WOLF_CRAGS_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_FOREST_00": {
+    "AppendableStats": {
+      "CRT": 7,
+      "DEF": 8,
+      "EVD": 9,
+      "HP": 60,
+      "PHY": 14
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_FOREST_00",
+    "ConfigName": "WOLF_FOREST_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_FOREST_01": {
+    "AppendableStats": {
+      "CRT": 7,
+      "DEF": 9,
+      "EVD": 10,
+      "HP": 66,
+      "PHY": 22
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_FOREST_01",
+    "ConfigName": "WOLF_FOREST_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_FOREST_02": {
+    "AppendableStats": {
+      "CRT": 9,
+      "DEF": 11,
+      "EVD": 13,
+      "HP": 70,
+      "PHY": 23
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_FOREST_02",
+    "ConfigName": "WOLF_FOREST_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_FOREST_03": {
+    "AppendableStats": {
+      "CRT": 10,
+      "DEF": 14,
+      "EVD": 15,
+      "HP": 81,
+      "PHY": 26
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_FOREST_03",
+    "ConfigName": "WOLF_FOREST_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_FOREST_04": {
+    "AppendableStats": {
+      "CRT": 10,
+      "DEF": 14,
+      "EVD": 16,
+      "HP": 83,
+      "PHY": 30
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_FOREST_04",
+    "ConfigName": "WOLF_FOREST_04",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_FOREST_05": {
+    "AppendableStats": {
+      "CRT": 11,
+      "DEF": 16,
+      "EVD": 18,
+      "HP": 90,
+      "PHY": 34
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_FOREST_05",
+    "ConfigName": "WOLF_FOREST_05",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 2,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_FOREST_06": {
+    "AppendableStats": {
+      "CRT": 12,
+      "DEF": 18,
+      "EVD": 20,
+      "HP": 97,
+      "PHY": 38
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_FOREST_06",
+    "ConfigName": "WOLF_FOREST_06",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_FOREST_07": {
+    "AppendableStats": {
+      "CRT": 16,
+      "DEF": 20,
+      "EVD": 25,
+      "HP": 107,
+      "PHY": 45
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_FOREST_07",
+    "ConfigName": "WOLF_FOREST_07",
+    "ContractPrice": "AVERAGE",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 3,
+    "Rarity": "UNCOMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_GRASS_00": {
+    "AppendableStats": {
+      "CRT": 8,
+      "DEF": 8,
+      "EVD": 10,
+      "HP": 57,
+      "PHY": 16
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_GRASS_00",
+    "ConfigName": "WOLF_GRASS_00",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_GRASS_01": {
+    "AppendableStats": {
+      "CRT": 8,
+      "DEF": 10,
+      "EVD": 11,
+      "HP": 67,
+      "PHY": 18
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_GRASS_01",
+    "ConfigName": "WOLF_GRASS_01",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_GRASS_02": {
+    "AppendableStats": {
+      "CRT": 10,
+      "DEF": 12,
+      "EVD": 14,
+      "HP": 71,
+      "PHY": 24
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_GRASS_02",
+    "ConfigName": "WOLF_GRASS_02",
+    "ContractPrice": "VERY_LOW",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  },
+  "SMN_FOL_WOLF_GRASS_03": {
+    "AppendableStats": {
+      "CRT": 9,
+      "DEF": 12,
+      "EVD": 14,
+      "HP": 76,
+      "PHY": 26
+    },
+    "Behaviour": "DEFAULT",
+    "CaravanStatValue": 0,
+    "ClassName": "SMN_FOL_WOLF_GRASS_03",
+    "ConfigName": "WOLF_GRASS_03",
+    "ContractPrice": "TINY",
+    "ContractRounds": 0,
+    "Expansion": "BASE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "MaxTier": 3,
+    "MinTier": 1,
+    "Rarity": "COMMON",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "Tags": [
+      "COMPANION",
+      "PETSHOP"
+    ],
+    "Type": "COMPANION"
+  }
+}

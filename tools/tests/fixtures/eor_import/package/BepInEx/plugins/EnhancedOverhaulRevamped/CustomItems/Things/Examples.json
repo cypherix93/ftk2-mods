@@ -1,0 +1,30 @@
+{
+  "EOR_EXAMPLE_TEST_DAGGER": {
+    "ConsumableType": "NONE",
+    "Value": 18,
+    "MinTier": 0,
+    "MaxTier": 1,
+    "Class": "DAGGER",
+    "Rarity": "COMMON",
+    "Material": "METAL",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Equippable": {
+      "Slots": ["MAIN_HAND"],
+      "Stats": {"ATK": 5, "SPD": 2, "CRT": 4},
+      "MaxCharges": -1
+    },
+    "Interactable": {
+      "Abilities": {
+        "KNIFE_BASIC_ATTACK": {"MinValue": 0, "MaxValue": 1, "ACC": 0, "Stat": "SPD", "Rolls": 1, "Ammo": 0}
+      },
+      "AbilityBag": ["KNIFE_BASIC_ATTACK"],
+      "AbilityFillBag": ["KNIFE_BASIC_ATTACK"],
+      "ShuffleAbilityBag": false
+    },
+    "Tags": ["EOR_CUSTOM", "EOR_EXAMPLE", "PHYSICAL", "COMMON", "WEAPON", "HAND_EQUIP",
+             "WEAPON_ONE_HAND", "DAGGER", "MELEE", "DROPPABLE", "TOWN_MARKET", "DUNGEON_MARKET"],
+    "Expansion": "BASE"
+  }
+}

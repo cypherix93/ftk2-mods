@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>FTK2Mods.DevKit.Tests</RootNamespace>
+    <AssemblyName>DevKit.Core.Tests</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <!-- Console test runner (no NuGet test framework: the repo build rules bar package
+         references). Exit code 0 = every test passed, per the WarBrain sim harness pattern. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DevKit.Core\DevKit.Core.csproj" />
+  </ItemGroup>
+
+</Project>

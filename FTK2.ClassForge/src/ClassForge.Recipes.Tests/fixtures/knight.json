@@ -1,0 +1,45 @@
+// KNIGHT (Chivalry) — behavior matrix Table 1 KNIGHT (L6273-6286).
+// EOR: once per combat; finds an ally != origin below 25% HP, OrderBy(Guid) first match;
+// OnceCombat is set ONLY if such an ally was found.
+// v1.1: ON_ABILITY_USED + Budget{ONCE_PER_COMBAT, ConsumeOn EFFECT_APPLIED}
+//       -> ADD_STATUS{ALLY_BY_RANK ...} x2. ALLY_BY_RANK closes the selector gap the behavior
+//       matrix flagged; ties break on ordinal Entity.Guid, zero RNG (§4.3).
+// ConsumeOn EFFECT_APPLIED reproduces "the budget is spent only if a wounded ally was found".
+{
+  "SKILL_CF_KNIGHT_CHIVALRY": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Chivalry",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [],
+    "Effects": [
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_BY_RANK",
+        "Status": "STATUS_PROTECT_00",
+        "Duration": 1,
+        "Rank": {
+          "Stat": "HP_PCT",
+          "Order": "LOWEST",
+          "ExcludeSelf": true,
+          "Where": [ { "Type": "HP_THRESHOLD", "Comparator": "LTE", "Percent": 25 } ]
+        }
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_BY_RANK",
+        "Status": "STATUS_ARMORUP_00",
+        "Duration": 1,
+        "Rank": {
+          "Stat": "HP_PCT",
+          "Order": "LOWEST",
+          "ExcludeSelf": true,
+          "Where": [ { "Type": "HP_THRESHOLD", "Comparator": "LTE", "Percent": 25 } ]
+        }
+      }
+    ],
+    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "EFFECT_APPLIED" },
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Chivalry"
+  }
+}

@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <AssemblyName>FTK2.DevKit</AssemblyName>
+    <RootNamespace>DevKit.Plugin</RootNamespace>
+    <Version>0.1.0</Version>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <!-- Game install; override with -p:GameDir=... (docs/research/build-template-notes.md §1) -->
+    <GameDir Condition="'$(GameDir)' == ''">E:\Games\Steam\steamapps\common\For The King II</GameDir>
+    <ManagedDir>$(GameDir)\For The King II_Data\Managed</ManagedDir>
+    <BepInExDir>$(GameDir)\BepInEx\core</BepInExDir>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DevKit.Core\DevKit.Core.csproj" />
+  </ItemGroup>
+
+  <!-- No PackageReference anywhere: the repo build rules bar NuGet (BCL + HintPath refs only).
+       net472 resolves against the machine-installed .NET Framework 4.7.2 reference assemblies. -->
+  <ItemGroup>
+    <Reference Include="BepInEx">
+      <HintPath>$(BepInExDir)\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExDir)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ManagedDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- FTK2.dll is referenced for parity with the other plugin projects, but this plugin
+         deliberately uses NO game types: every game-side member is resolved at runtime through
+         AccessTools/reflection, because AdventureDirector._handleNetworkAction's exact signature is
+         still an open question (SPEC §11.8). That keeps the parity hook resilient to a game update
+         changing the signature - it degrades to "Target NOT found", never a load failure. -->
+    <Reference Include="FTK2">
+      <HintPath>$(ManagedDir)\FTK2.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

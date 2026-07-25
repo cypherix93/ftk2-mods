@@ -1,0 +1,157 @@
+{
+  "CF_EOR_ARCANIST": {
+    "EorId": "EOR_ARCANIST",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_ASSASSIN": {
+    "EorId": "EOR_ASSASSIN",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_BARD": {
+    "EorId": "EOR_BARD",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_BEASTMASTER": {
+    "EorId": "EOR_BEASTMASTER",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_BLADEDANCER": {
+    "EorId": "EOR_BLADEDANCER",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_CHRONOMANCER": {
+    "EorId": "EOR_CHRONOMANCER",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_CORSAIR": {
+    "EorId": "EOR_CORSAIR",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_DRUID": {
+    "EorId": "EOR_DRUID",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_DUELIST": {
+    "EorId": "EOR_DUELIST",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_FORTUNEBORN": {
+    "EorId": "EOR_FORTUNEBORN",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_GAMBLER": {
+    "EorId": "EOR_GAMBLER",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_GLADIATOR": {
+    "EorId": "EOR_GLADIATOR",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_HEXBLADE": {
+    "EorId": "EOR_HEXBLADE",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_JESTER": {
+    "EorId": "EOR_JESTER",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_KNIGHT": {
+    "EorId": "EOR_KNIGHT",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_MARSHAL": {
+    "EorId": "EOR_MARSHAL",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_ORACLE": {
+    "EorId": "EOR_ORACLE",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_PALADIN": {
+    "EorId": "EOR_PALADIN",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_PEASANT": {
+    "EorId": "EOR_PEASANT",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_PRIEST": {
+    "EorId": "EOR_PRIEST",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_RANCHER": {
+    "EorId": "EOR_RANCHER",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_RANGER": {
+    "EorId": "EOR_RANGER",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_RUNEMAGE": {
+    "EorId": "EOR_RUNEMAGE",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_SCOUT": {
+    "EorId": "EOR_SCOUT",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_SENTINEL": {
+    "EorId": "EOR_SENTINEL",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_TEMPLAR": {
+    "EorId": "EOR_TEMPLAR",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_THIEF": {
+    "EorId": "EOR_THIEF",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_TRICKSHOT": {
+    "EorId": "EOR_TRICKSHOT",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_WARDEN": {
+    "EorId": "EOR_WARDEN",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_WARRIOR": {
+    "EorId": "EOR_WARRIOR",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "CF_EOR_WIZARD": {
+    "EorId": "EOR_WIZARD",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  }
+}

@@ -1,0 +1,45 @@
+// TRAIT_WARDBOUND + OF_STABILITY — coverage matrix rows §2.8 / §3.13 (PORT-MODIFIED).
+// EOR: ApplyStatus PREfix returning false — per-client suppression of authoritative state,
+// forbidden by charter rule 3.
+// v1.1 redesign (§7.3): ON_STATUS_APPLIED (T5, POSTfix — the status IS applied on every peer)
+//       + STATUS_TYPE (C10) + ProcChance 20 -> REMOVE_STATUS{SELF, "TRIGGER_STATUS"}.
+// Semantic delta recorded in the matrix: the status is applied and then removed rather than
+// never applied.
+//
+// Authoring note: conditions are ANDed and v1.1 has no OR, so EOR's "CURSE or DEBUFF" is two
+// recipes. A status has exactly one Type, so at most one of them ever reaches its roll —
+// the 20% chance is still a single draw per status application, matching EOR's shared roll.
+{
+  "SKILL_CF_WARDBOUND_CURSE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Wardbound (curse)",
+    "Trigger": "ON_STATUS_APPLIED",
+    "Conditions": [
+      { "Type": "STATUS_TYPE", "Value": "CURSE" }
+    ],
+    "Effects": [
+      { "Type": "REMOVE_STATUS", "Target": "SELF", "Status": "TRIGGER_STATUS" }
+    ],
+    "Budget": { "Scope": "NONE", "Key": "CF_WARDBOUND" },
+    "ProcChance": 20,
+    "AiProcChance": 20,
+    "Priority": 0,
+    "VerboseLogTag": "Wardbound"
+  },
+  "SKILL_CF_WARDBOUND_DEBUFF": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Wardbound (debuff)",
+    "Trigger": "ON_STATUS_APPLIED",
+    "Conditions": [
+      { "Type": "STATUS_TYPE", "Value": "DEBUFF" }
+    ],
+    "Effects": [
+      { "Type": "REMOVE_STATUS", "Target": "SELF", "Status": "TRIGGER_STATUS" }
+    ],
+    "Budget": { "Scope": "NONE", "Key": "CF_WARDBOUND" },
+    "ProcChance": 20,
+    "AiProcChance": 20,
+    "Priority": 1,
+    "VerboseLogTag": "Wardbound"
+  }
+}

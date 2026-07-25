@@ -1,0 +1,35 @@
+// TRAIT_FIELDMEDIC + TRAIT_MENDERS_TOUCH — behavior matrix Table 2 (L24486-24509).
+// EOR: CharacterHelper.AddHealth prefix; FIELDMEDIC adds +25% (min +1), MENDERS_TOUCH adds a
+// flat +10 when the healer used a consumable. Both mutate `ref int __1`.
+// v1.1: ON_HEAL_PENDING (T8) -> HEAL_MODIFIER (E2). Scope RECEIVED matches on pEntity,
+//       Scope GIVEN matches on the healer captured by the paired ApplyStatChange prefix.
+// The validator REJECTS any ProcChance != 100 on these recipes — no RNG on the heal path
+// (§2 T8 authority note, §4.2 E2).
+{
+  "SKILL_CF_FIELDMEDIC": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Field Medic",
+    "Trigger": "ON_HEAL_PENDING",
+    "Conditions": [],
+    "Effects": [
+      { "Type": "HEAL_MODIFIER", "Scope": "RECEIVED", "Percent": 25, "MinDelta": 1 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Field Medic"
+  },
+  "SKILL_CF_MENDERS_TOUCH": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Mender's Touch",
+    "Trigger": "ON_HEAL_PENDING",
+    "Conditions": [
+      { "Type": "ITEM_CONSUMABLE", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "HEAL_MODIFIER", "Scope": "GIVEN", "Flat": 10 }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "VerboseLogTag": "Mender's Touch"
+  }
+}

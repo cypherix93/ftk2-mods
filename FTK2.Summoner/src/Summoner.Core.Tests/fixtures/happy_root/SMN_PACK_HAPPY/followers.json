@@ -1,0 +1,37 @@
+{
+  "SMN_FOL_TEST_PIXIE": {
+    "Type": "COMPANION",
+    "ConfigName": "COMPANION_PIXIE_GENERIC_00",
+    "ClassName": "SMN_FOL_TEST_PIXIE",
+    "ContractRounds": 0,
+    "MinTier": 0,
+    "MaxTier": 3,
+    "Rarity": "COMMON",
+    "ContractPrice": "VERY_LOW",
+    "Behaviour": "DEFAULT",
+    "Subtitle": "CREATURE_SUBTITLE",
+    "JoinParty": "CREATURE_JOIN_PARTY",
+    "LeaveParty": "CREATURE_LEAVE_PARTY",
+    "Tags": ["COMPANION", "PETSHOP"],
+    "CaravanStatValue": 0,
+    "AppendableStats": { "HP": 48, "MAG": 14, "RES": 8, "EVD": 18, "CRT": 5 },
+    "Expansion": "BASE"
+  },
+  "SMN_MRC_TEST_GUARD": {
+    "Type": "MERCENARY",
+    "ConfigName": "SMN_CHAR_TEST_CREATURE",
+    "ClassName": "SMN_MRC_TEST_GUARD",
+    "ContractRounds": 999,
+    "MinTier": 0,
+    "MaxTier": 3,
+    "Rarity": "COMMON",
+    "ContractPrice": "TINY",
+    "Behaviour": "DEFAULT",
+    "Subtitle": "MERCENARY_SUBTITLE",
+    "JoinParty": "MERC_HEAVY_JOIN_PARTY",
+    "LeaveParty": "MERC_HEAVY_LEAVE_PARTY",
+    "Tags": ["MERCENARY"],
+    "CaravanStatValue": 0,
+    "Expansion": "BASE"
+  }
+}

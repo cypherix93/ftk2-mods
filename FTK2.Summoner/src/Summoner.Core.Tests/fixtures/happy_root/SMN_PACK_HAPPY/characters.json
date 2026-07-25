@@ -1,0 +1,15 @@
+{
+  "SMN_CHAR_TEST_CREATURE": {
+    "Stats": { "HP": 40, "ATK": 10, "DEF": 2 },
+    "Things": { "GENERIC_CLUB_00": 1 },
+    "Passives": ["SKILL_GENERIC_GUARD"],
+    "LocKey": "SMN_CHAR_TEST_CREATURE",
+    "Rarity": "COMMON",
+    "Level": 1,
+    "Threat": 1,
+    "BaseType": "STANDARD",
+    "DefaultBodyType": "HUMANOID",
+    "Tags": ["SMN_PACK_HAPPY"],
+    "Expansion": "BASE"
+  }
+}

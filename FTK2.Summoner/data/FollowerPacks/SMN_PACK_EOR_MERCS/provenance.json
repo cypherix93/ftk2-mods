@@ -1,0 +1,502 @@
+{
+  "SMN_MRC_BANDIT_HEAVY_00": {
+    "EorId": "MERC_PLUS_BANDIT_HEAVY_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_HEAVY_01": {
+    "EorId": "MERC_PLUS_BANDIT_HEAVY_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_HEAVY_02": {
+    "EorId": "MERC_PLUS_BANDIT_HEAVY_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_HEAVY_03": {
+    "EorId": "MERC_PLUS_BANDIT_HEAVY_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_HEAVY_04": {
+    "EorId": "MERC_PLUS_BANDIT_HEAVY_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_HEAVY_05": {
+    "EorId": "MERC_PLUS_BANDIT_HEAVY_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_HEAVY_06": {
+    "EorId": "MERC_PLUS_BANDIT_HEAVY_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_HEAVY_07": {
+    "EorId": "MERC_PLUS_BANDIT_HEAVY_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_MELEE_00": {
+    "EorId": "MERC_PLUS_BANDIT_MELEE_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_MELEE_01": {
+    "EorId": "MERC_PLUS_BANDIT_MELEE_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_MELEE_02": {
+    "EorId": "MERC_PLUS_BANDIT_MELEE_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_MELEE_03": {
+    "EorId": "MERC_PLUS_BANDIT_MELEE_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_MELEE_04": {
+    "EorId": "MERC_PLUS_BANDIT_MELEE_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_MELEE_05": {
+    "EorId": "MERC_PLUS_BANDIT_MELEE_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_MELEE_06": {
+    "EorId": "MERC_PLUS_BANDIT_MELEE_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_MELEE_07": {
+    "EorId": "MERC_PLUS_BANDIT_MELEE_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_RANGED_00": {
+    "EorId": "MERC_PLUS_BANDIT_RANGED_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_RANGED_01": {
+    "EorId": "MERC_PLUS_BANDIT_RANGED_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_RANGED_02": {
+    "EorId": "MERC_PLUS_BANDIT_RANGED_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_RANGED_03": {
+    "EorId": "MERC_PLUS_BANDIT_RANGED_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_RANGED_04": {
+    "EorId": "MERC_PLUS_BANDIT_RANGED_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_RANGED_05": {
+    "EorId": "MERC_PLUS_BANDIT_RANGED_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_RANGED_06": {
+    "EorId": "MERC_PLUS_BANDIT_RANGED_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_BANDIT_RANGED_07": {
+    "EorId": "MERC_PLUS_BANDIT_RANGED_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_00": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_01": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_02": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_03": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_04": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_05": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_06": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_07": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_00": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_ELITE_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_01": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_ELITE_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_02": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_ELITE_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_03": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_ELITE_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_04": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_ELITE_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_05": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_ELITE_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_06": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_ELITE_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_HEAVY_ELITE_07": {
+    "EorId": "MERC_PLUS_CULTIST_HEAVY_ELITE_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_00": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_01": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_02": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_03": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_04": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_05": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_06": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_07": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_00": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_ELITE_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_01": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_ELITE_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_02": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_ELITE_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_03": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_ELITE_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_04": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_ELITE_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_05": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_ELITE_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_06": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_ELITE_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MAGIC_ELITE_07": {
+    "EorId": "MERC_PLUS_CULTIST_MAGIC_ELITE_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_00": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_01": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_02": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_03": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_04": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_05": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_06": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_07": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_00": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_ELITE_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_01": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_ELITE_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_02": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_ELITE_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_03": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_ELITE_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_04": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_ELITE_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_05": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_ELITE_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_06": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_ELITE_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_CULTIST_MELEE_ELITE_07": {
+    "EorId": "MERC_PLUS_CULTIST_MELEE_ELITE_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_00": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_ALCHEMIST_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_01": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_ALCHEMIST_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_02": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_ALCHEMIST_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_03": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_ALCHEMIST_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_04": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_ALCHEMIST_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_05": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_ALCHEMIST_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_06": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_ALCHEMIST_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_ALCHEMIST_07": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_ALCHEMIST_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_00": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_MELEE_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_01": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_MELEE_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_02": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_MELEE_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_03": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_MELEE_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_04": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_MELEE_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_05": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_MELEE_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_06": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_MELEE_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_MELEE_07": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_MELEE_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_00": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_RANGED_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_01": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_RANGED_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_02": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_RANGED_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_03": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_RANGED_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_04": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_RANGED_04",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_05": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_RANGED_05",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_06": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_RANGED_06",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_DESERT_BANDIT_RANGED_07": {
+    "EorId": "MERC_PLUS_DESERT_BANDIT_RANGED_07",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_EVILBARD_MUSIC_00": {
+    "EorId": "MERC_PLUS_EVILBARD_MUSIC_00",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_EVILBARD_MUSIC_01": {
+    "EorId": "MERC_PLUS_EVILBARD_MUSIC_01",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_EVILBARD_MUSIC_02": {
+    "EorId": "MERC_PLUS_EVILBARD_MUSIC_02",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  },
+  "SMN_MRC_EVILBARD_MUSIC_03": {
+    "EorId": "MERC_PLUS_EVILBARD_MUSIC_03",
+    "PackageVersion": "0.7.0.60",
+    "Source": "eor-import"
+  }
+}

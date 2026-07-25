@@ -1,0 +1,1224 @@
+{
+  "CF_EOR_ARCANIST": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_ARCANIST",
+    "Passives": [
+      "SKILL_BLACKHOLE",
+      "SKILL_REFOCUS"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 72,
+      "CRT": 6,
+      "DEF": 0,
+      "EVD": 1,
+      "FOC": 4,
+      "HP": 30,
+      "INT": 84,
+      "LCK": 52,
+      "PA": 1,
+      "RES": 2,
+      "SA": 1,
+      "SPD": 64,
+      "STR": 52,
+      "TAL": 78,
+      "VIT": 58
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOOK_SCHOLAR_BASIC_00": 1,
+      "SCROLL_TELEPORT_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_ASSASSIN": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_ASSASSIN",
+    "Passives": [
+      "SKILL_ELITESNEAK",
+      "SKILL_CALLEDSHOT"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 82,
+      "CRT": 9,
+      "DEF": 0,
+      "EVD": 6,
+      "FOC": 3,
+      "HP": 30,
+      "INT": 60,
+      "LCK": 55,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 84,
+      "STR": 68,
+      "TAL": 66,
+      "VIT": 56
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOW_HUNTER_BASIC_00": 1,
+      "HERB_HERMIT_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_BARD": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_BARD",
+    "Passives": [
+      "SKILL_INSPIRE",
+      "SKILL_ENCOURAGE"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 58,
+      "CRT": 5,
+      "EVD": 5,
+      "FOC": 4,
+      "HP": 32,
+      "INT": 66,
+      "LCK": 50,
+      "PA": 1,
+      "SA": 1,
+      "SPD": 74,
+      "STR": 52,
+      "TAL": 80,
+      "VIT": 60
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "HERB_SCHOLARWORT_01": 1,
+      "LUTE_MINSTREL_BASIC_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_BEASTMASTER": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_BEASTMASTER",
+    "Passives": [
+      "SKILL_HERD",
+      "SKILL_NAVIGATOR"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 74,
+      "CRT": 5,
+      "DEF": 1,
+      "EVD": 2,
+      "FOC": 3,
+      "HP": 34,
+      "INT": 60,
+      "LCK": 52,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 66,
+      "STR": 60,
+      "TAL": 60,
+      "VIT": 74
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOOMERANG_PATHFINDER_BASIC_00": 1,
+      "TOOL_RALLYBANNER_01": 4,
+      "TRINKET_COMPASS_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_BLADEDANCER": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_BLADEDANCER",
+    "Passives": [
+      "SKILL_CHARGEATTACK",
+      "SKILL_SMOKEFLEE"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 70,
+      "CRT": 7,
+      "DEF": 1,
+      "EVD": 4,
+      "FOC": 3,
+      "HP": 33,
+      "INT": 56,
+      "LCK": 52,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 80,
+      "STR": 76,
+      "TAL": 62,
+      "VIT": 64
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "HERB_GOLDENROOT_01": 1,
+      "LONGSTAFF_MONK_BASIC_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_CHRONOMANCER": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_CHRONOMANCER",
+    "Passives": [
+      "SKILL_EAGER",
+      "SKILL_ENERGYBOOST"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 66,
+      "CRT": 5,
+      "DEF": 0,
+      "EVD": 3,
+      "FOC": 4,
+      "HP": 31,
+      "INT": 78,
+      "LCK": 55,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 82,
+      "STR": 54,
+      "TAL": 76,
+      "VIT": 60
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOOK_ASTRONOMER_BASIC_00": 1,
+      "TRINKET_SPYGLASS_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_CORSAIR": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_CORSAIR",
+    "Passives": [
+      "SKILL_ELITEAMBUSH",
+      "SKILL_BOUNTY"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 78,
+      "CRT": 6,
+      "DEF": 1,
+      "EVD": 4,
+      "FOC": 4,
+      "HP": 34,
+      "INT": 52,
+      "LCK": 56,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 76,
+      "STR": 70,
+      "TAL": 66,
+      "VIT": 64
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "HERB_GOLDENROOT_01": 1,
+      "LONGSTAFF_MONK_BASIC_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_DRUID": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_DRUID",
+    "Passives": [
+      "SKILL_FINDHERB",
+      "SKILL_NAVIGATOR"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 78,
+      "CRT": 5,
+      "DEF": 1,
+      "EVD": 2,
+      "FOC": 4,
+      "HP": 34,
+      "INT": 72,
+      "LCK": 56,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 68,
+      "STR": 56,
+      "TAL": 70,
+      "VIT": 68
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "HERB_GODSBEARD_01": 1,
+      "STAFF_HERBALIST_BASIC_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_DUELIST": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_DUELIST",
+    "Passives": [
+      "SKILL_DISCIPLINE",
+      "SKILL_ELITEAMBUSH"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 76,
+      "CRT": 8,
+      "DEF": 1,
+      "EVD": 4,
+      "FOC": 3,
+      "HP": 32,
+      "INT": 58,
+      "LCK": 54,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 78,
+      "STR": 74,
+      "TAL": 68,
+      "VIT": 62
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "HERB_GOLDENROOT_01": 1,
+      "LONGSTAFF_MONK_BASIC_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_FORTUNEBORN": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_FORTUNEBORN",
+    "Passives": [
+      "SKILL_FORTUNE",
+      "SKILL_BOUNTY"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 60,
+      "CRT": 9,
+      "DEF": 0,
+      "EVD": 2,
+      "FOC": 3,
+      "HP": 30,
+      "INT": 64,
+      "LCK": 95,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 68,
+      "STR": 50,
+      "TAL": 76,
+      "VIT": 52
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "LUTE_BUSKER_BASIC_00": 1,
+      "TOOL_LOCKPICKS_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_GAMBLER": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_GAMBLER",
+    "Passives": [
+      "SKILL_FORTUNE",
+      "SKILL_NICEDAY"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 60,
+      "CRT": 7,
+      "DEF": 0,
+      "EVD": 2,
+      "FOC": 4,
+      "HP": 30,
+      "INT": 62,
+      "LCK": 72,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 74,
+      "STR": 54,
+      "TAL": 80,
+      "VIT": 58
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "LUTE_BUSKER_BASIC_00": 1,
+      "TOOL_LOCKPICKS_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_GLADIATOR": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_GLADIATOR",
+    "Passives": [
+      "SKILL_PARRY",
+      "SKILL_STEADFAST"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 62,
+      "CRT": 6,
+      "DEF": 2,
+      "EVD": 0,
+      "FOC": 3,
+      "HP": 40,
+      "INT": 50,
+      "LCK": 52,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 64,
+      "STR": 82,
+      "TAL": 58,
+      "VIT": 80
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BLUNT_BLACKSMITH_BASIC_00": 1,
+      "SHIELD_BLACKSMITH_BASIC_00": 1,
+      "TOOL_VEHICLE_REPAIR_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_HEXBLADE": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_HEXBLADE",
+    "Passives": [
+      "SKILL_FATE",
+      "SKILL_ANNOYING"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 70,
+      "CRT": 6,
+      "DEF": 1,
+      "EVD": 2,
+      "FOC": 4,
+      "HP": 36,
+      "INT": 64,
+      "LCK": 58,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 70,
+      "STR": 74,
+      "TAL": 68,
+      "VIT": 70
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BLUNT_BLACKSMITH_BASIC_00": 1,
+      "SHIELD_BLACKSMITH_BASIC_00": 1,
+      "TOOL_VEHICLE_REPAIR_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_JESTER": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_JESTER",
+    "Passives": [
+      "SKILL_ENTERTAIN",
+      "SKILL_DISTRACT"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 60,
+      "CRT": 5,
+      "EVD": 5,
+      "FOC": 4,
+      "HP": 30,
+      "INT": 58,
+      "LCK": 50,
+      "PA": 1,
+      "SA": 1,
+      "SPD": 78,
+      "STR": 54,
+      "TAL": 82,
+      "VIT": 58
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "LUTE_BUSKER_BASIC_00": 1,
+      "TOOL_LOCKPICKS_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_KNIGHT": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_KNIGHT",
+    "Passives": [
+      "SKILL_KNIGHTSOATH",
+      "SKILL_PARRY"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 64,
+      "CRT": 5,
+      "DEF": 2,
+      "EVD": 0,
+      "FOC": 3,
+      "HP": 40,
+      "INT": 50,
+      "LCK": 50,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 60,
+      "STR": 78,
+      "TAL": 58,
+      "VIT": 82
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BLUNT_BLACKSMITH_BASIC_00": 1,
+      "SHIELD_BLACKSMITH_BASIC_00": 1,
+      "TOOL_VEHICLE_REPAIR_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_MARSHAL": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_MARSHAL",
+    "Passives": [
+      "SKILL_JUSTICE",
+      "SKILL_TACTICS"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 68,
+      "CRT": 5,
+      "DEF": 2,
+      "EVD": 1,
+      "FOC": 3,
+      "HP": 36,
+      "INT": 62,
+      "LCK": 50,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 66,
+      "STR": 78,
+      "TAL": 64,
+      "VIT": 76
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOOMERANG_PATHFINDER_BASIC_00": 1,
+      "TOOL_RALLYBANNER_01": 4,
+      "TRINKET_COMPASS_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_ORACLE": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_ORACLE",
+    "Passives": [
+      "SKILL_FATE",
+      "SKILL_FINDSCROLL"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 80,
+      "CRT": 6,
+      "DEF": 0,
+      "EVD": 1,
+      "FOC": 4,
+      "HP": 31,
+      "INT": 76,
+      "LCK": 60,
+      "PA": 1,
+      "RES": 2,
+      "SA": 1,
+      "SPD": 68,
+      "STR": 52,
+      "TAL": 74,
+      "VIT": 60
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOOK_SCHOLAR_BASIC_00": 1,
+      "SCROLL_TELEPORT_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_PALADIN": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_PALADIN",
+    "Passives": [
+      "SKILL_REDIRECT",
+      "SKILL_PARTYHEAL"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 64,
+      "CRT": 5,
+      "DEF": 2,
+      "EVD": 1,
+      "FOC": 3,
+      "HP": 36,
+      "INT": 62,
+      "LCK": 50,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 62,
+      "STR": 74,
+      "TAL": 66,
+      "VIT": 78
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BLUNT_FRIAR_BASIC_00": 1,
+      "DRINK_IRONSPIRIT_01": 1,
+      "SHIELD_FRIAR_BASIC_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_PEASANT": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_PEASANT",
+    "Passives": [
+      "SKILL_FINDSTUFF",
+      "SKILL_HARDWORK"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 58,
+      "CRT": 5,
+      "DEF": 1,
+      "EVD": 0,
+      "FOC": 3,
+      "HP": 36,
+      "INT": 54,
+      "LCK": 62,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 64,
+      "STR": 66,
+      "TAL": 56,
+      "VIT": 72
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "CORNDOG_BASIC_01": 1,
+      "POLEARM_FARMER_BASIC_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_PRIEST": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_PRIEST",
+    "Passives": [
+      "SKILL_PARTYHEAL",
+      "SKILL_REFOCUS"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 74,
+      "CRT": 5,
+      "DEF": 0,
+      "FOC": 5,
+      "HP": 32,
+      "INT": 80,
+      "LCK": 50,
+      "PA": 1,
+      "RES": 2,
+      "SA": 1,
+      "SPD": 60,
+      "STR": 52,
+      "TAL": 60,
+      "VIT": 64
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BLUNT_FRIAR_BASIC_00": 1,
+      "DRINK_IRONSPIRIT_01": 1,
+      "SHIELD_FRIAR_BASIC_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_RANCHER": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_RANCHER",
+    "Passives": [
+      "SKILL_HERD",
+      "SKILL_NAVIGATOR"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 80,
+      "CRT": 5,
+      "DEF": 1,
+      "EVD": 3,
+      "FOC": 4,
+      "HP": 36,
+      "INT": 52,
+      "LCK": 52,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 72,
+      "STR": 64,
+      "TAL": 60,
+      "VIT": 78
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BLADE_STABLEBOY_BASIC_00": 1,
+      "HERB_NETTLE_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_RANGER": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_RANGER",
+    "Passives": [
+      "SKILL_CALLEDSHOT",
+      "SKILL_BOUNTY"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 82,
+      "CRT": 7,
+      "DEF": 0,
+      "EVD": 5,
+      "FOC": 4,
+      "HP": 30,
+      "INT": 54,
+      "LCK": 52,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 74,
+      "STR": 62,
+      "TAL": 68,
+      "VIT": 56
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOOMERANG_PATHFINDER_BASIC_00": 1,
+      "TOOL_RALLYBANNER_01": 4,
+      "TRINKET_COMPASS_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_RUNEMAGE": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_RUNEMAGE",
+    "Passives": [
+      "SKILL_BLACKHOLE",
+      "SKILL_MEDIC"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 70,
+      "CRT": 5,
+      "DEF": 0,
+      "EVD": 0,
+      "FOC": 5,
+      "HP": 30,
+      "INT": 84,
+      "LCK": 54,
+      "PA": 1,
+      "RES": 2,
+      "SA": 1,
+      "SPD": 68,
+      "STR": 52,
+      "TAL": 74,
+      "VIT": 58
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOOK_ASTRONOMER_BASIC_00": 1,
+      "TRINKET_SPYGLASS_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_SCOUT": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_SCOUT",
+    "Passives": [
+      "SKILL_SURVEY",
+      "SKILL_SCOUT"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 72,
+      "CRT": 6,
+      "DEF": 0,
+      "EVD": 5,
+      "FOC": 4,
+      "HP": 32,
+      "INT": 56,
+      "LCK": 52,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 84,
+      "STR": 58,
+      "TAL": 72,
+      "VIT": 58
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOOMERANG_PATHFINDER_BASIC_00": 1,
+      "TOOL_RALLYBANNER_01": 4,
+      "TRINKET_COMPASS_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_SENTINEL": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_SENTINEL",
+    "Passives": [
+      "SKILL_REDIRECT",
+      "SKILL_STEADFAST"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 62,
+      "CRT": 5,
+      "DEF": 3,
+      "EVD": 1,
+      "FOC": 3,
+      "HP": 38,
+      "INT": 58,
+      "LCK": 50,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 60,
+      "STR": 72,
+      "TAL": 58,
+      "VIT": 82
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BLUNT_BLACKSMITH_BASIC_00": 1,
+      "SHIELD_BLACKSMITH_BASIC_00": 1,
+      "TOOL_VEHICLE_REPAIR_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_TEMPLAR": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_TEMPLAR",
+    "Passives": [
+      "SKILL_PARTYHEAL",
+      "SKILL_GUARD"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 64,
+      "CRT": 5,
+      "DEF": 3,
+      "EVD": 0,
+      "FOC": 3,
+      "HP": 40,
+      "INT": 58,
+      "LCK": 52,
+      "PA": 1,
+      "RES": 2,
+      "SA": 1,
+      "SPD": 60,
+      "STR": 76,
+      "TAL": 62,
+      "VIT": 82
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BLUNT_FRIAR_BASIC_00": 1,
+      "DRINK_IRONSPIRIT_01": 1,
+      "SHIELD_FRIAR_BASIC_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_THIEF": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_THIEF",
+    "Passives": [
+      "SKILL_ELITESNEAK",
+      "SKILL_SMOKEFLEE"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 62,
+      "CRT": 5,
+      "EVD": 6,
+      "FOC": 4,
+      "HP": 30,
+      "INT": 56,
+      "LCK": 50,
+      "PA": 1,
+      "SA": 1,
+      "SPD": 82,
+      "STR": 58,
+      "TAL": 80,
+      "VIT": 52
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "MISC_TREASUREMAP_01": 1,
+      "WHIP_TREASUREHUNTER_BASIC_00": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_TRICKSHOT": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_TRICKSHOT",
+    "Passives": [
+      "SKILL_CALLEDSHOT",
+      "SKILL_SCOUT"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 84,
+      "CRT": 7,
+      "DEF": 0,
+      "EVD": 5,
+      "FOC": 4,
+      "HP": 30,
+      "INT": 54,
+      "LCK": 54,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 78,
+      "STR": 62,
+      "TAL": 68,
+      "VIT": 56
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOW_HUNTER_BASIC_00": 1,
+      "HERB_HERMIT_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_WARDEN": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_WARDEN",
+    "Passives": [
+      "SKILL_SUPPORTRANGE",
+      "SKILL_TACTICS"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 68,
+      "CRT": 5,
+      "DEF": 1,
+      "EVD": 2,
+      "FOC": 3,
+      "HP": 34,
+      "INT": 66,
+      "LCK": 50,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 62,
+      "STR": 66,
+      "TAL": 70,
+      "VIT": 74
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BLUNT_BLACKSMITH_BASIC_00": 1,
+      "SHIELD_BLACKSMITH_BASIC_00": 1,
+      "TOOL_VEHICLE_REPAIR_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_WARRIOR": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_WARRIOR",
+    "Passives": [
+      "SKILL_JUSTICE",
+      "SKILL_GUARD"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 66,
+      "CRT": 5,
+      "DEF": 2,
+      "EVD": 0,
+      "FOC": 3,
+      "HP": 38,
+      "INT": 50,
+      "LCK": 50,
+      "PA": 1,
+      "RES": 0,
+      "SA": 1,
+      "SPD": 64,
+      "STR": 82,
+      "TAL": 58,
+      "VIT": 78
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BLUNT_BLACKSMITH_BASIC_00": 1,
+      "SHIELD_BLACKSMITH_BASIC_00": 1,
+      "TOOL_VEHICLE_REPAIR_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_EOR_WIZARD": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_EOR_WIZARD",
+    "Passives": [
+      "SKILL_BLACKHOLE",
+      "SKILL_REFOCUS"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 64,
+      "CRT": 5,
+      "DEF": 0,
+      "EVD": 0,
+      "FOC": 5,
+      "HP": 30,
+      "INT": 86,
+      "LCK": 50,
+      "PA": 1,
+      "RES": 2,
+      "SA": 1,
+      "SPD": 68,
+      "STR": 50,
+      "TAL": 78,
+      "VIT": 54
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_EOR_CLASSES"
+    ],
+    "Things": {
+      "BOOK_SCHOLAR_BASIC_00": 1,
+      "SCROLL_TELEPORT_01": 1
+    },
+    "Threat": 0
+  }
+}

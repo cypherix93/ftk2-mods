@@ -1,0 +1,10 @@
+{
+  "author": "ftk2mods",
+  "dependencies": [],
+  "description": "EOR's 31 EOR_* player classes, re-hosted with CF_EOR_ ids.",
+  "enabled": true,
+  "id": "CF_PACK_EOR_CLASSES",
+  "loadOrder": 100,
+  "name": "Enhanced Overhaul Classes (re-hosted)",
+  "version": "1.0.0"
+}

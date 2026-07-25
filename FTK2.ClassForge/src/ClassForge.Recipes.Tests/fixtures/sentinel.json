@@ -1,0 +1,30 @@
+// SENTINEL (Brace) — behavior matrix Table 1 SENTINEL (L6451-6457).
+// EOR: opponent-reaction pass; melee-only; OnceRound is only set ON SUCCESS, so a failed roll
+// on the first melee hit does not block a re-roll on a second melee hit the same round.
+// v1.1: ON_DAMAGE_TAKEN (T4) + ABILITY_RANGED{false} (C4) + Budget{ONCE_PER_ROUND, ConsumeOn PROC}
+//       -> ADD_STATUS{TRIGGER_SOURCE, STATUS_DAZE_00, FallbackStatus STATUS_ATTACKDOWN_00}.
+// ConsumeOn PROC is exactly EOR's real (not flavor-text) behavior — §5.1.
+// FallbackStatus is the IMMUNITY_FALLBACK field, resolved result-driven by the Plugin (§4.1).
+{
+  "SKILL_CF_SENTINEL_BRACE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Brace",
+    "Trigger": "ON_DAMAGE_TAKEN",
+    "Conditions": [
+      { "Type": "ABILITY_RANGED", "Value": false }
+    ],
+    "Effects": [
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_SOURCE",
+        "Status": "STATUS_DAZE_00",
+        "FallbackStatus": "STATUS_ATTACKDOWN_00",
+        "Duration": 1
+      }
+    ],
+    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "ProcChance": 25,
+    "AiProcChance": 25,
+    "VerboseLogTag": "Brace"
+  }
+}
