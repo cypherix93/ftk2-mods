@@ -2,6 +2,41 @@
 
 Plugin GUID: `ftk2mods.summoner` · Id prefix: `SMN_` · Priority: **P2**
 
+## Status (2026-07-25) — M0 implemented
+
+What shipped on `engine/eor-rehost` is **M0: a `Characters.json`/`Followers.json` pack loader** (design doc
+`docs/superpowers/plans/2026-07-25-summoner-m0-and-converter-design.md`, charter deliverable D5) — a narrower
+scope than the full Trainer/evolution-chain/companion/bond engine this SPEC describes below, which remains a
+design for later milestones. M0 exists to let `tools/eor_import.py`-converted EOR pets/mercenaries (249
+followers, imported as `SMN_PACK_EOR_MERCS`-style packs) merge into `Configs.Characters`/`Configs.Followers`
+the same adds-only way ClassForge merges classes. `Summoner.Core` (16 tests) is green.
+
+- **Loader implemented, adds-only.** `Summoner.Core/Merge/MergePlanner.cs` enforces a hard `^SMN_[A-Z0-9_]+$`
+  id shape and skips any candidate id already present in the live (pre-pack) `Configs` snapshot — the same
+  M0 discipline ClassForge's `MergePlanner` was ported from (the Wave-4 MP review specifically called out
+  Summoner's version as the one that got this right first). `Summoner.Plugin/Adapters/ConfigsSink.cs` writes
+  the planned entries into `Configs.Characters`/`Configs.Followers`.
+- **`[Multiplayer] OnParityMismatch = Block` — now actually wired**, not decorative. An earlier build parsed
+  the knob but never consumed it (the review's B7 finding: no `ParityFailed` pathway, so Summoner could not
+  learn it had diverged, enter SafeMode, or block). Fixed: registration now prefers
+  `FTK2Mods.DevKit.ParityService.RegisterWithCallback` (falling back to the callback-less `Register` only if
+  that overload can't be resolved), and the callback latches a session-scoped `Blocked` flag on any
+  non-`Match` verdict row that the `Configs`-merge postfixes consult before merging further. Because
+  Summoner's merge is load-time (like ClassForge's), `WarnAndSafeMode` and `Block` degenerate to the same
+  observable behavior — stop future merges, log loudly — the distinction is honest about *when* it can act,
+  not a claim that a WarnAndSafeMode-vs-Block choice changes runtime behavior differently for this mod.
+  Registering now happens unconditionally at `Awake()` (with `DataHash = "(disabled)"` when
+  `[General] Enabled=false`), so a disabled peer still appears in the handshake instead of being invisible to
+  it — the review's B7 fix.
+- **Field-type corrections vs. an earlier draft of this SPEC** (verified against the decompile,
+  `FollowerCharacterConfig.cs`, 18 fields; `CharacterConfig.cs`, 14 fields — both cited in the M0 design doc
+  §0.1): `Rescued` and `GiveDeed` on `FollowerEntry` are **`string`, not `bool`** (the decompile type is
+  `string` and is preserved verbatim — 14/249 real EOR entries populate `Rescued`, 13/249 populate `GiveDeed`,
+  neither with boolean-looking values worth coercing). `Stats` and `Things` on `CharacterEntry` are
+  **`Dictionary<string,int>`** mirroring the game's own `SerializedSortedDictionary<string,int>` (item id →
+  quantity for `Things`; stat key → value for `Stats`) — see §4.1/§4.6 below for the shapes those fields
+  appear in.
+
 ## 1. Purpose & scope
 
 FTK2.Summoner is a summon-and-evolution engine that delivers a trainer-style "raise a creature, fight

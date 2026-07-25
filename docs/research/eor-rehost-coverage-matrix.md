@@ -199,3 +199,66 @@ delivered as an **alternate grantor condition** on the same recipe, not a duplic
    (row 8 → Questsmith, deferred), and the systems the charter dropped outright (row 9: Risky Blessings,
    Nemesis, encounter modifiers, campaign mutators, world events, town specialists, sanctums; row 11:
    telemetry, version check, debug toolkit, camera tweaks).
+
+---
+
+## Implementation updates (2026-07-25)
+
+Findings from Wave 3 (implementation of `CF_PACK_EOR_CLASSES` against this matrix) and the Wave-4 adversarial
+MP-correctness review (`docs/research/eor-rehost-mp-review.md`) that refine or correct dispositions above.
+None reopen a PORT/PORT-MODIFIED/PARK verdict; all are either newly-discovered evidence or authoring notes
+found while actually writing the recipes this matrix specified.
+
+1. **`ON_DODGE` is unparkable as of this update — new evidence, not previously found.** §7's parked-primitive
+   index (and DUELIST's row, §1 row 9) cite PSN's `eAbilityResults` investigation as finding no dodge member.
+   A direct decompile check of `tools/out/decompile/FTK2/eAbilityResults.cs` shows **`DODGED` is in fact a
+   member of the enum** (line 14). This does not retroactively unpark DUELIST in this wave — the recipe
+   engine's dispatch surface and DUELIST's specific counter/`ROLL_STAT_BONUS` shape were not built against it
+   — but it removes the stated blocker. **Candidate for v1.2**: add an `ON_DODGE` trigger anchored wherever
+   `eAbilityResults.DODGED` is appended to a results list (needs its own hook-point verification, same
+   discipline as every other trigger in SPEC-DELTA-v1.1 §2), then revisit DUELIST (§1 row 9) and any other
+   mechanic that was parked solely on this evidence gap.
+2. **`ROLL_TIER {Value: "FAIL"}` is a schema token the game can never produce — validator-warning candidate.**
+   The game's real `eRollStatus` has exactly **three** members: `CRIT_FAIL, SUCCESS, PERFECT` — there is no
+   `FAIL`. The shipped recipe engine's `RollTier` vocabulary additionally declares `FAIL` for a complete
+   worst→best ordering (`CRIT_FAIL < FAIL < SUCCESS < PERFECT`), so `GTE`/`LTE` comparisons against `FAIL`
+   still behave sensibly (they degrade to "at least/at most `CRIT_FAIL`-or-better", which is meaningful), but
+   `{"Comparator":"EQ","Value":"FAIL"}` can **never** match — the game never produces that roll grade.
+   Verified: `ClassForge.Plugin/Recipes/RecipeEngineHost.cs` `MapRollTier` maps only `CRIT_FAIL`/`PERFECT`
+   explicitly and defaults everything else (including the game's actual `SUCCESS`) to `RollTier.SUCCESS`.
+   **Recommended fix, not yet built:** the pack loader's recipe validator should warn (not error, since the
+   condition is inert rather than broken) on any `ROLL_TIER{Comparator:"EQ", Value:"FAIL"}` authored against a
+   trigger whose roll tier comes from `pRollData.Status` (i.e. every trigger except the few that don't carry
+   one), so an author doesn't ship a silently-dead condition.
+3. **PRIEST ships simplified: `ON_HEAL` carries no roll tier, so the tiered status choice is honestly
+   flattened to one tier.** §1 row 20's recipe sketch gates the `_01`-tier status pair (`ARMORUP_01`/
+   `RESISTANCEUP_GROUP_01`) on `ROLL_TIER(EQ PERFECT)`, mirroring BM's read of the EOR source. As authored,
+   `ClassForge.Recipes`' `HealEvent` (`Runtime/TriggerEvents.cs`) carries **no roll-tier field** under
+   `ON_HEAL` — that condition would always read the engine's `RollTier.SUCCESS` default and never evaluate
+   true, silently downgrading the recipe to always-`_00` while *appearing* to gate on `PERFECT` in the JSON.
+   The shipped `SKILL_CF_PRIEST_BENEDICTION` recipe (`CF_PACK_EOR_CLASSES/skillrecipes.json`) ships the
+   honestly-expressible **always-`_00`** behavior instead of an improvised roll-tier gate that would silently
+   never fire its intended branch — documented inline in the recipe's own `_source`/provenance
+   `expressiveness_gaps` note. This is a real behavioral simplification versus BM's read of EOR, not a bug in
+   the shipped recipe; closing the gap needs `ON_HEAL` to carry an explicit roll-tier datum, which is not
+   currently among `InteractableHelper.ApplyStatChange`'s verified parameters for a heal path.
+4. **BEASTMASTER's pet-half recipe is authored but unattached — no pet Character config to carry it.**
+   §1 row 4's recipe sketch calls for a master recipe (quarry-marking, `SKILL_CF_BEASTMASTER_QUARRY`, shipped
+   and attached) plus a pet recipe (`SKILL_CF_BEASTMASTER_PACK_TACTICS`, authored onto pack pet configs).
+   `CF_PACK_EOR_CLASSES` owns no pet `Characters.json` entry — pack pets/mercs are Summoner's domain per this
+   matrix's own §5 cross-cutting note 7 — so `SKILL_CF_BEASTMASTER_PACK_TACTICS` is written and validated but
+   **currently unattached to any `Passives[]`** (see the recipe's own `_source` note and
+   `provenance.json`'s `expressiveness_gaps`). No functional loss for the shipped pack (Beastmaster's own
+   quarry-marking half fully ports), but the pet half needs a home the moment a Beastmaster-compatible pet
+   config exists (Summoner M1+ or a future ClassForge pack).
+5. **M6 (Armory zero-registration) posture note.** The Wave-4 MP review's M6 finding — Armory's ~417 items
+   reach `Configs` via manual copy/merge (`FTK2.Armory/INSTALL.md`) with **zero parity registration** — is a
+   real gap, but its disposition is a posture note, not a coverage-matrix reclassification: Armory ships no
+   C# at all by design (§6 row 1's "zero-code M1" status), so there is nothing in Armory itself to register
+   with. When installed under the recommended EOR path, EOR's own hash covers `CustomItems` (including our
+   packs) as part of its existing (if diagnostic-only) sync-guard hashing — better than nothing, but not R1
+   enforcement. **Our own DevKit-side registration for manually-installed data roots is a future Armory
+   micro-plugin item**, not a Wave-3/4 deliverable: a minimal plugin (or a DevKit hook a player points at an
+   arbitrary data folder) that computes `DevKit.DataHasher.ComputeFolderHash` over the installed Armory data
+   and registers `(guid, version, dataHash)` the same way every other `ftk2mods.*` mod does. Tracked here so
+   it isn't lost between the MP review (which found it) and Armory's own SPEC (which doesn't yet plan for it).

@@ -141,7 +141,7 @@ namespace ClassForge.Core
         public List<Finding> Findings = new List<Finding>();
     }
 
-    /// <summary>The payload shape ClassForgePlugin.Load() reflection-calls FTK2.DevKit.Core.ParityRegistry.Register(...) with (SPEC.md §3, §6, §9.6).</summary>
+    /// <summary>The payload shape ClassForgePlugin.Load() reflection-calls FTK2Mods.DevKit.ParityService.Register(...) with (SPEC.md §3, §6, §9.6).</summary>
     public sealed class ParityRegistration
     {
         public string Guid;

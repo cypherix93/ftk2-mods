@@ -6,19 +6,54 @@ caveat. This doc defines the shared architecture; each SPEC's §9 states how the
 
 ## What we know about FTK2 netcode (evidence + gaps)
 
+**Correction (2026-07-25, per the Wave-4 adversarial MP-correctness review,
+`docs/research/eor-rehost-mp-review.md` §0 "Verification of record"): the "string-keyed payloads" premise
+below was wrong, verified against the decompile, not assumption.** `AdventureDirector._handleNetworkAction`
+has exactly one declaration, `protected override async Task _handleNetworkAction(GameAction pGameAction)` —
+the transport is the **closed ProtoBuf `GameAction`/`GameActionDataBase` hierarchy**
+(`[ProtoInclude(1..23)]`, no runtime extension point), not a string-keyed action bus. There is no
+`_trySendNetworkAction` overload with string parameters for an action key + payload (all eight overloads are
+shaped `(eAdventureActions, Entity, ...)` / `(eTownServiceTypes, Entity)` / `(int)`). EOR's own
+`EOR_SYNC_TOWN_SNAPSHOT_V1`-style names are **not** literal wire action keys; EOR reaches the wire by binding
+one specific overload (`_trySendNetworkAction(eAdventureActions, eEncounterActions, ..., object pResultArgs,
+...)`, chosen via explicit `argumentTypes`) and stuffing its string payload into that overload's
+`pResultArgs`, which lands on a specific field of a specific `AdventureActionData` subtype
+(`EncounterActionActionData.SkillEncounterConfigId` for EOR's channel;
+`DebugGetSpecificThingActionData.ThingData` for DevKit's default, inert channel — see
+`FTK2.DevKit/SPEC.md` §Status/§3). **String payloads ride a specific action-data string field, not a
+free-form string-keyed bus** — our own `ParityService` transport (`FTK2.DevKit/src/DevKit.Plugin/
+ParityTransport.cs`) and EOR's precedent both confirm this. Every "custom network action" design in this repo
+must bind a real `_trySendNetworkAction` overload by explicit `argumentTypes` and choose a real
+`AdventureActionData` string field to carry its payload — there is no bespoke action-key mechanism to piggyback.
+
+Also newly confirmed: **the game self-polices desyncs.** `GameAction.DesyncDetectionData {Hash,
+GameRandomNextInt}` exists and `NetworkData` exposes `DoMonitorForDesyncs`/`HasADesyncBeenDetected`/
+`LatestGameRandomDesyncIndex`/`DebugDesyncGameRandomData` — the game itself compares `GameRandom` draw
+results across peers per action. Any asymmetric shared-stream draw our mods take is not a silent drift; it
+trips the vendor's own desync detector. (A separate visual-only stream, `GameRandom.NextFloatVisual`/
+`NextChanceVisual`, exists alongside the gameplay entry points — correct engines use only the latter.)
+
 Verified/precedented (from the EOR mod's decompilable implementation and FTK2.dll surface):
-- Custom network actions can piggyback **`AdventureDirector._handleNetworkAction`** with string-keyed
-  payloads (EOR: `EOR_SYNC_TOWN_SNAPSHOT_V1`, `EOR_MP_QUEST_ARCHETYPE`, …). This is our transport.
+- Custom network actions ride the ProtoBuf `GameAction`/`AdventureActionData` hierarchy above — this is our
+  transport, corrected from an earlier "string-keyed" assumption.
 - EOR runs a **mod-parity handshake** hashing mod version / config values / major data files /
   enabled systems / definitions (`EOR_VER / EOR_CFG / EOR_DAT / EOR_SYS / EOR_DEF / EOR_SIG`) and
-  warns "Multiplayer desync likely" on mismatch. Proven pattern; we generalize it.
+  warns "Multiplayer desync likely" on mismatch. Proven pattern; we generalize it — and, unlike EOR's,
+  ours (`FTK2.DevKit`'s `ParityService`) is meant to *enforce*, not just log.
 - EOR uses **shared deterministic RNG** (`EOR_SHARED_RNG|…`) and skips rolls when no deterministic
   `GameRandom` is available — the game has a deterministic-random facility we must reuse for any
-  roll whose outcome peers must agree on.
+  roll whose outcome peers must agree on. The game's own desync detector (above) validates this in practice.
 - EOR implements **host-authoritative town snapshots** — host authority over derived state, clients
   receive snapshots.
 - `CombatComponent` (PA/SA, CanSummon, …) is a serialized component; combat actions replicate through
   the vanilla action pipeline.
+- **`NetworkData.IsHost` and `NetworkData.PlayingOnlineMultiplayer` are plain public bools**
+  (`NetworkData.cs:26,61`), read directly in `AdventureDirector`, `AdventureSelectionDirector`, and
+  `CombatPhase` — this closes what an earlier draft of `FTK2.DevKit/SPEC.md` §11.8 called "no host/session
+  flag has been identified": DevKit's `ParityService` host detection is no longer hardcoded to `false`
+  (`FTK2.DevKit/SPEC.md` §Status). This confirms a session-level host flag *exists and is readable*; it does
+  not by itself confirm whether `AIHelper`'s decision-making is gated by it (open question #1 below, still
+  open).
 
 Open questions to resolve in the decompile pass (tracked here, not per-spec):
 1. Is enemy AI decision-making host-only in vanilla (i.e. does `AIHelper` run only on host, with
@@ -26,7 +61,9 @@ Open questions to resolve in the decompile pass (tracked here, not per-spec):
 2. Does `GameRunData` custom state replicate to clients or live host-side only?
 3. Does `CombatState.GridType` sync natively or is it computed per-peer?
 4. Does `PartyManagementDirector._rebuildCharactertAsNewConfigType` propagate to peers natively?
-5. Exact payload shape/size limits of `_handleNetworkAction` custom actions.
+5. Exact payload shape/size limits of `_handleNetworkAction` custom actions — partially addressed
+   pragmatically (not by a confirmed vendor limit) by `FTK2.DevKit`'s `MaxParityPayloadBytes` cap + degraded
+   snapshot fallback (`FTK2.DevKit/SPEC.md` §Status/§5).
 
 ## The five rules
 

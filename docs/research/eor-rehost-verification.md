@@ -296,3 +296,203 @@ if `eor_import.py` is ever re-run for a real reason (e.g. a new EOR package vers
   compiled packs exactly.
 - Determinism re-run: **not clean** — `CF_PACK_EOR_CLASSES` drifted due to post-import hand
   authoring the base importer can't reproduce; reverted, documented as an anomaly (§7, §9).
+
+## Post-fix re-verification (Wave 6)
+
+*Run 2026-07-25, from `D:\src\mods\ftk2-mods`. Scope per unit brief: re-run the full matrix after
+the Wave-5 parity fixes with real commands and real captured output. Fix nothing — any failure is
+reported verbatim. No commits made.*
+
+Pre-flight note: `git status --porcelain` showed two pre-existing modified tracked files
+(`FTK2.ClassForge/src/ClassForge.Core/Model.cs`, `.../ParityRegistrationBuilder.cs`) before any
+command in this sweep ran — both are doc-comment-only diffs (a stale type reference,
+`FTK2.DevKit.Core.ParityRegistry` / `FTK2.DevKit.Core.ParityRegistry.Register`, corrected to
+`FTK2Mods.DevKit.ParityService` / `FTK2Mods.DevKit.ParityService.Register`). Not touched by this
+sweep, not authored by it, and outside the three paths §6 below checks — noted here for the
+record, left as-is per "fix nothing."
+
+### 1. Build matrix
+
+All from `D:\src\mods\ftk2-mods`, `-c Release`. Plugins used
+`-p:ManagedDir=tools/bin/refs -p:BepInExDir=tools/bin/refs` except Summoner.Plugin (its csproj
+defaults `FtkRefsDir` to the same snapshot).
+
+| Component | Command | Result | Tail |
+|---|---|---|---|
+| DevKit.Core | `dotnet build FTK2.DevKit/src/DevKit.Core -c Release` | **PASS** | `Build succeeded. 0 Warning(s) 0 Error(s)` |
+| DevKit.Plugin | `dotnet build FTK2.DevKit/src/DevKit.Plugin -c Release -p:ManagedDir=tools/bin/refs -p:BepInExDir=tools/bin/refs` | **PASS** | `Build succeeded. 0 Warning(s) 0 Error(s)` |
+| ClassForge.Core | `dotnet build FTK2.ClassForge/src/ClassForge.Core -c Release` | **PASS** | `Build succeeded. 0 Warning(s) 0 Error(s)` |
+| ClassForge.Recipes | `dotnet build FTK2.ClassForge/src/ClassForge.Recipes -c Release` | **PASS** | `Build succeeded. 0 Warning(s) 0 Error(s)` |
+| ClassForge.Plugin | `dotnet build FTK2.ClassForge/src/ClassForge.Plugin -c Release -p:ManagedDir=tools/bin/refs -p:BepInExDir=tools/bin/refs` | **FAIL** | `9 Warning(s) 158 Error(s)` — `CS0246` cascade (`Entity`, `Thing`, `eAbilityResults`, `eCombatActions`, `eSkillEventProcs`, `CombatDecisionData`, `eGetStatEquippedFilters` not found), preceded by `MSB3245: Could not resolve this reference. Could not locate the assembly "BepInEx"` / `"FTK2"` etc. |
+| ClassForge.PackCheck | `dotnet build FTK2.ClassForge/src/ClassForge.PackCheck -c Release` | **PASS** | `Build succeeded. 0 Warning(s) 0 Error(s)` |
+| Summoner.Core | `dotnet build FTK2.Summoner/src/Summoner.Core -c Release` | **PASS** | `Build succeeded. 0 Warning(s) 0 Error(s)` |
+| Summoner.Plugin | `dotnet build FTK2.Summoner/src/Summoner.Plugin -c Release` | **PASS** | `Build succeeded. 0 Warning(s) 0 Error(s)` |
+| WarBrain.Core | `dotnet build FTK2.WarBrain/src/WarBrain.Core -c Release` | **PASS** | `Build succeeded. 0 Warning(s) 0 Error(s)` |
+| WarBrain.Plugin | `dotnet build FTK2.WarBrain/src/WarBrain.Plugin -c Release -p:ManagedDir=tools/bin/refs -p:BepInExDir=tools/bin/refs` | **FAIL** | `7 Warning(s) 82 Error(s)` — identical `CS0246` shape (`Entity`, `CombatState`, `CombatAbilityConfig`, `ConfigEntry<>`, `Harmony`, `HarmonyMethod` not found), preceded by `MSB3245: Could not resolve this reference. Could not locate the assembly "BepInEx"` / `"0Harmony"`. |
+
+**8/10 pass, 2/10 fail.** Root cause (identical for both failures, confirmed by reading the
+`.csproj` files): `DevKit.Plugin.csproj` was fixed with a `RepoRoot`/`ManagedDirResolved`/
+`BepInExDirResolved` indirection (`Path.Combine($(MSBuildThisFileDirectory)..\..\..\, $(ManagedDir))`)
+specifically so a **relative** `-p:ManagedDir=tools/bin/refs` resolves against the repo root. The
+unit brief said "DevKit.Plugin's csproj was fixed to resolve repo-root-relative overrides" — true,
+but **only DevKit.Plugin got that fix**. `ClassForge.Plugin.csproj` and `WarBrain.Plugin.csproj`
+still reference `$(ManagedDir)\FTK2.dll` etc. directly, so the same relative override resolves
+against each project's *own* directory (e.g.
+`FTK2.ClassForge/src/ClassForge.Plugin/tools/bin/refs/FTK2.dll`, which does not exist) — MSBuild
+emits `MSB3245` warnings for every unresolved `HintPath` reference, and every game type transitively
+needed from those references then cascades into `CS0246` errors. This is a real, reproducible build
+failure under the exact invocation this unit specifies, not a flake — captured verbatim above, not
+rationalized or fixed.
+
+### 2. Test suites
+
+| Suite | Command | Result | Tail |
+|---|---|---|---|
+| DevKit.Core.Tests | `dotnet run --project FTK2.DevKit/src/DevKit.Core.Tests -c Release` | **91/91** | `Tests run: 91   passed: 91   failed: 0` / `ALL TESTS PASSED` |
+| ClassForge.Core.Tests | `dotnet run --project FTK2.ClassForge/src/ClassForge.Core.Tests -c Release` | **21/21** | `21 passed, 0 failed.` |
+| ClassForge.Recipes.Tests | `dotnet run --project FTK2.ClassForge/src/ClassForge.Recipes.Tests -c Release` | **149/149** | `tests: 149  passed: 149  failed: 0` |
+| Summoner.Core.Tests | `dotnet run --project FTK2.Summoner/src/Summoner.Core.Tests -c Release` | **16/16** | `16 tests, 16 passed, 0 failed.` |
+
+All four met or exceeded the expected counts from the unit brief (91 / 21 / 149 / 16) exactly.
+
+### 3. PackCheck — CF_PACK_EOR_CLASSES + CF_PACK_BALDURS
+
+Command: `dotnet run --project FTK2.ClassForge/src/ClassForge.PackCheck -c Release`.
+
+| Pack | Result | Tail |
+|---|---|---|
+| CF_PACK_EOR_CLASSES | **exit 0** | `Classes: 31  Traits: 20  Things: 20  Abilities: 0  Localization: 102  Icons: 51  Portraits: 31` / `Recipes: 48` (48× `W_UNKNOWN_FIELD` on `_source`) / `RESULT: CF_PACK_EOR_CLASSES -- OK (zero Errors)` |
+| CF_PACK_BALDURS | **exit 0** | `Classes: 4  Traits: 6  Things: 10  Abilities: 13  Localization: 56  Icons: 6  Portraits: 3` / `Recipes: 5` (6 findings: 4× `W_SCHEMA_DEFAULT`, 1× `W_COND_DEPRECATED`) / `RESULT: CF_PACK_BALDURS -- OK (zero Errors)` |
+
+Combined: `PackCheck: ALL PACKS OK (zero Errors)`.
+
+**Deviation from the unit brief**: the brief asked to "record the sha256: pack hashes it prints."
+This build of `ClassForge.PackCheck` does not print a `sha256:`-prefixed dataHash anywhere in its
+console output for either pack — confirmed both from the full captured output (no `sha256`/`hash`
+match) and from source (`FTK2.ClassForge/src/ClassForge.PackCheck/Program.cs` has no reference to
+`DataHash` at all; the hash is computed and asserted only inside `ClassForge.Core.Tests`, e.g. "PASS:
+CF_PACK_BALDURS: dataHash is sha256:-prefixed, stable 64-char hex"). Reported as a real discrepancy,
+not fabricated — no hash value is recorded here because none was printed to capture.
+
+### 4. Python test suite
+
+Command: `python -m pytest tools/tests -v`
+
+Result: **114 passed** in 2.07s (0 failed) — matches the expected 114 exactly. Covers
+`test_eor_import.py`, `test_extract_vocab.py`, `test_forge.py`, `test_sprite_index.py`,
+`test_transforms.py`, `test_validate_pack.py`, including the golden full-pipeline test
+(`test_golden_full_pipeline_matches_committed_output`) and the real-package tests
+(`test_real_package_invariants_pass`, `test_real_package_item_packs_pass_validate_pack`,
+`test_real_package_two_runs_byte_identical`).
+
+```
+============================= 114 passed in 2.07s ==============================
+```
+
+### 5. Pack validation vs the vocab index
+
+Command: `python tools/validate_pack.py <pack> --vocab tools/out/vocab-index.json`
+
+| Pack | ERRORs | WARNs | Result |
+|---|---|---|---|
+| `FTK2.Armory/packs/eor_items.pack.json` | **0** | **54** | `eor_items.pack.json: 386 items, 0 errors, 54 warnings` (exit 0) — all 54 are `budget_warn` (stat above the observed p50/max range for its slot+rarity bucket) |
+| `FTK2.Armory/packs/eor_starters.pack.json` | **0** | **0** | `eor_starters.pack.json: 31 items, 0 errors, 0 warnings` (exit 0) |
+
+Both required 0 ERRORs met.
+
+### 6. Protective converter re-run — `tools/eor_import.py`
+
+Command (identical args as originally used):
+```
+python tools/eor_import.py --source "D:\temp\mods\Release 29 0.7.0.60 2026-07-18T18-42Z H0bovQUbN\BepInEx\plugins" --repo-root . --report-dir tools/out/eor-import --package-version 0.7.0.60
+```
+
+Output:
+```
+eor_import: 1397 findings (0 blocking, 101 warn, 1296 info)
+  ARM_EOR_ITEMS: 386 items
+  ARM_EOR_STARTERS: 31 items
+  SMN_PACK_EOR_MERCS: 100 followers
+  SMN_PACK_EOR_PETS: 100 followers
+  dropped: 9, vanilla_overrides: 40
+  CF_PACK_EOR_CLASSES: 31 classes
+eor_import: CF_PACK_EOR_CLASSES SKIPPED -- hand-authored content detected (traits.json/skillrecipes.json,
+an _authored_content provenance marker, or SKILL_CF_* Passives); nothing written for this pack.
+This is not an error. Re-run with --force-classes to overwrite it anyway.
+reports written to D:\src\mods\ftk2-mods\tools\out\eor-import
+```
+
+`git status --porcelain -- FTK2.Armory/packs FTK2.Summoner/data/FollowerPacks FTK2.ClassForge/data/ClassPacks`
+→ **empty output.**
+
+**Result: CLEAN.** This is the Wave-5 fix landing: the original sweep (§7 above) found the importer
+silently reverted `CF_PACK_EOR_CLASSES`'s hand-authored content back to the raw-import baseline on a
+bare re-run. This re-run shows the importer now detects the hand-authored content up front and
+**skips writing that pack entirely** (rather than overwriting it and needing a manual revert
+afterward) while still regenerating every other pack byte-identically. Overwrite protection and
+byte-determinism both hold simultaneously — the anomaly from the original sweep is resolved.
+
+### 7. Static grep tripwires
+
+**`return false` inside a Harmony prefix** (game-logic patches should have none):
+
+| Scope | Bool-returning Harmony prefixes found | `return false` hits | Verdict |
+|---|---|---|---|
+| `FTK2.DevKit/src` | 1 (`ParityPatches.HandleNetworkActionPrefix`) — but it is declared `void`, so it structurally cannot return `false` | **0** | clean |
+| `FTK2.ClassForge/src/ClassForge.Plugin` | 7 total; 5 are `void` (`RenderClassList_Prefix`, `PerformAbility_Prefix`, `ApplyStatChange_Prefix`, `AddHealth_Prefix`, `PerformSkillAbilityProcs_Prefix` — cannot return `false`); 2 are `bool` (`AssetPatches.GetImage_Prefix`, `AssetPatches.GetRender_Prefix`) | **2** | both in `AssetPatches.cs` (lines 81, 115) — icon/portrait texture-substitution only; each is documented in-file as "presentation-only ... does not touch game state" and fails open (`return true`) on every miss/exception path. Not a game-logic suppression. |
+| `FTK2.Summoner/src/Summoner.Plugin` | 0 — `SummonerPlugin.cs` registers only `Postfix` hooks (`LoadConfigs_Postfix`, `ReloadConfigs_Postfix`), no `Prefix` at all | **0** | clean (trivially, no prefixes exist) |
+
+**Non-readonly static fields in ClassForge.Plugin / ClassForge.Recipes:**
+
+`ClassForge.Recipes` — **0** non-readonly static fields (checked; every `static` there is either a
+method, a class, or `static readonly`).
+
+`ClassForge.Plugin` — **28** non-readonly static fields, all fitting one of four documented
+patterns (log-once flags, caches/resolved-reflection-state, cross-hook capture/re-entrancy guards,
+or plugin-lifetime singleton state — BepInEx guarantees exactly one live instance per plugin per
+process):
+
+- Log-once warning flags (6): `TraitLoadoutPatches._warnedMissingConfig`,
+  `TraitLoadoutPatches._loggedSessionGateDecision`, `ParityBridge._loggedDevKitAbsent`,
+  `ClassSelectPatches._loggedInjection`, `RecipeEngineHost._loggedNoCombat`,
+  `CombatHookPatches._warnedTurnHookMissing`
+- Caches / resolved-reflection state (7): `RecipeEngineHost._cachedState`,
+  `RecipeEngineHost._cachedSeed`, `RecipeEngineHost._cachedDispatcher`,
+  `NetworkSessionState._resolved`, `NetworkSessionState._envProperty`,
+  `NetworkSessionState._networkDataField`, `NetworkSessionState._playingOnlineField`
+- Cross-hook capture / re-entrancy guards (3): `CombatHookPatches._healOrigin` (prefix captures
+  target HP for its own postfix to read), `RecipeEngineHost._executionDepth` (re-entrancy guard),
+  `ParityBridge._blocked` (latched failure state)
+- Plugin-lifetime singleton state (12): `ClassForgePlugin.Log`, `.Instance`, `.Enabled`,
+  `.VerboseLogging`, `.AdditionalRoots`, `.EnableClassSelectInjection`, `.EnableIconFallback`,
+  `.EnableTraitLoadoutInjection`, `.EnableRecipeEngine`, `.CurrentMergePlan`, `.CurrentDataHash`,
+  and `RecipeEngineHost.Book`
+
+6 + 7 + 3 + 12 = **28**, matching the raw-grep count of distinct non-`readonly` `static` field
+declarations exactly. `ClassForge.Recipes` contributes 0, so the combined total for the two scopes
+named in the brief is 28. None is an undocumented mutable global outside these four benign
+patterns.
+
+### Acceptance summary (Wave 6)
+
+- Builds: **8/10 pass** (DevKit.Core, DevKit.Plugin, ClassForge.Core, ClassForge.Recipes,
+  ClassForge.PackCheck, Summoner.Core, Summoner.Plugin, WarBrain.Core). **2/10 fail**
+  (ClassForge.Plugin — 158 errors; WarBrain.Plugin — 82 errors), both traced to the same
+  unresolved-relative-HintPath root cause, reported verbatim, not fixed.
+- Test suites: DevKit.Core.Tests **91/91**, ClassForge.Core.Tests **21/21**,
+  ClassForge.Recipes.Tests **149/149**, Summoner.Core.Tests **16/16** — all match the brief's
+  expected counts exactly.
+- PackCheck: CF_PACK_EOR_CLASSES **exit 0**, CF_PACK_BALDURS **exit 0**, both zero Errors. No
+  `sha256:` hash was printed by this tool build to record (deviation noted, §3).
+- Python: **114/114 passed**, matching the expected count exactly.
+- Pack validation: `eor_items` **0 errors / 54 warnings**, `eor_starters` **0 errors / 0
+  warnings** — both required-0-errors targets met.
+- Protective converter re-run: **clean** — `git status --porcelain` empty across all three owned
+  pack directories; the importer now skips (rather than silently reverts) hand-authored
+  `CF_PACK_EOR_CLASSES` content, resolving the Wave-5-targeted anomaly from the original sweep.
+- Tripwires: Harmony-prefix `return false` — DevKit 0, ClassForge.Plugin **2** (both
+  presentation-only in `AssetPatches.cs`, not game-logic), Summoner.Plugin 0. Non-readonly statics
+  — ClassForge.Recipes 0, ClassForge.Plugin **28**, all documented log-once/cache/singleton
+  patterns.
+- **Net verdict: 2 real build failures + 1 tooling-output discrepancy (PackCheck hash) reported
+  verbatim; every other row in the matrix passes at or above its expected bar.**

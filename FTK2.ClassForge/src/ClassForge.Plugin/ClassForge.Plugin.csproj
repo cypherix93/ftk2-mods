@@ -9,8 +9,14 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <!-- Game install; override with -p:GameDir=... -->
     <GameDir Condition="'$(GameDir)' == ''">E:\Games\Steam\steamapps\common\For The King II</GameDir>
-    <ManagedDir>$(GameDir)\For The King II_Data\Managed</ManagedDir>
-    <BepInExDir>$(GameDir)\BepInEx\core</BepInExDir>
+    <ManagedDir Condition="'$(ManagedDir)' == ''">$(GameDir)\For The King II_Data\Managed</ManagedDir>
+    <BepInExDir Condition="'$(BepInExDir)' == ''">$(GameDir)\BepInEx\core</BepInExDir>
+    <!-- Repo-root-relative -p: overrides (e.g. -p:ManagedDir=tools/bin/refs) resolve against the
+         repo root, not this project dir; absolute overrides and the live-game defaults pass
+         through Path.Combine unchanged. Same mechanism as DevKit.Plugin.csproj. -->
+    <RepoRoot>$(MSBuildThisFileDirectory)..\..\..\</RepoRoot>
+    <ManagedDirResolved>$([System.IO.Path]::Combine('$(RepoRoot)', '$(ManagedDir)'))</ManagedDirResolved>
+    <BepInExDirResolved>$([System.IO.Path]::Combine('$(RepoRoot)', '$(BepInExDir)'))</BepInExDirResolved>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
@@ -37,39 +43,39 @@
 
   <ItemGroup>
     <Reference Include="BepInEx">
-      <HintPath>$(BepInExDir)\BepInEx.dll</HintPath>
+      <HintPath>$(BepInExDirResolved)\BepInEx.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>$(BepInExDir)\0Harmony.dll</HintPath>
+      <HintPath>$(BepInExDirResolved)\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="FTK2">
-      <HintPath>$(ManagedDir)\FTK2.dll</HintPath>
+      <HintPath>$(ManagedDirResolved)\FTK2.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>$(ManagedDir)\UnityEngine.dll</HintPath>
+      <HintPath>$(ManagedDirResolved)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(ManagedDirResolved)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIElementsModule">
-      <HintPath>$(ManagedDir)\UnityEngine.UIElementsModule.dll</HintPath>
+      <HintPath>$(ManagedDirResolved)\UnityEngine.UIElementsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
-      <HintPath>$(ManagedDir)\UnityEngine.ImageConversionModule.dll</HintPath>
+      <HintPath>$(ManagedDirResolved)\UnityEngine.ImageConversionModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="System.Text.Json">
-      <HintPath>$(ManagedDir)\System.Text.Json.dll</HintPath>
+      <HintPath>$(ManagedDirResolved)\System.Text.Json.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="SerializedSortedDictionary">
-      <HintPath>$(ManagedDir)\SerializedSortedDictionary.dll</HintPath>
+      <HintPath>$(ManagedDirResolved)\SerializedSortedDictionary.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

@@ -1,5 +1,13 @@
 # FTK2.ClassForge — SPEC amendment: skill-recipe vocabulary **v1.1**
 
+> **HISTORICAL DOCUMENT — merged into SPEC.md on 2026-07-25.** This amendment's content (resolved open
+> questions, the v1.1 trigger/condition/effect vocabulary, determinism invariants, per-battle state model,
+> and parked-primitive list) now lives in `FTK2.ClassForge/SPEC.md` §3, §4.6, §6, §9, §11 — SPEC.md is the
+> current source of truth. This file is kept for its detailed citations, rationale and worked examples, which
+> SPEC.md summarizes rather than repeats. Where the two still appear to disagree, SPEC.md wins (it also
+> reflects fixes found by the subsequent Wave-4 adversarial MP-correctness review,
+> `docs/research/eor-rehost-mp-review.md`, that postdate this document).
+
 **Status:** design-locked (2026-07-25) · **Applies to:** `FTK2.ClassForge/SPEC.md` §4.6, §6, §9, §11 ·
 **Merge policy:** this is an *amendment*. The base SPEC is merged from it later; until then, where the two
 disagree, **this document wins**.

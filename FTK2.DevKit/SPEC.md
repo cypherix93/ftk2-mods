@@ -4,6 +4,48 @@ Plugin GUID: `ftk2mods.devkit` · Content id prefix: `DK_` · Priority: **P0-dev
 
 ---
 
+## Status (2026-07-25) — ParityService implemented
+
+`ParityService` (the R1 enforcement core this spec's §3 describes) is **implemented and tested**
+(`DevKit.Core`, 91 tests) on branch `engine/eor-rehost`, including the fixes found by the Wave-4 adversarial
+MP-correctness review (`docs/research/eor-rehost-mp-review.md`). Offline-verified only — in-game smoke testing
+is pending (see the operator handoff, `docs/superpowers/plans/2026-07-25-eor-rehost-operator-handoff.md`).
+Corrections to this spec, as shipped:
+
+- **Transport channel reality.** The wire is **not** a bespoke string-keyed action — it's the game's closed
+  ProtoBuf `GameAction`/`GameActionDataBase` hierarchy (`[ProtoInclude(1..23)]`, no runtime extension point).
+  A payload rides inside an existing action's free-form slot, reached through the one root sender,
+  `AdventureDirector._trySendNetworkAction(eAdventureActions, eEncounterActions, ..., object pResultArgs,
+  ...)`. **No overload of `_trySendNetworkAction` takes a raw string action key + string payload** — an
+  earlier design assumption that one existed is wrong. Two candidate channels exist:
+  `eAdventureActions.ENCOUNTER_ACTION` + `eTownServiceTypes.TOWN_SERVICES` (what EOR itself uses — but only
+  safely because EOR's own `_handleNetworkAction` prefix returns `false` and suppresses vanilla handling,
+  which DevKit's observe-only receive hook must never do; left running it is *not* inert, it burns focus and
+  dereferences a possibly-null encounter entity) and `eAdventureActions.DEBUG_GET_SPECIFIC_THING`, which has
+  **no case at all** in `_handleNetworkAction`'s switch and falls to a `default:` arm that logs one cosmetic
+  `Debug.LogError` per peer and advances the action queue — zero simulation side effects. **DevKit defaults to
+  `DEBUG_GET_SPECIFIC_THING`** for exactly that reason; the EOR-identical channel is kept behind
+  `[Multiplayer] ParityChannel = EorTownServices` as an escape hatch (§5).
+- **`NetworkData.IsHost` / `NetworkData.PlayingOnlineMultiplayer` are public bools** (`NetworkData.cs:26,61`)
+  — **this corrects §11.8's premise** that no host/session flag had been identified. Both are read directly;
+  host detection is no longer hardcoded to `false`, so the late-join reply path (`FTK2MODS_PARITY_REQUEST_V1`
+  → host responds) is live, not dead code.
+- **Hash normalization** matches the canonical `sha256:` + 64-hex form documented in §3 below, and
+  `IsWellFormedHash` rejects anything else — an early sibling-mod integration bug (bare hex with no prefix)
+  made every comparison a forced mismatch until every hasher emitted the same shape; fixed across DevKit,
+  ClassForge and Summoner's hashers.
+- **Payload cap + degraded mode.** Snapshot payloads are capped (`DefaultMaxPayloadBytes = 8192`, knob-
+  configurable, §5); over the cap, `EncodeTruncatedSnapshot` ships a degraded payload carrying only a
+  registration *count* plus a `Truncated` marker, so an oversized peer is reported as "could not be verified"
+  rather than silently invisible (comparing a truncated snapshot as an empty registration list would have
+  produced spurious `MissingRemote` verdicts for every local mod).
+- **Late-join is live.** With host detection fixed, `FTK2MODS_PARITY_REQUEST_V1` is no longer dead code on
+  every peer — the host branch actually replies with a fresh (not cached) snapshot.
+- **Callback contract resolved: `Action<string[]>`** (was open question §11.12). `ParityFailed` is a delegate
+  passed at `Register`/`RegisterWithCallback` time, receiving a fixed positional row
+  `[0]=guid [1]=kind [2]=localValue [3]=remoteValue [4]=remotePeerId [5]=message`, not a reflection-resolved
+  well-known method name — the simpler of the two options §11.12 posed.
+
 ## 1. Purpose & scope
 
 FTK2.DevKit is modder tooling, not a gameplay mod — **with one exception that is now load-bearing for the
@@ -137,16 +179,21 @@ the health-check trigger. Same reflection-based soft-dependency calling conventi
 run the same mods + the same data"). Every `ftk2mods.*` plugin — including DevKit's own gameplay-adjacent
 siblings, not DevKit's dev-tooling itself — registers with it at `Awake()`.
 
-- **Registration API.**
-  `Register(string pluginGuid, string version, string dataHash, string[] enabledFeatures, Action<ParityMismatch> onParityFailed = null)`.
-  Same reflection-based soft-dependency calling convention as `DevKitLog`/`PatchRegistry` (§3 above): callers
-  resolve `Type.GetType("FTK2Mods.DevKit.ParityService, ftk2mods.devkit")` via reflection and no-op if DevKit
-  isn't loaded, rather than taking a compile-time reference. This is deliberate — R1 must not become a hard
-  build dependency for sibling mods, mirroring the existing `PatchRegistry`/`DevKitLog` soft-dependency
-  approach (see open question in §11 about a shared contracts DLL, which now also covers this API).
-  `onParityFailed` is the mod's `ParityFailed` callback (see "Mismatch flow" below); a mod that omits it still
-  gets the on-screen warning and the policy-driven session effect (SafeMode/Block) but has no chance to react
-  itself (e.g. to also disable a feature DevKit doesn't know about by name).
+- **Registration API — implemented as `Register(...)` (no callback) and
+  `RegisterWithCallback(string pluginGuid, string version, string dataHash, string[] enabledFeatures,
+  Action<string[]> onParityFailed)`** (callback contract resolved per §11 #12: a plain
+  `Action<string[]>` delegate, fixed positional row `[0]=guid [1]=kind [2]=localValue [3]=remoteValue
+  [4]=remotePeerId [5]=message`, not the `Action<ParityMismatch>`/reflection-resolved-method-name shapes an
+  earlier draft of this spec considered). Same reflection-based soft-dependency calling convention as
+  `DevKitLog`/`PatchRegistry` (§3 above): callers resolve `Type.GetType("FTK2Mods.DevKit.ParityService,
+  ftk2mods.devkit")` via reflection and no-op if DevKit isn't loaded, rather than taking a compile-time
+  reference. This is deliberate — R1 must not become a hard build dependency for sibling mods, mirroring the
+  existing `PatchRegistry`/`DevKitLog` soft-dependency approach. `onParityFailed` is the mod's `ParityFailed`
+  callback (see "Mismatch flow" below); a mod that omits it (by calling `Register` instead of
+  `RegisterWithCallback`) still gets the on-screen warning and the policy-driven session effect but has no
+  chance to react itself (e.g. to also disable a feature DevKit doesn't know about by name) — an earlier
+  Summoner build did exactly this and shipped with an inert `Block` knob as a result; fixed (§9.6 of
+  `FTK2.Summoner/SPEC.md`).
 - **`dataHash` computation.** DevKit exposes a helper,
   `ParityService.ComputeDataHash(IEnumerable<string> filePaths, Func<string,bool> excludePredicate = null)`,
   so every mod computes its hash the same way (a per-mod-invented hashing scheme would itself be a parity
@@ -390,6 +437,17 @@ ParityService policy)
 - `ParityRequestTimeoutMs` (int, `5000`) — how long a late-joining client waits for the host's
   `FTK2MODS_PARITY_V1` reply to its `FTK2MODS_PARITY_REQUEST_V1` before logging a timeout warning and
   retrying once.
+- `ParityChannel` (string enum: `DebugThing` | `EorTownServices`, default `DebugThing`) — **implemented,
+  new.** Which existing `_trySendNetworkAction` case carries the parity payload (Status section above,
+  §3/§6): `DebugThing` rides `eAdventureActions.DEBUG_GET_SPECIFIC_THING`, which has no case in
+  `_handleNetworkAction`'s switch and is a true no-op channel (one cosmetic log line per peer, zero
+  simulation effect); `EorTownServices` rides the EOR-identical `ENCOUNTER_ACTION`/`TOWN_SERVICES` pair as an
+  escape hatch in case a future game build filters unhandled action types in netcode — only switch to it if
+  you understand it is not provably inert the way `DebugThing` is.
+- `MaxParityPayloadBytes` (int, default `8192`) — **implemented, new.** Cap on an encoded
+  `FTK2MODS_PARITY_V1` snapshot's size; over the cap, `ParityService` degrades to a truncated snapshot
+  (registration count only, `Truncated` marker) rather than failing silently or letting an oversized payload
+  blind the sender for the rest of the process (Status section above; MP review M4b).
 
 ## 6. Patch targets & integration points
 
@@ -616,16 +674,13 @@ the six points below answer that doc's mandated §9 structure.
 7. **Forced flee/win.** No confirmed low-risk bypass for `eCombatActions.FLEE`'s roll, and
    `CombatPhase._processCombatResults` isn't confirmed safely re-triggerable on demand — blocks
    `dk_flee_combat`/`dk_win_combat` (a zero-enemy-HP workaround is proposed for win in §6, unverified).
-8. **MP-session detection.** No networking/session-state flag was identified for "is this session
-   multiplayer" / "am I the host" — blocks a real implementation of the MP guard (§9) *and* now also blocks
-   ParityService's own handshake trigger (§3, §6: what fires "session started/joined" to kick off the
-   initial `FTK2MODS_PARITY_V1` exchange, and how a peer knows whether it's host or client for aggregation
-   purposes). Currently spec'd to fail closed (treat unknown as MP) until an API is found. This is the same
-   open problem as `docs/MULTIPLAYER.md`'s repo-wide open-question list items 1–5 (host-only AI decisions,
-   `GameRunData` replication scope, `CombatState.GridType` sync, party-rebuild propagation, and
-   `_handleNetworkAction` payload shape/size limits) — see that doc rather than duplicating the list here;
-   item 5 in particular (payload size limits) directly bounds how many mods' registrations can fit in one
-   `FTK2MODS_PARITY_V1` message before ParityService needs to chunk it.
+8. ~~**MP-session detection.**~~ — **resolved (Status section above).** `NetworkData.IsHost` and
+   `NetworkData.PlayingOnlineMultiplayer` are plain public bools, read directly; host detection is no longer
+   hardcoded to `false`. Payload size limits on `_handleNetworkAction` (the residual half of this question)
+   are addressed pragmatically, not by a confirmed vendor limit: a configurable byte cap
+   (`DefaultMaxPayloadBytes = 8192`, §5) plus a degraded-snapshot fallback rather than an unbounded payload.
+   `docs/MULTIPLAYER.md`'s repo-wide open questions #1–3 (host-only AI decisions, `GameRunData` replication
+   scope, `CombatState.GridType` sync) remain open and are tracked there, not here.
 9. **Contracts DLL vs reflection.** Should the `DevKitLog`/`PatchRegistry`/**`ParityService`** shared APIs be
    a tiny compile-time "contracts" assembly referenced by every `ftk2mods.*` plugin (type-safe, but adds a
    build dependency to every mod in the repo), or stay reflection-based soft dependencies (zero build
@@ -639,9 +694,8 @@ the six points below answer that doc's mandated §9 structure.
 11. **FileSystemWatcher reliability.** Editor save behavior (atomic replace vs. in-place write, multiple
     write events per save) varies by tool; `AutoWatchDebounceMs`'s default (750ms) is a guess and needs
     empirical tuning against whatever editor sibling-mod authors actually use.
-12. **ParityFailed callback contract.** Should `ParityFailed` be a delegate passed at `Register` time (as
-    currently spec'd in §3), or should DevKit instead look up a well-known static method name
-    (`FTK2Mods.<Mod>.OnParityFailed`) by reflection the same way `DevKitLog`/`PatchRegistry` are resolved?
-    The delegate approach is simpler for the registering mod but means DevKit holds a live reference across
-    an assembly boundary for the session's duration — worth confirming this doesn't complicate BepInEx
-    plugin unload/hot-swap scenarios before M1 ships.
+12. ~~**ParityFailed callback contract.**~~ — **resolved: the delegate approach, `Action<string[]>`.**
+    `RegisterWithCallback(guid, version, dataHash, enabledFeatures, Action<string[]> onParityFailed)` passes a
+    delegate at registration time (not a reflection-resolved well-known method name); the callback receives a
+    fixed positional row `[0]=guid [1]=kind [2]=localValue [3]=remoteValue [4]=remotePeerId [5]=message`. No
+    BepInEx plugin unload/hot-swap complication has surfaced in offline testing.

@@ -6,7 +6,7 @@ namespace ClassForge.Core
 {
     /// <summary>
     /// Builds the payload for the reflection-based call to
-    /// <c>FTK2.DevKit.Core.ParityRegistry.Register(string guid, string version, string dataHash, string[] enabledFeatures)</c>
+    /// <c>FTK2Mods.DevKit.ParityService.Register(string guid, string version, string dataHash, string[] enabledFeatures)</c>
     /// (SPEC.md §3, §6, §9.6). Core has no DevKit reference (mods never reference each other's assemblies);
     /// the Plugin resolves the call by name at runtime and no-ops gracefully if DevKit is absent.
     ///

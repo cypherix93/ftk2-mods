@@ -93,7 +93,7 @@ at L18701–18732. Effect delivery splits:
   DRUNKEN_COURAGE (`PerformConsumableAbility` postfix L24632).
 - Three trait statuses are declared "unsafe" by the mod itself and stripped at combat entry (L4399/L23890).
 
-### 2.5 Affixes (22 defined, 20 in the roll table L5114)
+### 2.5 Affixes (20 defined, 20 in the roll table L5114) [corrected 2026-07-25: decompile shows exactly 20]
 
 Runtime item-variant minting: `TryEnsureAffixVariantConfig` L16941 **mutates `Env.Configs.Things` at runtime**,
 tracked in per-process `AffixedItemVariants` L5048 (not persisted — hence a whole restore/repair layer
@@ -180,7 +180,7 @@ sources: env `EOR_GITHUB_ISSUE_TOKEN` or the shipped `github_issue_token.txt`. S
 | 3 | Classes (stats+gear+vanilla passives) | 31 | **ClassForge M1** | Portable once loader built | Data-only; rebalance pass recommended |
 | 4 | Class signature skills | 31 | ClassForge skill recipes | Majority portable | Needs recipe engine + primitive extensions (§7); minority parked |
 | 5 | Traits | 20 | ClassForge trait bridge + recipes | 9 now / 11 via recipes | Bridge mechanism now answerable from decompile |
-| 6 | Affixes | 22 | Forge-pattern pre-mint | 15 as static variants | Per-instance runtime minting refused by design; 5 need recipes |
+| 6 | Affixes | 20 [corrected 2026-07-25: decompile shows exactly 20, not 22] | Forge-pattern pre-mint | 15 as static variants | Per-instance runtime minting refused by design; 5 need recipes |
 | 7 | Starter weapons | 31 | Armory | Portable now | Treat as items; already exported JSON shape |
 | 8 | Quest archetypes | 17 | Questsmith (future) | Deferred | Board mechanics = Questsmith M2 territory |
 | 9 | Blessings / Nemesis / enc. modifiers / mutators / world events / specialists / sanctums | — | none specced | **Dropped** (re-spec later if missed) | Complete systems, and where the worst MP code lives |
