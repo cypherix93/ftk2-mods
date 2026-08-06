@@ -43,6 +43,11 @@ namespace ClassForge.Recipes.Runtime
 
         private readonly Dictionary<string, TurnState> _turnState = new Dictionary<string, TurnState>(StringComparer.Ordinal);
 
+        /// <summary>Encounter Modifiers spec §5/§6.1: <c>SELECTION_SET</c>'s state slot. <c>[LOCAL]</c> state,
+        /// <c>[SYNCED]</c> cause — never transmitted, reset with the runtime like <see cref="_counters"/>.
+        /// Reconstructable from replicated statuses at allocation time (§4.5, <see cref="ModifierReconstruction"/>).</summary>
+        private readonly Dictionary<string, string> _selections = new Dictionary<string, string>(StringComparer.Ordinal);
+
         public CombatRuntime(string combatKey)
         {
             CombatKey = combatKey ?? "";
@@ -136,6 +141,21 @@ namespace ClassForge.Recipes.Runtime
         {
             return _turnState.ContainsKey(ownerGuid ?? "");
         }
+
+        // ----- selections (Encounter Modifiers spec §5/§6.1) ---------------------------
+
+        /// <summary>Null when <paramref name="name"/> has no stored selection (never fired, or empty).</summary>
+        public string GetSelection(string name)
+        {
+            string v;
+            return !string.IsNullOrEmpty(name) && _selections.TryGetValue(name, out v) ? v : null;
+        }
+
+        public void SetSelection(string name, string value)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            _selections[name] = value ?? "";
+        }
     }
 
     /// <summary>
@@ -185,6 +205,89 @@ namespace ClassForge.Recipes.Runtime
         public void ResetRun()
         {
             ResetCombat();
+        }
+    }
+
+    /// <summary>
+    /// Derived-state reconstruction — Encounter Modifiers spec §4.5. When a fresh <see cref="CombatRuntime"/>
+    /// is allocated for a combat already in progress (JIP, mid-combat save/load, or a missed first hook), the
+    /// only cross-event state the encounter-modifiers system needs — "which modifier is active" and "which
+    /// enemies already got it" — is fully derivable from replicated state (the applied statuses themselves).
+    /// <para>Pure function of (<see cref="ICombatContext.Entities"/>, registry); no RNG, no game references.
+    /// The Plugin supplies the registry (built from the pack's <c>ModifierTable</c>, M-EM1) and the
+    /// selection/apply recipe budget identity (auto-discovered from the loaded recipe book, so this stays a
+    /// content-agnostic engine capability rather than hardcoding a pack's recipe ids).</para>
+    /// </summary>
+    public static class ModifierReconstruction
+    {
+        /// <summary>One row of the mapping the reconstruction scan needs: the status id a modifier's
+        /// application grants, and the id stored into <c>CombatRuntime.Selections[selectionName]</c> when
+        /// that modifier is the active one.</summary>
+        public sealed class ModifierRegistryEntry
+        {
+            public string StatusId;
+            public string ModifierId;
+        }
+
+        /// <summary>
+        /// Scans <paramref name="ctx"/>'s entities in ascending ordinal <c>Guid</c> order for any status id
+        /// present in <paramref name="registry"/>: first hit ⇒ that modifier is recorded as selected
+        /// (selection latch set via <paramref name="selectionName"/>, no draws taken) and the apply recipe's
+        /// per-target budget is marked consumed for every entity already bearing that modifier's status. A
+        /// no-op when nothing in <paramref name="registry"/> is found on any entity (fresh/pre-selection combat).
+        /// </summary>
+        public static void Reconstruct(
+            ICombatContext ctx, CombatRuntime runtime, IReadOnlyList<ModifierRegistryEntry> registry,
+            string selectionName,
+            BudgetScope selectionBudgetScope, string selectionBudgetKey,
+            BudgetScope applyBudgetScope, string applyBudgetKey)
+        {
+            if (ctx == null || runtime == null || registry == null || registry.Count == 0) return;
+            if (string.IsNullOrEmpty(selectionName)) return;
+
+            var entities = EntitySets.SortedByGuid(ctx.Entities);
+
+            string chosenModifierId = null;
+            string chosenStatusId = null;
+            for (int i = 0; i < entities.Count && chosenModifierId == null; i++)
+            {
+                var statuses = entities[i].Statuses;
+                if (statuses == null) continue;
+                for (int s = 0; s < statuses.Count; s++)
+                {
+                    var hit = FindByStatus(registry, statuses[s]);
+                    if (hit != null) { chosenModifierId = hit.ModifierId; chosenStatusId = hit.StatusId; break; }
+                }
+            }
+            if (chosenModifierId == null) return;
+
+            // Selection latch — no draws taken (§4.5).
+            runtime.SetSelection(selectionName, chosenModifierId);
+            runtime.ConsumeBudget(selectionBudgetScope, selectionBudgetKey, "", "");
+
+            // Per-enemy application budgets — marked consumed for every entity already bearing the chosen
+            // modifier's status, so a JIP peer never re-applies it to an already-modified late-wave enemy.
+            for (int i = 0; i < entities.Count; i++)
+            {
+                var statuses = entities[i].Statuses;
+                if (statuses == null) continue;
+                for (int s = 0; s < statuses.Count; s++)
+                {
+                    if (string.Equals(statuses[s], chosenStatusId, StringComparison.Ordinal))
+                    {
+                        runtime.ConsumeBudget(applyBudgetScope, applyBudgetKey, "", entities[i].Guid);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private static ModifierRegistryEntry FindByStatus(IReadOnlyList<ModifierRegistryEntry> registry, string statusId)
+        {
+            if (string.IsNullOrEmpty(statusId)) return null;
+            for (int i = 0; i < registry.Count; i++)
+                if (string.Equals(registry[i].StatusId, statusId, StringComparison.Ordinal)) return registry[i];
+            return null;
         }
     }
 }

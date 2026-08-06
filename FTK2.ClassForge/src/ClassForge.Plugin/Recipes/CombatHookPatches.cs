@@ -66,9 +66,14 @@ namespace ClassForge.Plugin
         /// <c>public static void SetInitiative(Entity pEntity, List&lt;Entity&gt; pAllies,
         /// CombatState pCombatState, GameRunData pGameRun, List&lt;(eAbilityResults, object)&gt; pResults,
         /// bool pTrySkillProc = false)</c>. Owner = <c>pEntity</c>. Needed by PREPARED, OF_FOCUS.
+        /// <para><b>Encounter Modifiers spec §4.3 engine fix:</b> the 6th parameter, <c>pTrySkillProc</c>, is
+        /// now captured and carried on <see cref="CombatStartEvent.TrySkillProc"/> through to the
+        /// <c>COMBAT_START_REAL</c> condition and the dispatcher. EOR gates its own encounter-modifier
+        /// anchor on this being <c>true</c> (L22840) — summon/revive/boss-phase re-initializations pass
+        /// <c>false</c>, so a recipe conditioned on <c>COMBAT_START_REAL</c> correctly never re-fires for them.</para>
         /// </summary>
         public static void SetInitiative_Postfix(Entity pEntity, List<Entity> pAllies,
-            List<(eAbilityResults, object)> pResults)
+            List<(eAbilityResults, object)> pResults, bool pTrySkillProc = false)
         {
             try
             {
@@ -77,7 +82,7 @@ namespace ClassForge.Plugin
                 var owner = ctx.Wrap(pEntity);
                 if (owner == null) return;
 
-                var plan = d.OnCombatStart(ctx, new CombatStartEvent { Entity = owner });
+                var plan = d.OnCombatStart(ctx, new CombatStartEvent { Entity = owner, TrySkillProc = pTrySkillProc });
                 RecipeActionExecutor.Execute(plan, new RecipeExecEnvironment
                 {
                     Ctx = ctx, Party = pAllies, Results = pResults

@@ -151,6 +151,60 @@ namespace ClassForge.Recipes.Model
         // AFFIX_ROLL — reserved, always validator-rejected in v1 (M-LG4)
         public int? ChancePct;
         public string Table;
+
+        // --- Encounter Modifiers effects (v1.2, spec §5) ---
+
+        // SELECTION_SET
+        /// <summary>Selection-slot key written into <c>CombatRuntime.Selections</c>. Reuses the generic
+        /// <see cref="Name"/> field above (same slot used by COUNTER_ADD/COUNTER_SET) — one authored key per
+        /// effect kind that needs one.</summary>
+        public List<WeightedValue> OneOfWeighted;
+
+        // ADD_STATUS / REMOVE_STATUS extension
+        /// <summary>Mutually exclusive with <see cref="Status"/>/<see cref="StatusOneOf"/>. Resolves the
+        /// status id from <c>CombatRuntime.Selections[StatusFromSelection]</c>; empty selection ⇒ no-op.</summary>
+        public string StatusFromSelection;
+
+        // EVENT_BANNER — [LOCAL] presentation only, never gates gameplay (spec §5, §9)
+        public string LocKey;
+        public string FallbackText;
+        public int? DurationMs;
+        /// <summary>Optional selection-slot key whose stored value the Plugin substitutes into the banner
+        /// text at render time (engine only resolves and carries the raw stored value — formatting/loc is
+        /// a Plugin concern).</summary>
+        public string TextFromSelection;
+    }
+
+    /// <summary>One <c>{Value, Weight}</c> row of <c>SELECTION_SET.OneOfWeighted</c> — Encounter Modifiers
+    /// spec §5. Authored array order is load-bearing: it is the weighted-pick walk order (spec §6.3,
+    /// EOR L22814-28 verbatim).</summary>
+    public sealed class WeightedValue
+    {
+        public string Value;
+        public int Weight;
+    }
+
+    /// <summary>One row of <see cref="ProcChanceFormula.Base"/>/<see cref="ProcChanceFormula.Adjustments"/> —
+    /// Encounter Modifiers spec §5.</summary>
+    public sealed class ProcChanceFormulaRow
+    {
+        public List<RecipeCondition> Conditions = new List<RecipeCondition>();
+        public int Value;
+    }
+
+    /// <summary>
+    /// <c>ProcChanceFormula</c> — Encounter Modifiers spec §5. Recipe-level, mutually exclusive with
+    /// <c>ProcChance</c>. A pure function of replicated state (no RNG): the first <see cref="Base"/> row
+    /// whose Conditions all pass wins (last row with no Conditions = default); every passing
+    /// <see cref="Adjustments"/> row adds its <c>Value</c>; the total is clamped to <c>[Min, Max]</c> when
+    /// present. A result &lt;= 0 takes zero draws (symmetric skip, spec §5).
+    /// </summary>
+    public sealed class ProcChanceFormula
+    {
+        public List<ProcChanceFormulaRow> Base = new List<ProcChanceFormulaRow>();
+        public List<ProcChanceFormulaRow> Adjustments = new List<ProcChanceFormulaRow>();
+        public int? Min;
+        public int? Max;
     }
 
     /// <summary><c>Budget</c> block — SPEC-DELTA-v1.1 §5.1.</summary>
@@ -184,12 +238,33 @@ namespace ClassForge.Recipes.Model
         public TriggerKind Trigger;
         public string RawTrigger;
 
+        /// <summary>Recipe-level scope — Encounter Modifiers spec §4.2. <c>OWNED</c> (default) is exactly
+        /// today's v1.1 semantics; <c>COMBAT</c> requires SchemaVersion 1.2 and is validated per §4.2's
+        /// rejection rules (no SELF-defaulting conditions, no SELF/CASTER/ALLY_*/ENEMY_ALL targets, no
+        /// AiProcChance).</summary>
+        public RecipeScope Scope = RecipeScope.OWNED;
+        public string RawScope;
+
         public List<RecipeCondition> Conditions = new List<RecipeCondition>();
         public List<RecipeEffect> Effects = new List<RecipeEffect>();
 
         /// <summary>0–100, = the <c>CHANCE_PCT</c> primitive. 100 takes ZERO draws (§5.2 invariant 3).</summary>
         public int ProcChance = 100;
         public int AiProcChance = 100;
+
+        /// <summary>True when the JSON explicitly authored <c>ProcChance</c> (vs. the silent 100 default) —
+        /// needed because <see cref="ProcChanceFormula"/> is validator-rejected as mutually exclusive only
+        /// when the author actually wrote both (Encounter Modifiers spec §5).</summary>
+        public bool ProcChanceAuthored;
+
+        /// <summary>True when the JSON explicitly authored <c>AiProcChance</c> — needed because it is
+        /// validator-rejected on a <c>COMBAT</c>-scoped recipe (no owner to select Ai vs. player chance,
+        /// Encounter Modifiers spec §4.2) only when actually authored, not merely defaulted.</summary>
+        public bool AiProcChanceAuthored;
+
+        /// <summary>Encounter Modifiers spec §5. Mutually exclusive with <see cref="ProcChance"/>. Null when
+        /// not authored (the recipe uses the plain <c>ProcChance</c>/<c>AiProcChance</c> primitive as today).</summary>
+        public ProcChanceFormula ProcChanceFormula;
 
         public RecipeBudget Budget = new RecipeBudget();
 

@@ -96,10 +96,17 @@ namespace ClassForge.Plugin
                     return false;
                 }
 
-                SyncCombat(state);
+                bool freshlyAllocated = SyncCombat(state);
 
                 ctx = new CombatContextAdapter(env, state);
                 dispatcher = _cachedDispatcher;
+
+                // Encounter Modifiers spec §4.5 — derived-state reconstruction. Runs exactly once, right
+                // after a fresh per-battle runtime is allocated for THIS combat (new CombatKey), using the
+                // just-built ctx so the scan sees the combat's current entities/statuses.
+                if (freshlyAllocated && dispatcher != null)
+                    RunModifierReconstruction(ctx, dispatcher);
+
                 return dispatcher != null;
             }
             catch (Exception ex)
@@ -114,13 +121,15 @@ namespace ClassForge.Plugin
         /// <summary>
         /// The §6 single-slot drop-and-reallocate. Compares by <b>reference identity</b> of the CombatState
         /// (not a hash — a hash could collide) plus the <c>GameRandom.Seed</c>, which is a
-        /// <c>public readonly int</c> identical on every peer and different for every combat.
+        /// <c>public readonly int</c> identical on every peer and different for every combat. Returns true
+        /// exactly when a fresh dispatcher/runtime was just allocated for a CombatKey the host had not seen
+        /// before — the §4.5 reconstruction trigger.
         /// </summary>
-        private static void SyncCombat(CombatState state)
+        private static bool SyncCombat(CombatState state)
         {
             int seed = state.Random.Seed;
             if (_cachedDispatcher != null && ReferenceEquals(_cachedState, state) && _cachedSeed == seed)
-                return;
+                return false;
 
             _cachedState = state;
             _cachedSeed = seed;
@@ -131,6 +140,79 @@ namespace ClassForge.Plugin
                 ClassForgePlugin.Log.LogDebug(
                     "[ClassForge] New CombatKey (seed=" + seed.ToString(CultureInfo.InvariantCulture) +
                     ") — per-battle recipe runtime reallocated from scratch (SPEC-DELTA-v1.1 §6).");
+            }
+            return true;
+        }
+
+        // =====================================================================================
+        // §4.5 derived-state reconstruction (Encounter Modifiers spec)
+        // =====================================================================================
+
+        /// <summary>
+        /// Content-agnostic wiring for <see cref="ModifierReconstruction.Reconstruct"/>: for every pack that
+        /// shipped a <c>modifiers.json</c> (<see cref="MergePlan.ModifierTables"/>, M-EM1), auto-discovers
+        /// the selection recipe's <c>SELECTION_SET.Name</c> and the matching "apply" recipe (any live recipe
+        /// whose <c>ADD_STATUS.StatusFromSelection</c> reads that same Name) purely by scanning the loaded
+        /// <see cref="Book"/> — no hardcoded pack recipe ids. The registry (modifier id → status id) comes
+        /// from the pack's own <c>ModifierTable</c>. A table with no matching recipes in the current book
+        /// (e.g. M-EM1/M-EM2 packs shipped before the generated recipes exist, M-EM3) is silently skipped.
+        /// </summary>
+        private static void RunModifierReconstruction(CombatContextAdapter ctx, RecipeDispatcher dispatcher)
+        {
+            try
+            {
+                var plan = ClassForgePlugin.CurrentMergePlan;
+                var tables = plan != null ? plan.ModifierTables : null;
+                if (tables == null || tables.Count == 0) return;
+
+                var runtime = dispatcher.State.Sync(ctx);
+                var book = Book.Ordered;
+
+                for (int ti = 0; ti < tables.Count; ti++)
+                {
+                    var table = tables[ti];
+                    if (table == null || string.IsNullOrEmpty(table.SelectionRecipe)) continue;
+
+                    SkillRecipe selRecipe = null;
+                    for (int i = 0; i < book.Count; i++)
+                        if (string.Equals(book[i].Id, table.SelectionRecipe, StringComparison.Ordinal)) { selRecipe = book[i]; break; }
+                    if (selRecipe == null || !selRecipe.IsLive) continue;
+
+                    string selectionName = null;
+                    for (int i = 0; i < selRecipe.Effects.Count; i++)
+                        if (selRecipe.Effects[i].Type == EffectKind.SELECTION_SET) { selectionName = selRecipe.Effects[i].Name; break; }
+                    if (string.IsNullOrEmpty(selectionName)) continue;
+
+                    SkillRecipe applyRecipe = null;
+                    for (int i = 0; i < book.Count && applyRecipe == null; i++)
+                    {
+                        var r = book[i];
+                        if (!r.IsLive) continue;
+                        for (int e = 0; e < r.Effects.Count; e++)
+                        {
+                            if (r.Effects[e].Type == EffectKind.ADD_STATUS &&
+                                string.Equals(r.Effects[e].StatusFromSelection, selectionName, StringComparison.Ordinal))
+                            { applyRecipe = r; break; }
+                        }
+                    }
+                    if (applyRecipe == null) continue;
+
+                    var registry = new List<ModifierReconstruction.ModifierRegistryEntry>();
+                    for (int i = 0; i < table.Modifiers.Count; i++)
+                    {
+                        var m = table.Modifiers[i];
+                        if (m == null || string.IsNullOrEmpty(m.Status) || string.IsNullOrEmpty(m.Id)) continue;
+                        registry.Add(new ModifierReconstruction.ModifierRegistryEntry { StatusId = m.Status, ModifierId = m.Id });
+                    }
+
+                    ModifierReconstruction.Reconstruct(ctx, runtime, registry, selectionName,
+                        selRecipe.Budget.Scope, selRecipe.BudgetKey,
+                        applyRecipe.Budget.Scope, applyRecipe.BudgetKey);
+                }
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogError("[ClassForge] Modifier reconstruction failed (fail-safe, no reconstruction applied): " + ex);
             }
         }
 

@@ -155,6 +155,74 @@ namespace ClassForge.Recipes.Parsing
                 if (e.Rank != null) ValidateConditionList(set, r, e.Rank.Where, path + ".Rank.Where", isV10);
                 ValidateEffect(set, r, e, path);
             }
+
+            // --- ProcChanceFormula (Encounter Modifiers spec §5, v1.2, M-EM2) ---
+            if (r.ProcChanceFormula != null)
+            {
+                if (isV10 || isV11)
+                    RecipeParser.Err(set, r, "ProcChanceFormula", "E_SCHEMA_GATE",
+                        "ProcChanceFormula requires SchemaVersion " + Vocabulary.SchemaVersionLoot);
+                if (r.ProcChanceAuthored)
+                    RecipeParser.Err(set, r, "ProcChanceFormula", "E_PCF_MUTEX",
+                        "ProcChance and ProcChanceFormula are mutually exclusive");
+                if (r.ProcChanceFormula.Min.HasValue && r.ProcChanceFormula.Max.HasValue &&
+                    r.ProcChanceFormula.Min.Value > r.ProcChanceFormula.Max.Value)
+                    RecipeParser.Err(set, r, "ProcChanceFormula", "E_RANGE", "ProcChanceFormula.Min must be <= Max");
+                ValidateFormulaRows(set, r, r.ProcChanceFormula.Base, "ProcChanceFormula.Base", isV10);
+                ValidateFormulaRows(set, r, r.ProcChanceFormula.Adjustments, "ProcChanceFormula.Adjustments", isV10);
+            }
+
+            // --- Scope: COMBAT (Encounter Modifiers spec §4.2, v1.2, M-EM2) ---
+            if (r.Scope == RecipeScope.COMBAT)
+            {
+                if (!isV12)
+                    RecipeParser.Err(set, r, "Scope", "E_COMBAT_SCHEMA_GATE",
+                        "Scope COMBAT requires SchemaVersion " + Vocabulary.SchemaVersionLoot);
+                if (r.AiProcChanceAuthored)
+                    RecipeParser.Err(set, r, "AiProcChance", "E_COMBAT_AIPROCCHANCE",
+                        "AiProcChance is meaningless on a COMBAT-scoped recipe (no owner to select Ai vs. " +
+                        "player chance) and is rejected");
+                ValidateCombatScopeConditions(set, r, r.Conditions, "Conditions");
+                for (int i = 0; i < r.Effects.Count; i++)
+                {
+                    string path = "Effects[" + i.ToString(CultureInfo.InvariantCulture) + "]";
+                    var e = r.Effects[i];
+                    ValidateCombatScopeConditions(set, r, e.Conditions, path + ".Conditions");
+                    if (!Contains(Vocabulary.TargetlessEffects, e.Type) && IsSelfLikeTarget(e.Target))
+                        RecipeParser.Err(set, r, path + ".Target", "E_COMBAT_TARGET",
+                            "COMBAT-scoped recipes have no owner — Target " + e.Target +
+                            " (SELF/CASTER/ALLY_*/ENEMY_ALL) is undefined; use TRIGGER_TARGET or TRIGGER_SOURCE");
+                }
+            }
+        }
+
+        private static void ValidateFormulaRows(RecipeSet set, SkillRecipe r, List<ProcChanceFormulaRow> rows, string path, bool isV10)
+        {
+            for (int i = 0; i < rows.Count; i++)
+                ValidateConditionList(set, r, rows[i].Conditions, path + "[" + i.ToString(CultureInfo.InvariantCulture) + "].Conditions", isV10);
+        }
+
+        /// <summary>Encounter Modifiers spec §4.2 load-time rejection: any condition whose <c>Of</c>
+        /// resolves to SELF (explicit or default) on a COMBAT-scoped recipe, since Owner is null and SELF
+        /// would silently resolve to nothing. Only applies to conditions the <c>Of</c> selector is actually
+        /// defined for — a condition that never reads <c>Of</c> at all (e.g. <c>IS_DUNGEON</c>) is unaffected.</summary>
+        private static void ValidateCombatScopeConditions(RecipeSet set, SkillRecipe r, List<RecipeCondition> list, string path)
+        {
+            if (list == null) return;
+            for (int i = 0; i < list.Count; i++)
+            {
+                var c = list[i];
+                if (Contains(Vocabulary.OfCapableConditions, c.Type) && c.Of == OfSelector.SELF)
+                    RecipeParser.Err(set, r, path + "[" + i.ToString(CultureInfo.InvariantCulture) + "].Of", "E_COMBAT_SELF_COND",
+                        c.Type + " defaults/resolves to Of: SELF, which is undefined on a COMBAT-scoped " +
+                        "recipe (no owner) — use TRIGGER_TARGET or TRIGGER_SOURCE, or a combat-level condition");
+            }
+        }
+
+        private static bool IsSelfLikeTarget(TargetKind k)
+        {
+            return k == TargetKind.SELF || k == TargetKind.CASTER || k == TargetKind.ALLY_ALL ||
+                   k == TargetKind.ALLY_ALL_OTHERS || k == TargetKind.ALLY_BY_RANK || k == TargetKind.ENEMY_ALL;
         }
 
         /// <summary>Loot-grant effect vocabulary — verb spec §6.1/§6.2. AFFIX_ROLL is further always
@@ -224,10 +292,14 @@ namespace ClassForge.Recipes.Parsing
                 {
                     bool hasStatus = !string.IsNullOrEmpty(e.Status);
                     bool hasOneOf = e.StatusOneOf != null && e.StatusOneOf.Count > 0;
-                    if (!hasStatus && !hasOneOf)
-                        RecipeParser.Err(set, r, path, "E_STATUS_MISSING", e.Type + " requires Status or StatusOneOf");
-                    if (hasStatus && hasOneOf)
-                        RecipeParser.Err(set, r, path, "E_STATUS_AMBIGUOUS", "Status and StatusOneOf are mutually exclusive");
+                    bool hasFromSelection = !string.IsNullOrEmpty(e.StatusFromSelection);
+                    int howMany = (hasStatus ? 1 : 0) + (hasOneOf ? 1 : 0) + (hasFromSelection ? 1 : 0);
+                    if (howMany == 0)
+                        RecipeParser.Err(set, r, path, "E_STATUS_MISSING",
+                            e.Type + " requires Status, StatusOneOf, or StatusFromSelection");
+                    if (howMany > 1)
+                        RecipeParser.Err(set, r, path, "E_STATUS_AMBIGUOUS",
+                            "Status, StatusOneOf and StatusFromSelection are mutually exclusive");
                     if (hasStatus && string.Equals(e.Status, Vocabulary.TriggerStatusToken, StringComparison.Ordinal)
                         && r.Trigger != TriggerKind.ON_STATUS_APPLIED)
                         RecipeParser.Err(set, r, path + ".Status", "E_TRIGGER_STATUS_SCOPE",
@@ -237,6 +309,23 @@ namespace ClassForge.Recipes.Parsing
                             "FallbackStatus is only meaningful on ADD_STATUS (§4.1 IMMUNITY_FALLBACK)");
                     if (e.Duration.HasValue && e.Duration.Value < 0)
                         RecipeParser.Err(set, r, path + ".Duration", "E_RANGE", "Duration must be >= 0");
+                    break;
+                }
+                case EffectKind.SELECTION_SET:
+                {
+                    if (string.IsNullOrEmpty(e.Name))
+                        RecipeParser.Err(set, r, path + ".Name", "E_SELECTION_NAME_MISSING", "SELECTION_SET requires Name");
+                    if (e.OneOfWeighted == null || e.OneOfWeighted.Count == 0)
+                        RecipeParser.Err(set, r, path + ".OneOfWeighted", "E_VALUE_MISSING",
+                            "SELECTION_SET requires a non-empty OneOfWeighted");
+                    break;
+                }
+                case EffectKind.EVENT_BANNER:
+                {
+                    if (string.IsNullOrEmpty(e.LocKey) && string.IsNullOrEmpty(e.FallbackText))
+                        RecipeParser.Err(set, r, path, "E_VALUE_MISSING", "EVENT_BANNER requires LocKey and/or FallbackText");
+                    if (e.DurationMs.HasValue && e.DurationMs.Value < 0)
+                        RecipeParser.Err(set, r, path + ".DurationMs", "E_RANGE", "DurationMs must be >= 0");
                     break;
                 }
                 case EffectKind.STAT_CHANGE:
@@ -255,6 +344,19 @@ namespace ClassForge.Recipes.Parsing
                         RecipeParser.Warn(set, r, path + ".StatChangeType", "W_DAMAGE_TYPE",
                             "eDamageType '" + e.StatChangeType + "' on the non-HP stat '" + e.Stat +
                             "' is semantically unverified at runtime (OQ#5); prefer MAGICAL/PHYSICAL/REGEN");
+                    // GATE C (Encounter Modifiers spec §5/§8.1): FlatValueFrom "TARGET_MXHP_PCT" reads the
+                    // effect's own Percent field (sign + magnitude) — a plain FlatPercent STAT_CHANGE on
+                    // Stat "MXHP" is a DIFFERENT, unsupported native path (InteractableHelper.
+                    // GetStatChangePercentValue only handles "HP"/"XP" and throws for MXHP).
+                    if (string.Equals(e.FlatValueFrom, Vocabulary.SourceTargetMxhpPct, StringComparison.Ordinal)
+                        && !e.Percent.HasValue)
+                        RecipeParser.Warn(set, r, path + ".Percent", "W_MXHP_PCT_NO_PERCENT",
+                            "FlatValueFrom TARGET_MXHP_PCT with no Percent authored always resolves to 0 (no-op)");
+                    if (string.Equals(e.Stat, "MXHP", StringComparison.Ordinal) && e.FlatPercent.HasValue)
+                        RecipeParser.Err(set, r, path + ".FlatPercent", "E_MXHP_FLATPERCENT_UNSUPPORTED",
+                            "STAT_CHANGE Stat \"MXHP\" + FlatPercent throws natively (InteractableHelper." +
+                            "GetStatChangePercentValue only handles HP/XP, GATE C) — use FlatValueFrom " +
+                            "\"TARGET_MXHP_PCT\" + Percent instead");
                     break;
                 }
                 case EffectKind.SUMMON:
@@ -347,6 +449,10 @@ namespace ClassForge.Recipes.Parsing
                 if (isV10 && Contains(Vocabulary.V11OnlyConditions, c.Type))
                     RecipeParser.Err(set, r, p + ".Type", "E_SCHEMA_GATE",
                         "condition " + c.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionCurrent);
+                bool isV11Here = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionCurrent, StringComparison.Ordinal);
+                if ((isV10 || isV11Here) && Contains(Vocabulary.V12OnlyConditions, c.Type))
+                    RecipeParser.Err(set, r, p + ".Type", "E_SCHEMA_GATE",
+                        "condition " + c.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionLoot);
                 if (c.Of != OfSelector.SELF && !Contains(Vocabulary.OfCapableConditions, c.Type))
                     RecipeParser.Warn(set, r, p + ".Of", "W_OF_IGNORED",
                         "the Of selector is not defined for " + c.Type + " (§3) and is ignored");
@@ -441,6 +547,51 @@ namespace ClassForge.Recipes.Parsing
                     if (!Contains(TriggersWithRoll, r.Trigger))
                         RecipeParser.Warn(set, r, p, "W_NO_ROLL_DATA",
                             r.Trigger + " carries no pRollData; ROLL_TIER reads the default tier");
+                    break;
+
+                // --- Encounter Modifiers spec §5 (v1.2, M-EM2) ---
+
+                case ConditionKind.PARTY_AVG_LEVEL:
+                    if (!c.ValueInt.HasValue)
+                        RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING", "PARTY_AVG_LEVEL requires an integer Value");
+                    if (!c.HasComparator)
+                        RecipeParser.Err(set, r, p + ".Comparator", "E_CMP_MISSING", "PARTY_AVG_LEVEL requires a Comparator");
+                    break;
+
+                case ConditionKind.IS_DUNGEON:
+                case ConditionKind.BOSS_FIGHT:
+                    if (!c.ValueBool.HasValue)
+                        RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING", c.Type + " requires a boolean Value");
+                    break;
+
+                case ConditionKind.ENCOUNTER_PROPERTY:
+                case ConditionKind.ENTITY_TAG:
+                    if (string.IsNullOrEmpty(c.Value))
+                        RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING", c.Type + " requires a string Value (enum member name)");
+                    break;
+
+                case ConditionKind.CONFIG_NAME_CONTAINS:
+                    if (string.IsNullOrEmpty(c.Value))
+                        RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING", "CONFIG_NAME_CONTAINS requires a string Value");
+                    break;
+
+                case ConditionKind.COMBAT_START_REAL:
+                    if (!c.ValueBool.HasValue)
+                        RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING", "COMBAT_START_REAL requires a boolean Value");
+                    if (r.Trigger != TriggerKind.ON_COMBAT_START)
+                        RecipeParser.Err(set, r, p, "E_COND_TRIGGER_SCOPE", "COMBAT_START_REAL is ON_COMBAT_START only (§4.3)");
+                    break;
+
+                case ConditionKind.SELECTION_PRESENT:
+                    if (string.IsNullOrEmpty(c.Name))
+                        RecipeParser.Err(set, r, p + ".Name", "E_SELECTION_NAME_MISSING", "SELECTION_PRESENT requires Name");
+                    if (!c.ValueBool.HasValue)
+                        RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING", "SELECTION_PRESENT requires a boolean Value");
+                    break;
+
+                case ConditionKind.IS_ENEMY:
+                    if (!c.ValueBool.HasValue)
+                        RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING", "IS_ENEMY requires a boolean Value");
                     break;
             }
 

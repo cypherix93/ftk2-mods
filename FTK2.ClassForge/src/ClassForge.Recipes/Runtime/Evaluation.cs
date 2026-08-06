@@ -39,6 +39,10 @@ namespace ClassForge.Recipes.Runtime
 
         /// <summary>Damage/heal magnitude carried by the trigger, when it has one.</summary>
         public int Amount;
+
+        /// <summary>Bound to <c>COMBAT_START_REAL</c> — <c>CombatStartEvent.TrySkillProc</c>, valid only
+        /// under <c>ON_COMBAT_START</c> (Encounter Modifiers spec §4.3/§5).</summary>
+        public bool CombatStartReal;
     }
 
     /// <summary>
@@ -216,6 +220,39 @@ namespace ClassForge.Recipes.Runtime
                     var item = Item(t);
                     return item != null && item.IsConsumable == Want(c);
                 }
+
+                // --- Encounter Modifiers spec §5 (v1.2, M-EM2) — all pure reads, no RNG ---
+
+                case ConditionKind.PARTY_AVG_LEVEL:
+                    return t.Ctx != null &&
+                           Vocabulary.Compare(c.Comparator, t.Ctx.PartyAverageLevel, c.ValueInt.HasValue ? c.ValueInt.Value : 0);
+
+                case ConditionKind.IS_DUNGEON:
+                    return t.Ctx != null && t.Ctx.IsDungeon == Want(c);
+
+                case ConditionKind.BOSS_FIGHT:
+                    return t.Ctx != null && t.Ctx.IsBossFight == Want(c);
+
+                case ConditionKind.ENCOUNTER_PROPERTY:
+                    return t.Ctx != null && t.Ctx.HasEncounterProperty(c.Value);
+
+                case ConditionKind.ENTITY_TAG:
+                    return e != null && e.HasTag(c.Value);
+
+                case ConditionKind.CONFIG_NAME_CONTAINS:
+                    return e != null && !string.IsNullOrEmpty(e.ConfigName) && !string.IsNullOrEmpty(c.Value) &&
+                           e.ConfigName.IndexOf(c.Value, StringComparison.OrdinalIgnoreCase) >= 0;
+
+                case ConditionKind.COMBAT_START_REAL:
+                    return t.CombatStartReal == Want(c);
+
+                case ConditionKind.SELECTION_PRESENT:
+                    return t.Runtime != null && !string.IsNullOrEmpty(t.Runtime.GetSelection(c.Name)) == Want(c);
+
+                // GATE D: enemy-side gate via CharacterHelper.IsEnemy semantics (GroupIndex == 1), never
+                // CHARACTER_TYPE (proven unable to express it).
+                case ConditionKind.IS_ENEMY:
+                    return e != null && e.IsEnemy == Want(c);
 
                 default:
                     return false;
@@ -434,17 +471,20 @@ namespace ClassForge.Recipes.Runtime
     /// </summary>
     public static class ValueSources
     {
-        /// <summary>Resolves the raw source magnitude, then applies <c>PerUnit</c>, <c>Min</c> and <c>Max</c>.</summary>
+        /// <summary>Resolves the raw source magnitude, then applies <c>PerUnit</c>, <c>Min</c> and <c>Max</c>.
+        /// <c>TARGET_MXHP_PCT</c> (GATE C) is the one source that already returns a fully-formed, signed,
+        /// floor-at-1 flat value — <c>PerUnit</c> defaults to 1 so it passes through unchanged unless an
+        /// author deliberately overrides it.</summary>
         public static int Resolve(string token, RecipeEffect effect, TriggerContext t)
         {
-            int raw = Raw(token, t);
+            int raw = Raw(token, effect, t);
             int v = raw * (effect.PerUnit.HasValue ? effect.PerUnit.Value : 1);
             if (effect.Min.HasValue && v < effect.Min.Value) v = effect.Min.Value;
             if (effect.Max.HasValue && v > effect.Max.Value) v = effect.Max.Value;
             return v;
         }
 
-        private static int Raw(string token, TriggerContext t)
+        private static int Raw(string token, RecipeEffect effect, TriggerContext t)
         {
             if (string.IsNullOrEmpty(token)) return 0;
             if (string.Equals(token, Vocabulary.SourceFocusSpent, StringComparison.Ordinal))
@@ -456,6 +496,8 @@ namespace ClassForge.Recipes.Runtime
                 int max = e.GetStat("MXHP");
                 return max > 0 ? (e.GetStat("HP") * 100) / max : 0;
             }
+            if (string.Equals(token, Vocabulary.SourceTargetMxhpPct, StringComparison.Ordinal))
+                return RawTargetMxhpPct(effect, t);
             if (token.StartsWith(Vocabulary.SourceCounterPrefix, StringComparison.Ordinal))
             {
                 if (t.Owner == null) return 0;
@@ -471,6 +513,28 @@ namespace ClassForge.Recipes.Runtime
                 return ConditionEvaluator.CountStatuses(t.Ctx, t.Owner, category, null);
             }
             return 0;
+        }
+
+        /// <summary>
+        /// GATE C (binding gate resolution): STAT_CHANGE with Stat "MXHP" + FlatPercent throws natively
+        /// (<c>InteractableHelper.GetStatChangePercentValue</c> only handles "HP"/"XP"). This is the
+        /// engine-computed replacement: reads the effect's authored <c>Percent</c> and
+        /// <c>TRIGGER_TARGET.MXHP</c>, then applies EOR's own rounding (L22663-4) —
+        /// <c>flat = sign(Percent) * max(1, round(|targetMaxHp * Percent| / 100))</c> — so the emitted
+        /// action is a plain <c>FlatValue</c> STAT_CHANGE on Stat "MXHP" through the native verb, never a
+        /// FlatPercent one. <c>Percent == 0</c> or no resolvable target/MXHP ⇒ 0 (no-op delta).
+        /// </summary>
+        private static int RawTargetMxhpPct(RecipeEffect effect, TriggerContext t)
+        {
+            var e = t.TriggerTarget;
+            if (e == null) return 0;
+            int pct = effect.Percent.HasValue ? effect.Percent.Value : 0;
+            if (pct == 0) return 0;
+            int maxHp = e.GetStat("MXHP");
+            if (maxHp <= 0) return 0;
+            decimal magnitudeRaw = Math.Abs((decimal)maxHp * pct) / 100m;
+            int magnitude = (int)Math.Max(1m, Math.Round(magnitudeRaw, MidpointRounding.AwayFromZero));
+            return pct < 0 ? -magnitude : magnitude;
         }
     }
 }

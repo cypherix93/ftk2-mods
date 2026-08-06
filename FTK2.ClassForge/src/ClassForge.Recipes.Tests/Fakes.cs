@@ -21,11 +21,16 @@ namespace ClassForge.Recipes.Tests
         public string CharType = "PLAYER";
         public string Base = "HUMAN";
         public readonly List<string> PassiveList = new List<string>();
+        public readonly List<string> TagList = new List<string>();
+        public string ConfigNameValue = "";
+        /// <summary>GATE D: defaults to the team-1 convention every test Rig already uses for "foe".</summary>
+        public bool EnemyFlag;
 
         public FakeEntity(string guid, int team)
         {
             Guid = guid;
             Team = team;
+            EnemyFlag = team == 1;
             Stats["HP"] = 100;
             Stats["MXHP"] = 100;
             Stats["FOC"] = 0;
@@ -47,10 +52,14 @@ namespace ClassForge.Recipes.Tests
         public string CharacterType { get { return CharType; } }
         public string BaseType { get { return Base; } }
         public IReadOnlyList<string> Passives { get { return PassiveList; } }
+        public bool IsEnemy { get { return EnemyFlag; } }
+        public bool HasTag(string tagName) { return tagName != null && TagList.Contains(tagName); }
+        public string ConfigName { get { return ConfigNameValue; } }
 
         public FakeEntity With(string stat, int value) { Stats[stat] = value; return this; }
         public FakeEntity WithStatus(string id) { StatusList.Add(id); return this; }
         public FakeEntity WithPassive(string id) { PassiveList.Add(id); return this; }
+        public FakeEntity WithTag(string tag) { TagList.Add(tag); return this; }
     }
 
     public sealed class FakeAbility : IAbilityInfo
@@ -101,9 +110,19 @@ namespace ClassForge.Recipes.Tests
         public readonly Dictionary<string, IItemInfo> Items = new Dictionary<string, IItemInfo>(StringComparer.Ordinal);
         public readonly List<EngineAction> Emitted = new List<EngineAction>();
 
+        /// <summary>Encounter Modifiers spec §5 test knobs — plain settable fields, no game refs.</summary>
+        public int PartyAverageLevelValue = 1;
+        public bool IsDungeonValue;
+        public bool IsBossFightValue;
+        public readonly HashSet<string> EncounterPropertiesSet = new HashSet<string>(StringComparer.Ordinal);
+
         public string CombatIdentity { get { return Identity; } }
         public int Round { get { return RoundValue; } }
         public IReadOnlyList<ICombatEntity> Entities { get { return EntityList; } }
+        public int PartyAverageLevel { get { return PartyAverageLevelValue; } }
+        public bool IsDungeon { get { return IsDungeonValue; } }
+        public bool IsBossFight { get { return IsBossFightValue; } }
+        public bool HasEncounterProperty(string propertyName) { return propertyName != null && EncounterPropertiesSet.Contains(propertyName); }
 
         public bool AreOpponents(ICombatEntity a, ICombatEntity b)
         {
@@ -152,6 +171,11 @@ namespace ClassForge.Recipes.Tests
 
         public int Draws;
 
+        /// <summary>The <c>chance</c> argument of the most recent <see cref="NextChance"/> call (0..1), or
+        /// null if never called. Lets a test assert the exact numeric output of a <c>ProcChanceFormula</c>
+        /// (Encounter Modifiers spec §5) without exposing the dispatcher's private evaluator.</summary>
+        public decimal? LastChance;
+
         public FakeRandom(int seed) { _state = seed == 0 ? 0x9E3779B9u : (uint)seed; }
 
         public FakeRandom ScriptChance(params bool[] values)
@@ -177,6 +201,7 @@ namespace ClassForge.Recipes.Tests
         public bool NextChance(decimal chance)
         {
             Draws++;
+            LastChance = chance;
             if (_scriptedChance.Count > 0) return _scriptedChance.Dequeue();
             return (decimal)(NextState() % 1000u) / 1000m < chance;
         }
@@ -187,6 +212,17 @@ namespace ClassForge.Recipes.Tests
             if (_scriptedInt.Count > 0) return _scriptedInt.Dequeue();
             if (maxExclusive <= minInclusive) return minInclusive;
             return minInclusive + (int)(NextState() % (uint)(maxExclusive - minInclusive));
+        }
+
+        /// <summary>Mirrors <c>GameRandom.NextInt(min, max, pMaxInclusive: true)</c> — used by
+        /// <c>SELECTION_SET</c> (Encounter Modifiers spec §5/§6.3). Shares the same scripted-int queue as
+        /// <see cref="NextInt"/> so a test can script the exact draw regardless of which method consumes it.</summary>
+        public int NextIntInclusive(int minInclusive, int maxInclusive)
+        {
+            Draws++;
+            if (_scriptedInt.Count > 0) return _scriptedInt.Dequeue();
+            if (maxInclusive <= minInclusive) return minInclusive;
+            return minInclusive + (int)(NextState() % (uint)(maxInclusive - minInclusive + 1));
         }
     }
 

@@ -18,7 +18,9 @@ namespace ClassForge.Recipes.Parsing
         {
             "SchemaVersion", "DisplayName", "Enabled", "Trigger", "Conditions", "Effects",
             "ProcChance", "AiProcChance", "Budget", "Cooldown", "Priority", "VerboseLogTag",
-            "PickOneEffect"
+            "PickOneEffect",
+            // Encounter Modifiers spec §4.2/§5 (v1.2, M-EM2)
+            "Scope", "ProcChanceFormula"
         };
 
         private static readonly string[] BudgetFields = { "Scope", "ConsumeOn", "Key" };
@@ -37,10 +39,16 @@ namespace ClassForge.Recipes.Parsing
             "Percent", "Flat", "MinDelta", "Scope", "Name", "Delta", "Value",
             "FlatValueFrom", "PercentFrom", "PerUnit", "Min", "Max",
             // loot-grant effects (ON_COMBAT_LOOT only, SchemaVersion 1.2, verb spec §6.2)
-            "MinGold", "MaxGold", "Tag", "Rarity", "Stack", "ConfigName", "ChancePct", "Table"
+            "MinGold", "MaxGold", "Tag", "Rarity", "Stack", "ConfigName", "ChancePct", "Table",
+            // Encounter Modifiers effects (v1.2, spec §5, M-EM2)
+            "OneOfWeighted", "StatusFromSelection", "LocKey", "FallbackText", "DurationMs", "TextFromSelection"
         };
 
         private static readonly string[] RankFields = { "Stat", "Order", "Where", "ExcludeSelf" };
+
+        private static readonly string[] ProcChanceFormulaFields = { "Base", "Adjustments", "Min", "Max" };
+        private static readonly string[] ProcChanceFormulaRowFields = { "Conditions", "Value" };
+        private static readonly string[] WeightedValueFields = { "Value", "Weight" };
 
         /// <summary>Parses a recipe file. The returned set is always usable, possibly empty.</summary>
         public static RecipeSet Parse(string json)
@@ -95,6 +103,15 @@ namespace ClassForge.Recipes.Parsing
             r.Enabled = Bool(set, r, node, "Enabled", true);
             r.VerboseLogTag = Str(node, "VerboseLogTag", r.DisplayName);
 
+            r.RawScope = Str(node, "Scope", null);
+            if (!string.IsNullOrEmpty(r.RawScope))
+            {
+                RecipeScope scope;
+                if (!TryEnum(r.RawScope, out scope))
+                    Err(set, r, "Scope", "E_SCOPE_UNKNOWN", "unknown Scope token '" + r.RawScope + "' (OWNED|COMBAT)");
+                else r.Scope = scope;
+            }
+
             r.RawTrigger = Str(node, "Trigger", null);
             TriggerKind trig;
             if (string.IsNullOrEmpty(r.RawTrigger))
@@ -117,11 +134,34 @@ namespace ClassForge.Recipes.Parsing
                 }
             }
 
+            r.ProcChanceAuthored = node.Get("ProcChance") != null;
+            r.AiProcChanceAuthored = node.Get("AiProcChance") != null;
             r.ProcChance = Int(set, r, node, "ProcChance", 100, "ProcChance");
             r.AiProcChance = Int(set, r, node, "AiProcChance", r.ProcChance, "AiProcChance");
             r.Cooldown = Int(set, r, node, "Cooldown", 0, "Cooldown");
             r.Priority = Int(set, r, node, "Priority", 0, "Priority");
             r.PickOneEffect = Bool(set, r, node, "PickOneEffect", false);
+
+            var pcfNode = node.Get("ProcChanceFormula");
+            if (pcfNode != null)
+            {
+                if (pcfNode.Kind != JsonKind.Object)
+                {
+                    Err(set, r, "ProcChanceFormula", "E_SHAPE", "ProcChanceFormula must be an object");
+                }
+                else
+                {
+                    WarnUnknownFields(set, r, pcfNode, ProcChanceFormulaFields, "ProcChanceFormula");
+                    var pcf = new ProcChanceFormula();
+                    pcf.Base = ParseFormulaRows(set, r, pcfNode.Get("Base"), "ProcChanceFormula.Base");
+                    pcf.Adjustments = ParseFormulaRows(set, r, pcfNode.Get("Adjustments"), "ProcChanceFormula.Adjustments");
+                    pcf.Min = OptInt(set, r, pcfNode, "Min", "ProcChanceFormula");
+                    pcf.Max = OptInt(set, r, pcfNode, "Max", "ProcChanceFormula");
+                    if (pcf.Base.Count == 0)
+                        Err(set, r, "ProcChanceFormula.Base", "E_SHAPE", "ProcChanceFormula.Base must have at least one row");
+                    r.ProcChanceFormula = pcf;
+                }
+            }
 
             var budgetNode = node.Get("Budget");
             if (budgetNode != null)
@@ -173,6 +213,33 @@ namespace ClassForge.Recipes.Parsing
             }
 
             return r;
+        }
+
+        private static List<ProcChanceFormulaRow> ParseFormulaRows(RecipeSet set, SkillRecipe r, JsonValue node, string path)
+        {
+            var list = new List<ProcChanceFormulaRow>();
+            if (node == null) return list;
+            if (node.Kind != JsonKind.Array)
+            {
+                Err(set, r, path, "E_SHAPE", path + " must be an array");
+                return list;
+            }
+            for (int i = 0; i < node.Items.Count; i++)
+            {
+                string itemPath = path + "[" + i.ToString(CultureInfo.InvariantCulture) + "]";
+                var item = node.Items[i];
+                if (item == null || item.Kind != JsonKind.Object)
+                {
+                    Err(set, r, itemPath, "E_SHAPE", "row must be an object");
+                    continue;
+                }
+                WarnUnknownFields(set, r, item, ProcChanceFormulaRowFields, itemPath);
+                var row = new ProcChanceFormulaRow();
+                row.Conditions = ParseConditions(set, r, item.Get("Conditions"), itemPath + ".Conditions");
+                row.Value = Int(set, r, item, "Value", 0, itemPath + ".Value");
+                list.Add(row);
+            }
+            return list;
         }
 
         private static List<RecipeCondition> ParseConditions(RecipeSet set, SkillRecipe r, JsonValue node, string path)
@@ -430,6 +497,46 @@ namespace ClassForge.Recipes.Parsing
             e.ConfigName = Str(node, "ConfigName", null);
             e.ChancePct = OptInt(set, r, node, "ChancePct", path);
             e.Table = Str(node, "Table", null);
+
+            // Encounter Modifiers effects (v1.2, spec §5, M-EM2)
+            var oneOfWeightedNode = node.Get("OneOfWeighted");
+            if (oneOfWeightedNode != null)
+            {
+                if (oneOfWeightedNode.Kind != JsonKind.Array)
+                {
+                    Err(set, r, path + ".OneOfWeighted", "E_SHAPE", "OneOfWeighted must be an array");
+                }
+                else
+                {
+                    e.OneOfWeighted = new List<WeightedValue>();
+                    for (int i = 0; i < oneOfWeightedNode.Items.Count; i++)
+                    {
+                        string itemPath = path + ".OneOfWeighted[" + i.ToString(CultureInfo.InvariantCulture) + "]";
+                        var item = oneOfWeightedNode.Items[i];
+                        if (item == null || item.Kind != JsonKind.Object)
+                        {
+                            Err(set, r, itemPath, "E_SHAPE", "OneOfWeighted entry must be an object");
+                            continue;
+                        }
+                        WarnUnknownFields(set, r, item, WeightedValueFields, itemPath);
+                        var wv = new WeightedValue();
+                        wv.Value = Str(item, "Value", null);
+                        wv.Weight = Int(set, r, item, "Weight", 0, itemPath + ".Weight");
+                        if (string.IsNullOrEmpty(wv.Value))
+                            Err(set, r, itemPath + ".Value", "E_VALUE_MISSING", "OneOfWeighted entry requires Value");
+                        if (wv.Weight < 1)
+                            Err(set, r, itemPath + ".Weight", "E_RANGE", "OneOfWeighted entry Weight must be >= 1");
+                        e.OneOfWeighted.Add(wv);
+                    }
+                    if (e.OneOfWeighted.Count == 0)
+                        Err(set, r, path + ".OneOfWeighted", "E_SHAPE", "OneOfWeighted must not be empty");
+                }
+            }
+            e.StatusFromSelection = Str(node, "StatusFromSelection", null);
+            e.LocKey = Str(node, "LocKey", null);
+            e.FallbackText = Str(node, "FallbackText", null);
+            e.DurationMs = OptInt(set, r, node, "DurationMs", path);
+            e.TextFromSelection = Str(node, "TextFromSelection", null);
 
             return e;
         }

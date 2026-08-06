@@ -52,10 +52,25 @@ namespace ClassForge.Recipes.Abstractions
 
         /// <summary>
         /// Skill ids this entity carries (adapter: <c>Equippable.Passives</c> across equipped Things,
-        /// including <c>TRAIT_*</c> Things per SPEC-DELTA-v1.1 OQ#1). A recipe only evaluates for owners
-        /// that hold its <c>SKILL_*</c> id.
+        /// including <c>TRAIT_*</c> Things per SPEC-DELTA-v1.1 OQ#1, plus status-attached <c>SKILL_</c>
+        /// passives per Encounter Modifiers spec §4.4). A recipe only evaluates for owners that hold its
+        /// <c>SKILL_*</c> id.
         /// </summary>
         IReadOnlyList<string> Passives { get; }
+
+        /// <summary>GATE D (Encounter Modifiers spec, binding gate resolution): adapter —
+        /// <c>CharacterHelper.IsEnemy(entity)</c>, i.e. <c>CharacterComponent.GroupIndex == 1</c>. The
+        /// enemy-side gate for <c>IS_ENEMY</c> — proven unable to be expressed via <c>CHARACTER_TYPE</c>.</summary>
+        bool IsEnemy { get; }
+
+        /// <summary>Encounter Modifiers spec §5 <c>ENTITY_TAG</c>: adapter —
+        /// <c>CharacterHelper.ActorHasTag(entity, eConfigTags.&lt;tagName&gt;)</c>, parsing the enum member
+        /// name from <paramref name="tagName"/>. An unparseable tag name is a fail-safe false, never a throw.</summary>
+        bool HasTag(string tagName);
+
+        /// <summary>Encounter Modifiers spec §5 <c>CONFIG_NAME_CONTAINS</c>: adapter —
+        /// <c>CharacterComponent.ConfigName</c> (the character's config id, e.g. "SCOURGE_TOTEM").</summary>
+        string ConfigName { get; }
     }
 
     /// <summary>Ability facts a condition may read. Adapter: <c>Configs.Abilities[id]</c> + the acting Thing's config.</summary>
@@ -121,6 +136,24 @@ namespace ClassForge.Recipes.Abstractions
         /// <summary>Null when the config name is unknown.</summary>
         IItemInfo GetItem(string thingConfigName);
 
+        /// <summary>Encounter Modifiers spec §5 <c>PARTY_AVG_LEVEL</c>: adapter —
+        /// <c>ProgressionHelper.GetAveragePartyLevel</c> over <c>GameRun.Entities</c> filtered
+        /// <c>Has&lt;PlayerComponent&gt;() &amp;&amp; Has&lt;CharacterComponent&gt;()</c> (mirrors EOR's
+        /// caller-side filter, EOR L22744).</summary>
+        int PartyAverageLevel { get; }
+
+        /// <summary>Encounter Modifiers spec §5 <c>IS_DUNGEON</c>: adapter — <c>CombatState.IsDungeon</c>.</summary>
+        bool IsDungeon { get; }
+
+        /// <summary>Encounter Modifiers spec §5 <c>BOSS_FIGHT</c>: adapter — <c>CombatState.BossFightState != null</c>.</summary>
+        bool IsBossFight { get; }
+
+        /// <summary>Encounter Modifiers spec §5 <c>ENCOUNTER_PROPERTY</c>: adapter — resolves the encounter
+        /// entity via <c>GameRun.AdventureState.EncounterGUID</c>, then <c>EncounterComponent.HasProperty</c>,
+        /// parsing the enum member name from <paramref name="propertyName"/>. No encounter entity resolved
+        /// ⇒ false (matches EOR's default, L22772-3).</summary>
+        bool HasEncounterProperty(string propertyName);
+
         /// <summary>
         /// Action sink. The dispatcher both returns the ordered plan AND pushes each action here, so the
         /// Plugin can translate to <c>CombatHelper.ApplyAction</c> calls streaming rather than in a batch
@@ -144,6 +177,11 @@ namespace ClassForge.Recipes.Abstractions
         /// <summary>Adapter: <c>GameRandom.NextInt(min, max)</c> with <c>pMaxInclusive:false</c>. One draw.
         /// Used for <c>StatusOneOf</c>, which is exactly what <c>GetRandomElementFromList</c> does internally.</summary>
         int NextInt(int minInclusive, int maxExclusive);
+
+        /// <summary>Adapter: <c>GameRandom.NextInt(min, max, pMaxInclusive: true)</c>. One draw. Used by
+        /// <c>SELECTION_SET</c> (Encounter Modifiers spec §5/§6.3): <c>NextInt(1, Σweights, pMaxInclusive:
+        /// true)</c>, EOR's weighted-pick draw verbatim (L22814).</summary>
+        int NextIntInclusive(int minInclusive, int maxInclusive);
     }
 
     /// <summary>Optional diagnostic sink; the engine never requires one (all calls are null-guarded).</summary>

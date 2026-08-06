@@ -14,17 +14,23 @@
     "_source": "Encounter Modifiers spec §8.2 (docs/superpowers/plans/2026-08-05-encounter-modifiers-spec.md), verbatim. Owner = the STATUS_CF_ENCMOD_CURSED-bearing enemy, via the §4.4 EntityAdapter.Passives status-passives extension (M-EM2, not yet wired -- this recipe is inert until then, per spec §2 move 3 / M-EM1 scope note). ON_DAMAGE_DEALT already restricts the trigger target to the owner's opponents (SPEC-DELTA-v1.1 §2.2 T3), matching EOR's IsEnemy(origin) && !IsEnemy(target) gate (EOR L24593) for free."
   },
   "SKILL_CF_ENCMOD_REGEN_TICK": {
-    "SchemaVersion": "1.1",
+    "SchemaVersion": "1.2",
     "DisplayName": "Regenerating Encounter",
     "Trigger": "ON_TURN_START",
     "Conditions": [
       { "Type": "HP_THRESHOLD", "Percent": 99, "Comparator": "LTE" }
     ],
     "Effects": [
-      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "HP", "StatChangeType": "REGEN", "FlatValue": 2 }
+      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "HP", "StatChangeType": "REGEN", "FlatValue": 2,
+        "Conditions": [ { "Type": "PARTY_AVG_LEVEL", "Comparator": "LTE", "Value": 3 } ] },
+      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "HP", "StatChangeType": "REGEN", "FlatValue": 3,
+        "Conditions": [ { "Type": "PARTY_AVG_LEVEL", "Comparator": "GTE", "Value": 4 },
+                         { "Type": "PARTY_AVG_LEVEL", "Comparator": "LTE", "Value": 6 } ] },
+      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "HP", "StatChangeType": "REGEN", "FlatValue": 4,
+        "Conditions": [ { "Type": "PARTY_AVG_LEVEL", "Comparator": "GTE", "Value": 7 } ] }
     ],
     "Budget": { "Scope": "ONCE_PER_ROUND" },
     "VerboseLogTag": "Regenerating encounter",
-    "_source": "TODO-M-EM2: Encounter Modifiers spec §8.3 authors EOR's 2/3/4-heal-by-party-level table (EOR L22960) via three per-effect-Conditions bands gated on a PARTY_AVG_LEVEL condition. PARTY_AVG_LEVEL is a v1.2 vocabulary addition (spec §5) not yet implemented in ClassForge.Recipes (current vocabulary: ClassForge.Recipes/Model/Vocabulary.cs) -- RecipeParser/RecipeValidator reject an unknown condition token outright (E_COND_UNKNOWN), which would disable this whole recipe. Shipped here instead with a single unconditional FlatValue:2 effect (the <=3-party-level band only) so the recipe is live and PackCheck-clean at M-EM1. When M-EM2 lands PARTY_AVG_LEVEL, restore the spec §8.3 three-band Effects array verbatim (2/<=3, 3/4-6, 4/>=7) and delete this note."
+    "_source": "Encounter Modifiers spec §8.3 (docs/superpowers/plans/2026-08-05-encounter-modifiers-spec.md), verbatim EOR 2/3/4-heal-by-party-level table (EOR L22960), now that M-EM2 landed PARTY_AVG_LEVEL. SchemaVersion bumped 1.1 -> 1.2 (PARTY_AVG_LEVEL is a v1.2-only condition). Owner = the STATUS_CF_ENCMOD_REGENERATING-bearing enemy, via the §4.4 EntityAdapter.Passives status-passives extension (M-EM2)."
   }
 }

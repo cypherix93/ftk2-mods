@@ -112,10 +112,62 @@ namespace ClassForge.Plugin
             var summon = action as SummonAction;
             if (summon != null) { ExecSummon(summon, origin, env, party, results); return; }
 
+            var banner = action as EventBannerAction;
+            if (banner != null) { ExecEventBanner(banner); return; }
+
             // RollStatBonusAction / HealModifierAction: handled by their owning prefixes, not here.
-            // CounterAddAction / CounterSetAction: engine already applied the state write; log only.
+            // CounterAddAction / CounterSetAction / SelectionSetAction: engine already applied the state
+            // write; log only.
             if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
                 ClassForgePlugin.Log.LogDebug("[ClassForge] (no native call) " + action.Describe());
+        }
+
+        // ------------------------------------------------------------------ EVENT_BANNER
+
+        /// <summary>
+        /// <c>EVENT_BANNER</c> — Encounter Modifiers spec §5/§9. <c>[LOCAL]</c> presentation only: builds the
+        /// display text from <see cref="EventBannerAction.LocKey"/> (looked up via the game's localization,
+        /// falling back to <see cref="EventBannerAction.FallbackText"/> when the key has none) with
+        /// <see cref="EventBannerAction.SelectionValue"/> substituted for a <c>{0}</c> placeholder, then
+        /// calls <c>GameplayDialogViewHelper.ShowEventTitle(text, DurationMs)</c>. Exceptions are swallowed —
+        /// this never gates gameplay and is excluded from SafeMode considerations like all presentation (R4).
+        /// </summary>
+        private static void ExecEventBanner(EventBannerAction a)
+        {
+            try
+            {
+                string text = ResolveBannerText(a);
+                if (string.IsNullOrEmpty(text)) return;
+                GameplayDialogViewHelper.ShowEventTitle(text, a.DurationMs > 0 ? a.DurationMs : 3000);
+            }
+            catch (Exception ex)
+            {
+                // [LOCAL] presentation — never let a banner failure touch gameplay state or propagate.
+                if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
+                    ClassForgePlugin.Log.LogDebug("[ClassForge] EVENT_BANNER failed (swallowed, presentation-only): " + ex);
+            }
+        }
+
+        /// <summary>Prefers the localized <c>Lang.__t(LocKey, SelectionValue)</c> string (native lookup +
+        /// <c>{0}</c>-style arg substitution in one call); falls back to <see cref="EventBannerAction.FallbackText"/>
+        /// (itself <c>{0}</c>-substituted) when the key is missing or unresolvable.</summary>
+        private static string ResolveBannerText(EventBannerAction a)
+        {
+            if (!string.IsNullOrEmpty(a.LocKey))
+            {
+                try
+                {
+                    bool success;
+                    string localized = Lang.__t(a.LocKey, out success, a.SelectionValue ?? "");
+                    if (success && !string.IsNullOrEmpty(localized)) return localized;
+                }
+                catch { /* fall through to FallbackText */ }
+            }
+
+            if (string.IsNullOrEmpty(a.FallbackText)) return null;
+            if (a.FallbackText.IndexOf("{0}", StringComparison.Ordinal) >= 0)
+                return string.Format(CultureInfo.InvariantCulture, a.FallbackText, a.SelectionValue ?? "");
+            return a.FallbackText;
         }
 
         // ------------------------------------------------------------------ ADD_STATUS

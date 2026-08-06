@@ -15,6 +15,15 @@ namespace ClassForge.Recipes.Runtime
     {
         /// <summary><c>pEntity</c> — the recipe owner.</summary>
         public ICombatEntity Entity;
+
+        /// <summary>
+        /// <c>pTrySkillProc</c> (6th <c>SetInitiative</c> parameter, default <c>false</c>) — Encounter
+        /// Modifiers spec §4.3 engine fix. EOR gates its encounter-modifier anchor on this being
+        /// <c>true</c> (L22840): summon/revive/boss-phase re-initializations pass <c>false</c> and must not
+        /// re-fire combat-start recipes that assume a genuine combat start. Bound to the
+        /// <c>COMBAT_START_REAL</c> condition (§5), <c>ON_COMBAT_START</c> only.
+        /// </summary>
+        public bool TrySkillProc;
     }
 
     /// <summary>

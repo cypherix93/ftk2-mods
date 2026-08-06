@@ -52,20 +52,20 @@ namespace ClassForge.Recipes.Runtime
         /// <summary>T1 <c>ON_COMBAT_START</c> — <c>CombatHelper.SetInitiative</c> Postfix.</summary>
         public IReadOnlyList<EngineAction> OnCombatStart(ICombatContext ctx, CombatStartEvent e)
         {
-            return Run(ctx, TriggerKind.ON_COMBAT_START, Single(ctx, e.Entity, t => { }));
+            return Fire(ctx, TriggerKind.ON_COMBAT_START, e.Entity, t => { t.CombatStartReal = e.TrySkillProc; });
         }
 
         /// <summary>T2 <c>ON_ABILITY_DECLARED</c> — <c>CombatHelper.PerformAbility</c> Prefix.</summary>
         public IReadOnlyList<EngineAction> OnAbilityDeclared(ICombatContext ctx, AbilityDeclaredEvent e)
         {
-            return Run(ctx, TriggerKind.ON_ABILITY_DECLARED, Single(ctx, e.Origin, t =>
+            return Fire(ctx, TriggerKind.ON_ABILITY_DECLARED, e.Origin, t =>
             {
                 t.TriggerTarget = e.Target;
                 t.AbilityId = e.AbilityId;
                 t.Roll = e.RollTier;
                 t.HasRoll = true;
                 t.FocusUsed = e.FocusUsed;
-            }));
+            });
         }
 
         /// <summary><c>ON_ABILITY_USED</c> — <c>CombatHelper.PerformAbility</c> Postfix.
@@ -73,14 +73,14 @@ namespace ClassForge.Recipes.Runtime
         /// so <c>ABILITY_REPEATED</c> compares against the previous ability, not this one).</summary>
         public IReadOnlyList<EngineAction> OnAbilityUsed(ICombatContext ctx, AbilityUsedEvent e)
         {
-            var plan = Run(ctx, TriggerKind.ON_ABILITY_USED, Single(ctx, e.Origin, t =>
+            var plan = Fire(ctx, TriggerKind.ON_ABILITY_USED, e.Origin, t =>
             {
                 t.TriggerTarget = e.Target;
                 t.AbilityId = e.AbilityId;
                 t.Roll = e.RollTier;
                 t.HasRoll = true;
                 t.FocusUsed = e.FocusUsed;
-            }));
+            });
             if (e.Origin != null)
             {
                 var ts = _state.Sync(ctx).GetTurnState(e.Origin.Guid);
@@ -118,111 +118,117 @@ namespace ClassForge.Recipes.Runtime
                     HasRoll = true
                 });
             }
-            return Run(ctx, TriggerKind.ON_ENEMY_ABILITY_RESOLVED, contexts);
+            var combatTemplate = new TriggerContext
+            {
+                Ctx = ctx, Runtime = runtime, Owner = null,
+                TriggerSource = e.Origin, TriggerTarget = e.Target, AbilityId = e.AbilityId,
+                Roll = e.RollTier, HasRoll = true
+            };
+            return Run(ctx, TriggerKind.ON_ENEMY_ABILITY_RESOLVED, contexts, combatTemplate);
         }
 
         /// <summary><c>ON_CRIT</c> — <c>InteractableHelper.ApplyStatChange</c> Postfix, <c>pIsCrit == true</c>.</summary>
         public IReadOnlyList<EngineAction> OnCrit(ICombatContext ctx, CritEvent e)
         {
-            return Run(ctx, TriggerKind.ON_CRIT, Single(ctx, e.Origin, t =>
+            return Fire(ctx, TriggerKind.ON_CRIT, e.Origin, t =>
             {
                 t.TriggerTarget = e.Target;
                 t.AbilityId = e.AbilityId;
-            }));
+            });
         }
 
         /// <summary><c>ON_KILL</c> — <c>ApplyStatChange</c> Prefix(capture)+Postfix, origin-attributed.</summary>
         public IReadOnlyList<EngineAction> OnKill(ICombatContext ctx, KillEvent e)
         {
-            return Run(ctx, TriggerKind.ON_KILL, Single(ctx, e.Origin, t =>
+            return Fire(ctx, TriggerKind.ON_KILL, e.Origin, t =>
             {
                 t.TriggerTarget = e.Target;
                 t.AbilityId = e.AbilityId;
                 t.Amount = e.HpBefore - e.HpAfter;
-            }));
+            });
         }
 
         /// <summary>T3 <c>ON_DAMAGE_DEALT</c> — owner = <c>pOriginEntity</c>.</summary>
         public IReadOnlyList<EngineAction> OnDamageDealt(ICombatContext ctx, DamageDealtEvent e)
         {
-            return Run(ctx, TriggerKind.ON_DAMAGE_DEALT, Single(ctx, e.Origin, t =>
+            return Fire(ctx, TriggerKind.ON_DAMAGE_DEALT, e.Origin, t =>
             {
                 t.TriggerTarget = e.Target;
                 t.AbilityId = e.AbilityId;
                 t.Amount = e.Amount;
-            }));
+            });
         }
 
         /// <summary>T4 <c>ON_DAMAGE_TAKEN</c> — owner = <c>pTargetEntity</c>, attacker → <c>TRIGGER_SOURCE</c>.
         /// This is also where the deprecated <c>ON_DAMAGED</c> alias lands (rewritten at parse time).</summary>
         public IReadOnlyList<EngineAction> OnDamageTaken(ICombatContext ctx, DamageTakenEvent e)
         {
-            return Run(ctx, TriggerKind.ON_DAMAGE_TAKEN, Single(ctx, e.Victim, t =>
+            return Fire(ctx, TriggerKind.ON_DAMAGE_TAKEN, e.Victim, t =>
             {
                 t.TriggerTarget = e.Victim;
                 t.TriggerSource = e.Attacker;
                 t.AbilityId = e.AbilityId;
                 t.Amount = e.Amount;
-            }));
+            });
         }
 
         /// <summary><c>ON_HEAL</c> — owner = healer, healed entity → <c>TRIGGER_TARGET</c>.</summary>
         public IReadOnlyList<EngineAction> OnHeal(ICombatContext ctx, HealEvent e)
         {
-            return Run(ctx, TriggerKind.ON_HEAL, Single(ctx, e.Healer, t =>
+            return Fire(ctx, TriggerKind.ON_HEAL, e.Healer, t =>
             {
                 t.TriggerTarget = e.Healed;
                 t.AbilityId = e.AbilityId;
                 t.Amount = e.Amount;
-            }));
+            });
         }
 
         /// <summary>T8 <c>ON_HEAL_PENDING</c> — <c>CharacterHelper.AddHealth</c> Prefix. No RNG on this path
         /// (the validator rejects a chance-gated <c>HEAL_MODIFIER</c>).</summary>
         public IReadOnlyList<EngineAction> OnHealPending(ICombatContext ctx, HealPendingEvent e)
         {
-            return Run(ctx, TriggerKind.ON_HEAL_PENDING, Single(ctx, e.Recipient, t =>
+            return Fire(ctx, TriggerKind.ON_HEAL_PENDING, e.Recipient, t =>
             {
                 t.TriggerTarget = e.Recipient;
                 t.TriggerSource = e.Healer;
                 t.ItemConfigName = e.ItemConfigName;
                 t.Amount = e.PendingAmount;
-            }));
+            });
         }
 
         /// <summary>T5 <c>ON_STATUS_APPLIED</c> — <c>InteractableHelper.ApplyStatus</c> single-target Postfix.
         /// The status IS authoritatively applied; the recipe observes and may remove it (§7.3).</summary>
         public IReadOnlyList<EngineAction> OnStatusApplied(ICombatContext ctx, StatusAppliedEvent e)
         {
-            return Run(ctx, TriggerKind.ON_STATUS_APPLIED, Single(ctx, e.Target, t =>
+            return Fire(ctx, TriggerKind.ON_STATUS_APPLIED, e.Target, t =>
             {
                 t.TriggerTarget = e.Target;
                 t.TriggerSource = e.Applier;
                 t.StatusId = e.StatusId;
-            }));
+            });
         }
 
         /// <summary>T6 <c>ON_CONSUMABLE_USED</c> — <c>InteractableHelper.PerformConsumableAbility</c> Postfix.</summary>
         public IReadOnlyList<EngineAction> OnConsumableUsed(ICombatContext ctx, ConsumableUsedEvent e)
         {
-            return Run(ctx, TriggerKind.ON_CONSUMABLE_USED, Single(ctx, e.Origin, t =>
+            return Fire(ctx, TriggerKind.ON_CONSUMABLE_USED, e.Origin, t =>
             {
                 t.TriggerTarget = e.Target;
                 t.ItemConfigName = e.ItemConfigName;
                 t.AbilityId = e.AbilityId;
-            }));
+            });
         }
 
         /// <summary><c>ON_TURN_START</c> — <c>CombatHelper._onCombatSkillProc</c> Postfix, <c>START_TURN</c>.</summary>
         public IReadOnlyList<EngineAction> OnTurnStart(ICombatContext ctx, TurnEvent e)
         {
-            return Run(ctx, TriggerKind.ON_TURN_START, Single(ctx, e.Entity, t => { }));
+            return Fire(ctx, TriggerKind.ON_TURN_START, e.Entity, t => { });
         }
 
         /// <summary><c>ON_TURN_END</c> — <c>CombatHelper._onCombatSkillProc</c> Postfix, <c>END_TURN</c>.</summary>
         public IReadOnlyList<EngineAction> OnTurnEnd(ICombatContext ctx, TurnEvent e)
         {
-            return Run(ctx, TriggerKind.ON_TURN_END, Single(ctx, e.Entity, t => { }));
+            return Fire(ctx, TriggerKind.ON_TURN_END, e.Entity, t => { });
         }
 
         /// <summary>
@@ -251,6 +257,29 @@ namespace ClassForge.Recipes.Runtime
             return list;
         }
 
+        /// <summary>
+        /// Builds both the owned-recipe context (via <see cref="Single"/>) and the combat-scope template for
+        /// one trigger firing, from the SAME <paramref name="fill"/> delegate — Encounter Modifiers spec
+        /// §4.2/§4.3: "owner binding — for owned recipes the event's entity is the owner; for combat recipes
+        /// it is bound to TRIGGER_TARGET instead". The combat template has <c>Owner = null</c>; if
+        /// <paramref name="fill"/> did not itself set <c>TriggerTarget</c> (most triggers carry an explicit
+        /// one already, e.g. <c>ON_ABILITY_DECLARED</c>'s <c>e.Target</c>), <paramref name="impliedTarget"/>
+        /// (the same entity that is Owner for the owned pass) is bound there instead — this is exactly
+        /// <c>ON_COMBAT_START</c>'s "the entity being initialized, owned by no one" case.
+        /// </summary>
+        private List<EngineAction> Fire(ICombatContext ctx, TriggerKind trigger, ICombatEntity impliedTarget, Action<TriggerContext> fill)
+        {
+            var owners = Single(ctx, impliedTarget, fill);
+            TriggerContext template = null;
+            if (ctx != null)
+            {
+                template = new TriggerContext { Ctx = ctx, Runtime = _state.Sync(ctx), Owner = null };
+                fill(template);
+                if (template.TriggerTarget == null) template.TriggerTarget = impliedTarget;
+            }
+            return Run(ctx, trigger, owners, template);
+        }
+
         private bool HoldsAnyRecipeFor(ICombatEntity e, TriggerKind trigger)
         {
             var ordered = _recipes.Ordered;
@@ -277,11 +306,17 @@ namespace ClassForge.Recipes.Runtime
         /// Evaluation order is fixed by SPEC-DELTA-v1.1 §5.2 invariant 3:
         /// <c>Enabled → Trigger match → Conditions → Cooldown → Budget → roll → Effects</c>.
         /// Because the roll is last, no draw is taken on a path a peer could skip for a state-dependent reason.
+        /// <para>Encounter Modifiers spec §4.2: owned recipes for this event are evaluated first (unchanged
+        /// v1.1 behavior, one pass per owner in <paramref name="owners"/>), then <c>Scope: COMBAT</c> recipes
+        /// are evaluated exactly ONCE against <paramref name="combatTemplate"/> (extends invariant 4 — owned
+        /// first, then combat recipes ascending Priority/ordinal id, which <c>_recipes.Ordered</c> already
+        /// guarantees since it is one globally-sorted list filtered by <c>Scope</c> here).</para>
         /// </summary>
-        private List<EngineAction> Run(ICombatContext ctx, TriggerKind trigger, List<TriggerContext> owners)
+        private List<EngineAction> Run(ICombatContext ctx, TriggerKind trigger, List<TriggerContext> owners, TriggerContext combatTemplate)
         {
             var plan = new List<EngineAction>();
-            if (ctx == null || owners.Count == 0) return plan;
+            if (ctx == null) return plan;
+            if (owners.Count == 0 && combatTemplate == null) return plan;
 
             var runtime = _state.Sync(ctx);
 
@@ -298,7 +333,9 @@ namespace ClassForge.Recipes.Runtime
             }
 
             var ordered = _recipes.Ordered;
-            for (int oi = 0; oi < owners.Count; oi++)   // owners: ascending ordinal Guid (§5.2 inv. 4)
+
+            // Pass 1 — owned recipes, one owner at a time (§5.2 inv. 4: owners ascending ordinal Guid).
+            for (int oi = 0; oi < owners.Count; oi++)
             {
                 var t = owners[oi];
                 t.Runtime = runtime;
@@ -307,9 +344,25 @@ namespace ClassForge.Recipes.Runtime
                 {
                     var r = ordered[ri];
                     if (r.Trigger != trigger) continue;
+                    if (r.Scope != RecipeScope.OWNED) continue;
                     if (!r.IsLive) continue;                      // Enabled + validator gate
                     if (!Holds(t.Owner, r.Id)) continue;
                     EvaluateRecipe(r, t, runtime, plan);
+                }
+            }
+
+            // Pass 2 — combat-scoped recipes, once per trigger event, after every owned recipe (§4.2).
+            if (combatTemplate != null)
+            {
+                combatTemplate.Runtime = runtime;
+                combatTemplate.Trigger = trigger;
+                for (int ri = 0; ri < ordered.Count; ri++)
+                {
+                    var r = ordered[ri];
+                    if (r.Trigger != trigger) continue;
+                    if (r.Scope != RecipeScope.COMBAT) continue;
+                    if (!r.IsLive) continue;
+                    EvaluateRecipe(r, combatTemplate, runtime, plan);
                 }
             }
 
@@ -322,47 +375,142 @@ namespace ClassForge.Recipes.Runtime
             // 1. Conditions (ANDed; empty array is always true)
             if (!ConditionEvaluator.EvaluateAll(r.Conditions, t, null)) return;
 
+            // Encounter Modifiers spec §4.2 state keying: COMBAT-scoped recipes (Owner == null) use the
+            // fixed sentinel owner guid "" — ordinal-sorts before every real guid, so iteration order stays
+            // deterministic. ONCE_PER_TARGET_* budgets still key on the trigger entity's guid exactly as today.
+            string ownerGuid = t.Owner != null ? t.Owner.Guid : "";
+
             // 2. Cooldown
-            if (!runtime.IsCooldownReady(r.Id, t.Owner.Guid)) return;
+            if (!runtime.IsCooldownReady(r.Id, ownerGuid)) return;
 
             // 3. Budget availability
             string targetGuid = t.TriggerTarget != null ? t.TriggerTarget.Guid : "";
-            if (!runtime.IsBudgetAvailable(r.Budget.Scope, r.BudgetKey, t.Owner.Guid, targetGuid)) return;
+            if (!runtime.IsBudgetAvailable(r.Budget.Scope, r.BudgetKey, ownerGuid, targetGuid)) return;
 
             if (r.Budget.ConsumeOn == ConsumeOn.EVALUATION)
-                runtime.ConsumeBudget(r.Budget.Scope, r.BudgetKey, t.Owner.Guid, targetGuid);
+                runtime.ConsumeBudget(r.Budget.Scope, r.BudgetKey, ownerGuid, targetGuid);
 
-            // 4. THE roll. This is the ONE place the engine draws for ProcChance, and it is reached
-            //    exactly once per eligible evaluation, on every peer, in the same order (§5.2 inv. 1+3).
-            //    ProcChance == 100 takes ZERO draws — explicitly required by §5.1.
-            int chance = t.Owner.IsAiControlled ? r.AiProcChance : r.ProcChance;
+            // 4. THE roll(s). This is the ONE place (or, for a hoisted SELECTION_SET recipe, the two places —
+            //    §6.3) the engine draws for the proc gate, reached exactly once per eligible evaluation, on
+            //    every peer, in the same order (§5.2 inv. 1+3). ProcChance == 100 takes ZERO draws (§5.1).
+            //    ProcChanceFormula (Encounter Modifiers spec §5) is a pure function of replicated state
+            //    replacing the whole chance computation; a result <= 0 takes ZERO draws (symmetric skip).
+            bool usesFormula = r.ProcChanceFormula != null;
+            int chance = usesFormula
+                ? EvaluateProcChanceFormula(r.ProcChanceFormula, t)
+                : (t.Owner != null && t.Owner.IsAiControlled ? r.AiProcChance : r.ProcChance);
+
+            if (usesFormula && chance <= 0) return;   // excluded/clamped fight — zero draws, full stop.
+
+            bool hoistPick = usesFormula && HasSelectionSet(r);
+
             bool proc;
             if (chance >= 100) proc = true;
             else proc = _rng.NextChance(chance / 100m);
 
             if (!proc)
             {
+                if (hoistPick)
+                {
+                    // §6.3 constant-2 hoisting: the pick draw is taken unconditionally so every eligible
+                    // fight (gate succeeds or fails) takes exactly 2 draws; the result is discarded here.
+                    TakeAndDiscardSelectionDraw(r);
+                }
                 // ConsumeOn.PROC leaves the budget open so a later qualifying event in the same round
                 // re-rolls — EOR's real SENTINEL behavior (§5.1).
                 return;
             }
 
             if (r.Budget.ConsumeOn == ConsumeOn.PROC)
-                runtime.ConsumeBudget(r.Budget.Scope, r.BudgetKey, t.Owner.Guid, targetGuid);
+                runtime.ConsumeBudget(r.Budget.Scope, r.BudgetKey, ownerGuid, targetGuid);
 
-            runtime.StartCooldown(r.Id, t.Owner.Guid, r.Cooldown);
+            runtime.StartCooldown(r.Id, ownerGuid, r.Cooldown);
 
-            // 5. Effects, in authored array order (§5.2 inv. 4)
+            // 5. Effects, in authored array order (§5.2 inv. 4). The recipe's SELECTION_SET effect (if any)
+            //    takes its own draw here as normal — for a hoisted recipe this IS the pick draw #2.
             int before = plan.Count;
             for (int i = 0; i < r.Effects.Count; i++)
                 PlanEffect(r, r.Effects[i], i, t, runtime, plan);
 
             if (r.Budget.ConsumeOn == ConsumeOn.EFFECT_APPLIED && plan.Count > before)
-                runtime.ConsumeBudget(r.Budget.Scope, r.BudgetKey, t.Owner.Guid, targetGuid);
+                runtime.ConsumeBudget(r.Budget.Scope, r.BudgetKey, ownerGuid, targetGuid);
 
             if (_log != null && !string.IsNullOrEmpty(r.VerboseLogTag))
-                _log.Info("[ClassForge] proc " + r.Id + " (" + r.VerboseLogTag + ") owner=" + t.Owner.Guid +
+                _log.Info("[ClassForge] proc " + r.Id + " (" + r.VerboseLogTag + ") owner=" + ownerGuid +
                           " actions=" + (plan.Count - before));
+        }
+
+        /// <summary>Encounter Modifiers spec §5: pure function of replicated state, no RNG. First
+        /// <c>Base</c> row whose Conditions all pass wins (authoring convention: last row has no Conditions
+        /// and so always passes, acting as the default); every passing <c>Adjustments</c> row adds its
+        /// Value; the total is clamped to <c>[Min, Max]</c> when present.</summary>
+        private static int EvaluateProcChanceFormula(ProcChanceFormula f, TriggerContext t)
+        {
+            int total = 0;
+            for (int i = 0; i < f.Base.Count; i++)
+            {
+                if (ConditionEvaluator.EvaluateAll(f.Base[i].Conditions, t, null))
+                {
+                    total = f.Base[i].Value;
+                    break;
+                }
+            }
+            for (int i = 0; i < f.Adjustments.Count; i++)
+                if (ConditionEvaluator.EvaluateAll(f.Adjustments[i].Conditions, t, null))
+                    total += f.Adjustments[i].Value;
+
+            if (f.Min.HasValue && total < f.Min.Value) total = f.Min.Value;
+            if (f.Max.HasValue && total > f.Max.Value) total = f.Max.Value;
+            return total;
+        }
+
+        private static bool HasSelectionSet(SkillRecipe r)
+        {
+            for (int i = 0; i < r.Effects.Count; i++)
+                if (r.Effects[i].Type == EffectKind.SELECTION_SET) return true;
+            return false;
+        }
+
+        /// <summary>§6.3 constant-2 hoisting: takes the SELECTION_SET pick draw and discards the result,
+        /// keeping the per-combat draw count constant (2) whether the gate succeeds or fails.</summary>
+        private void TakeAndDiscardSelectionDraw(SkillRecipe r)
+        {
+            for (int i = 0; i < r.Effects.Count; i++)
+            {
+                if (r.Effects[i].Type == EffectKind.SELECTION_SET)
+                {
+                    ResolveSelectionPick(r.Effects[i]);
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// <c>SELECTION_SET</c>'s weighted pick — Encounter Modifiers spec §5/§6.3, EOR's algorithm
+        /// verbatim (L22814-28): exactly one draw, <c>NextInt(1, Σweights, pMaxInclusive: true)</c>, then walk
+        /// the authored array in order subtracting weights until the running total drops to <c>&lt;= 0</c>.
+        /// </summary>
+        private string ResolveSelectionPick(RecipeEffect e)
+        {
+            if (e.OneOfWeighted == null || e.OneOfWeighted.Count == 0) return null;
+            int total = 0;
+            for (int i = 0; i < e.OneOfWeighted.Count; i++)
+            {
+                int w = e.OneOfWeighted[i].Weight;
+                if (w > 0) total += w;
+            }
+            if (total <= 0) return null;
+
+            int roll = _rng.NextIntInclusive(1, total);
+            int remaining = roll;
+            for (int i = 0; i < e.OneOfWeighted.Count; i++)
+            {
+                int w = e.OneOfWeighted[i].Weight;
+                if (w <= 0) continue;
+                remaining -= w;
+                if (remaining <= 0) return e.OneOfWeighted[i].Value;
+            }
+            return e.OneOfWeighted[e.OneOfWeighted.Count - 1].Value;   // unreachable in practice; safe fallback
         }
 
         private void PlanEffect(SkillRecipe r, RecipeEffect e, int index, TriggerContext t, CombatRuntime runtime, List<EngineAction> plan)
@@ -370,25 +518,58 @@ namespace ClassForge.Recipes.Runtime
             // Per-effect Conditions (§4) — same evaluator, same trigger context.
             if (!ConditionEvaluator.EvaluateAll(e.Conditions, t, null)) return;
 
+            // Encounter Modifiers spec §4.2: sentinel owner guid "" for COMBAT-scoped recipes (Owner == null).
+            string ownerGuid = t.Owner != null ? t.Owner.Guid : "";
+
             switch (e.Type)
             {
                 case EffectKind.COUNTER_ADD:
                 {
-                    int v = runtime.AddCounter(t.Owner.Guid, e.Name, e.Delta, e.Max);
+                    int v = runtime.AddCounter(ownerGuid, e.Name, e.Delta, e.Max);
                     plan.Add(new CounterAddAction
                     {
-                        RecipeId = r.Id, OwnerGuid = t.Owner.Guid, EffectIndex = index,
+                        RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
                         CounterName = e.Name, Delta = e.Delta, NewValue = v
                     });
                     return;
                 }
                 case EffectKind.COUNTER_SET:
                 {
-                    runtime.SetCounter(t.Owner.Guid, e.Name, e.Value);
+                    runtime.SetCounter(ownerGuid, e.Name, e.Value);
                     plan.Add(new CounterSetAction
                     {
-                        RecipeId = r.Id, OwnerGuid = t.Owner.Guid, EffectIndex = index,
+                        RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
                         CounterName = e.Name, NewValue = e.Value
+                    });
+                    return;
+                }
+                case EffectKind.SELECTION_SET:
+                {
+                    // Encounter Modifiers spec §5/§6.1: exactly one draw (or zero if the table sums to 0),
+                    // stores the winner (or nothing) in CombatRuntime.Selections[Name].
+                    string picked = ResolveSelectionPick(e);
+                    if (!string.IsNullOrEmpty(picked))
+                        runtime.SetSelection(e.Name, picked);
+                    plan.Add(new SelectionSetAction
+                    {
+                        RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
+                        Name = e.Name, Value = picked
+                    });
+                    return;
+                }
+                case EffectKind.EVENT_BANNER:
+                {
+                    // [LOCAL] presentation only — the engine resolves only the raw selection value (a pure
+                    // per-battle state read, no RNG); localization/formatting is a Plugin concern (§9).
+                    string selectionValue = !string.IsNullOrEmpty(e.TextFromSelection)
+                        ? runtime.GetSelection(e.TextFromSelection)
+                        : null;
+                    plan.Add(new EventBannerAction
+                    {
+                        RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
+                        LocKey = e.LocKey, FallbackText = e.FallbackText,
+                        DurationMs = e.DurationMs.HasValue ? e.DurationMs.Value : 3000,
+                        SelectionValue = selectionValue
                     });
                     return;
                 }
@@ -408,7 +589,7 @@ namespace ClassForge.Recipes.Runtime
                     for (int i = 0; i < targets.Count; i++)
                         plan.Add(new AddStatusAction
                         {
-                            RecipeId = r.Id, OwnerGuid = t.Owner.Guid, EffectIndex = index,
+                            RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
                             TargetGuid = targets[i].Guid, StatusId = status,
                             FallbackStatusId = e.FallbackStatus, Duration = e.Duration
                         });
@@ -421,7 +602,7 @@ namespace ClassForge.Recipes.Runtime
                     for (int i = 0; i < targets.Count; i++)
                         plan.Add(new RemoveStatusAction
                         {
-                            RecipeId = r.Id, OwnerGuid = t.Owner.Guid, EffectIndex = index,
+                            RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
                             TargetGuid = targets[i].Guid, StatusId = status
                         });
                     break;
@@ -437,7 +618,7 @@ namespace ClassForge.Recipes.Runtime
                     for (int i = 0; i < targets.Count; i++)
                         plan.Add(new StatChangeAction
                         {
-                            RecipeId = r.Id, OwnerGuid = t.Owner.Guid, EffectIndex = index,
+                            RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
                             TargetGuid = targets[i].Guid, Stat = e.Stat, StatChangeType = e.StatChangeType,
                             FlatValue = flat, FlatPercent = pct, Blockable = e.Blockable, IsSilent = e.IsSilent
                         });
@@ -450,7 +631,7 @@ namespace ClassForge.Recipes.Runtime
                         for (int k = 0; k < e.Count; k++)   // Count expands to N sequential actions, ascending (OQ#4)
                             plan.Add(new SummonAction
                             {
-                                RecipeId = r.Id, OwnerGuid = t.Owner.Guid, EffectIndex = index,
+                                RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
                                 TargetGuid = targets[i].Guid, UseTargetPosition = usePos,
                                 SummonType = e.SummonType, CharacterConfig = e.CharacterConfig, Index = k
                             });
@@ -467,7 +648,7 @@ namespace ClassForge.Recipes.Runtime
                     for (int i = 0; i < targets.Count; i++)
                         plan.Add(new RollStatBonusAction
                         {
-                            RecipeId = r.Id, OwnerGuid = t.Owner.Guid, EffectIndex = index,
+                            RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
                             TargetGuid = targets[i].Guid, Stat = e.Stat,
                             FlatDelta = flat, PercentDelta = pct, MinDelta = e.MinDelta
                         });
@@ -480,7 +661,7 @@ namespace ClassForge.Recipes.Runtime
                     for (int i = 0; i < targets.Count; i++)
                         plan.Add(new HealModifierAction
                         {
-                            RecipeId = r.Id, OwnerGuid = t.Owner.Guid, EffectIndex = index,
+                            RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
                             TargetGuid = targets[i].Guid, Scope = e.Scope,
                             FlatDelta = flat, PercentDelta = pct, MinDelta = e.MinDelta
                         });
@@ -490,15 +671,21 @@ namespace ClassForge.Recipes.Runtime
         }
 
         /// <summary>
-        /// <c>Status</c> / <c>StatusOneOf</c> / <c>TRIGGER_STATUS</c> resolution.
+        /// <c>Status</c> / <c>StatusOneOf</c> / <c>StatusFromSelection</c> / <c>TRIGGER_STATUS</c> resolution.
         /// <para><c>StatusOneOf</c> is <b>exactly one draw</b>, taken only when the effect actually executes —
         /// i.e. after conditions, budget and <c>ProcChance</c> have all passed and at least one target
         /// resolved (SPEC-DELTA-v1.1 §4.1 RANDOM_ELEMENT_CHOICE). The authored list is parity-hashed and
         /// identical on every peer, and <c>NextInt(0, n)</c> is exactly what
         /// <c>GameRandom.GetRandomElementFromList</c> does internally.</para>
+        /// <para><c>StatusFromSelection</c> (Encounter Modifiers spec §5) is a pure per-battle state read —
+        /// zero RNG. An empty/absent selection resolves to null, which the ADD_STATUS/REMOVE_STATUS caller
+        /// treats as a no-op — and, with <c>Budget.ConsumeOn: EFFECT_APPLIED</c>, that no-op does not burn
+        /// the budget (same "no target resolved" pattern ALLY_BY_RANK already uses, §4.3).</para>
         /// </summary>
         private string ResolveStatus(RecipeEffect e, TriggerContext t)
         {
+            if (!string.IsNullOrEmpty(e.StatusFromSelection))
+                return t.Runtime != null ? t.Runtime.GetSelection(e.StatusFromSelection) : null;
             if (e.StatusOneOf != null && e.StatusOneOf.Count > 0)
             {
                 int idx = _rng.NextInt(0, e.StatusOneOf.Count);

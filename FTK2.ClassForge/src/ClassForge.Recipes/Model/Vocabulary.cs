@@ -27,7 +27,7 @@ namespace ClassForge.Recipes.Model
         ON_COMBAT_LOOT
     }
 
-    /// <summary>Condition tokens — SPEC-DELTA-v1.1 §3 (8 v1 + 15 added = 23 tokens).</summary>
+    /// <summary>Condition tokens — SPEC-DELTA-v1.1 §3 (8 v1 + 15 v1.1 + 9 v1.2 encounter-modifiers = 32 tokens).</summary>
     public enum ConditionKind
     {
         // --- v1 (§3.1) ---
@@ -54,10 +54,20 @@ namespace ClassForge.Recipes.Model
         MOVED_THIS_ROUND, // C12
         ALL_ALLIES_ACTED, // C13
         ITEM_CLASS,       // C14
-        ITEM_CONSUMABLE   // C15
+        ITEM_CONSUMABLE,  // C15
+        // --- added in v1.2, Encounter Modifiers spec §5 (M-EM2) ---
+        PARTY_AVG_LEVEL,
+        IS_DUNGEON,
+        BOSS_FIGHT,
+        ENCOUNTER_PROPERTY,
+        ENTITY_TAG,
+        CONFIG_NAME_CONTAINS,
+        COMBAT_START_REAL,
+        SELECTION_PRESENT,
+        IS_ENEMY           // GATE D: CharacterHelper.IsEnemy semantics (GroupIndex == 1)
     }
 
-    /// <summary>Effect tokens — SPEC-DELTA-v1.1 §4 (4 v1 + 4 added = 8 tokens).</summary>
+    /// <summary>Effect tokens — SPEC-DELTA-v1.1 §4 (4 v1 + 4 v1.1 + 4 loot v1.2 + 2 encounter-modifiers v1.2 = 14 tokens).</summary>
     public enum EffectKind
     {
         ADD_STATUS,
@@ -72,7 +82,20 @@ namespace ClassForge.Recipes.Model
         GOLD_GRANT,
         ITEM_TAG_GRANT,
         LOOT_SCALE,
-        AFFIX_ROLL       // reserved: parses, but the v1 validator always rejects it (M-LG4)
+        AFFIX_ROLL,      // reserved: parses, but the v1 validator always rejects it (M-LG4)
+        // --- added in v1.2, Encounter Modifiers spec §5 (M-EM2) ---
+        SELECTION_SET,
+        EVENT_BANNER
+    }
+
+    /// <summary>Recipe-level scope — Encounter Modifiers spec §4.2. <c>OWNED</c> is exactly today's v1.1
+    /// semantics (default, field omitted everywhere pre-v1.2); <c>COMBAT</c> is the new ownerless
+    /// registration capability: live for every combat while the pack is enabled, evaluated once per
+    /// trigger event after all owned recipes for that event.</summary>
+    public enum RecipeScope
+    {
+        OWNED,
+        COMBAT
     }
 
     /// <summary>Target tokens — SPEC-DELTA-v1.1 §4.3 (5 v1 + 4 added = 9 tokens).</summary>
@@ -234,18 +257,39 @@ namespace ClassForge.Recipes.Model
             TriggerKind.ON_COMBAT_LOOT
         };
 
-        /// <summary>Effects added in v1.2 (loot-grant verb spec §6.2).</summary>
+        /// <summary>Effects added in v1.2 (loot-grant verb spec §6.2 + Encounter Modifiers spec §5).</summary>
         public static readonly IReadOnlyList<EffectKind> V12OnlyEffects = new[]
         {
-            EffectKind.GOLD_GRANT, EffectKind.ITEM_TAG_GRANT, EffectKind.LOOT_SCALE, EffectKind.AFFIX_ROLL
+            EffectKind.GOLD_GRANT, EffectKind.ITEM_TAG_GRANT, EffectKind.LOOT_SCALE, EffectKind.AFFIX_ROLL,
+            EffectKind.SELECTION_SET, EffectKind.EVENT_BANNER
         };
 
-        /// <summary>Conditions the <c>Of</c> selector is defined for — SPEC-DELTA-v1.1 §3.</summary>
+        /// <summary>Conditions added in v1.2 (Encounter Modifiers spec §5, M-EM2).</summary>
+        public static readonly IReadOnlyList<ConditionKind> V12OnlyConditions = new[]
+        {
+            ConditionKind.PARTY_AVG_LEVEL, ConditionKind.IS_DUNGEON, ConditionKind.BOSS_FIGHT,
+            ConditionKind.ENCOUNTER_PROPERTY, ConditionKind.ENTITY_TAG, ConditionKind.CONFIG_NAME_CONTAINS,
+            ConditionKind.COMBAT_START_REAL, ConditionKind.SELECTION_PRESENT, ConditionKind.IS_ENEMY
+        };
+
+        /// <summary>Conditions the <c>Of</c> selector is defined for — SPEC-DELTA-v1.1 §3, extended by
+        /// Encounter Modifiers spec §5.</summary>
         public static readonly IReadOnlyList<ConditionKind> OfCapableConditions = new[]
         {
             ConditionKind.HP_THRESHOLD, ConditionKind.HAS_STATUS, ConditionKind.LACKS_STATUS,
             ConditionKind.ROW, ConditionKind.CHARACTER_TYPE, ConditionKind.STATUS_COUNT,
-            ConditionKind.FOCUS_CURRENT, ConditionKind.MOVED_THIS_ROUND
+            ConditionKind.FOCUS_CURRENT, ConditionKind.MOVED_THIS_ROUND,
+            ConditionKind.ENTITY_TAG, ConditionKind.CONFIG_NAME_CONTAINS, ConditionKind.IS_ENEMY
+        };
+
+        /// <summary>Effect kinds that resolve no <c>Target</c> (pure per-battle state writes or [LOCAL]
+        /// presentation) — SPEC-DELTA-v1.1 §4.2 E3/E4, Encounter Modifiers spec §5. Used both by the
+        /// dispatcher's early-effect switch and by the COMBAT-scope validator's target-rejection rule
+        /// (Encounter Modifiers spec §4.2), which must not flag these for the default <c>Target: SELF</c>
+        /// they never actually resolve.</summary>
+        public static readonly IReadOnlyList<EffectKind> TargetlessEffects = new[]
+        {
+            EffectKind.COUNTER_ADD, EffectKind.COUNTER_SET, EffectKind.SELECTION_SET, EffectKind.EVENT_BANNER
         };
 
         /// <summary>Dynamic value-source tokens for <c>FlatValueFrom</c>/<c>PercentFrom</c> — SPEC-DELTA-v1.1 §4.1.</summary>
@@ -253,6 +297,11 @@ namespace ClassForge.Recipes.Model
         public const string SourceCounterPrefix = "COUNTER:";
         public const string SourceStatusCountPrefix = "STATUS_COUNT:";
         public const string SourceTargetHpPct = "TARGET_HP_PCT";
+
+        /// <summary>GATE C (Encounter Modifiers spec §5/§8.1): <c>FlatValueFrom</c> token computing a flat
+        /// <c>STAT_CHANGE</c> value from <c>TRIGGER_TARGET.MXHP</c> and the effect's authored <c>Percent</c> —
+        /// <c>flat = sign(Percent) * max(1, round(|targetMaxHp * Percent| / 100))</c> (EOR's rounding).</summary>
+        public const string SourceTargetMxhpPct = "TARGET_MXHP_PCT";
 
         public static bool TryParseTrigger(string token, out TriggerKind kind)
         {

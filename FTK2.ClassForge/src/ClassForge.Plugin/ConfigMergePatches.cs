@@ -64,7 +64,7 @@ namespace ClassForge.Plugin
                 // `configs` (vanilla content the native LoadConfigs/ReloadConfigs body just built, BEFORE this
                 // postfix applies anything) so MergePlanner can refuse a pack entry that would silently
                 // overwrite pre-existing content (e.g. a pack shipping an id named "KNIGHT").
-                var liveIds = new LiveIdSets(configs.Characters?.Keys, configs.Things?.Keys, configs.Abilities?.Keys);
+                var liveIds = new LiveIdSets(configs.Characters?.Keys, configs.Things?.Keys, configs.Abilities?.Keys, configs.StatusEffects?.Keys);
                 var result = loader.Load(fs, roots, ClassForgePlugin.IsPackEnabled, liveIds);
 
                 foreach (var finding in result.Findings)
@@ -93,6 +93,7 @@ namespace ClassForge.Plugin
                     $"[{string.Join(", ", result.EnabledOrderedPacks.Select(p => p.Id))}] -> " +
                     $"{result.MergePlan.Characters.Count} classes, {result.MergePlan.Things.Count} things " +
                     $"({result.MergePlan.TraitIds.Count} traits), {result.MergePlan.Abilities.Count} abilities, " +
+                    $"{result.MergePlan.StatusEffects.Count} statuses, " +
                     $"{result.MergePlan.Localization.Count} loc keys, {result.MergePlan.Icons.Count} icons, " +
                     $"{result.MergePlan.Portraits.Count} portraits. dataHash={result.DataHash}.");
 
@@ -159,6 +160,24 @@ namespace ClassForge.Plugin
                     LogApplied("ability", op);
                 }
                 catch (Exception ex) { LogApplyFailed("ability", op, ex); }
+            }
+
+            // Encounter Modifiers spec §3.4/M-EM2 (deferred from M-EM1): statuses.json -> Configs.StatusEffects.
+            // Same idempotent from-scratch-rebuild pass, same DeserializeGameConfig<T> pathway (game-type
+            // deserialization rule) as Characters/Things/Abilities above — StatusEffectConfig is
+            // field-based (Type/Duration/TickFrequency/TickOverworld/TickCombat/TickExpire/TileSync/
+            // GroupSync/Passives/AddProperties/Stats/CustomStats), so the same ImportOptions +
+            // NormalizeNullCollections pass that already handles the other three categories applies
+            // unchanged (Stats/CustomStats are SerializedSortedDictionary<string,int>, a collection type
+            // NormalizeNullCollections already knows how to default when a pack entry omits it).
+            foreach (var op in plan.StatusEffects)
+            {
+                try
+                {
+                    configs.StatusEffects[op.Id] = DeserializeGameConfig<StatusEffectConfig>(op.Value.ToJsonString());
+                    LogApplied("status", op);
+                }
+                catch (Exception ex) { LogApplyFailed("status", op, ex); }
             }
         }
 

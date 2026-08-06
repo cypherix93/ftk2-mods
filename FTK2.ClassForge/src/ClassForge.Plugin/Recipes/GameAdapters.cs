@@ -179,8 +179,15 @@ namespace ClassForge.Plugin
         /// pVisualOnly: false, pIncludeTraits: true)</c> (EquipmentHelper.cs L341) is the native call that
         /// includes <c>TRAIT_</c>-prefixed Things regardless of slot — which is exactly why a ClassForge
         /// trait with <c>Equippable.Slots: []</c> still contributes its passives with zero patches.
-        /// <para>The native call returns a <c>HashSet&lt;Thing&gt;</c>, so the result is sorted ordinal and
-        /// de-duplicated before the engine sees it (§5.2 invariant 4).</para>
+        /// <b>Plus</b>, per Encounter Modifiers spec §4.4: for each entry of this entity's
+        /// <c>StatusEffectComponent.Statuses</c>, <c>Configs.StatusEffects[key].Passives</c> filtered to
+        /// <c>SKILL_</c>-prefixed entries — mirroring native <c>CharacterHelper.GetPassiveSkills</c>
+        /// (L936-968). This is what lets a status-attached recipe (e.g. <c>SKILL_CF_ENCMOD_REGEN_TICK</c>
+        /// on <c>STATUS_CF_ENCMOD_REGENERATING</c>) route through the ordinary owned-trigger path with no
+        /// bespoke combat-scoped machinery.
+        /// <para>The native calls return unordered collections, so the result is sorted ordinal and
+        /// de-duplicated before the engine sees it (§5.2 invariant 4). Adapter instances are per-hook-
+        /// invocation (see remarks below), so this cannot go stale across status changes.</para>
         /// </summary>
         public IReadOnlyList<string> Passives
         {
@@ -215,12 +222,66 @@ namespace ClassForge.Plugin
                             }
                         }
                     }
+
+                    // Encounter Modifiers spec §4.4 — status-attached SKILL_ passives.
+                    StatusEffectComponent statusComp;
+                    if (Native != null && Native.TryGet<StatusEffectComponent>(out statusComp) && statusComp != null && statusComp.Statuses != null)
+                    {
+                        foreach (var kv in statusComp.Statuses)
+                        {
+                            if (string.IsNullOrEmpty(kv.Key)) continue;
+                            var statusCfg = GameLookups.StatusConfig(kv.Key);
+                            if (statusCfg == null || statusCfg.Passives == null) continue;
+                            for (int i = 0; i < statusCfg.Passives.Count; i++)
+                            {
+                                var p = statusCfg.Passives[i];
+                                if (!string.IsNullOrEmpty(p) && p.StartsWith("SKILL_", StringComparison.Ordinal))
+                                    set.Add(p);
+                            }
+                        }
+                    }
                 }
                 catch { }
                 var list = new List<string>(set);
                 list.Sort(StringComparer.Ordinal);
                 _passives = list;
                 return _passives;
+            }
+        }
+
+        /// <summary>GATE D: <c>CharacterHelper.IsEnemy(entity)</c> — <c>CharacterComponent.GroupIndex == 1</c>
+        /// (verified CharacterHelper.cs:1492).</summary>
+        public bool IsEnemy
+        {
+            get { try { return Native != null && CharacterHelper.IsEnemy(Native); } catch { return false; } }
+        }
+
+        /// <summary><c>CharacterHelper.ActorHasTag(entity, eConfigTags.&lt;tagName&gt;)</c> — parses the enum
+        /// member name from <paramref name="tagName"/>; an unparseable name is a fail-safe false.</summary>
+        public bool HasTag(string tagName)
+        {
+            try
+            {
+                if (Native == null || string.IsNullOrEmpty(tagName)) return false;
+                eConfigTags tag;
+                if (!Enum.TryParse(tagName, out tag)) return false;
+                return CharacterHelper.ActorHasTag(Native, tag);
+            }
+            catch { return false; }
+        }
+
+        /// <summary><c>CharacterComponent.ConfigName</c>.</summary>
+        public string ConfigName
+        {
+            get
+            {
+                try
+                {
+                    CharacterComponent cc;
+                    if (Native == null || !Native.TryGet<CharacterComponent>(out cc) || cc == null) return "";
+                    return cc.ConfigName ?? "";
+                }
+                catch { return ""; }
             }
         }
     }
@@ -371,6 +432,74 @@ namespace ClassForge.Plugin
             catch { return null; }
         }
 
+        /// <summary>Encounter Modifiers spec §5 <c>PARTY_AVG_LEVEL</c>: <c>ProgressionHelper.
+        /// GetAveragePartyLevel</c> over <c>GameRun.Entities</c> filtered to
+        /// <c>Has&lt;PlayerComponent&gt;() &amp;&amp; Has&lt;CharacterComponent&gt;()</c> — mirrors EOR's
+        /// caller-side filter (L22744); the extra CharacterComponent filter is a safety net against a
+        /// PlayerComponent entity that (abnormally) lacks one, which the native helper would otherwise throw on.</summary>
+        public int PartyAverageLevel
+        {
+            get
+            {
+                try
+                {
+                    var run = Env != null ? Env.GameRun : null;
+                    if (run == null || run.Entities == null) return 0;
+                    var filtered = new List<Entity>();
+                    foreach (var e in run.Entities)
+                    {
+                        if (e == null) continue;
+                        PlayerComponent pc; CharacterComponent cc;
+                        if (e.TryGet<PlayerComponent>(out pc) && e.TryGet<CharacterComponent>(out cc))
+                            filtered.Add(e);
+                    }
+                    return ProgressionHelper.GetAveragePartyLevel(filtered);
+                }
+                catch { return 0; }
+            }
+        }
+
+        /// <summary>Encounter Modifiers spec §5 <c>IS_DUNGEON</c>: <c>CombatState.IsDungeon</c>.</summary>
+        public bool IsDungeon
+        {
+            get { try { return State != null && State.IsDungeon; } catch { return false; } }
+        }
+
+        /// <summary>Encounter Modifiers spec §5 <c>BOSS_FIGHT</c>: <c>CombatState.BossFightState != null</c>.</summary>
+        public bool IsBossFight
+        {
+            get { try { return State != null && State.BossFightState != null; } catch { return false; } }
+        }
+
+        /// <summary>Encounter Modifiers spec §5 <c>ENCOUNTER_PROPERTY</c>: resolves the encounter entity via
+        /// <c>GameRun.AdventureState.EncounterGUID</c>, then <c>EncounterComponent.HasProperty</c>. No
+        /// encounter entity resolved ⇒ false (matches EOR's default, L22772-3).</summary>
+        public bool HasEncounterProperty(string propertyName)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(propertyName)) return false;
+                eEncounterProperties prop;
+                if (!Enum.TryParse(propertyName, out prop)) return false;
+
+                var run = Env != null ? Env.GameRun : null;
+                var adv = run != null ? run.AdventureState : null;
+                string guid = adv != null ? adv.EncounterGUID : null;
+                if (string.IsNullOrEmpty(guid) || run.Entities == null) return false;
+
+                foreach (var e in run.Entities)
+                {
+                    if (e == null || !string.Equals(e.Guid, guid, StringComparison.Ordinal)) continue;
+                    EncounterComponent ec;
+                    if (e.TryGet<EncounterComponent>(out ec) && ec != null)
+                        return ec.HasProperty(prop);
+                    return false;
+                }
+                return false;
+            }
+            catch { return false; }
+        }
+
         /// <summary>Action sink. The plan is collected here and executed by <see cref="RecipeActionExecutor"/>
         /// after the dispatcher returns, so nothing mutates game state mid-evaluation.</summary>
         public void EmitAction(EngineAction action)
@@ -480,6 +609,10 @@ namespace ClassForge.Plugin
         /// <summary><c>GameRandom.NextInt(min, max, pMaxInclusive: false)</c> — one draw. Exactly what
         /// <c>GetRandomElementFromList&lt;T&gt;</c> does internally, which is what <c>StatusOneOf</c> needs.</summary>
         public int NextInt(int minInclusive, int maxExclusive) { return _rng.NextInt(minInclusive, maxExclusive, false); }
+
+        /// <summary><c>GameRandom.NextInt(min, max, pMaxInclusive: true)</c> — one draw. Used by
+        /// <c>SELECTION_SET</c> (Encounter Modifiers spec §5/§6.3), EOR's weighted-pick draw verbatim (L22814).</summary>
+        public int NextIntInclusive(int minInclusive, int maxInclusive) { return _rng.NextInt(minInclusive, maxInclusive, true); }
     }
 
     /// <summary>Routes the engine's diagnostics into BepInEx, gated on <c>[General] VerboseLogging</c>.</summary>

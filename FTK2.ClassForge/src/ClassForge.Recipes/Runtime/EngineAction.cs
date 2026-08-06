@@ -253,6 +253,54 @@ namespace ClassForge.Recipes.Runtime
         }
     }
 
+    /// <summary>
+    /// <c>SELECTION_SET</c> — Encounter Modifiers spec §5/§6.1.
+    /// <para><b>Plugin call: none.</b> Pure per-battle state write the engine has ALREADY performed
+    /// (<c>CombatRuntime.Selections[Name] = Value</c>) — same posture as <see cref="CounterAddAction"/>.
+    /// Emitted only for logging/parity-audit.</para>
+    /// </summary>
+    public sealed class SelectionSetAction : EngineAction
+    {
+        public string Name;
+        /// <summary>The winning value, or null when the weighted draw resolved to nothing (empty table).</summary>
+        public string Value;
+
+        public override string Kind { get { return "SelectionSet"; } }
+
+        public override string Describe()
+        {
+            return "SelectionSet{recipe=" + S(RecipeId) + ",owner=" + S(OwnerGuid) + ",name=" + S(Name) +
+                   ",value=" + S(Value) + "}";
+        }
+    }
+
+    /// <summary>
+    /// <c>EVENT_BANNER</c> — Encounter Modifiers spec §5/§9. <c>[LOCAL]</c> presentation only, never gates
+    /// gameplay, never touches replicated state or RNG.
+    /// <para><b>Plugin call:</b> <c>GameplayDialogViewHelper.ShowEventTitle(text, DurationMs)</c>, with
+    /// exceptions swallowed (R4 posture) and the formatted/localized text built from
+    /// <see cref="LocKey"/>/<see cref="FallbackText"/>/<see cref="SelectionValue"/> — the engine resolves
+    /// only the raw selection value (a pure per-battle state read), never localization.</para>
+    /// </summary>
+    public sealed class EventBannerAction : EngineAction
+    {
+        public string LocKey;
+        public string FallbackText;
+        public int DurationMs;
+        /// <summary>Resolved from <c>CombatRuntime.Selections[TextFromSelection]</c> at plan time when the
+        /// effect authored <c>TextFromSelection</c>; null otherwise.</summary>
+        public string SelectionValue;
+
+        public override string Kind { get { return "EventBanner"; } }
+
+        public override string Describe()
+        {
+            return "EventBanner{recipe=" + S(RecipeId) + ",owner=" + S(OwnerGuid) + ",locKey=" + S(LocKey) +
+                   ",fallback=" + S(FallbackText) + ",durationMs=" + DurationMs.ToString(CultureInfo.InvariantCulture) +
+                   ",selection=" + S(SelectionValue) + "}";
+        }
+    }
+
     /// <summary>Helpers for turning an action plan into a stable comparable log.</summary>
     public static class ActionLog
     {
