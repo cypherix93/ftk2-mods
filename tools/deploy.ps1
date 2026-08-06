@@ -23,8 +23,8 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet('devkit', 'classforge', 'summoner', 'warbrain', 'armory')]
-    [string[]]$Mods = @('devkit', 'classforge', 'summoner'),
+    [ValidateSet('devkit', 'classforge', 'summoner', 'wardrobe', 'warbrain', 'armory')]
+    [string[]]$Mods = @('devkit', 'classforge', 'summoner', 'wardrobe'),
 
     [string]$GameDir = '',
 
@@ -99,6 +99,11 @@ $ModDefs = [ordered]@{
         targetSub  = 'BepInEx\plugins\ftk2mods.summoner'
         note       = '200 EOR mercs/pets in recruitment'
     }
+    wardrobe = @{
+        payloadSub = 'plugins\ftk2mods.wardrobe'
+        targetSub  = 'BepInEx\plugins\ftk2mods.wardrobe'
+        note       = 'all non-DLC cosmetics + class models selectable at character creation (pure client)'
+    }
     warbrain = @{
         payloadSub = 'plugins\FTK2.WarBrain'
         targetSub  = 'BepInEx\plugins\FTK2.WarBrain'
@@ -129,6 +134,7 @@ function Stage-Payload {
             @('FTK2.DevKit\src\DevKit.Plugin',         $true),
             @('FTK2.ClassForge\src\ClassForge.Plugin', $true),
             @('FTK2.Summoner\src\Summoner.Plugin',     $false),
+            @('FTK2.Wardrobe\src\Wardrobe.Plugin',     $false),
             @('FTK2.WarBrain\src\WarBrain.Plugin',     $true)
         )
         foreach ($b in $builds) {
@@ -178,6 +184,11 @@ function Stage-Payload {
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.Summoner\src\Summoner.Plugin\bin\Release\net472\*.dll') $d
     Copy-Tree (Join-Path $RepoRoot 'FTK2.Summoner\data') (Join-Path $d 'data')
+
+    # wardrobe: single plugin dll, no data
+    $d = Join-Path $PayloadDir $ModDefs.wardrobe.payloadSub
+    New-Item -ItemType Directory -Force $d | Out-Null
+    Copy-Item (Join-Path $RepoRoot 'FTK2.Wardrobe\src\Wardrobe.Plugin\bin\Release\net472\*.dll') $d
 
     # warbrain: dlls + data next to dll
     $d = Join-Path $PayloadDir $ModDefs.warbrain.payloadSub
@@ -234,6 +245,8 @@ What's in here:
   devkit     - required base: multiplayer safety/parity engine
   classforge - 34 new playable classes, 20 traits, 48 skill effects
   summoner   - 200 new hireable mercs & pets
+  wardrobe   - every non-DLC cosmetic + class model selectable at character
+               creation, free (visual only, safe to mix)
   warbrain   - (optional) smarter enemy AI. If ANYONE installs this, EVERYONE must.
   armory     - (optional) 533 new items. Installs into game config folder; some
                items may show placeholder art. If anyone installs it, everyone must.
