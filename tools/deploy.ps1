@@ -1,4 +1,4 @@
-# ftk2-mods deploy script — build, stage, install, package, uninstall.
+﻿# ftk2-mods deploy script — build, stage, install, package, uninstall.
 #
 # Runs in two modes, auto-detected:
 #   REPO mode    (this file at <repo>\tools\deploy.ps1): builds plugins, stages a payload
