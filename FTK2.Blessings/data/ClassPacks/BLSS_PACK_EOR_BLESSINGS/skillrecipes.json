@@ -1,0 +1,20 @@
+{
+  "SKILL_BLSS_ARCANE_HUNGER": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Arcane Hunger",
+    "Enabled": true,
+    "Trigger": "ON_COMBAT_START",
+    "Conditions": [
+      { "Type": "FOCUS_CURRENT", "Comparator": "LT", "Value": "MAX" }
+    ],
+    "Effects": [
+      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValue": 1, "Blockable": false }
+    ],
+    "ProcChance": 100,
+    "AiProcChance": 100,
+    "Cooldown": 0,
+    "Priority": 0,
+    "VerboseLogTag": "Arcane Hunger",
+    "_source": "Risky Blessings spec §4.3, cloned field-for-field from CF_PACK_EOR_CLASSES/skillrecipes.json SKILL_CF_PREPARED (L656-673); EOR original RiskyBlessingManager Focus rider, Plugin.cs L22849-22858 (GrantsStartCombatFocus gated on CharacterHelper.GetFocusMissing > 0)"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "author": "ftk2mods",
+  "dependencies": [],
+  "description": "Risky Blessings: EOR's 15-entry weighted blessing table (BLSS_ ids), re-hosted as hidden TRAIT_BLSS_* Things per docs/superpowers/plans/2026-08-05-risky-blessings-spec.md. Content-only pack; orchestration lives in the FTK2.Blessings plugin.",
+  "enabled": true,
+  "id": "BLSS_PACK_EOR_BLESSINGS",
+  "loadOrder": 100,
+  "name": "Risky Blessings (re-hosted)",
+  "version": "1.0.0"
+}

@@ -1,0 +1,110 @@
+{
+  "SchemaVersion": "1.0",
+  "Blessings": {
+    "BLSS_BLOOD_PRICE": {
+      "TraitId": "TRAIT_BLSS_BLOOD_PRICE",
+      "Weight": 6,
+      "Enabled": true,
+      "Tags": ["Physical", "RiskReward"],
+      "_eor_source": "Plugin.cs L5140"
+    },
+    "BLSS_GLASS_MIND": {
+      "TraitId": "TRAIT_BLSS_GLASS_MIND",
+      "Weight": 6,
+      "Enabled": true,
+      "Tags": ["Magic", "RiskReward"],
+      "_eor_source": "Plugin.cs L5141"
+    },
+    "BLSS_FLEET_CURSE": {
+      "TraitId": "TRAIT_BLSS_FLEET_CURSE",
+      "Weight": 6,
+      "Enabled": true,
+      "Tags": ["Movement", "Curse", "RiskReward"],
+      "_eor_source": "Plugin.cs L5142"
+    },
+    "BLSS_GOLDEN_BURDEN": {
+      "TraitId": "TRAIT_BLSS_GOLDEN_BURDEN",
+      "Weight": 10,
+      "Enabled": true,
+      "Tags": ["Economy", "RiskReward"],
+      "_eor_source": "Plugin.cs L5143"
+    },
+    "BLSS_FATED_WOUND": {
+      "TraitId": "TRAIT_BLSS_FATED_WOUND",
+      "Weight": 6,
+      "Enabled": true,
+      "Tags": ["Physical", "RiskReward"],
+      "_eor_source": "Plugin.cs L5144"
+    },
+    "BLSS_IRON_SHACKLES": {
+      "TraitId": "TRAIT_BLSS_IRON_SHACKLES",
+      "Weight": 6,
+      "Enabled": true,
+      "Tags": ["Defense", "Movement", "RiskReward"],
+      "_eor_source": "Plugin.cs L5145"
+    },
+    "BLSS_LUCKY_DOOM": {
+      "TraitId": "TRAIT_BLSS_LUCKY_DOOM",
+      "Weight": 10,
+      "Enabled": true,
+      "Tags": ["Curse", "RiskReward"],
+      "_eor_source": "Plugin.cs L5146"
+    },
+    "BLSS_ARCANE_HUNGER": {
+      "TraitId": "TRAIT_BLSS_ARCANE_HUNGER",
+      "Weight": 2,
+      "Enabled": true,
+      "Tags": ["Magic", "Economy", "RiskReward"],
+      "_eor_source": "Plugin.cs L5147"
+    },
+    "BLSS_WILD_PACT": {
+      "TraitId": "TRAIT_BLSS_WILD_PACT",
+      "Weight": 10,
+      "Enabled": true,
+      "Tags": ["Movement", "Economy", "RiskReward"],
+      "_eor_source": "Plugin.cs L5148"
+    },
+    "BLSS_VENGEFUL_MARK": {
+      "TraitId": "TRAIT_BLSS_VENGEFUL_MARK",
+      "Weight": 6,
+      "Enabled": true,
+      "Tags": ["Physical", "Economy", "RiskReward"],
+      "_eor_source": "Plugin.cs L5149"
+    },
+    "BLSS_CURSED_INSIGHT": {
+      "TraitId": "TRAIT_BLSS_CURSED_INSIGHT",
+      "Weight": 10,
+      "Enabled": true,
+      "Tags": ["Curse", "RiskReward"],
+      "_eor_source": "Plugin.cs L5150"
+    },
+    "BLSS_HOLLOW_VIGOR": {
+      "TraitId": "TRAIT_BLSS_HOLLOW_VIGOR",
+      "Weight": 10,
+      "Enabled": true,
+      "Tags": ["Defense", "RiskReward"],
+      "_eor_source": "Plugin.cs L5151"
+    },
+    "BLSS_BURNING_SOUL": {
+      "TraitId": "TRAIT_BLSS_BURNING_SOUL",
+      "Weight": 6,
+      "Enabled": true,
+      "Tags": ["Physical", "Magic", "RiskReward"],
+      "_eor_source": "Plugin.cs L5152"
+    },
+    "BLSS_SHADOW_BARGAIN": {
+      "TraitId": "TRAIT_BLSS_SHADOW_BARGAIN",
+      "Weight": 10,
+      "Enabled": true,
+      "Tags": ["Defense", "RiskReward"],
+      "_eor_source": "Plugin.cs L5153"
+    },
+    "BLSS_MERCHANTS_CURSE": {
+      "TraitId": "TRAIT_BLSS_MERCHANTS_CURSE",
+      "Weight": 10,
+      "Enabled": true,
+      "Tags": ["Economy", "Curse", "RiskReward"],
+      "_eor_source": "Plugin.cs L5154"
+    }
+  }
+}
