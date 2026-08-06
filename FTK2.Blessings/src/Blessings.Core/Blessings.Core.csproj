@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <RootNamespace>Blessings.Core</RootNamespace>
+    <!-- Engine core is host-agnostic and dependency-free, mirrors Summoner.Core.csproj /
+         WarBrain.Core.csproj (build-template-notes.md §7): no BepInEx, no Unity, no game refs.
+         Unlike Summoner.Core (which delegates JSON parsing to a host-supplied IJsonCodec because
+         it parses many different DTO shapes), Blessings.Core owns ONE closed, load-bearing schema
+         (blessings.json) whose authored key ORDER is itself part of the deterministic contract
+         (§3.4 walk order) — Dictionary/JsonSerializer object-member order is not a documented
+         guarantee, so this project carries its own tiny hand-rolled, order-preserving JSON reader
+         (Json/MiniJsonParser.cs), the same "dependency-free, zero packages" posture as
+         FTK2.DevKit/src/DevKit.Core/MiniJson.cs. Zero &lt;Reference&gt; and zero
+         &lt;PackageReference&gt;. -->
+  </PropertyGroup>
+
+</Project>

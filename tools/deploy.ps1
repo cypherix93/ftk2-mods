@@ -23,7 +23,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet('devkit', 'classforge', 'summoner', 'wardrobe', 'warbrain', 'armory')]
+    [ValidateSet('devkit', 'classforge', 'summoner', 'wardrobe', 'warbrain', 'armory', 'blessings')]
     [string[]]$Mods = @('devkit', 'classforge', 'summoner', 'wardrobe'),
 
     [string]$GameDir = '',
@@ -114,6 +114,13 @@ $ModDefs = [ordered]@{
         targetSub  = 'For The King II_Data\StreamingAssets\Assets\Configs\JSON~\Things'
         note       = '533 items via game-owned config folder (no EOR visual-fallback layer: some items may show placeholder/no art)'
     }
+    blessings = @{
+        payloadSub = 'plugins\ftk2mods.blessings'
+        targetSub  = 'BepInEx\plugins\ftk2mods.blessings'
+        note       = 'Risky Blessings (15-blessing EOR table). Needs classforge installed AND its ' +
+                     '[Packs] AdditionalRoots pointed at BepInEx\plugins\ftk2mods.blessings\ClassPacks ' +
+                     'so the BLSS_PACK_EOR_BLESSINGS content pack is discovered (off by default: [Blessings] Mode=Disabled).'
+    }
 }
 
 # ---------------------------------------------------------------- staging (repo mode)
@@ -135,7 +142,8 @@ function Stage-Payload {
             @('FTK2.ClassForge\src\ClassForge.Plugin', $true),
             @('FTK2.Summoner\src\Summoner.Plugin',     $false),
             @('FTK2.Wardrobe\src\Wardrobe.Plugin',     $false),
-            @('FTK2.WarBrain\src\WarBrain.Plugin',     $true)
+            @('FTK2.WarBrain\src\WarBrain.Plugin',     $true),
+            @('FTK2.Blessings\src\Blessings.Plugin',   $false)
         )
         foreach ($b in $builds) {
             $proj = Join-Path $RepoRoot $b[0]
@@ -201,6 +209,17 @@ function Stage-Payload {
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.Armory\data\Things\*.json') $d
 
+    # blessings: plugin dll + its own ClassPacks\BLSS_PACK_EOR_BLESSINGS\ (same root layout as
+    # ClassForge's own <plugin>\ClassPacks\ -- ClassForge does not own this pack, so it is discovered
+    # via [Packs] AdditionalRoots pointed at <this plugin's folder>\ClassPacks (see ModDefs.blessings.note
+    # and the payload README below). Blessings.Plugin also reads blessings.json straight out of this
+    # same staged copy (BlessingsPlugin.LoadRegistry) -- there is exactly one copy of the file on disk,
+    # not a plugin-side duplicate plus a pack-side duplicate.
+    $d = Join-Path $PayloadDir $ModDefs.blessings.payloadSub
+    New-Item -ItemType Directory -Force $d | Out-Null
+    Copy-Item (Join-Path $RepoRoot 'FTK2.Blessings\src\Blessings.Plugin\bin\Release\net472\*.dll') $d
+    Copy-Tree (Join-Path $RepoRoot 'FTK2.Blessings\data\ClassPacks') (Join-Path $d 'ClassPacks')
+
     # installer entry points + metadata
     Copy-Item $ScriptFullPath (Join-Path $PayloadDir 'install.ps1')
     @'
@@ -250,6 +269,10 @@ What's in here:
   warbrain   - (optional) smarter enemy AI. If ANYONE installs this, EVERYONE must.
   armory     - (optional) 533 new items. Installs into game config folder; some
                items may show placeholder art. If anyone installs it, everyone must.
+  blessings  - (optional) Risky Blessings: EOR's 15-blessing run-start table.
+               Needs classforge + its [Packs] AdditionalRoots pointed at
+               BepInEx\plugins\ftk2mods.blessings\ClassPacks (see that mod's own
+               ClassPacks folder after install). Off by default (Mode=Disabled).
 
 First launch after install: a console window / BepInEx log appears; the first
 load takes a little longer. That is normal.

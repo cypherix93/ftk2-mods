@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <AssemblyName>FTK2.Blessings</AssemblyName>
+    <RootNamespace>Blessings.Plugin</RootNamespace>
+    <Version>0.1.0</Version>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <!-- tools/bin/refs is a flat folder: game Managed dlls + BepInEx core dlls together.
+         Override with -p:FtkRefsDir=... to point at a different snapshot or the live game
+         (build-template-notes.md §3). Same no-flags self-resolving pattern as
+         Wardrobe.Plugin.csproj / Summoner.Plugin.csproj. -->
+    <FtkRefsDir Condition="'$(FtkRefsDir)' == ''">$(MSBuildThisFileDirectory)..\..\..\tools\bin\refs</FtkRefsDir>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <!-- No System.Memory/System.Text.Json PackageReference needed (unlike ClassForge.Plugin /
+         Summoner.Plugin): this plugin reads blessings.json as raw text and hands it to
+         Blessings.Core.Parsing.BlessingsRegistryParser, which is pure BCL with its own hand-rolled
+         reader (Blessings.Core.csproj); no JsonSerializer string-overload call site exists here. -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Blessings.Core\Blessings.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BepInEx">
+      <HintPath>$(FtkRefsDir)\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(FtkRefsDir)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="FTK2">
+      <HintPath>$(FtkRefsDir)\FTK2.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(FtkRefsDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(FtkRefsDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SerializedSortedDictionary">
+      <HintPath>$(FtkRefsDir)\SerializedSortedDictionary.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

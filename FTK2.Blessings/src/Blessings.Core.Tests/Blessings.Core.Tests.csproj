@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Blessings.Core.Tests</RootNamespace>
+    <Nullable>disable</Nullable>
+    <!-- Plain console-runner, not an xunit project: no NuGet packages (build rule: BCL only),
+         mirrors Summoner.Core.Tests.csproj / DevKit.Core.Tests.csproj. References ONLY
+         Blessings.Core. System.Text.Json (used only by the roster to pack cross-check test to read
+         the real traits.json) is part of the net8.0 shared framework, no package reference needed. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Blessings.Core\Blessings.Core.csproj" />
+  </ItemGroup>
+
+</Project>
