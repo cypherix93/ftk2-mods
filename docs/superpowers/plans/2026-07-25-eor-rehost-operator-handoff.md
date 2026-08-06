@@ -161,6 +161,205 @@ window (or `BepInEx/LogOutput.log`) visible throughout.
 
 ---
 
+### Wave-2 smoke checks (2026-08-06)
+
+Three new systems shipped since (a)/(b)/(c) above were written — loot grants, Risky Blessings, encounter
+modifiers — all offline-verified only (`docs/superpowers/handoffs/2026-08-06-eor-rehost-wave2-implementation-handoff.md`
+has the full ledger). This section is additive: it assumes the install from (b) plus two new mods/packs.
+
+**Additional install for this section:**
+- **`blessings`** mod (`tools/deploy.ps1 -Mods devkit,classforge,summoner,blessings` or add it to an
+  existing `-Mods` list) — stages `BepInEx/plugins/ftk2mods.blessings/` (plugin DLL +
+  `ClassPacks/BLSS_PACK_EOR_BLESSINGS/`). **Blessings does nothing until you also point ClassForge at its
+  pack**: edit `BepInEx/config/ftk2mods.classforge.cfg`, section `[Packs]`, key `AdditionalRoots`, to the
+  absolute path of `BepInEx/plugins/ftk2mods.blessings/ClassPacks` (comma-separate if you already have a
+  value there). ClassForge's `[Packs] AdditionalRoots` scans `<root>/<PackName>/pack.json`, same shape as
+  its own `ClassPacks/` folder (`FTK2.ClassForge/src/ClassForge.Core/PackLoader.cs`); without this the
+  roster-verification gate in `GrantAnchorPatches.EnsureRosterResolvesAgainstConfigs` fails closed and logs
+  one `[Blessings] N roster TraitId(s) do not resolve in Env.Configs.Things -- this plugin is DISABLED for
+  the session` error every launch.
+- **Loot grants and encounter modifiers ship inside the `classforge` mod you already have** — no new
+  plugin folder, just new BepInEx config keys under the `[Skills]` section of
+  `BepInEx/config/ftk2mods.classforge.cfg` (below).
+- Config keys below were grep-verified against the shipped code (`ClassForgePlugin.cs` `Config.Bind` calls,
+  `BlessingsPlugin.cs` `Config.Bind` calls) as of the commits listed in the session handoff — spelling and
+  casing are exact.
+
+Order below: cheap single-player checks first (A, C, E), then their MP drills (B, D, F) last, since the
+2-peer setup is the expensive part of any of these to arrange. Each check cites the spec open question
+(OQ) it resolves or exercises, where one exists.
+
+#### A. Loot grants — single-player
+
+9. **Enable the feature.** Both `[Skills] EnableRecipeEngine = true` (default) and
+   `[Skills] EnableLootGrants = false → true` in `ftk2mods.classforge.cfg` (the verb ships **dark by
+   default** — this is the whole reason this check exists). Also set `[General] VerboseLogging = true` so
+   the `CLASSFORGE_LOOT` log lines below actually print (`LootGrantPatches.LogGrantState`/`LogReceive` are
+   both gated on `[General] VerboseLogging`, not a separate knob).
+10. **Pick a Scavenger-trait character** (or any EOR class whose loadout can carry `TRAIT_SCAVENGER`) and
+    win combats. Expect, per combat: a `[ClassForge][CLASSFORGE_LOOT]` debug line reading
+    `GrantKey=<hash> ops=<N> opsHash=<hash8> status=unverified (single-player, no host push expected)` —
+    **that exact "unverified (single-player...)" status is expected and correct in SP, not an error**; SP
+    never sends a payload, it just computes+applies the same deterministic delta a host would. Roughly 1 in
+    4 wins (`SCAVENGER` is `ProcChance: 25`, `FTK2.ClassForge/data/ClassPacks/CF_PACK_EOR_CLASSES/skillrecipes.json`
+    `SKILL_CF_TRAIT_SCAVENGER_LOOT`) the loot screen shows an extra 8–20 gold or a COMMON-rarity HERB item
+    on top of vanilla drops, and it's takeable like any other loot-screen item. **If it fails:** report
+    whether the log line appears at all (feature not wired) vs. appears but the loot screen shows nothing
+    extra (apply-side bug) vs. the extra item can't be taken (vanilla `_onTakeLootItem` issue, unrelated to
+    this verb per spec §1.3).
+11. **Diagnostic-only zero-draw check (optional, noisy).** `[Skills] DebugLogCombatRandomDraws = true`
+    makes the same postfix call `GameRandom.LogCalls(true)` on the **shared** combat stream so every draw
+    from it logs — confirms nothing in the loot-grant path is stealing a shared-stream roll (the whole
+    point of Gate A's private-stream redesign). **Turn this back off after the check** — it spams a
+    per-draw log line for the rest of the session once enabled (per its own config comment).
+
+#### B. Loot grants — 2-peer MP (resolves V-1, V-3; exercises §7's failure-mode matrix)
+
+12. **Baseline — matching install.** Both peers: identical build, `EnableLootGrants = true`,
+    `VerboseLogging = true`, a Scavenger-trait character each. Host+join, win 5+ combats. Expect on
+    **both** peers: identical loot lists (compare the two loot screens directly), a `CLASSFORGE_LOOT`
+    receive-side line reading `status=verified` on the non-computing peer(s) once the host's push arrives
+    (`LootGrantPatches.LogReceive`, the literal string is `"verified"`), and no vendor desync warning
+    (`NetworkData.DoMonitorForDesyncs`) across the run. Record: **V-1** — did `GrantKey` (which folds in
+    `CombatState.Random.Seed` per §4.2) agree on both peers every combat, i.e. zero `stale GrantKey` /
+    `Mismatch` log lines? **V-3** — when a granted item is taken from the loot screen, does it disappear
+    identically on both peers' inventories (confirms the take replicates by the same identity loot-grant's
+    deterministic `Thing.Id` derivation relies on, §3.3)?
+13. **Deliberate divergence drill.** With the session still running, hand-edit the **client's**
+    `CF_PACK_EOR_CLASSES/skillrecipes.json` → `SKILL_CF_TRAIT_SCAVENGER_LOOT` → `ProcChance` from `25` to
+    `100`, then trigger a config reload/rejoin so the edit takes. Next won combat with a Scavenger
+    character: expect the loud `ClassForge LOOT-GRANT MISMATCH -- GrantKey=...` error banner
+    (`LootGrantPatches.ReportMismatch`, both a local/remote `OpsHash` line and an "offending op" line) on
+    whichever peer(s) detect the divergence, loot-grant SafeMode latching for the rest of that peer's
+    session (`[Skills] EnableLootGrants` effectively goes inert there — no retro-mutation of the
+    already-applied delta, per spec §7.5b), **and** — belt and suspenders — ClassForge's own
+    pack-`dataHash` parity check should separately flag the edited pack (`ParityBridge`/`Block`, same
+    mechanism as Wave-1 step 8). Report which of the two fired, or neither.
+14. **Transport-kill check (if feasible).** If you have a way to block outbound `TransportService.Send`
+    for one peer (dev knob / firewall rule on the DevKit transport port), do it, then win a combat on both
+    peers. Expect: identical loot on both (deterministic mirror per Mode M — no host push required for
+    correctness) but the `CLASSFORGE_LOOT` log shows `status=unverified (transport unavailable)` instead of
+    `verified` on the peer that couldn't send/receive. This is the one place "unverified (transport
+    unavailable)" is the correct string to see — contrast with check 10's SP string, which is worded
+    differently on purpose.
+15. **On a green V-1 pass:** the recorded follow-up is flipping `[Skills] EnableLootGrants`'s **default**
+    from `false` to `true` in `ClassForgePlugin.cs` (currently ships dark specifically because this
+    measurement was pending) — file that as the next code change, not a config change, since it's the
+    shipped default that moves.
+
+#### C. Blessings — single-player (resolves OQ5; exercises §8.3)
+
+16. **Setup.** `blessings` mod installed + `[Packs] AdditionalRoots` pointed at its `ClassPacks` folder
+    (see this section's preamble). In `BepInEx/config/ftk2mods.blessings.cfg`: `[General] Enabled = true`
+    (default), `[General] VerboseLogging = true`, `[Blessings] Mode = BLSS_HOLLOW_VIGOR`.
+17. **Start a new run.** Expect an info-level log line `[Blessings] GATE E: offline/single-player session
+    -- granting unconditionally.` followed by `[Blessings] Blessing resolved: HOLLOW_VIGOR
+    (TRAIT_BLSS_HOLLOW_VIGOR). Granted <N> party members, 0 already held it.` Every starting party
+    character's sheet should show **Max HP +15** and **Health Regen −1** (observe over a rest/regen tick,
+    since HRG isn't always a headline stat on the sheet). **If it fails:** check whether the roster-missing
+    error logged instead (pack not discovered — re-check `AdditionalRoots`) or the grant log fired with 0
+    granted (GATE E denied it — expected only online, see check 19).
+18. **Repeat with `Mode = BLSS_ARCANE_HUNGER`.** Enter combat at full Focus: no grant (the recipe's
+    `FOCUS_CURRENT LT MAX` condition blocks it). Enter combat below max Focus: **+1 Focus at combat start**,
+    once per combat (`SKILL_BLSS_ARCANE_HUNGER`, `ProcChance: 100`, `ON_COMBAT_START` trigger). Also
+    confirm **Talent −5** is visible wherever the game surfaces shop/service pricing.
+19. **Save/reload.** Save mid-run, quit, reload. Expect: no second `Blessing resolved` grant line with a
+    nonzero granted count (the trait-presence check makes re-grants a no-op — `GetTraits().Any(ConfigName
+    == blessing.TraitId)`), stats unchanged (no double-application), latch (`GameRunData.Stats["
+    BLSS_ACTIVE_HOLLOW_VIGOR"]`, not player-visible) still present if you can inspect a save.
+20. **`Mode = Random`, same run seed twice.** Start, note the resolved blessing id from the log, restart
+    the exact same seed (or same `MapGenSeed`/`ConfigName` pair): expect the **same** blessing id resolved
+    both times (SHA-256 over `MapGenSeed|ConfigName`, zero RNG draws, §9.3).
+21. **`Mode = Disabled`.** Zero delta: no grant log beyond `[Blessings] Mode=Disabled -- no blessing this
+    run.`, no stat changes, run plays exactly like vanilla+ClassForge-without-Blessings.
+22. **Hidden-trait visibility (OQ5).** With any blessing active, check every place traits normally render
+    — loadout/party screen, character inspect, inventory/equipment panels, any "traits" tooltip list — and
+    confirm `TRAIT_BLSS_*` (authored `Hidden: true` in `traits.json`) appears in **none** of them. Report
+    exactly which screen(s), if any, leak it; that's the OQ5 answer this check exists to produce.
+
+#### D. Blessings — 2-peer MP (resolves OQ3 in practice; exercises §9.6)
+
+23. **Match.** Both peers same build+pack, `Mode = Random`. Start a run: both logs resolve the **same**
+    blessing id from the same seed, both show `N` grants, both character sheets show identical modified
+    totals. Fight one combat with `ARCANE_HUNGER` active: `+1 Focus` applies identically on both screens.
+24. **First-online-session note (expected, not a bug).** On the very first `AdventureDirector.Initialize`
+    of a fresh online session, you may see `[Blessings] GATE E: online multiplayer session -- no verified
+    parity Match yet (handshake may not have completed) -- grant FAILS CLOSED this call.` with zero grants
+    that call. This is fail-closed-by-design (`GrantAnchorPatches.GrantIsAllowedThisCall`, GATE E) — it
+    self-heals at the **next** `Initialize` call (a save-load re-entry, or simply continuing play once
+    DevKit's parity handshake resolves `HasVerifiedMatch()`), at which point the grant fires normally. Only
+    report this as a real bug if the grant **never** lands after a full handshake settles.
+25. **Mismatch drill — mode.** Host `Mode = Random`, client `Mode = Disabled`. Expect a `feature:Mode`
+    parity divergence reported by both peers' Blessings registration, **both** peers' Blessings entering
+    SafeMode (`[Multiplayer] OnParityMismatch = WarnAndSafeMode`, the Blessings-local default — distinct
+    from ClassForge's own `Block`), **neither** peer granting a blessing, run proceeding blessing-less, and
+    no vendor desync warning (both peers are now symmetric — nobody granted).
+
+#### E. Encounter modifiers — single-player (resolves §13.1, contributes to §13.2/13.4; exercises §12.6)
+
+26. **Force the roll.** `[Skills] DebugEncounterModifierChance = 100` in `ftk2mods.classforge.cfg`
+    (default `-1` = off; valid range `0..100`; requires `EnableRecipeEngine = true`). This overrides only
+    the generated selection recipe's `ProcChanceFormula` result — it does not change which modifier gets
+    picked, only whether one is rolled at all.
+27. **Fight a normal (non-boss/non-scourge/non-siege) encounter.** Expect a banner reading
+    `"<Name> Encounter! <description>"` (`GameplayDialogViewHelper.ShowEventTitle`, `CF_ENCMOD_BANNER`
+    format string, 4-second display) and every enemy in the fight — **including enemies that spawn in a
+    later wave of the same combat** — carrying a `STATUS_CF_ENCMOD_<NAME>` status with a working
+    icon/tooltip on the enemy panel (this persists for the rest of combat, unlike EOR's transient-banner
+    original). With `[General] VerboseLogging = true` you should also see a
+    `[ClassForge] proc SKILL_CF_ENCMOD_SELECT (Encounter modifier selection) owner=<guid> actions=<N>` line.
+28. **MXHP modifiers (Swift −10%, Veteran +10%, Wealthy +10%, GlassCannon −20%, TreasureGuarded +15%).**
+    Get one of these selected (re-roll fights until you see it, or narrow via save-scumming) and inspect
+    the affected enemies' max HP against an un-modified enemy of the same type. Record: does the delta
+    match EOR's floor-at-1 rounding (`Math.Max(1, round(|maxhp × pct| / 100))`, the §13.1 acceptance bar)
+    and does a negative delta (Swift/GlassCannon) also cut **current** HP, or only the max? This single
+    observation is what resolves spec open question §13.1 (the fallback design, `FlatValueFrom:
+    "TARGET_MXHP_PCT"`, is already what's shipped — this check is confirming its runtime behavior matches
+    EOR's floor/rounding, not choosing between designs).
+29. **Cursed.** Get it selected; deal several hits to a Cursed enemy and confirm the `CURSE` status lands
+    on the attacker roughly 1 time in 10 (`SKILL_CF_ENCMOD_CURSE_ON_HIT`, `ProcChance: 10`).
+30. **Regenerating.** Get it selected; confirm the enemy heals **2 / 3 / 4** HP at the start of its turn
+    depending on your party's average level (≤3 / 4–6 / ≥7 — `PARTY_AVG_LEVEL` bands, `SKILL_CF_ENCMOD_REGEN_TICK`),
+    and **only while damaged** (no heal tick at full HP). This also empirically answers §13.2 — does the
+    native `ON_TURN_START` proc path fire for AI/enemy entities at all? If the enemy never heals despite
+    the status being visibly present, that's a "no" and the fallback anchor
+    (`CombatHelper.TickActiveEntityCharacterStatus` postfix, already signature-verified per the spec) needs
+    to be wired in as a follow-up — report a clean pass/fail here, don't guess.
+31. **Icon check (§13.4).** While any modifier status is active, note whether its enemy-panel icon is the
+    pack's authored icon or the game's generic missing-icon placeholder. Either is an acceptable v1 state
+    (tooltip text carries the info either way) but the answer resolves §13.4.
+32. **Exclusions.** Fight a boss fight, a "SCOURGE"-named encounter, and a siege/special encounter (any
+    encounter carrying the `BOSS`/`SPECIAL`/`SIEGE` `EncounterComponent` properties). Expect: **no** banner,
+    **no** `STATUS_CF_ENCMOD_*` on any enemy. Note for the record: there is currently **no dedicated
+    "excluded" log line** — the engine's exclusion behavior is a structural zero-draw early-return
+    (`RecipeDispatcher.cs`, "excluded/clamped fight — zero draws, full stop") with nothing printed even at
+    Verbose. The observable is the *absence* of the banner and the *absence* of the
+    `Encounter modifier selection` proc line from check 27 — don't wait for text that isn't there.
+33. **Knob back to default.** Set `DebugEncounterModifierChance = -1` and fight several more normal
+    encounters. Expect the real formula's rates: base 10% (party avg level ≤2) / 20% (3–5) / 30% (6+),
+    ±5 for AMBUSH/QUEST_TARGET encounter properties where applicable, clamped to a max of **35%** overall
+    (`ProcChanceFormula { Min = 0, Max = 35 }`, `ModifierRecipeGenerator.BuildProcChanceFormula`) — you
+    won't see this converge in a handful of fights, but confirm the banner does *not* fire on every single
+    normal encounter once the knob is off (a sanity check that the debug override actually stopped
+    overriding).
+
+#### F. Encounter modifiers — 2-peer MP (exercises §12.7-8)
+
+34. **Match.** Both peers with the pack, `DebugEncounterModifierChance = 100` on both for a fast baseline
+    (then repeat once at default rates for a longer soak, if time allows). Fight several eligible combats:
+    confirm the **same** modifier is selected on both peers each fight (compare logs), identical enemy
+    HP/status panels, and the vendor desync monitor stays quiet across full combats including multi-wave
+    fights.
+35. **Reward halves.** For Veteran (+10% XP), Wealthy (+25% gold), Cursed (+10% XP), and Treasure-Guarded
+    (+20% extra-loot chance) fights: confirm the post-combat loot/reward screen reflects the bonus
+    identically on both peers (same gold total, same XP total, same extra-item-or-not on Treasure-Guarded).
+    This exercises the M-EM4 interface into the loot-grant verb (§11) — if loot grants (section B above)
+    aren't enabled (`EnableLootGrants = false`), the reward-halves paths that ride the loot verb's
+    reward-ops will no-op with a one-time log line instead of applying; enable loot grants first if you
+    want this check to actually exercise the bonus math.
+
+---
+
 ## (d) Known limitations & follow-ups
 
 - **In-game verification is pending, full stop.** Every number and mechanism above is offline-verified only.

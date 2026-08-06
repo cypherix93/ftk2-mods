@@ -45,6 +45,15 @@ Corrections to this spec, as shipped:
   passed at `Register`/`RegisterWithCallback` time, receiving a fixed positional row
   `[0]=guid [1]=kind [2]=localValue [3]=remoteValue [4]=remotePeerId [5]=message`, not a reflection-resolved
   well-known method name — the simpler of the two options §11.12 posed.
+- **TransportService (new, 2026-08-06).** A generalized public send/receive surface —
+  `TransportService.Send(string payloadJson)` / `RegisterReceiver(string actionKey, Action<string> handler)`
+  / `CanSend` — wrapping the existing `ParityTransport`/`ParityPayloadCodec` internals for sibling-mod
+  payloads that aren't parity traffic (first consumer: ClassForge's `CF_SYNC_LOOT_GRANT_V1`,
+  `docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md` §1.5/OQ-1). Same reflection-based
+  soft-dependency convention as `DevKitLog`/`PatchRegistry`/`ParityService`
+  (`Type.GetType("FTK2Mods.DevKit.TransportService, ftk2mods.devkit")`), same `DebugGetSpecificThing`
+  no-op wire channel, same `MaxParityPayloadBytes` (8192) cap inherited with no separate knob. Full surface:
+  §3 below. §11.9's contracts-DLL question is annotated, not resolved, by this — see §11.9.
 
 ## 1. Purpose & scope
 
@@ -236,6 +245,39 @@ siblings, not DevKit's dev-tooling itself — registers with it at `Awake()`.
   mod *versions* already fail R1 on their own, but the versioned payload keeps the failure diagnosable rather
   than silent. A future breaking payload change ships as `_V2` with `_V1` support carried for one version
   window if feasible.
+
+**TransportService (generalized send/receive surface — new, adopted 2026-08-06; resolves loot-grant-verb-spec.md
+OQ-1 without tipping §11.9).** `ParityTransport`/`ParityPayloadCodec` are `internal` — a sibling mod that
+needs to ride the same wire for a *non-parity* payload (first consumer: ClassForge's `CF_SYNC_LOOT_GRANT_V1`)
+had no public entry point. DevKit now exposes a thin public static class, `FTK2Mods.DevKit.TransportService`
+(assembly `FTK2.DevKit`, plugin guid `ftk2mods.devkit`), wrapping the same internals `ParityService` itself
+uses:
+
+- `bool CanSend` — mirrors `ParityTransport`'s own readiness check (host/session detection via
+  `NetworkData.IsHost`/`PlayingOnlineMultiplayer`); a caller should check this before `Send` rather than
+  swallow a failure.
+- `void Send(string payloadJson)` — encodes and sends over the same channel `ParityService` itself uses
+  (`DEBUG_GET_SPECIFIC_THING` by default, or `EorTownServices` per `[Multiplayer] ParityChannel`, §5).
+  Inherits the same size discipline as `FTK2MODS_PARITY_V1` — `MaxParityPayloadBytes` (default 8192, §5)
+  with **no separate cap knob**. A caller over the cap is responsible for its own degrade path (the
+  loot-grant verb's digest-only fallback, loot-grant-verb-spec.md §3.1, is the shipped precedent).
+- `void RegisterReceiver(string actionKey, Action<string> handler)` — one handler per `actionKey` (the
+  payload's `"Action"` field, the same key `ParityPayloadCodec.PeekAction` dispatches on); a second
+  registration for the same key replaces the first and logs a warning.
+
+Same reflection-based soft-dependency calling convention as `DevKitLog`/`PatchRegistry`/`ParityService`
+above: callers resolve `Type.GetType("FTK2Mods.DevKit.TransportService, ftk2mods.devkit")` and no-op if
+DevKit isn't loaded — `TransportService` does **not** tip §11.9's contracts-DLL question; it is deliberately
+shipped on the existing reflection convention (annotated, not resolved — §11.9).
+
+**Receive-side precedence and isolation.** The shared observe-only Prefix on
+`AdventureDirector._handleNetworkAction` (§6) now dispatches every inbound payload in a fixed order: the
+parity action family (`FTK2MODS_PARITY_V1`/`FTK2MODS_PARITY_REQUEST_V1`) is checked and handled first,
+internally, and never reaches a registered receiver; every other `"Action"` value is then looked up against
+`TransportService`'s receiver table and, if registered, invoked. **Handler isolation:** an exception thrown
+by one registered receiver is caught and logged by the dispatch loop rather than propagating — it cannot
+prevent the parity path or any other registered receiver from running against the same payload batch, so one
+misbehaving sibling mod's handler cannot take down ParityService or another mod's receiver.
 
 ## 4. Data file formats
 
@@ -469,7 +511,7 @@ just calling the game's own machinery) and **Harmony patches** (actual intercept
 | `InteractableHelper.ApplyStatChange` | Direct call | `dk_set_stat` — synthesizes a `CHANGE_STAT`-shaped mutation using the game's own applier rather than writing to `CharacterConfig.Stats` directly (M1). |
 | `CharacterHelper.GetStat` | Direct call | Read-back/confirmation after `dk_set_stat`, and general stat inspection for dumps (M1). |
 | `AppConfigManager.Initialize` **or** `RouterMono.Update` (first tick) | Postfix (candidate) | Timing hook for "run health check once all sibling plugins have registered." Exact choice depends on BepInEx plugin load-order guarantees (§11); `RouterMono.Update`'s first tick is the safer bet since all plugins' `Awake()` calls precede any `Update()` call (M3). |
-| `AdventureDirector._handleNetworkAction` | Prefix (receive) + direct call (send) | ParityService transport (M1, R1): sends/receives `FTK2MODS_PARITY_V1` on session host/join and after any hot-reload in MP, and `FTK2MODS_PARITY_REQUEST_V1` for a late-joining client's re-query. Verified precedented hook — this is exactly where EOR's own `EOR_VER/EOR_CFG/EOR_DAT/EOR_SYS/EOR_DEF/EOR_SIG` handshake and `EOR_SYNC_TOWN_SNAPSHOT_V1` piggyback (`docs/research/game-code-reference.md` §7). |
+| `AdventureDirector._handleNetworkAction` | Prefix (receive) + direct call (send) | ParityService transport (M1, R1): sends/receives `FTK2MODS_PARITY_V1` on session host/join and after any hot-reload in MP, and `FTK2MODS_PARITY_REQUEST_V1` for a late-joining client's re-query. Verified precedented hook — this is exactly where EOR's own `EOR_VER/EOR_CFG/EOR_DAT/EOR_SYS/EOR_DEF/EOR_SIG` handshake and `EOR_SYNC_TOWN_SNAPSHOT_V1` piggyback (`docs/research/game-code-reference.md` §7). **(2026-08-06: the same observe-only Prefix now also dispatches to `TransportService`'s registered receivers, keyed by each payload's `"Action"` field, after the parity family is handled — §3 "TransportService".)** |
 | `AdventureDirector.Initialize` | Postfix (candidate) | Candidate "session started/joined" trigger point to kick off the initial ParityService handshake; exact trigger and host-vs-client detection is an open question shared with §11 item 8 (M1). |
 
 Same reflection-based soft-dependency calling convention as `DevKitLog`/`PatchRegistry` (§3) applies to
@@ -687,6 +729,10 @@ the six points below answer that doc's mandated §9 structure.
    coupling, slower/uglier call sites, silent no-op if DevKit is missing or renamed)? Decide before sibling
    mods start integrating — now higher-stakes than before, since a silent `ParityService.Register` no-op
    means that peer's mod is invisible to R1 enforcement, not just missing a logging convenience.
+   **Status (2026-08-06): still open** — `TransportService` (§3) shipped as a reflection-based soft
+   dependency instead, following the same convention as `DevKitLog`/`PatchRegistry`/`ParityService`, rather
+   than tipping this question toward a contracts DLL. The decision is deliberately deferred, not resolved,
+   per `docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md` OQ-1.
 10. **BepInEx load-order guarantee.** Does `RouterMono`'s first `Update()` tick reliably fall after every
     `ftk2mods.*` plugin's `Awake()` has run and registered its patch targets, or does DevKit need an explicit
     `[BepInDependency]`/soft-dependency ordering convention across the repo to guarantee the health check

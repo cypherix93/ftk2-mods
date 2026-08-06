@@ -620,6 +620,9 @@ harness (§8.1) representative of MP behavior.
 
 **Verification items (empirical, decompile cannot answer):**
 
+> **→ see Disposition ledger (2026-08-06)** at the end of this document — V-1/V-2/V-3 each carry an
+> explicit post-implementation status there. The table below is preserved as the design-time record.
+
 | # | Question | Gates |
 |---|---|---|
 | V-1 | Is `CombatState.Random.NextCount` bit-identical across peers at the loot postfix in real 2-peer sessions (i.e., does `DrawMark`-keyed `GrantKey` agree)? Expected yes (it is the lockstep invariant); measure anyway | M-LG3 default-on |
@@ -629,6 +632,10 @@ harness (§8.1) representative of MP behavior.
 ---
 
 ## 9. Open questions
+
+> **→ see Disposition ledger (2026-08-06)** at the end of this document — every OQ below is dispositioned
+> there (resolved with evidence, superseded by a gate, carried forward with an owner, or awaiting the
+> operator smoke). The wording below is the design-time record and is deliberately left unedited.
 
 1. **DevKit transport API surface.** ParityTransport/`ParityPayloadCodec` are `internal` today (DK-src).
    The verb needs a send/receive-registration surface for sibling mods:
@@ -683,3 +690,41 @@ harness (§8.1) representative of MP behavior.
 5. `docs/MULTIPLAYER.md` — add `CF_SYNC_LOOT_GRANT_V1` to the standard-spec-language example list of
    versioned snapshot actions (R3), with the Mode M "mirror + audit" pattern noted as the third posture
    alongside "host-decides + vanilla-replicates" and "custom `_SYNC_` display snapshots".
+
+---
+
+## Disposition ledger (2026-08-06, post-implementation)
+
+Written after M-LG1–M-LG3 shipped (`fc17c53`, `f7b14b9`, `22131ce`; M-LG4 parked as planned). Statuses:
+**RESOLVED** (evidence + where) · **RESOLVED-BY-DESIGN-CHANGE** (a verification gate superseded the
+question) · **CARRIED-FORWARD** (still open, with an owner and a stated safe interim behavior) ·
+**AWAITING-SMOKE** (in-game only; named operator step). Nothing from §8.2/§9 is dropped.
+
+| Item | Status | Evidence / pointer | Owner if carried |
+|---|---|---|---|
+| **OQ-1** DevKit transport API surface | **RESOLVED** | `TransportService.Send(string)` + `RegisterReceiver(actionKey, Action<string>)` shipped as a public static in `FTK2.DevKit/src/DevKit.Plugin/TransportService.cs`, wrapping the still-`internal` `ParityTransport`/codec; ClassForge consumes it by reflection under the existing `ParityBridge` soft-dependency convention (**`22131ce`**). Parity's own send path was left untouched and still runs first. **Sub-question deliberately not tipped:** the contracts-DLL alternative (`FTK2.DevKit/SPEC.md` §11.9) stays open — reflection sufficed, so the DLL question was not forced. Note for future readers: the assembly name is `FTK2.DevKit` (not `ftk2mods.devkit`, which is `DevKit.Core`). | — (§11.9 remains DevKit's own OQ) |
+| **OQ-2** `ITEM_TAG_GRANT` pool filter semantics | **RESOLVED** (with a recorded deliberate deviation) | Verification found EOR's pool is tag(`OrdinalIgnoreCase`) + exact rarity **only**, plus hardcoded 5-item fallbacks, while the native `FilterLootNames` predicate set is strictly stricter. **Gate B** adopted the native-stricter pool: tag `OrdinalIgnoreCase` + exact rarity + `NOT Hidden` + `Value != 0` + rarity-weight `!= 0` + expansion enabled, candidates sorted `OrdinalIgnoreCase`, **no EOR fallbacks**. Shipped as `ThingCandidateSource` behind the core's `IItemCandidateSource` seam (**`f7b14b9`**); core keeps `Rarity` as an opaque string, `eItemRarities` validation lives plugin-side. Second recorded deviation: EOR's equipment-prefab check was deliberately not ported. | — |
+| **OQ-3** Grants fire on `RewardEncounterComponent` combats | **CARRIED-FORWARD** | Unchanged by implementation: the postfix is on the single method (§1.1), so reward-encounter combats proc grants exactly as EOR's postfix did. No condition on `pEnemies` composition was added — adding one is cheap (an `ON_COMBAT_LOOT` condition) but the call is a playtest/design judgement, not a decompile fact. **Safe interim behavior:** EOR-parity (grants proc), and the whole surface is dark behind `[Skills] EnableLootGrants = false`. | Playtest after the V-1 default flip; revisit at M-LG4 |
+| **OQ-4** Branch A scripted venue loot bypasses the hook | **CARRIED-FORWARD** | Confirmed still true: `CombatPhase._endCombatAsync` Branch A (`:2570-2575`) calls `LootDropHelper.GetDrops` directly, so the verb's sole hook never runs there. Accepted v1 gap at EOR parity (EOR had the identical gap). No second hook was added — a second compute point would need its own `GrantKey` entropy source and would double the audit surface. **Safe interim behavior:** final-phase venue combats with a `LootTableArg` simply produce no grants (silent, symmetric on every peer). | Revisit only if playtesting surfaces it; M-LG4 at the earliest |
+| **OQ-5** Mode H channel choice (DebugThing vs `EorTownServices`) | **CARRIED-FORWARD** | Not forced, exactly as §1.5 predicted. v1 ships Mode M only; `LootGrantMode.HOST_PUSH` round-trips through the codec but `LootGrantCodec.IsApplyModeSupported(HOST_PUSH)` is `false` and unit-tested as such (**`fc17c53`**). The channel question becomes live only if Mode H ships *and* a game update filters the debug action. **Safe interim behavior:** debug channel, verification-only traffic — losing it can mute an audit but can never change gameplay. | M-LG4, gated on V-2 |
+| **OQ-6** Can a peer join mid-combat / mid-combat-end? | **CARRIED-FORWARD** | Still `[UNVERIFIED]`; the Wave-1 replication pass answered *what* rides the JIP blob (full `GameRunData` JSON+LZ4 — PSN §12) but not *when* a join is permitted. Affects only §7's JIP footnote. **Safe interim behavior:** the §3.4 rules already cover it without knowing the answer — a payload for a `GrantKey` this peer never armed is discarded with one debug log, and a peer that missed the loot screen missed it in vanilla too. Same underlying unknown as the encounter-modifier spec's §13.3. | Repo-wide MP recon (DevKit); opportunistic check during the 2-peer smoke |
+| **OQ-7** `GameRunData` gold/XP credit replication | **AWAITING-SMOKE** | Expectations materially strengthened but not closed: blessings V2 proved the full `GameRunData` (JSON + LZ4 blob incl. `Stats`) rides `JIP_SYNC_DATA` (`NetworkHelper` L1237/1264-73, `SaveGameHelper` L507-14 — PSN §12), and V5 proved `DesyncDetectionData.Hash` is an MD5 over near-full `GameRunData` **plus** an explicit `Stats` copy at save/init/end-turn checkpoints. Both say credit *should* land identically. Confirmation is still empirical because the verb rides the vanilla distribution flow. | **Operator step:** 2-peer smoke §8.2(a) — after a granted-gold combat, compare both peers' party gold/XP totals |
+| **V-1** `CombatState.Random.NextCount` bit-identical across peers at the postfix | **AWAITING-SMOKE** | Cannot be measured offline. Two implementation notes change what V-1 actually measures: (a) **Gate A** found `GameRandom.NextCount` is dead code in the shipped build (`_nextCount++` is gated on the private `_logCalls`, settable only via `LogCalls(bool)`, zero call sites in the game assembly) — it always reads 0, so `DrawMark` was dropped from the design and `GrantKey`/`grantSeed` entropy is now `CombatSeed` + sorted enemy `Entity.Guid`s + `ListDigest` + sorted owner guids (**`fc17c53`**); (b) V-1 therefore now reads as "**does the GrantKey agree across peers**", measured by comparing the logged `GrantKey`/`OpsHash` on both peers, not by reading a counter. **Gating honored:** the M-LG3 default flip specified in §10 was deliberately **not** taken — `[Skills] EnableLootGrants` ships `false` (`ClassForgePlugin.cs`, **`22131ce`**); flipping it is an operator action after V-1 measures clean. | **Operator step:** 2-peer smoke §8.2(a), 5+ consecutive combats; gates the `EnableLootGrants` default flip |
+| **V-2** Delivery + *handling* latency of the payload vs `_distributeRewardsAsync`:712 | **AWAITING-SMOKE** | Unchanged and un-measurable offline; the decompiled pump order (`:777` vs `:779-782`) is the reason Mode M ships and Mode H does not. M-LG4 stays parked exactly as the engage-time plan recorded. | **Operator step:** 2-peer smoke §8.2(d), timestamped receive log vs loot-screen open; gates M-LG4 / Mode H |
+| **V-3** How a loot take replicates on the wire (index vs `Thing.Id` vs config name) | **AWAITING-SMOKE** | Deterministic ids ship regardless and are unit-tested (`LootThingId.Mint` = `"cf-"` + first 12 hex of `SHA256("CF_LOOT_THING\|" + GrantKey + "\|" + opIndex)`, `LootIdentity.cs`, **`fc17c53`**) — V-3 only decides whether they are load-bearing or belt-and-suspenders, so no design branches on it. **Safe interim behavior:** ids are minted deterministically either way; the cost of being wrong is zero. | **Operator step:** 2-peer smoke §8.2(a) — take the granted item on the client, confirm the same concrete item leaves both lists; gates the M-LG3 sign-off note only |
+
+**Superseding gate recorded outside the OQ list (not an OQ, but it changes §3.1/§3.4/§4.1/§4.2):**
+**Gate A** — `NextCount` dead code. `DrawMark` was replaced by `ListDigest` (SHA-256 over canonical
+`"ConfigName|Stack"` rows of the pre-grant vanilla loot list, in list order) as the payload field and as
+`GrantKey`/`grantSeed` entropy; the runtime zero-shared-draw **assertion** of §4.1 was dropped as
+unimplementable and replaced by a **structural** guarantee (the core compute API is handed no reference to
+any shared stream — `LootDeltaComputer` takes a single `IRandomSource`) plus harness draw-count tests
+(**`fc17c53`**). An optional dev-only `LogCalls(true)` diagnostic knob remains available but unshipped
+(log-spam caveat). §8.1 harness item 3 is satisfied structurally, not by the runtime assertion.
+
+Additional recorded deltas that touch this spec's text without being open questions: `SCALE_STACK`
+rounding is `MidpointRounding.AwayFromZero` (§3.2 said "round-to-int"); the encounter-modifier reward
+consumer (spec §0 consumer 6) shipped under **Mode M**, not the Mode H this spec assumed, because the
+modifier selection is itself mirrored on every peer (**`d293536`**) — Mode H remains reserved for
+genuinely host-private inputs (Nemesis); the extra-loot draw for Treasure-Guarded is taken from the
+**private grant stream**, a recorded improvement over EOR's shared-stream draw.

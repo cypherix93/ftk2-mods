@@ -58,7 +58,19 @@ Verified/precedented (from the EOR mod's decompilable implementation and FTK2.dl
 Open questions to resolve in the decompile pass (tracked here, not per-spec):
 1. Is enemy AI decision-making host-only in vanilla (i.e. does `AIHelper` run only on host, with
    resulting actions replicated)? Strong prior: yes. Every AI-side design assumes it; verify first.
-2. Does `GameRunData` custom state replicate to clients or live host-side only?
+2. ~~Does `GameRunData` custom state replicate to clients or live host-side only?~~ — **RESOLVED YES
+   (2026-08-06).** The full `GameRunData` (JSON+LZ4 blob, including `Stats` and every party character's
+   `Entities`/`Things`) rides `eServerAction.JIP_SYNC_DATA` — `SaveGameHelper._writeCompressedRunDataToStream`
+   (`SaveGameHelper.cs:507`) is the single serialization choke point for both on-disk saves and the
+   join-in-progress payload, broadcast host→joiner via `NetworkHelper.cs:1237/1264-73`. This supersedes an
+   earlier "NOT FOUND" reading of the same question. Verified signatures:
+   `docs/research/game-patch-surface-notes.md` §12. **Related finding — the vendor's own desync detector
+   already polices this state:** `GameAction.DesyncDetectionData.Hash` is an MD5 digest over
+   **near-full `GameRunData`** (the whole serialized graph including `Entities`/`Things`, cosmetic fields
+   ignore-listed) plus an explicit second copy of `Stats`, computed at save/init/end-turn checkpoints
+   (`NetworkDebuggingHelper.CreateCopyOfSyncCheckGameRun`, PSN §12.2/§12.3); `GameRandomNextInt` is a
+   separate, narrower per-action stream-order probe. So `GameRunData.Stats` divergence isn't just
+   replicated — the game itself actively compares it across peers at those checkpoints.
 3. Does `CombatState.GridType` sync natively or is it computed per-peer?
 4. Does `PartyManagementDirector._rebuildCharactertAsNewConfigType` propagate to peers natively?
 5. Exact payload shape/size limits of `_handleNetworkAction` custom actions — partially addressed
@@ -101,6 +113,20 @@ counters and triggers (Summoner), custom quest-verb evaluation (Questsmith), gri
 need bespoke sync. Custom state that clients must *display* (bond levels, memory-driven telegraphs,
 AP pools if vanilla doesn't cover them) syncs as versioned snapshot actions
 (`<PREFIX>_SYNC_<NAME>_V1`), host → clients, idempotent to apply.
+
+**A third posture, observed in practice (2026-08-06): mirror + audit.** Where every peer can derive the
+*same* effect from already-replicated state (parity-hashed recipe/config data + replicated combat state + a
+private, derived-not-shared RNG stream), a versioned action doesn't need to carry the effect at all — every
+peer computes and applies it locally, and the host's push is only the cross-peer audit digest.
+`FTK2.ClassForge`'s `CF_SYNC_LOOT_GRANT_V1` (`docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md`
+§2/§7) is the first example: host → all peers, once per won combat, `{GrantKey, OpsHash}`. A peer whose
+local computation disagrees has, by definition, already failed R1-class parity, and the payload converts
+that silent drift into a loud, attributed failure; dropped/late/duplicated payloads never affect gameplay —
+verification degrades, gameplay does not. This sits between the two postures named above — **host-decides +
+vanilla-replicates** (the effect is decided once, host-side, and rides a vanilla replication path) and
+**custom `_SYNC_` display snapshots** (the payload *is* the state, sent because nothing else carries it) —
+as **mirror + audit**: the payload is neither the sole source of the effect nor purely cosmetic, it's a
+verification channel for an effect every peer already computed the same way.
 
 ### R4 — Presentation-only features are parity-exempt
 Logging, decision-breakdown dumps, camera/UI cosmetics, localization: no parity requirement, may

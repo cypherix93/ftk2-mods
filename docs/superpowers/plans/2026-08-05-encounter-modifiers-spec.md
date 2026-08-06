@@ -742,6 +742,10 @@ there**:
 
 ## 13. Open questions
 
+> **→ see Disposition ledger (2026-08-06)** at the end of this document — every OQ below is dispositioned
+> there (resolved with evidence, superseded by a gate, carried forward with an owner, or awaiting the
+> operator smoke). The wording below is the design-time record and is deliberately left unedited.
+
 1. **`CHANGE_STAT MXHP FlatPercent` runtime semantics** — percent of current-max or base; whether a
    negative delta clamps current HP; rounding vs EOR's `max(1, round(...))`/floor-at-1 (§8.1). Resolved
    by test §12.6 before M-EM3 signs off. Fallback if the verb misbehaves: pre-minted per-modifier flat
@@ -789,3 +793,38 @@ there**:
 *Spec ends. No implementation code was written; every named game symbol above was verified either in the
 current-build decompile output under `<scratchpad>/decomp/` or in the repo's checked decompiles, at the
 cited lines, during this session.*
+
+---
+
+## Disposition ledger (2026-08-06, post-implementation)
+
+Written after M-EM1–M-EM4 shipped (`f8c4eaf` loader + inert pack, `a92a0e3` engine capability,
+`d293536` generated recipes + reward halves). Statuses: **RESOLVED** (evidence + where) ·
+**RESOLVED-BY-DESIGN-CHANGE** (a verification gate superseded the question) · **CARRIED-FORWARD** (still
+open, with an owner and a stated safe interim behavior) · **AWAITING-SMOKE** (in-game only; named
+operator step). Nothing from §13 is dropped.
+
+| Item | Status | Evidence / pointer | Owner if carried |
+|---|---|---|---|
+| **§13.1** `CHANGE_STAT MXHP FlatPercent` runtime semantics | **RESOLVED-BY-DESIGN-CHANGE** (**Gate C**) | The question was answered in the worst possible way and then routed around: `STAT_CHANGE` on `MXHP` with `FlatPercent` **throws natively** — `GetStatChangePercentValue` handles only `HP` and `XP` (`InteractableHelper.cs:1741-53`). So §13.1's *fallback* became the **mandatory primary design**: the five MaxHP halves ride `FlatValueFrom: "TARGET_MXHP_PCT"`, with the engine computing the flat delta from the target's max HP at emission using EOR's rounding, `max(1, round(\|maxhp × pct\| / 100))`. `MXHP` + `FlatPercent` is now a **hard validator Error**, so the throw is unreachable from authored content (`a92a0e3`). Also established: `AppendStat` on `MXHP` heals on a positive delta, clamps current HP only when it exceeds the new max on a negative delta, and has **no native floor-at-1** — the floor is ours. PSN §14 (`1f25aec`). **Residual smoke rider:** the rounding *tie-break* ships as `MidpointRounding.AwayFromZero`; EOR's tie-break was never confirmed, so §12.6's in-game check still owns that one decimal of behavior (recorded delta, not a design gap). | — (rounding tie-break rides §12.6) |
+| **§13.2** Does `ON_TURN_START` fire for enemy/AI entities? | **RESOLVED** | **Yes.** `CombatPhase._nextTurn` (L2108) invokes the turn-start proc path **unconditionally** — there is no player-only gate, so the `START_TURN` `EVENT_PROC` route reaches AI entities. The §8.3 fallback anchor (`CombatHelper.TickActiveEntityCharacterStatus` postfix) is therefore **not needed and not shipped**; `SKILL_CF_ENCMOD_REGEN_TICK` rides plain `ON_TURN_START` with its 3-band party-level table restored (`a92a0e3`). PSN §14 (`1f25aec`). | — |
+| **§13.3** Does FTK2 support mid-combat join-in-progress? | **CARRIED-FORWARD** | Still unknown repo-wide — the Wave-1 replication pass established *what* rides `JIP_SYNC_DATA` (PSN §12) but not *when* a join is permitted. As §4.5 promised, **the reconstruction ships regardless** and is content-agnostic: it auto-discovers the selection/apply recipe pair and re-derives both the selection latch and the per-enemy applied budgets from the statuses already on `CombatState.Entities`, taking zero draws (`a92a0e3`, unit-tested per §12.3). **Safe interim behavior:** identical to the SP mid-combat save/load path, which is exercised offline; a JIP peer that never happens costs nothing. Same underlying unknown as the loot-grant spec's OQ-6. | Repo-wide MP recon (DevKit); §12.8 attempts a mid-combat join opportunistically if the game allows it |
+| **§13.4** Do status icons route through the `AssetLoader` patch? | **RESOLVED** | **Yes.** The asset patch carries **no `pAtlas` filter**, and native status icons are fetched through the same patched overload — so `icons/` entries keyed by status id are picked up for the Status atlas exactly as for other atlases. §9's "accepted degraded state" branch is unreachable. PSN §14 (`1f25aec`). | — |
+| **§13.5** `SELECTION_SET` generality (should `Selections` be readable by *owned* recipes?) | **CARRIED-FORWARD** | Deliberately unresolved: the schema still allows `SELECTION_PRESENT` outside `COMBAT` scope, and no second consumer appeared — the only shipped user is the generated encounter-modifier pair, plus the reward read (`ResolveActiveModifierRewards`) which goes through the engine's read-only interface rather than the condition vocabulary (`d293536`). Deciding generality with one consumer would be designing against a hypothetical. **Safe interim behavior:** the permissive schema costs nothing today; the semantics are pinned by tests for the one shipped shape. | Revisit when a second system wants it (a future Nemesis port is the named candidate) |
+| **§13.6** Which native flows call `SetInitiative` with `pTrySkillProc == false` | **RESOLVED** | Callsite enumeration done: the summon and revive paths **all** pass `pTrySkillProc: false`, which makes the `COMBAT_START_REAL {Value: true}` gate exact rather than approximate — summons and mid-combat rebuilds never receive the modifier, matching EOR's intent (§1.2's `__5` gate) without inheriting its incidental behavior. `pTrySkillProc` is now captured on `CombatStartEvent` (`a92a0e3`). PSN §14 (`1f25aec`). | — |
+| **§13.7** Enemy-side predicate surface (`CHARACTER_TYPE` vs a dedicated `IS_ENEMY`) | **RESOLVED** (**Gate D**) | `CHARACTER_TYPE` **cannot** express "enemy": `eCharacterTypes` and `GroupIndex` are disjoint notions, so no value of the existing condition matches the native predicate. A dedicated **`IS_ENEMY {Of}`** condition wrapping `CharacterHelper.IsEnemy` (`GroupIndex == 1`) shipped in M-EM2 and is what the generated recipes emit; `CHARACTER_TYPE` is forbidden for the enemy gate. The `"..."` placeholders in §6.1 resolve to `{ "Type": "IS_ENEMY", "Of": "TRIGGER_TARGET" }` (`a92a0e3`). | — |
+
+**Recorded deltas touching this spec's text without being open questions.** (a) `StatusFromSelection`
+had a real, found-and-fixed bug: §4.5 reconstruction canonically stores the **modifier id** in
+`Selections`, while `StatusFromSelection` echoed that id as if it were a **status id** — resolved by
+adding `StatusFromSelectionTable` / `PercentFromSelectionTable`, which map modifier id → status/percent
+through the parsed `modifiers.json` table (`d293536`). (b) The §6.3 constant-2 draw hoisting shipped as
+specced and is asserted by the draw-count tests (2/2/0/0). (c) A `DebugEncounterModifierChance` knob was
+added constructor-threaded (no static state) so §12.6's "force chance to 100" step needs no code edit.
+(d) `REGEN_TICK` shipped single-band in M-EM1's inert pack (a recorded TODO in the pack `_source`) and
+was restored to the specced 3 bands in M-EM2 once `PARTY_AVG_LEVEL` existed. (e) The reward halves
+(§11 / M-EM4) shipped under the loot verb's **Mode M**, not the Mode H that spec assumed for consumer 6 —
+the modifier selection is itself mirrored on every peer, so no host-private input exists; the
+Treasure-Guarded extra-loot draw comes from the loot verb's **private grant stream** (an improvement over
+EOR's shared-stream draw), and the stack-bump uses the loot verb's `SCALE_STACK` **round** rather than
+EOR's **ceil** (recorded delta) (`d293536`).

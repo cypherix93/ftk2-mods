@@ -22,6 +22,26 @@ spec and that review disagree about what shipped, the review (and the code it au
 recommended for ClassForge (M0 adds-only enforcement, B3/B4/M1/M2 parity-registration and Block-semantics
 fixes) are already applied in the current code and are described below as implemented, not as open findings.
 
+**Update (2026-08-06) — recipe vocabulary bumped to v1.2.** Two Wave-2 capabilities landed on
+`engine/eor-rehost`, offline-verified (`ClassForge.Recipes` 287 tests, `ClassForge.Core` 32 tests,
+`DevKit.Core` 91 tests — all green; in-game smoke still pending, same caveat as M1–M3 above):
+
+- **The loot-grant sync verb** (`ON_COMBAT_LOOT` trigger + `GOLD_GRANT`/`ITEM_TAG_GRANT`/`LOOT_SCALE` effects
+  + `PickOneEffect`, `CF_SYNC_LOOT_GRANT_V1` host mirror+audit) — commits `fc17c53` (M-LG1 offline core),
+  `f7b14b9` (M-LG2 hooks + SP + consumer recipes, dark), `22131ce` (M-LG3 MP wire-up). Ships **dark** behind
+  `[Skills] EnableLootGrants = false`, flip gated on operator smoke item V-1. Full design:
+  `docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md`.
+- **The encounter-modifier engine capability** (`Scope: COMBAT` ownerless recipes, `ProcChanceFormula`,
+  `SELECTION_SET`/`StatusFromSelection`/`EVENT_BANNER`, 9 new conditions incl. `IS_ENEMY`, `STAT_CHANGE`
+  `FlatValueFrom: "TARGET_MXHP_PCT"`, the `statuses.json`/`modifiers.json` pack file types and their
+  `Configs.StatusEffects` merge category) — commits `f8c4eaf` (M-EM1 pack surface), `a92a0e3` (M-EM2 engine
+  capability), `d293536` (M-EM3/4 generated recipes + reward halves). Ships live via
+  `CF_PACK_ENCOUNTER_MODIFIERS`; reward halves ride the loot-grant verb (above) in Mode M. Full design:
+  `docs/superpowers/plans/2026-08-05-encounter-modifiers-spec.md`.
+
+Both are described below as implemented, folded into the §4.6 vocabulary tables rather than kept as a
+separate delta document.
+
 ## 1. Purpose & scope
 
 ClassForge is a **content-pack engine** for player classes. It lets a designer drop a self-contained folder
@@ -121,6 +141,11 @@ BepInEx Awake
        │    │    hard-rejected — §3 point 2, §4.3; no separate "trait bridge" registration step exists)
        │    ├─ merge abilities.json → Configs.Abilities
        │    ├─ merge items.json    → Configs.Things
+       │    ├─ merge statuses.json → Configs.StatusEffects (v1.2, new merge category — same adds-only /
+       │    │    last-pack-wins-among-packs / live-id-refused semantics as the three above; every `Passives`
+       │    │    entry must resolve to a recipe id in the same pack or an `eSkills` member — §4.6)
+       │    ├─ merge modifiers.json → ClassForge's own EncounterModifier registry (v1.2, NOT a Configs.* field,
+       │    │    mirrors skillrecipes.json below — feeds the generated `Scope:COMBAT` select/apply recipe pair)
        │    ├─ merge skillrecipes.json → ClassForge's own SkillRecipe registry (NOT a Configs.* field — SKILL_*
        │    │    ids referenced from Passives[]/trait Things still need a SkillConfigs.json tuning entry only if
        │    │    they want native ProcChance/EVENT_PROC bookkeeping; ClassForge's dispatcher works without one)
@@ -403,8 +428,9 @@ method, nothing is transmitted, and no trigger itself consumes RNG.
 | `ON_CONSUMABLE_USED` | `InteractableHelper.PerformConsumableAbility` **Postfix** (PSN §2 L538) | `pOriginEntity` | `pThing` → `ITEM_CLASS`/`ITEM_CONSUMABLE` |
 | `ON_ENEMY_ABILITY_RESOLVED` | `CombatHelper.PerformAbility` **Postfix** | each living recipe-holder opposed to `pOrigin`, iterated in ascending ordinal `Entity.Guid` order | acting enemy = `pOrigin` → `TRIGGER_SOURCE`; `pRollData.Status` → `ROLL_TIER` |
 | `ON_HEAL_PENDING` | `CharacterHelper.AddHealth(Entity, ref int pValue, ...)` **Prefix** (PSN §3 L1342/L1357) | `pEntity` | `ref int pValue` — the only `HEAL_MODIFIER` insertion point |
+| `ON_COMBAT_LOOT` (v1.2, adopted 2026-08-06) | `LootDropHelper.GetLootDropsFromEnemies` **Postfix** (PSN §11) | each entity in `pParty` (alive players), ascending `Entity.Guid` ordinal | defeated enemies (`pEnemies`); the pending loot list (not exposed to conditions). Fires once per won enemy-loot combat (Branch B only — scripted venue loot bypasses the hook, loot-grant-verb-spec.md §9 OQ-4). Restricted vocabulary: only the §4.6 grant effects below may appear in `Effects[]`; `Budget`/`Cooldown` are rejected (intrinsically once-per-combat); MP posture `[SYNCED]` via Mode M mirror+audit, `CF_SYNC_LOOT_GRANT_V1` (§9) — full semantics in `docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md` §6 |
 
-#### Conditions (23)
+#### Conditions (23 + 9)
 
 ANDed; empty array = always true. Two universal extensions apply to every condition: `"Negate": true`
 (inverts the result; subsumes v1's `TARGET_BASE_TYPE_NOT`, now a deprecated alias) and `"Of":
@@ -421,7 +447,22 @@ v1.1 added: `ROLL_TIER {Comparator, Value: PERFECT|SUCCESS|FAIL|CRIT_FAIL}` (rea
 (`ON_STATUS_APPLIED` only), `COUNTER`, `MOVED_THIS_ROUND` (+`Of`), `ALL_ALLIES_ACTED`, `ITEM_CLASS`,
 `ITEM_CONSUMABLE`.
 
-#### Effects (8)
+v1.2 added (9, encounter-modifiers spec — adopted 2026-08-06, full semantics
+`docs/superpowers/plans/2026-08-05-encounter-modifiers-spec.md` §5/§7): `PARTY_AVG_LEVEL {Comparator, Value}`
+(`ProgressionHelper.GetAveragePartyLevel` over `PlayerComponent` entities), `IS_DUNGEON {Value: bool}`
+(`CombatState.IsDungeon`), `BOSS_FIGHT {Value: bool}` (`CombatState.BossFightState != null`),
+`ENCOUNTER_PROPERTY {Value: <eEncounterProperties>, Negate}` (encounter entity via
+`GameRun.AdventureState.EncounterGUID` → `EncounterComponent.HasProperty`/`HasAnyProperty`; no encounter
+entity resolved ⇒ false), `ENTITY_TAG {Of, Value: <eConfigTags>, Negate}` (`CharacterHelper.ActorHasTag`),
+`CONFIG_NAME_CONTAINS {Of, Value, Negate}` (ordinal-ignore-case `CharacterComponent.ConfigName` substring),
+`COMBAT_START_REAL {Value: bool}` (`SetInitiative`'s `pTrySkillProc` parameter — `ON_COMBAT_START` only),
+`SELECTION_PRESENT {Name, Value: bool}` (`CombatRuntime.Selections[Name]` non-empty — engine state, no
+hook), and `IS_ENEMY {Of}` (wraps `CharacterHelper.IsEnemy`, i.e. `GroupIndex == 1` — the native predicate
+used for every enemy-side gate; `CHARACTER_TYPE` cannot express "enemy" since `eCharacterTypes` and
+`GroupIndex` are disjoint vocabularies). All pure reads, no condition consumes RNG (same universal rule as
+v1/v1.1 above).
+
+#### Effects (8 + new)
 
 Every effect is emitted by constructing the equivalent `(eCombatActions, object)` pair and routing it
 through `CombatHelper.ApplyAction` (PSN §1 L1871) — nothing bypasses the native action pipeline, so there is
@@ -433,11 +474,19 @@ roll-tiered/conditional branching (PRIEST, ASSASSIN's boss split, BARD's escalat
   `FallbackStatus` (apply a substitute if the primary result never appears in `pResults` — result-driven, no
   RNG, no immunity-table introspection), `StatusOneOf: [ids]` (exactly one draw via
   `CombatState.Random.GetRandomElementFromList<T>`, only when the effect actually executes), `Duration: int?`,
-  and the `"TRIGGER_STATUS"` target token under `ON_STATUS_APPLIED`.
+  and the `"TRIGGER_STATUS"` target token under `ON_STATUS_APPLIED`. **v1.2 adds `StatusFromSelection:
+  <Name>`** (mutually exclusive with `Status`/`StatusOneOf`) — resolves the status id from
+  `CombatRuntime.Selections[Name]` (written by `SELECTION_SET` below); no selection present ⇒ no-op, zero
+  RNG. Adopted 2026-08-06, encounter-modifiers-spec.md §5.
 - `STAT_CHANGE` — `{Target, Stat, StatChangeType, FlatValue|FlatPercent, Blockable}` → native `CHANGE_STAT`.
   v1.1 adds dynamic value sources `FlatValueFrom`/`PercentFrom` ∈ `"FOCUS_SPENT"`, `"COUNTER:<name>"`,
   `"STATUS_COUNT:HARMFUL"`, `"TARGET_HP_PCT"` (with optional `PerUnit`/`Min`/`Max`), and `IsSilent`.
-  `FOCUS_CHANGE` is deliberately not a separate effect — it's `STAT_CHANGE{Stat:"FOC"}`.
+  `FOCUS_CHANGE` is deliberately not a separate effect — it's `STAT_CHANGE{Stat:"FOC"}`. **v1.2 adds
+  `FlatValueFrom: "TARGET_MXHP_PCT"`** (adopted 2026-08-06) — engine computes the flat value from the
+  target's max HP at emission time (`max(1, round(|maxhp × pct| / 100))`, EOR's rounding), because native
+  `STAT_CHANGE{Stat:"MXHP", FlatPercent}` throws (`GetStatChangePercentValue` only handles `HP`/`XP`,
+  `InteractableHelper.cs:1741-53` — encounter-modifiers-spec.md Gate C/§13.1); also adds
+  `PercentFromSelection: <Name>` sugar (the selected modifier's `MaxHpPercent`, 0 ⇒ omitted).
 - `SUMMON` — `{Target, SummonType, CharacterConfig, Count}` → native `ADD_CHARACTER`. `SummonType` is
   `eSummonTypes` (default `SPECIFIC`, see §4.4). `Count` is **authoring sugar only** — expanded by the
   emitter into N sequential `ApplyAction` calls (never passed to the game), capped at 4, default 1.
@@ -449,16 +498,42 @@ roll-tiered/conditional branching (PRIEST, ASSASSIN's boss split, BARD's escalat
   chance-gated `HEAL_MODIFIER`.
 - `COUNTER_ADD {Name, Delta, Max?}` / `COUNTER_SET {Name, Value}` (new) — pure per-battle state writes (§6
   below); `[LOCAL]` state, `[SYNCED]` cause, no RNG.
+- **`GOLD_GRANT {MinGold, MaxGold}` / `ITEM_TAG_GRANT {Tag, Rarity?, Stack?}` / `LOOT_SCALE {ConfigName,
+  Percent}`** (v1.2, adopted 2026-08-06, `ON_COMBAT_LOOT` only) — emit `ADD_GOLD`/`ADD_ITEM`/`SCALE_STACK`
+  delta ops into the pending loot list, computed against a private per-combat grant stream (never the shared
+  `CombatState.Random`) and pushed as `CF_SYNC_LOOT_GRANT_V1` (§9). `MinGold==MaxGold` on `GOLD_GRANT` is a
+  zero-draw flat grant; `LOOT_SCALE` is always zero-draw. `ITEM_TAG_GRANT`'s candidate pool is
+  native-stricter than EOR's tag+rarity-only pool (a recorded deliberate deviation — Gate B, coverage
+  matrix §2). A `REPLACE_ITEM`-emitting `AFFIX_ROLL {ChancePct, Table}` effect exists in the wire schema but
+  is **validator-rejected in v1** (reserved for M-LG4). Recipe-level field **`PickOneEffect: true`** (this
+  trigger only) selects exactly one entry of `Effects[]` uniformly after the proc roll passes (one
+  grant-stream draw), mirroring `StatusOneOf`. Full schema and semantics:
+  `docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md` §6.
+- **`SELECTION_SET {Name, OneOfWeighted: [{Value, Weight}]}`** (v1.2, adopted 2026-08-06) — the weighted-pick
+  counterpart to `StatusOneOf`: exactly one draw (`NextInt(1, Σweights, pMaxInclusive: true)`, EOR's walk
+  algorithm verbatim), stores the winning `Value` in `CombatRuntime.Selections[Name]` (new
+  `Dictionary<string,string>` on `CombatRuntime`, reset with the runtime like `Counters`). `[LOCAL]` state,
+  `[SYNCED]` cause. Consumed by `StatusFromSelection`/`PercentFromSelection` above and `SELECTION_PRESENT`
+  (§ Conditions). Only shipped consumer today: the generated encounter-modifier select recipe
+  (encounter-modifiers-spec.md §5/§6).
+- **`EVENT_BANNER {LocKey, FallbackText, DurationMs, TextFromSelection?}`** (v1.2, adopted 2026-08-06) —
+  `[LOCAL]` presentation (R4) via `GameplayDialogViewHelper.ShowEventTitle` (min enforced duration 3000ms).
+  Renders on every peer running the engine; never gates or feeds gameplay state, excluded from SafeMode
+  considerations like all presentation.
 
 `Target` ∈ `SELF|CASTER|TRIGGER_TARGET|TRIGGER_TARGET_POSITION|ALLY_ALL` (v1) **+** `TRIGGER_SOURCE` (the
 entity that caused the trigger), `ALLY_ALL_OTHERS`, `ENEMY_ALL`, `ALLY_BY_RANK{Rank:{Stat, Order, Where,
 ExcludeSelf}}` (deterministic — sorted by stat then ordinal `Entity.Guid` tiebreak, zero RNG, mirrors EOR's
 own `.OrderBy(SPD).ThenBy(Guid)`).
 
-**"Gain gold" is PARKED, not shipped**, per the original v1 finding: no verified combat-time gold verb exists
-(gold grants are overworld-only reward verbs). The v1.1 redesign considered — a host-decided,
-version-synced `CF_SYNC_LOOT_GRANT_V1` action — needs `LootDropHelper.GetLootDropsFromEnemies`'s signature
-added to the patch-surface notes first; tracked as a v1.2 candidate (§11.6, coverage matrix §7.1).
+**"Gain gold" is ADOPTED (v1.2, 2026-08-06)** — was PARKED per the original v1 finding (no verified
+combat-time gold verb existed; gold grants are overworld-only reward verbs). `LootDropHelper.
+GetLootDropsFromEnemies`'s signature is now verified (PSN §11) and the host-decided, version-synced
+`CF_SYNC_LOOT_GRANT_V1` action ships: `ON_COMBAT_LOOT` + `GOLD_GRANT`/`ITEM_TAG_GRANT`/`LOOT_SCALE` (§ above)
+compute a deterministic post-combat loot delta at a single verified point, mirrored identically on every
+peer (Mode M), with the host's push serving as the authoritative audit digest rather than an apply-from-wire
+channel — see §9 and `docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md` §2. Ships **dark** behind
+`[Skills] EnableLootGrants = false` pending operator smoke item V-1 (coverage matrix §1/§2/§3, §11 below).
 
 #### Recipe-level fields
 
@@ -469,6 +544,24 @@ ONCE_PER_TARGET_PER_COMBAT, ConsumeOn: PROC|EVALUATION|EFFECT_APPLIED, Key}` (ne
 behavior; `Key` lets a declare/resolve recipe pair (CORSAIR-style) share one budget. `Cooldown` stays in
 rounds, `0` = none. `Priority` (new) breaks evaluation-order ties (ascending, then ordinal recipe id).
 `SchemaVersion`/`Enabled` (new) — a per-recipe kill switch and version gate.
+
+**`Scope: OWNED|COMBAT`** (v1.2, adopted 2026-08-06; `OWNED` is the default — exactly today's semantics,
+field omitted everywhere in pre-v1.2 packs). A `COMBAT` recipe is registered for every combat while its
+pack is enabled — `Holds()` is bypassed, there is no owner iteration, `Owner = null`. Evaluated once per
+trigger event, after all owned recipes for that event, ordered ascending `Priority`/ordinal id (an
+extension of the fixed-iteration-order invariant below). The validator rejects, in a `COMBAT` recipe: any
+condition whose `Of` resolves to `SELF`; any effect targeting `SELF`/`CASTER`/`ALLY_*`/`ENEMY_ALL`;
+`AiProcChance` — all meaningless without an owner (load-time rejection, not runtime skipping). Budget/
+cooldown/counter state for a `COMBAT` recipe keys on the sentinel owner guid `""` (empty string, ordinal-
+sorts before every real guid) in the same single-slot `(CombatKey, CombatRuntime)` cache as owned-recipe
+state — no new state container. **`ProcChanceFormula: {Base: [{Conditions, Value}], Adjustments:
+[{Conditions, Value}], Min, Max}`** (v1.2, mutually exclusive with `ProcChance`; `COMBAT` and `OWNED`
+recipes alike) — first `Base` row whose `Conditions` pass wins (last row = default), every passing
+`Adjustments` row adds its `Value`, clamped to `[Min, Max]`: a pure function of replicated state, so exactly
+one `NextChance` draw (or zero when it clamps to ≤0 — a symmetric, replicated-state-determined skip, same
+argument as `ProcChance:100`). Both fields are the encounter-modifiers spec's contribution; full semantics
+and the shipped selection/application recipe pair: `docs/superpowers/plans/2026-08-05-encounter-modifiers-spec.md`
+§4/§5/§6.
 
 #### Determinism invariants (binding)
 
@@ -497,9 +590,10 @@ mid-fight on multi-wave encounters and is therefore not monotonic; either source
 peer, so this is a correctness nicety, not an MP-safety difference), `Budgets`, `Cooldowns`, `Counters`, and
 per-owner `TurnState` (`ActedRound`/`MovedRound`/`LastAbilityId`). No per-run state; no new `GameRunData` keys.
 
-#### Parked primitives (9)
+#### Parked primitives (7)
 
-`GOLD_GRANT`/`ITEM_TAG_GRANT` (needs the loot-hook signature + a synced loot verb), `SUPPRESS_CONSUME` (needs
+**`GOLD_GRANT`/`ITEM_TAG_GRANT` ADOPTED (v1.2, 2026-08-06)** — see the "Gain gold" paragraph above; removed
+from this list. `SUPPRESS_CONSUME` (needs
 out-of-combat shared RNG + a replicated inventory-grant verb — its EOR form and its host-decided redesign
 both fail, since scroll use happens outside combat where `CombatState.Random` doesn't exist),
 `DAMAGE_TAKEN_MULT` (`CalculateFinalDamage` has no RNG parameter — a chance gate there would be an asymmetric
@@ -512,6 +606,21 @@ resolved via redesign rather than parked: `STATUS_APPLY_RESIST`'s EOR form (pref
 false`) is per-client suppression and refused; the behavior ships instead as `ON_STATUS_APPLIED` (Postfix) +
 `STATUS_TYPE` + `ProcChance` + `REMOVE_STATUS{"TRIGGER_STATUS"}` — the status is briefly applied and then
 removed, a documented semantic delta from "never applied".
+
+#### New pack file types (v1.2, adopted 2026-08-06): `statuses.json` / `modifiers.json`
+
+Two new pack files, shipped by `CF_PACK_ENCOUNTER_MODIFIERS` (§3 runtime flow above lists their merge
+steps): `statuses.json` is `StatusEffectConfig`-shaped verbatim (`Type, Duration, TickFrequency,
+TickOverworld, TickCombat, TickExpire, TileSync, GroupSync, Passives[], AddProperties[], Stats, CustomStats`),
+merges adds-only into `Configs.StatusEffects` under the same M0 live-id enforcement as `Configs.Characters/
+Things/Abilities` (§9.1); `modifiers.json` is ClassForge's own weighted modifier table (`{Id, Weight,
+Status, MaxHpPercent?, Rewards?}[]`, authored array order = pick-walk order), parsed into ClassForge's own
+registry like `skillrecipes.json` (not a `Configs.*` field) and used to **generate** the `Scope:COMBAT`
+selection/application recipe pair (§ recipe-level fields above) at pack-load time — authors write the
+table, the engine emits the recipes, so the weighted list/status ids/`MaxHpPercent` values can never drift
+across hand-authored copies. Both files are new inputs to the existing `dataHash` automatically (§3 "Multiplayer
+parity registration" — it hashes every non-localization file in the pack tree), so R1 parity covers them
+with zero new mechanism. Full schema: `docs/superpowers/plans/2026-08-05-encounter-modifiers-spec.md` §3.
 
 ### 4.7 `localization/en.json`
 
@@ -729,7 +838,11 @@ in the boot sequence than `PartyManagementDirector`.
 | Skill-recipe proc evaluation (`ProcChance`/`AiProcChance` roll) | `[SYNCED]` | Whichever peer executes the native hook method; safe under either combat-authority design (§9.3b) by construction — every roll draws from `CombatState.Random` at a point reached identically on every peer, and the roll is always evaluated last (§4.6 determinism invariants) |
 | Skill-recipe effect application (`CHANGE_STAT`/`ADD_STATUS`/`ADD_CHARACTER`) | `[SYNCED]` | Rides the vanilla action-pipeline replication used by any ability's `Actions[]` |
 | Skill-recipe cooldown/budget/counter state | `[LOCAL]` | Per-battle, single-slot cache keyed by `(CombatState` identity`, seed)` — drops and reallocates on any change, so it cannot leak past the combat that produced it; derived from `[SYNCED]` triggers, never itself transmitted |
-| `EnableRecipeEngine` / `EnableTraitLoadoutInjection` knobs | parity-covered | Included in `ParityService`'s `enabledFeatures` as `feature:<Name>=<value>` (§3) — a knob mismatch between otherwise-identical peers is now a real, reported divergence, not a silent "Match" |
+| `ON_COMBAT_LOOT` grant computation + application (v1.2, 2026-08-06) | `[SYNCED]` | Every peer computes+applies the identical delta (Mode M mirrored-deterministic); RNG = a private per-combat grant stream derived from replicated state, never `CombatState.Random` — loot-grant-verb-spec.md §2/§4 |
+| `CF_SYNC_LOOT_GRANT_V1` push (host → all, per won combat) | `[SYNCED]` | Host only sends (`NetworkData.IsHost`); all peers receive/verify. Not an apply-from-wire channel — the push is the authoritative audit digest (`{GrantKey, OpsHash}`); dropped/late/duplicated payloads never affect gameplay (loot-grant-verb-spec.md §7) |
+| `Scope: COMBAT` recipe evaluation (encounter modifiers, v1.2, 2026-08-06) | `[SYNCED]` | Ownerless, registered (not held); evaluated once per trigger event at every executing peer, same posture as owned recipes above |
+| `statuses.json`/`modifiers.json` merge → `Configs.StatusEffects` / EncounterModifier registry (v1.2, 2026-08-06) | `[SYNCED]` | All peers identically at load (R1 property, nothing transmitted) |
+| `EnableRecipeEngine` / `EnableTraitLoadoutInjection` / `EnableLootGrants` knobs | parity-covered | Included in `ParityService`'s `enabledFeatures` as `feature:<Name>=<value>` (§3) — a knob mismatch between otherwise-identical peers is now a real, reported divergence, not a silent "Match". `EnableLootGrants` defaults `false` (dark, §11) |
 
 ### 9.3 Determinism inventory
 
@@ -783,6 +896,16 @@ Tracked as an open question in §11 alongside `docs/MULTIPLAYER.md`'s combat-aut
   and per-peer convergence via shared `GameRandom` alone proves insufficient, the designed-for fallback is
   `CF_SYNC_RECIPE_PROC_V1` (host → clients, `{recipeId, casterId, targetId, rngDraw}`, idempotent to apply) — a
   last resort per `docs/MULTIPLAYER.md`'s guidance, named here so it isn't a scope surprise later.
+- **`CF_SYNC_LOOT_GRANT_V1` (v1.2, adopted 2026-08-06) — the first shipped custom `_SYNC_` action, and a
+  third posture beyond "no sync needed" and the `CF_SYNC_RECIPE_PROC_V1` fallback above.** Host → all peers,
+  once per won enemy-loot combat, idempotent by `GrantKey`; rides `FTK2.DevKit`'s `TransportService`
+  (`FTK2.DevKit/SPEC.md` §3). Not an apply-from-wire channel: every peer computes and applies the identical
+  loot delta locally (Mode M, `ON_COMBAT_LOOT` above), and the pushed `{GrantKey, OpsHash}` is the
+  authoritative audit digest — a silent-drift-to-loud-failure conversion (per `docs/MULTIPLAYER.md`'s new
+  "mirror + audit" posture), not a replication mechanism. Ships dark behind `[Skills] EnableLootGrants =
+  false` pending operator smoke item V-1. Reserved Mode H (host-authoritative verbatim-apply push, for
+  host-private inputs like a future Nemesis system) is M-LG4, gated on verification item V-2. Full design:
+  `docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md` §2/§3/§7.
 
 ### 9.5 SafeMode definition: `OnParityMismatch = Block` (ClassForge's override of the repo default)
 
@@ -875,9 +998,12 @@ tracked here rather than closed silently:
    §7. **One residual sub-item stays genuinely unverified**: the runtime semantics of `CHANGE_STAT.Type` on a
    *non-`HP`* stat (e.g. granting `PA`/`SA`/`FOC`) — authors use `MAGICAL`/`PHYSICAL`/`REGEN` by flavor and the
    validator only warns (doesn't error) on other `eDamageType` members for non-`HP` stats. §4.4.
-6. ~~"Gain gold" effect has no verified combat-time verb~~ — **resolved: parked, not shipped.** No verified
-   loot-hook signature exists in the patch-surface notes to build a host-decided/synced version against;
-   tracked as a v1.2 candidate. §4.6, coverage matrix §7.1.
+6. ~~"Gain gold" effect has no verified combat-time verb~~ — **resolved: parked, not shipped**, then
+   **superseded and ADOPTED (v1.2, 2026-08-06):** `LootDropHelper.GetLootDropsFromEnemies`'s signature is
+   verified (PSN §11); `ON_COMBAT_LOOT` + `GOLD_GRANT`/`ITEM_TAG_GRANT`/`LOOT_SCALE` + `CF_SYNC_LOOT_GRANT_V1`
+   (Mode M host mirror+audit) ship, dark behind `[Skills] EnableLootGrants = false` pending operator smoke
+   item V-1 (`docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md` §10, milestone M-LG3). §4.6, §9,
+   coverage matrix §1/§2/§3.
 8. ~~Hot-reload idempotency~~ — **resolved as a corollary of #3: both `LoadConfigs` and `ReloadConfigs` rebuild
    `Configs` from scratch, so a re-running merge postfix never sees leftover pack data and cannot
    double-insert.** The residual risk (other systems holding a stale `Configs` reference across a reload) is a

@@ -351,6 +351,9 @@ Localized display strips the "(… fallback)" annotations (they are EOR dev note
 
 ### 8.1 Pre-implementation verification (PSN write-ups required, against the 7/31 refs)
 
+> **→ see Disposition ledger (2026-08-06)** at the end of this document — V1–V7 each carry an explicit
+> post-implementation status there. The list below is preserved as the design-time record.
+
 `tools/bin/refs` matches the 7/31 game build; **all PSN line-number citations predate it** and the 7/31
 update demonstrably changed at least one hook shape (memory note: `RenderClassList` grew a 5th bool;
 vanilla now ships `TRAIT_FIELDMEDIC`). Each item below needs a PSN section (or addendum) before its
@@ -517,6 +520,10 @@ Host+client smoke (extends §8.3):
 
 ## 11. Open questions
 
+> **→ see Disposition ledger (2026-08-06)** at the end of this document — every OQ below is dispositioned
+> there (resolved with evidence, superseded by a gate, carried forward with an owner, or awaiting the
+> operator smoke). The wording below is the design-time record and is deliberately left unedited.
+
 1. **`PHY`/`MAG`/`MOV`/`GLD`/`XPM` effectiveness as `Equippable.Stats` keys** — the roster gate.
    Owner: M0 (V1). Ship-blocking for Tiers B/C only; Tier A ships regardless.
 2. **`GameRunData.Stats` MP replication** (PSN NOT FOUND L755; MULTIPLAYER.md OQ#2). Owner: repo-wide
@@ -538,3 +545,36 @@ Host+client smoke (extends §8.3):
 7. **`Weight ≤ 0` semantics** — EOR clamps to 1 in both the sum and the walk (`Max(1, Weight)`,
    L832/L837); we mirror it, but `blessings.json` authoring guidance should simply forbid non-positive
    weights (validator warning). Owner: M1 validator.
+
+---
+
+## Disposition ledger (2026-08-06, post-implementation)
+
+Written after M0–M2 shipped (`e57b02b` content pack, `1b98408` orchestrator + 34 tests; M3/M4 are
+operator smoke waves and remain outstanding by design). Statuses: **RESOLVED** (evidence + where) ·
+**RESOLVED-BY-DESIGN-CHANGE** (a verification gate superseded the question) · **CARRIED-FORWARD** (still
+open, with an owner and a stated safe interim behavior) · **AWAITING-SMOKE** (in-game only; named
+operator step). Nothing from §8.1/§11 is dropped.
+
+| Item | Status | Evidence / pointer | Owner if carried |
+|---|---|---|---|
+| **V1** stat-key effectiveness (roster gate) | **RESOLVED** | `PHY MAG MOV GLD XPM` are all canonical `eCharacterStats` members and all live in vanilla `Equippable.Stats` data (55/50/22/111/36 uses in the 7/31 build), summed by the *generic unfiltered* `GetStat` path (`CharacterHelper.cs` L411-562, `InventoryHelper.cs` L861-868). `GLD`/`XPM` are real percent-modifier stats (`CharacterSummaryViewHelper` L136, `ToolTipHelper` L721-722). Negatives are unclamped for all five (none appear in the `TryGetMin/MaxStatValue` allowlists) and negative equippable stats are pervasive in vanilla. Written up as **PSN §15** (stat-key census, `1f25aec`). **Consequence: the Tier A/B/C split in §7 dissolves — all 15 blessings ship `Enabled: true`** (`e57b02b`). | — |
+| **V2** `GameRunData.Stats` MP replication + join snapshot | **RESOLVED** | It **does** replicate: the full `GameRunData` (JSON + LZ4 blob) rides `JIP_SYNC_DATA` — `NetworkHelper` L1237/L1264-73, `SaveGameHelper` L507-14. This **contradicts and supersedes** the stale PSN "NOT FOUND" entry, which was corrected in the same pass. Written up as **PSN §12** (`1f25aec`). The `BLSS_ACTIVE_<ID>` latch is therefore peer-consistent — but §3.5's "trait is the source of truth" rule was kept anyway (it costs nothing and survives a future regression). | — |
+| **V3** `MapGenSeed`/`ConfigName` cross-peer identity at run start | **RESOLVED** | Both are set in `PartyManagementDirector._initAdventureAndRoute` during the **replicated** `NewRouteAction`, i.e. before `AdventureDirector.Initialize` runs — so they are populated *and* identical on every peer at the grant anchor. PSN §12 (`1f25aec`). The §3.4 offer hash (`SHA256("BLSS_OFFER_V1\|" + MapGenSeed + "\|" + ConfigName)`) stands as specced and is golden-tested with independently computed hashes (`1b98408`). | — |
+| **V4** party `Things` replication on join-in-progress | **RESOLVED** | Party `Thing`s ride the same `JIP_SYNC_DATA` blob as the rest of `GameRunData` — a late joiner receives already-granted `TRAIT_BLSS_*` Things with party state, as §3.5 expected. PSN §12 (`1f25aec`). | — |
+| **V5** `GameAction.DesyncDetectionData.Hash` coverage | **RESOLVED** | The hash is an MD5 over near-full `GameRunData` (including `Entities`/`Things`) **plus an explicit `Stats` copy**, taken at save/init/end-turn checkpoints; `GameRandomNextInt` is a separate, narrower check. So the vendor detector genuinely covers both a divergent trait grant and a divergent latch — §9.6's self-audit claim is now specific rather than general. PSN §12 (`1f25aec`). | — |
+| **V6** 7/31 signatures for every §6 surface | **RESOLVED** (with two API corrections) | `CharacterHelper.GiveTrait(Entity, string)` and `AdventureDirector.Initialize` confirmed as specced. **Corrections:** `GetFirstTrait` takes a `CharacterComponent` and returns only the first trait — presence checks use `InventoryHelper.GetTraits(e).Any(ConfigName == id)` instead; `RemoveTrait` takes a `Thing`, not a string. Also confirmed: `PlayerComponent` is an explicit opt-in flag on the ≤4 party characters (mercs are created with `pAddPlayerComponent: false`), so §3.5's "`PlayerComponent` holders only" scoping is exact. Written up as **PSN §13** (`1f25aec`); the corrected calls ship in `Blessings.Plugin` (`1b98408`). | — |
+| **V7** grant-anchor ordering vs the parity handshake | **RESOLVED-BY-DESIGN-CHANGE** (**Gate E**) | The premise was wrong: "postfix ordered *after* DevKit's handshake" is neither achievable nor meaningful, because the handshake is **async fire-and-forget** — no Harmony ordering can make a postfix wait for it. Superseded by the ClassForge `ParityBridge.HasVerifiedMatch()` pattern (`ParityBridge.cs:167-197`): the grant anchor **polls** `ParityService.GetLastVerdictRows()` for a `Match` verdict, fail-closed, and re-tries idempotently at later anchor opportunities. Shipped in `Blessings.Plugin` via `DevKitParityBridge` (`1b98408`). Visible consequence, logged as expected rather than as an error: **in a first online session the grant lands at the second anchor opportunity**, not the first. | — |
+| **OQ1** `PHY`/`MAG`/`MOV`/`GLD`/`XPM` effectiveness | **RESOLVED** | Same evidence as V1 (PSN §15). Roster frozen at **all 15 `Enabled: true`**; §7's Tier A/B/C gate is now historical. | — |
+| **OQ2** `GameRunData.Stats` MP replication | **RESOLVED** | Same evidence as V2 (PSN §12). The latch is peer-consistent; trait-presence remains the authority per §3.5. | — |
+| **OQ3** grant anchor vs parity-handshake ordering | **RESOLVED-BY-DESIGN-CHANGE** (**Gate E**) | Same as V7 — verdict polling replaces patch ordering entirely, so the "inherits ClassForge §9.1's known limitation" framing no longer applies. The predicted consequence ("first-session online grants may be legitimately deferred to the next anchor opportunity") is exactly what ships, and is now a designed, logged behavior rather than a limitation. | — |
+| **OQ4** mid-run party-composition changes | **CARRIED-FORWARD** | No recon pass was run — the Wave-1 verification budget went to V1–V7, and this question needs a `_rebuildCharactertAsNewConfigType`/revival-path decompile sweep that nothing in M1/M2 depended on. **Risk is bounded by design, not by luck:** the grant is idempotent (trait-presence check first) and self-healing (re-checked at every later anchor opportunity), so a rebuilt character that lost its trait re-acquires it at the next anchor, symmetrically on every peer. **Safe interim behavior:** no grant-on-add hook; worst case is a temporarily blessing-less rebuilt character. | Repo-wide MP recon (DevKit), or M4 if the smoke surfaces it |
+| **OQ5** hidden-trait visibility (`Hidden: true` renders nowhere it shouldn't) | **AWAITING-SMOKE** | Purely a rendering question; no offline surface answers it. The pack ships all 15 traits `Hidden: true, Slots: []` per §4.2 and PackCheck is clean (`e57b02b`). **Safe interim behavior:** if a hidden trait does render somewhere unwanted, it is cosmetic — stats are already correct via the native equipped-trait path. | **Operator step:** M3 SP smoke (§8.3) — after granting, inspect inventory/loadout/character-sheet screens for a stray `TRAIT_BLSS_*` row; also decides the v1 attribution surface |
+| **OQ6** double parity coverage of `blessings.json` | **CARRIED-FORWARD** | Shipped as designed, i.e. the accepted redundancy stands: ClassForge hashes the whole pack tree (including `blessings.json`) and `Blessings` registers its own hash over the same file. Whether one edit produces two mismatch reports is only observable once DevKit's mismatch UI is watched live. **Safe interim behavior:** double-reporting is cosmetic; both hashes fail closed in the same direction. | M4 MP smoke (§9.6 step 4) — observe the report count, then decide whether Blessings drops the file from its own hash |
+| **OQ7** `Weight ≤ 0` semantics | **RESOLVED** | Both halves shipped in `Blessings.Core` (`1b98408`): `BlessingsRegistryParser` emits a **warning** finding for any `Weight <= 0` ("authoring guidance is to avoid non-positive weights"), and `BlessingResolver.SumWeights`/`WalkWeighted` both apply `Math.Max(1, Weight)`, mirroring EOR L832/L837 exactly. Boundary cases are covered by the golden weight-walk tests. | — |
+
+**Recorded delta touching §3.5/§6 without being an open question:** the `blss status` / `blss clear`
+R5-gated debug commands are **not shipped**. DevKit has no command-registration surface at all — the
+`FTK2.DevKit/SPEC.md` text describes the concept, not an implemented API (searched during M2). The §6
+row "DevKit command surface" is therefore aspirational until DevKit builds one; debug removal via
+`CharacterHelper.RemoveTrait(Thing)` remains available to a future command surface with no design change.

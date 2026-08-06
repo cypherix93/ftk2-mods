@@ -21,10 +21,17 @@
 | Family | Rows | PORT | PORT-MODIFIED | PARK |
 |---|---:|---:|---:|---:|
 | §1 Class signature skills | 31 | 19 | 9 | 3 |
-| §2 Selectable loadout traits | 20 | 11 | 7 | 2 |
-| §3 Affixes (20 ids + 2 system rows) | 22 | 17 | 4 | 1 |
+| §2 Selectable loadout traits | 20 | 14 | 5 | 1 |
+| §3 Affixes (20 ids + 2 system rows) | 22 | 18 | 3 | 1 |
 | §4 Mastery meta-progression | 1 | 0 | 0 | 1 |
-| **Total** | **74** | **47** | **20** | **7** |
+| **Total** | **74** | **51** | **17** | **6** |
+
+**Recount note (2026-08-06):** the loot-grant sync verb's adoption (commits `fc17c53`/`f7b14b9`/`22131ce` —
+see "Implementation updates (2026-08-06)" at the end of this document) flips §2 rows 6/9/12
+(`TRAIT_TREASURE_SENSE`/`TRAIT_SCHOLARS_HABIT`/`TRAIT_SCAVENGER`, PORT-MODIFIED/PORT-MODIFIED/PARK →
+PORT/PORT/PORT) and §3 row 16 (`OF_SCAVENGING`, PORT-MODIFIED → PORT); §3 row 22 (affix drop-rolling) stays
+**PARK**, re-gated on M-LG4 instead of the now-resolved "loot hook absent from PSN" reason. Net: PORT
+47→51 (+4), PORT-MODIFIED 20→17 (−3), PARK 7→6 (−1); row total unchanged at 74.
 
 **Row-count reconciliation (read this before auditing the totals).** The charter and AUD §2.5 both say
 "22 affixes". The decompile says **20**: `AffixDefinitions = new AffixDefinition[20]` (EOR `Plugin.cs`
@@ -38,7 +45,7 @@ zero silent omissions in either direction.
 
 | Parked primitive | Blocks |
 |---|---|
-| `GOLD_GRANT` / `ITEM_TAG_GRANT` (§7.1) | SCAVENGER; loot halves of TREASURE_SENSE, SCHOLARS_HABIT, OF_SCAVENGING; affix drop-rolling |
+| ~~`GOLD_GRANT` / `ITEM_TAG_GRANT` (§7.1)~~ — **ADOPTED v1.2, 2026-08-06** | ~~SCAVENGER; loot halves of TREASURE_SENSE, SCHOLARS_HABIT, OF_SCAVENGING~~ — all shipped, see §2 rows 6/9/12. Affix drop-rolling now blocks on `REPLACE_ITEM` + the pre-mint registry instead — **M-LG4** (loot-grant-verb-spec.md §3.2/§10), see §3 row 22 |
 | `SUPPRESS_CONSUME` (§7.2) | ARCANE_MEMORY; code half of OF_SPELLKEEPING |
 | `DAMAGE_TAKEN_MULT` (§7.4) | code half of SHIELDBEARER |
 | `STEAL_STATUS` (§7.5) | THIEF |
@@ -106,13 +113,13 @@ Rows cite **BM Table 2** for coded traits and **TM §3a / AUD §2.4** for the st
 | 3 | `TRAIT_STREETWISE` | stat-only | TM §3a / AUD §2.4 | **PORT** | as above |
 | 4 | `TRAIT_GOLD_INSTINCT` | stat-only (`GLD`) | TM §3a / AUD §2.4 | **PORT** | as above; `GLD` is a legal `eCharacterStats` member (EGT §6) and this is a passive stat, **not** the parked combat-time gold verb |
 | 5 | `TRAIT_KNIFE_EDGE` | stat-only (`CRT +10, HP -3`) | TM §3a L18728–18731 | **PORT** | as above |
-| 6 | `TRAIT_TREASURE_SENSE` | hybrid: stat + 20% post-combat gold | BM T2 TREASURE_SENSE (L16379–16388) | **PORT-MODIFIED** | Stat half ports as data. **Loot half parked** — `GOLD_GRANT` (SPEC-DELTA §7.1: loot hook absent from PSN; EOR's version is per-client loot-list mutation + extra shared-stream draws, AUD §3.2/§3.3). Recommend compensating the stat half (e.g. `LCK`) in the balance pass |
+| 6 | `TRAIT_TREASURE_SENSE` | hybrid: stat + 20% post-combat gold | BM T2 TREASURE_SENSE (L16379–16388) | **PORT** | Stat half ports as data. **Loot half ADOPTED (2026-08-06, commits `fc17c53`/`f7b14b9`):** `SKILL_CF_TRAIT_TREASURE_SENSE_LOOT` — `ON_COMBAT_LOOT`, `ProcChance 20` → `GOLD_GRANT{Min:8, Max:20}`, byte-identical to EOR (L16379–16388), delivered via `CF_SYNC_LOOT_GRANT_V1` Mode-M mirror+audit (loot-grant-verb-spec.md §6.3). Ships dark behind `[Skills] EnableLootGrants=false` pending operator V-1 smoke |
 | 7 | `TRAIT_STEADY_AIM` | hybrid: stat + first ranged attack/combat gets `+10 CRT` | BM T2 STEADY_AIM (L22876–22905) | **PORT** | Stat half as data; code half = `ON_ABILITY_DECLARED` + `HOSTILE_ACTION` + `ABILITY_RANGED(true)` + `Budget{ONCE_PER_COMBAT}` → `ROLL_STAT_BONUS{Stat:"CRT", Flat:10}`. **Also fixes EOR's bug**: `SteadyAimUsedThisCombat` is a process-global `HashSet` never cleared on a new run (TM §6 hazard 3); v1.1's budget lives in the `CombatKey`-invalidated single-slot runtime (SPEC-DELTA §6) and cannot leak |
 | 8 | `TRAIT_WARDBOUND` | hybrid: stat + 20% resist CURSE/DEBUFF | BM T2 WARDBOUND (L24780–24788) | **PORT-MODIFIED** | Stat half as data. Resist half **redesigned**: EOR prefixes `ApplyStatus` and `return false`s (per-client suppression of authoritative state — forbidden by charter rule 3). v1.1 uses `ON_STATUS_APPLIED`(T5, **Post**fix) + `STATUS_TYPE{CURSE\|DEBUFF}`(C10) + `ProcChance 20` → `REMOVE_STATUS{SELF, "TRIGGER_STATUS"}`. **Delta:** the status is applied and then removed rather than never applied — any on-apply side effect fires once and the application is briefly visible |
-| 9 | `TRAIT_SCHOLARS_HABIT` | hybrid: stat + 20% post-combat scroll | BM T2 SCHOLARS_HABIT (L16389–16396) | **PORT-MODIFIED** | Stat half ports. **Loot half parked** — `ITEM_TAG_GRANT`, same reason as TREASURE_SENSE |
+| 9 | `TRAIT_SCHOLARS_HABIT` | hybrid: stat + 20% post-combat scroll | BM T2 SCHOLARS_HABIT (L16389–16396) | **PORT** | Stat half ports. **Loot half ADOPTED (2026-08-06, commits `fc17c53`/`f7b14b9`):** `SKILL_CF_TRAIT_SCHOLARS_HABIT_LOOT` — `ON_COMBAT_LOOT`, `ProcChance 20` → `ITEM_TAG_GRANT{Tag:SCROLL}`. **Recorded deviation from EOR (Gate B, deliberate):** candidate pool is native-stricter (tag OrdinalIgnoreCase + exact rarity + NOT Hidden + Value≠0 + rarity-weight≠0 + expansion-enabled, ordinal-sorted) rather than EOR's tag+rarity-only pool with hardcoded fallbacks (loot-grant-verb-spec.md §4.3/§9). Ships dark behind `[Skills] EnableLootGrants=false` pending operator V-1 smoke |
 | 10 | `TRAIT_PREPARED` | `+1` Focus at combat start | BM T2 PREPARED (L22830/L22849) | **PORT** | `ON_COMBAT_START`(T1) + `FOCUS_CURRENT{LT, "MAX"}`(C8) → `STAT_CHANGE{SELF, FOC, +1}`. No RNG. EOR's `ShouldDisablePreparedFocusForMultiplayer` stub (always `false`, TM §6 hazard 2) is **not** copied — the primitive is genuinely deterministic, so no gate is needed or faked |
 | 11 | `TRAIT_PACK_TACTICS` | conditional `PHY +2` when a pet is active | BM T2 PACK_TACTICS (L22616–22621) | **PORT-MODIFIED** | Becomes an **unconditional `PHY +1`** stat trait. `CONDITIONAL_STAT_MODIFIER` is parked (SPEC-DELTA §7.10): a `CharacterHelper.GetStat` postfix runs on an extremely hot path with 8 overloads (PSN §3), in and out of combat, with no authority/RNG context — cost/benefit fails for a flat `+2`. Halved to `+1` because it is now always on |
-| 12 | `TRAIT_SCAVENGER` | 25% post-combat gold **or** herb | BM T2 SCAVENGER (L16357–16378) | **PARK** | Needs both `GOLD_GRANT` and `ITEM_TAG_GRANT`; it has **no stat half** to fall back on, so the whole trait parks. **Unlock:** SPEC-DELTA §7.1 (PSN-verified loot hook + host-decided `CF_SYNC_LOOT_GRANT_V1`) |
+| 12 | `TRAIT_SCAVENGER` | 25% post-combat gold **or** herb | BM T2 SCAVENGER (L16357–16378) | **PORT** | **ADOPTED (2026-08-06, commits `fc17c53`/`f7b14b9`).** `SKILL_CF_TRAIT_SCAVENGER_LOOT` — `ON_COMBAT_LOOT`, `ProcChance 25`, `PickOneEffect: true` → `GOLD_GRANT{Min:8,Max:20}` **or** `ITEM_TAG_GRANT{Tag:HERB, Rarity:COMMON}`, mirroring EOR's nested 50/50 (L16357–16377) via the loot-grant verb's private grant-stream draw instead of the shared stream. Herb branch inherits the same Gate-B pool deviation as `TRAIT_SCHOLARS_HABIT` above. Ships dark behind `[Skills] EnableLootGrants=false` pending operator V-1 smoke |
 | 13 | `TRAIT_BATTLE_RHYTHM` | on damage dealt → self `EVADEUP` | BM T2 BATTLE_RHYTHM (L24541/L24556) | **PORT** | `ON_DAMAGE_DEALT`(T3) + `HOSTILE_ACTION` → `ADD_STATUS{SELF, STATUS_EVADEUP_00}`. Uses the vanilla status EOR itself substitutes; the retired `STATUS_EOR_BATTLE_RHYTHM` custom id is **not** re-created (TM §6 hazard 4) |
 | 14 | `TRAIT_ARCANE_MEMORY` | 30% chance not to consume a scroll | BM T2 ARCANE_MEMORY (L24454/L24462) | **PARK** | `SUPPRESS_CONSUME` parked (SPEC-DELTA §7.2). Both the original (prefix `return false` = per-client suppression) and the host-decided refund-after-consume redesign fail: scroll use is **normally out of combat**, where `CombatState.Random` is null, so invariant 5.2#2 forbids the roll — and the only escape is a fresh seeded `GameRandom`, which is exactly the non-lockstep path EOR shipped (BM Legend `RollSelectableTraitChance(random: null, …)`). **Unlock:** an out-of-combat shared deterministic RNG + a verified replicated inventory-grant verb |
 | 15 | `TRAIT_SHIELDBEARER` | 25% chance, incoming physical damage `−2` | BM T2 SHIELDBEARER (L24604/L24608) | **PORT-MODIFIED** | Becomes a flat **`DEF +1`** stat trait, zero primitives. `DAMAGE_TAKEN_MULT` is parked (SPEC-DELTA §7.4): `CalculateFinalDamage` (PSN §2 L1708) has **no `GameRandom` parameter**, so a chance gate there must take a static draw at a point only the host may execute — charter rule 2's named failure. Balance note: `DEF +1` reduces every blockable physical hit by 1 vs EOR's expected 0.5/hit — roughly 2× stronger, flag for the balance pass |
@@ -122,7 +129,8 @@ Rows cite **BM Table 2** for coded traits and **TM §3a / AUD §2.4** for the st
 | 19 | `TRAIT_DRUNKEN_COURAGE` | after a `DRINK_*` consumable → self `ATTACKUP` | BM T2 DRUNKEN_COURAGE (L24628/L24632) | **PORT-MODIFIED** | `ON_CONSUMABLE_USED`(T6) + `ITEM_CLASS{"ALCOHOL"}`(C14) → `ADD_STATUS{SELF, STATUS_ATTACKUP_00}`. **Delta:** the gate is the vanilla `ThingConfig.Class == "ALCOHOL"` (a real, verified class value, EGT §5) rather than EOR's `ConfigName.StartsWith("DRINK_")` / ability-id string prefix match — so the set of qualifying items is whatever the game classes as alcohol, not whatever happens to be named `DRINK_*`. Retired `STATUS_EOR_DRUNKEN_COURAGE` id not re-created |
 | 20 | `TRAIT_MENDERS_TOUCH` | consumable heals get flat `+10` | BM T2 MENDERS_TOUCH (L24486/L24502) | **PORT** | `ON_HEAL_PENDING` + `ITEM_CONSUMABLE(true)`(C15) → `HEAL_MODIFIER{Flat:10, Scope:GIVEN}`. Additive stacking with FIELDMEDIC on the same healer is preserved (two recipes, both fire) |
 
-**§2 counts: PORT 11 · PORT-MODIFIED 7 · PARK 2 = 20** ✔
+**§2 counts: PORT 14 · PORT-MODIFIED 5 · PARK 1 = 20** ✔ (updated 2026-08-06 — loot-grant verb adoption,
+commits `fc17c53`/`f7b14b9`; was PORT 11 · PORT-MODIFIED 7 · PARK 2)
 
 ---
 
@@ -151,15 +159,16 @@ delivered as an **alternate grantor condition** on the same recipe, not a duplic
 | 13 | `OF_STABILITY` | `VIT +1` | 20% resist CURSE/DEBUFF (**one roll shared with `TRAIT_WARDBOUND`**, not independent) | BM T3 OF_STABILITY (L24780) | **PORT-MODIFIED** | Stat half ports; resist half uses `TRAIT_WARDBOUND`'s **redesigned** apply-then-cleanse recipe (`ON_STATUS_APPLIED` + `REMOVE_STATUS{TRIGGER_STATUS}`). Same semantic delta as row §2.8. Shared-roll behavior preserved: one recipe, two grantor conditions — a character with both trait and affix gets one 20% roll, not two |
 | 14 | `OF_FORTUNE` | `LCK +5` | — | L5129 | **PORT** | stat-only pre-mint |
 | 15 | `OF_PROSPERITY` | `GLD +10` | — | L5130 | **PORT** | stat-only pre-mint (passive `GLD` stat, not the parked combat-gold verb) |
-| 16 | `OF_SCAVENGING` | `LCK +2` | 10% post-combat gold **or** herb | BM T3 OF_SCAVENGING (L16397–16418) | **PORT-MODIFIED** | Stat half ports; **loot half parked** with `GOLD_GRANT`/`ITEM_TAG_GRANT` (SPEC-DELTA §7.1). BM notes this affix is an *additional independent draw pair* stacked on SCAVENGER/TREASURE_SENSE/SCHOLARS_HABIT — up to 8 extra shared-stream draws per player per combat (AUD §3.2). Parking it removes that hazard entirely |
+| 16 | `OF_SCAVENGING` | `LCK +2` | 10% post-combat gold **or** herb | BM T3 OF_SCAVENGING (L16397–16418) | **PORT** | Stat half ports. **Loot half recipe ADOPTED (2026-08-06, commits `fc17c53`/`f7b14b9`):** `SKILL_CF_AFFIX_OF_SCAVENGING_LOOT` — `ON_COMBAT_LOOT`, `ProcChance 10`, `PickOneEffect: true` → `GOLD_GRANT{Min:5,Max:10}` **or** `ITEM_TAG_GRANT{Tag:HERB, Rarity:COMMON}` — written and validated, but **carrier-less**: no pre-minted `_OF_SCAVENGING` item variant exists yet to carry it as an `Equippable.Passives` entry (row 21's deterministic pre-mint registry), so the recipe cannot fire in practice until **M-LG4** wires the affix-variant carrier. BM's stacked-draw hazard (up to 8 extra shared-stream draws/player/combat, AUD §3.2) is moot regardless — the loot-grant verb draws from a private grant stream, never the shared one |
 | 17 | `OF_THE_PATHFINDER` | `MOV +1` | — | L5132 | **PORT** | stat-only pre-mint |
 | 18 | `OF_THE_WILDS` | `AWR +5` | — | L5133 | **PORT** | stat-only pre-mint |
 | 19 | `OF_THE_DUELIST` | `SPD +5, EVD +3` | — | L5134 | **PORT** | stat-only pre-mint |
 | 20 | `OF_THE_MERCHANT` | `TAL +5` | — | L5135 | **PORT** | stat-only pre-mint |
 | 21 | **[system]** Affix variant **minting** | — | `TryEnsureAffixVariantConfig` mutates `Env.Configs.Things` at runtime; variants tracked in a per-process `AffixedItemVariants` dict that is **not persisted**, requiring a whole restore/repair layer (L17013–L17384) | AUD §2.5 (L16941/L5048) | **PORT-MODIFIED** | Replaced by **deterministic pre-minting**: every `<affix × eligible base item>` pair becomes an ordinary parity-hashed `ThingConfig` id at load, Forge `_PLUS{N}`-style. Removes the runtime `Configs` mutation, the restore/repair layer, and the R1 hash instability. Explicitly refused by `FTK2.Forge/SPEC.md`'s design and by `docs/MULTIPLAYER.md`'s "prefer config-shaped content over runtime state" |
-| 22 | **[system]** Affix **drop-time rolling** | — | `PickWeightedAffix` + `TryCreateAffixedThing` roll an affix onto a dropped item from the shared `GameRandom` inside the loot path | AUD §2.5, §3.2; BM T3 loot-postfix hazard class | **PARK** | Same reason as `GOLD_GRANT` (SPEC-DELTA §7.1): the loot hook is absent from PSN, and drop-time rolls are extra shared-stream draws on a path that executes asymmetrically across peers, plus per-client mutation of a loot list. **Unlock:** PSN-verified loot hook + host-decided-and-synced loot delta. Until then, pre-minted affix variants ship as ordinary loot-table content (deterministic, no runtime roll) |
+| 22 | **[system]** Affix **drop-time rolling** | — | `PickWeightedAffix` + `TryCreateAffixedThing` roll an affix onto a dropped item from the shared `GameRandom` inside the loot path | AUD §2.5, §3.2; BM T3 loot-postfix hazard class | **PARK — M-LG4** | **Reason superseded (2026-08-06):** the loot hook is no longer absent from PSN — `LootDropHelper.GetLootDropsFromEnemies` is verified (PSN §11) and `CF_SYNC_LOOT_GRANT_V1` ships (M-LG1–3, commits `fc17c53`/`f7b14b9`/`22131ce`). What still blocks this row specifically: the `REPLACE_ITEM` delta op is defined in the wire schema (loot-grant-verb-spec.md §3.1/§3.2) but **validator-rejected in v1** pending row 21's deterministic pre-mint registry (the fixed `<affix × base item>` id set `REPLACE_ITEM` would swap onto). **Unlock:** M-LG4 — pre-mint registry + `REPLACE_ITEM`/`AFFIX_ROLL` validator activation, gated on in-game verification item V-2 (delivery-window measurement for the reserved Mode-H host-push variant) |
 
-**§3 counts: PORT 17 · PORT-MODIFIED 4 · PARK 1 = 22** ✔
+**§3 counts: PORT 18 · PORT-MODIFIED 3 · PARK 1 = 22** ✔ (updated 2026-08-06 — loot-grant verb adoption,
+commits `fc17c53`/`f7b14b9`; was PORT 17 · PORT-MODIFIED 4 · PARK 1; row 22 stays PARK, re-gated on M-LG4)
 
 ---
 
@@ -191,14 +200,35 @@ delivered as an **alternate grantor condition** on the same recipe, not a duplic
    `STATUS_EOR_DRUNKEN_COURAGE` (TM §6 hazard 4) have no `StatusEffectConfig` in the shipped build; ClassForge
    uses the vanilla statuses EOR's own later code substitutes.
 6. **Balance passes owed** (all flagged, none blocking): PACK_TACTICS `+2`→`+1`, ARCANE_FOCUS `+2`→`+1`,
-   SHIELDBEARER →`DEF +1` (≈2× stronger), TREASURE_SENSE / SCHOLARS_HABIT / OF_SCAVENGING losing their loot
-   halves, BEASTMASTER newly inheriting `STATUS_MARKED_00`'s vanilla +30 crit chance, and AUD §2.1's noted
+   SHIELDBEARER →`DEF +1` (≈2× stronger), ~~TREASURE_SENSE / SCHOLARS_HABIT / OF_SCAVENGING losing their loot
+   halves~~ (**resolved 2026-08-06** — loot halves shipped via the loot-grant verb, see §2 rows 6/9/12 and §3
+   row 16), BEASTMASTER newly inheriting `STATUS_MARKED_00`'s vanilla +30 crit chance, and AUD §2.1's noted
    class stat-envelope power creep (LCK 50–95 vs vanilla flat 50).
 7. **Not covered by this matrix** (dispositioned elsewhere, by design): classes as data (AUD §6 row 3 → the
    ClassForge M1 loader), items (row 7 → Armory), pets/mercs (rows in AUD §2.3 → Summoner), quest archetypes
-   (row 8 → Questsmith, deferred), and the systems the charter dropped outright (row 9: Risky Blessings,
-   Nemesis, encounter modifiers, campaign mutators, world events, town specialists, sanctums; row 11:
-   telemetry, version check, debug toolkit, camera tweaks).
+   (row 8 → Questsmith, deferred), and the systems the charter dropped outright (row 9: ~~Risky Blessings~~ —
+   **ADOPTED v0, 2026-08-06**, see note 8 below; ~~encounter modifiers~~ — **ADOPTED, 2026-08-06**, see note 8
+   below; Nemesis, campaign mutators, world events, town specialists, sanctums remain dropped/re-spec-later;
+   row 11: telemetry, version check, debug toolkit, camera tweaks).
+8. **Two AUD §6 row 9 systems re-specced and shipped (2026-08-06), superseding note 7 above for these two
+   only:**
+   - **Risky Blessings — PORT (v0).** Re-hosted as `FTK2.Blessings` (a thin orchestrator plugin + the
+     `BLSS_PACK_EOR_BLESSINGS` ClassForge content pack) — commit `e57b02b` (M1 content: 15 blessings,
+     Σweight 114, EOR table order), commit `1b98408` (M2 orchestrator: hash-derived deterministic offer pick,
+     zero RNG draws; symmetric grant anchor gated on `ParityBridge.HasVerifiedMatch()`, Gate E). All 15 EOR
+     blessings ship `Enabled: true`. Fixes EOR's three identified desync mechanisms (non-shared offer RNG,
+     client-local acceptance, stubbed MP guards). v1 (in-run accept/decline dialog + `BLSS_SYNC_BLESSING_V1`)
+     remains parked. Full design: `docs/superpowers/plans/2026-08-05-risky-blessings-spec.md`.
+   - **Encounter modifiers — PORT.** Re-hosted on ClassForge's engine as `CF_PACK_ENCOUNTER_MODIFIERS`
+     (`statuses.json`+`modifiers.json`, all 10 EOR modifiers, `Scope: COMBAT` selection/application recipes)
+     — commits `f8c4eaf` (M-EM1 pack surface), `a92a0e3` (M-EM2 engine capability: `Scope:COMBAT`,
+     `ProcChanceFormula`, `IS_ENEMY`), `d293536` (M-EM3/4 generated recipes + reward halves). **Reward halves
+     included** (Veteran/Cursed XP, Wealthy gold, Treasure-Guarded extra loot) — they ride the loot-grant
+     verb's `LOOT_SCALE`/`ADD_ITEM` ops in Mode M, drawing from a private per-combat stream (a recorded
+     improvement over EOR's shared-stream extra-loot draw). Full design:
+     `docs/superpowers/plans/2026-08-05-encounter-modifiers-spec.md`.
+
+   Nemesis, campaign mutators, world events, town specialists and sanctums remain dropped per note 7.
 
 ---
 
@@ -262,3 +292,34 @@ found while actually writing the recipes this matrix specified.
    arbitrary data folder) that computes `DevKit.DataHasher.ComputeFolderHash` over the installed Armory data
    and registers `(guid, version, dataHash)` the same way every other `ftk2mods.*` mod does. Tracked here so
    it isn't lost between the MP review (which found it) and Armory's own SPEC (which doesn't yet plan for it).
+
+---
+
+## Implementation updates (2026-08-06)
+
+Wave-2 findings (loot-grant verb, Risky Blessings, encounter modifiers — implementation on `engine/eor-rehost`,
+offline-verified) that flip dispositions above. None invents a new verdict category; every flip is recorded
+inline at its row plus recapped here for scannability.
+
+1. **Loot-grant sync verb (`CF_SYNC_LOOT_GRANT_V1`) adopted — unlocks 4 of the 8 `GOLD_GRANT`/`ITEM_TAG_GRANT`
+   consumers named in the parked-primitive index (§0).** Commits `fc17c53` (M-LG1 offline core), `f7b14b9`
+   (M-LG2 hooks + SP + consumer recipes), `22131ce` (M-LG3 MP wire-up). Flips: §2 row 6 `TRAIT_TREASURE_SENSE`
+   (PORT-MODIFIED → PORT), §2 row 9 `TRAIT_SCHOLARS_HABIT` (PORT-MODIFIED → PORT), §2 row 12
+   `TRAIT_SCAVENGER` (PARK → PORT), §3 row 16 `OF_SCAVENGING` (PORT-MODIFIED → PORT, carrier-less pending
+   M-LG4). §3 row 22 (affix drop-rolling) **stays PARK**, re-gated on M-LG4's pre-mint registry +
+   `REPLACE_ITEM` validator activation rather than the now-resolved "loot hook absent from PSN" reason. One
+   deliberate deviation recorded against EOR (Gate B): `ITEM_TAG_GRANT`'s candidate pool is native-stricter
+   than EOR's tag+rarity-only pool. Ships **dark** behind `[Skills] EnableLootGrants = false` pending operator
+   smoke item V-1 — every flipped row is a *shipped, verified-offline* capability, not yet an in-game-confirmed
+   one. Full design: `docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md`.
+2. **Risky Blessings re-specced and shipped (v0) — was AUD §6 row 9 "dropped".** Commits `e57b02b` (content
+   pack) + `1b98408` (orchestrator). See note 8 in "Cross-cutting notes" above. **PORT.**
+3. **Encounter modifiers re-specced and shipped — was AUD §6 row 9 "dropped".** Commits `f8c4eaf`/`a92a0e3`/
+   `d293536`. Reward halves ride the loot-grant verb (item 1 above) rather than being separately parked. See
+   note 8 in "Cross-cutting notes" above. **PORT.**
+4. **Totals recount (§0 Summary counts, updated in place above):** §2 PORT 11→14, PORT-MODIFIED 7→5, PARK
+   2→1 (20 unchanged). §3 PORT 17→18, PORT-MODIFIED 4→3, PARK 1→1 unchanged in count but row 22's reason
+   changed (22 unchanged). §1/§4 untouched. Grand total: PORT 47→51, PORT-MODIFIED 20→17, PARK 7→6 (74 rows
+   unchanged). Risky Blessings and encounter modifiers are AUD §6 row-9 *systems*, not rows in this
+   mechanic-by-mechanic matrix, so their adoption doesn't change the 74-row count — it is recorded in
+   "Cross-cutting notes" note 8 instead.
