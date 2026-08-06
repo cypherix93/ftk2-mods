@@ -43,8 +43,10 @@ namespace ClassForge.Plugin
         private static readonly HashSet<string> WarnedIncomplete = new HashSet<string>(StringComparer.Ordinal);
         private static bool _loggedInjection;
 
-        public static void RenderClassList_Prefix(Entity pEntity, List<string> pPlayableCharacters,
-            Func<Entity, string, bool, bool, Task> pOnChangeClass, VisualElement pItemCard)
+        // Only the two parameters the prefix actually uses — Harmony binds prefix parameters by
+        // name, so omitting pOnChangeClass/pItemCard keeps this valid when their types drift
+        // between game updates (they did on 7/31/2026: pOnChangeClass gained a fifth bool).
+        public static void RenderClassList_Prefix(Entity pEntity, List<string> pPlayableCharacters)
         {
             if (!ClassForgePlugin.FeaturesActive) return;
             if (!ClassForgePlugin.EnableClassSelectInjection.Value) return;

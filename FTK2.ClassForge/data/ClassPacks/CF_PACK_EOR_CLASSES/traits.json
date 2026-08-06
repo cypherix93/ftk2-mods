@@ -179,7 +179,7 @@
     "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
     "Expansion": ""
   },
-  "TRAIT_FIELDMEDIC": {
+  "TRAIT_CF_FIELDMEDIC": {
     "ConsumableType": "NONE",
     "Value": 0,
     "MinTier": 1,

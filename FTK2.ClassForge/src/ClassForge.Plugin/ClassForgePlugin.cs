@@ -114,14 +114,23 @@ namespace ClassForge.Plugin
                 postfix: M(typeof(LocalizationPatches), nameof(LocalizationPatches.SetLanguage_Postfix)));
 
             // ---- class-select UI ----
+            // Resolved by NAME ONLY (the game has a single RenderClassList overload): the 7/31/2026
+            // game update added a fifth bool to pOnChangeClass's Func, so a fully-typed lookup goes
+            // stale on every callback-shape change. The prefix only reads pEntity/pPlayableCharacters
+            // and so survives that drift.
             Patch(harmony, typeof(CharacterCustomizationViewHelper), "RenderClassList",
-                prefix: M(typeof(ClassSelectPatches), nameof(ClassSelectPatches.RenderClassList_Prefix)),
-                argumentTypes: new[]
-                {
-                    typeof(Entity), typeof(List<string>),
-                    typeof(Func<Entity, string, bool, bool, System.Threading.Tasks.Task>),
-                    typeof(UnityEngine.UIElements.VisualElement)
-                });
+                prefix: M(typeof(ClassSelectPatches), nameof(ClassSelectPatches.RenderClassList_Prefix)));
+
+            // ---- pack-class visual remap (see VisualRemapPatches header) ----
+            // Pack classes have no dCharacter model record; without these three patches, SELECTING
+            // one strips the avatar, NREs on the null record, and leaves the UI input-locked.
+            Patch(harmony, typeof(CharacterVisualHelper), "GetCharacterTierRecord",
+                prefix: M(typeof(VisualRemapPatches), nameof(VisualRemapPatches.GetCharacterTierRecord_Prefix)),
+                argumentTypes: new[] { typeof(string), typeof(Entity) });
+            Patch(harmony, typeof(CharacterHelper), "GetConfigNameWithBodyType",
+                postfix: M(typeof(VisualRemapPatches), nameof(VisualRemapPatches.GetConfigNameWithBodyType_Postfix)));
+            Patch(harmony, typeof(PartyManagementDirector), "_rebuildCharactertAsNewConfigType",
+                postfix: M(typeof(VisualRemapPatches), nameof(VisualRemapPatches.RebuildAsNewConfigType_Postfix)));
 
             // ---- icon / portrait fallback ----
             // `out Color` MUST be declared as MakeByRefType() or AccessTools returns null and the patch

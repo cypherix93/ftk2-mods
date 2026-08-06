@@ -18,6 +18,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <!-- Compile-time only: JsonSerializer's string overloads surface ReadOnlySpan<> in their
+         signatures (GameJsonCodec). The game ships System.Memory.dll at runtime; never copy it
+         into the plugin folder (same pattern as ClassForge.Plugin). -->
+    <PackageReference Include="System.Memory" Version="4.5.5" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>

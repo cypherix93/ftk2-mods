@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using ClassForge.Core;
 using ClassForge.Core.IO;
@@ -70,6 +72,10 @@ namespace ClassForge.Plugin
 
                 ApplyPlan(configs, result.MergePlan);
 
+                // Feed the visual-remap layer the current pack class ids (full rebuild each merge,
+                // so hot-reload / disabled packs never leave a stale remap behind).
+                VisualRemapPatches.SetPackClassIds(result.MergePlan.Characters.Select(op => op.Id));
+
                 ClassForgePlugin.CurrentMergePlan = result.MergePlan;
                 ClassForgePlugin.CurrentDataHash = result.DataHash;
 
@@ -129,7 +135,7 @@ namespace ClassForge.Plugin
             {
                 try
                 {
-                    configs.Characters[op.Id] = JsonSerializer.Deserialize<CharacterConfig>(op.Value.ToJsonString());
+                    configs.Characters[op.Id] = DeserializeGameConfig<CharacterConfig>(op.Value.ToJsonString());
                     LogApplied("class", op);
                 }
                 catch (Exception ex) { LogApplyFailed("class", op, ex); }
@@ -139,7 +145,7 @@ namespace ClassForge.Plugin
             {
                 try
                 {
-                    configs.Things[op.Id] = JsonSerializer.Deserialize<ThingConfig>(op.Value.ToJsonString());
+                    configs.Things[op.Id] = DeserializeGameConfig<ThingConfig>(op.Value.ToJsonString());
                     LogApplied("thing", op);
                 }
                 catch (Exception ex) { LogApplyFailed("thing", op, ex); }
@@ -149,10 +155,91 @@ namespace ClassForge.Plugin
             {
                 try
                 {
-                    configs.Abilities[op.Id] = JsonSerializer.Deserialize<CombatAbilityConfig>(op.Value.ToJsonString());
+                    configs.Abilities[op.Id] = DeserializeGameConfig<CombatAbilityConfig>(op.Value.ToJsonString());
                     LogApplied("ability", op);
                 }
                 catch (Exception ex) { LogApplyFailed("ability", op, ex); }
+            }
+        }
+
+        /// <summary>
+        /// Game config classes are field-based (public fields, no properties), so they MUST be
+        /// deserialized with the game's own <c>JsonHelper.importOptions</c> (IncludeFields=true,
+        /// string enums, comments/trailing commas) — default STJ options silently ignore every
+        /// field and produce a hollow config (day-one in-game finding: null <c>Tags</c> on a merged
+        /// Thing crashed <c>SkillHelper.Initialize</c> at boot).
+        /// </summary>
+        private static T DeserializeGameConfig<T>(string json) where T : class
+        {
+            var obj = JsonSerializer.Deserialize<T>(json, ImportOptions);
+            if (obj != null) NormalizeNullCollections(obj);
+            return obj;
+        }
+
+        private static JsonSerializerOptions _importOptions;
+
+        /// <summary>
+        /// The game's own <c>JsonHelper.importOptions</c> (fields, comments, trailing commas) with
+        /// one addition: enum parsing tolerates the empty string, mapping it to the enum's default
+        /// (day-one in-game finding: pack JSON writes <c>"Expansion": ""</c> / <c>"Material": ""</c>
+        /// for "unset", which the stock <c>JsonStringEnumConverter</c> rejects, skipping the entry).
+        /// </summary>
+        private static JsonSerializerOptions ImportOptions
+        {
+            get
+            {
+                if (_importOptions == null)
+                {
+                    var o = new JsonSerializerOptions(JsonHelper.importOptions);
+                    o.Converters.Insert(0, new LenientEnumConverterFactory());
+                    _importOptions = o;
+                }
+                return _importOptions;
+            }
+        }
+
+        private sealed class LenientEnumConverterFactory : System.Text.Json.Serialization.JsonConverterFactory
+        {
+            public override bool CanConvert(Type typeToConvert) => typeToConvert.IsEnum;
+
+            public override System.Text.Json.Serialization.JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+                => (System.Text.Json.Serialization.JsonConverter)Activator.CreateInstance(
+                    typeof(LenientEnumConverter<>).MakeGenericType(typeToConvert));
+        }
+
+        private sealed class LenientEnumConverter<T> : System.Text.Json.Serialization.JsonConverter<T>
+            where T : struct, Enum
+        {
+            public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                if (reader.TokenType == JsonTokenType.Number)
+                    return (T)Enum.ToObject(typeof(T), reader.GetInt64());
+                var s = reader.GetString();
+                if (string.IsNullOrWhiteSpace(s)) return default;
+                return (T)Enum.Parse(typeof(T), s, ignoreCase: true);
+            }
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+                => writer.WriteStringValue(value.ToString());
+        }
+
+        /// <summary>
+        /// Vanilla config entries always carry their collection fields, and vanilla code indexes
+        /// them without null checks (e.g. <c>SkillHelper.Initialize</c> runs <c>Tags.Contains</c>
+        /// over every Thing). A pack entry that omits a collection must land as an empty instance,
+        /// not null. Non-collection reference fields (Equippable, LocKey, ...) are left null —
+        /// null is meaningful there ("not equippable") and vanilla JSON omits them too.
+        /// </summary>
+        private static void NormalizeNullCollections(object obj)
+        {
+            foreach (var f in obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (f.GetValue(obj) != null) continue;
+                var t = f.FieldType;
+                if (!t.IsClass || t.IsAbstract || t == typeof(string)) continue;
+                if (!typeof(IEnumerable).IsAssignableFrom(t)) continue;
+                var ctor = t.GetConstructor(Type.EmptyTypes);
+                if (ctor != null) f.SetValue(obj, ctor.Invoke(null));
             }
         }
 

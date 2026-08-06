@@ -138,7 +138,13 @@ namespace Summoner.Plugin
 
                 var externalCharacterIds = new HashSet<string>(StringComparer.Ordinal);
                 var validationFindings = PackValidator.ValidateAll(allPacks, externalCharacterIds);
-                findings.AddRange(validationFindings);
+                // At Awake the game's Configs don't exist yet, so the external character-id set
+                // above is necessarily empty — every vanilla-referencing ConfigName would log as a
+                // spurious [config_name_unresolved] error here (day-one finding: ~200 red lines on
+                // a healthy install). Resolution against the REAL id set happens at merge time
+                // (MergeInto → MergePlanner rejects, ConfigsSink logs); only intra-pack findings
+                // are meaningful this early.
+                findings.AddRange(validationFindings.Where(f => f.Check != "config_name_unresolved"));
 
                 foreach (var f in findings)
                     LogFinding(f);
@@ -173,9 +179,10 @@ namespace Summoner.Plugin
             var plan = MergePlanner.Plan(Packs, existingFollowerIds, existingCharacterIds);
             ConfigsSink.Apply(plan, configs, Log);
 
-            if (VerboseLogging.Value)
-                Log.LogDebug($"[Summoner] merge complete: +{plan.CharacterAdds.Count} characters, " +
-                             $"+{plan.FollowerAdds.Count} followers, {plan.Skips.Count} skipped, {plan.Rejects.Count} rejected.");
+            // Always at Info: this line is the smoke-test signal that followers actually landed in
+            // the live Configs (the Awake-time "followers=200" only counts parsed pack entries).
+            Log.LogInfo($"[Summoner] merge complete: +{plan.CharacterAdds.Count} characters, " +
+                        $"+{plan.FollowerAdds.Count} followers, {plan.Skips.Count} skipped, {plan.Rejects.Count} rejected.");
         }
 
         /// <summary>

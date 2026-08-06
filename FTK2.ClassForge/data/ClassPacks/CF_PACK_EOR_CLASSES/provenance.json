@@ -224,7 +224,7 @@
       "TRAIT_BATTLE_RHYTHM": "coverage-matrix §2 row 13 (PORT, no stat) / code effect via SKILL_CF_BATTLE_RHYTHM",
       "TRAIT_ARCANE_MEMORY": "coverage-matrix §2 row 14 (PARK) — see parked list",
       "TRAIT_SHIELDBEARER": "coverage-matrix §2 row 15 (PORT-MODIFIED) / EOR 25% chance -2 physical damage (DAMAGE_TAKEN_MULT parked, SPEC-DELTA §7.4) replaced with flat DEF+1 stat trait; balance flag: ~2x stronger than EOR's expected 0.5/hit",
-      "TRAIT_FIELDMEDIC": "coverage-matrix §2 row 16 (PORT, no stat) / code effect via SKILL_CF_FIELDMEDIC",
+      "TRAIT_CF_FIELDMEDIC": "coverage-matrix §2 row 16 (PORT, no stat) / code effect via SKILL_CF_FIELDMEDIC",
       "TRAIT_ARCANE_FOCUS": "coverage-matrix §2 row 17 (PORT-MODIFIED) / EOR conditional +2 MAG (CONDITIONAL_STAT_MODIFIER parked) halved and made unconditional: MAG+1",
       "TRAIT_MOMENTUM": "coverage-matrix §2 row 18 (PORT, no stat) / code effect via SKILL_CF_MOMENTUM",
       "TRAIT_DRUNKEN_COURAGE": "coverage-matrix §2 row 19 (PORT-MODIFIED, no stat) / code effect via SKILL_CF_DRUNKEN_COURAGE",
