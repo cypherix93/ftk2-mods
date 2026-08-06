@@ -35,6 +35,7 @@ param(
     [switch]$Package,       # repo mode: zip the staged payload for distribution
     [switch]$StageOnly,     # repo mode: stage/package but do not touch the game dir
     [switch]$NoBepInEx,     # never install BepInEx core files
+    [switch]$IncludeBaldurs, # stage the CF_PACK_BALDURS demo pack (off by default: localization gaps)
 
     # Where BepInEx 5.4.23 core files come from when staging (repo mode).
     [string]$BepInExSource = 'D:\temp\mods\Release 29 0.7.0.60 2026-07-18T18-42Z H0bovQUbN'
@@ -166,6 +167,11 @@ function Stage-Payload {
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.ClassForge\src\ClassForge.Plugin\bin\Release\net472\*.dll') $d
     Copy-Tree (Join-Path $RepoRoot 'FTK2.ClassForge\data\ClassPacks') (Join-Path $d 'ClassPacks')
+    if (-not $IncludeBaldurs) {
+        # Demo/crossover pack parked by default (2026-08-05): its granted skills lack the
+        # SKILL_CF_* / UI_ENCYCLOPEDIA_* localization entries the loadout panel renders.
+        Remove-Item -Recurse -Force (Join-Path $d 'ClassPacks\CF_PACK_BALDURS') -ErrorAction SilentlyContinue
+    }
 
     # summoner: dlls + data\FollowerPacks (loader expects <plugin>\data\FollowerPacks\)
     $d = Join-Path $PayloadDir $ModDefs.summoner.payloadSub
