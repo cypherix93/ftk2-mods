@@ -64,6 +64,10 @@ namespace DevKit.Plugin
                 string payload = ExtractPayload(__args[0]);
                 if (payload == null) return;
                 ParityCoordinator.OnNetworkPayloadObserved(payload);
+                // M-LG3: generic sibling-mod dispatch (TransportService.RegisterReceiver). Additive —
+                // parity's own hardwired path above is untouched either way (see TransportService's
+                // header for why the two can never collide).
+                TransportService.DispatchReceived(payload);
             }
             catch (Exception ex)
             {

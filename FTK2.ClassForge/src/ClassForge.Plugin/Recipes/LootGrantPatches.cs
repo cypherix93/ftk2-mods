@@ -1,28 +1,47 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using ClassForge.Recipes.Abstractions;
 using ClassForge.Recipes.Loot;
 
 namespace ClassForge.Plugin
 {
     /// <summary>
-    /// M-LG2 — the game-side wiring for the loot-grant sync verb
+    /// M-LG2/M-LG3 — the game-side wiring for the loot-grant sync verb
     /// (docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md, as resolved by the verification wave's
     /// GATE A/GATE B: <c>DrawMark</c> -&gt; <c>ListDigest</c>, candidate-source seam). One hook:
     /// <c>LootDropHelper.GetLootDropsFromEnemies</c> postfix (§1.1/§5) — computes and applies the delta
-    /// identically whether single-player or online (transport/host-push is M-LG3; nothing in this unit
-    /// sends or receives a network payload). Ships DARK behind <c>[Skills] EnableLootGrants = false</c>
-    /// (charter rule 3's disabled-by-default carrier while unproven).
+    /// identically whether single-player or online. M-LG3 adds the MP wire-up on top of that unchanged
+    /// compute/apply path: host send via <see cref="LootGrantTransportBridge"/>, receive/verify via
+    /// <see cref="OnLootGrantPayloadReceived"/>, the §7 failure-mode matrix, and the loot-grant SafeMode
+    /// latch. Ships DARK behind <c>[Skills] EnableLootGrants = false</c> (charter rule 3's
+    /// disabled-by-default carrier; the default flip is gated on an in-game V-1 measurement that is
+    /// operator scope, not part of this milestone — see the knob's own comment in ClassForgePlugin.cs).
     /// </summary>
     public static class LootGrantPatches
     {
         /// <summary>
-        /// Single-slot per-combat pending-grant record (verb spec §3.4) — verification bookkeeping consumed
-        /// by M-LG3 (host send / mismatch detection). M-LG2 only arms it; nothing here ever reads it back.
+        /// Single-slot per-combat pending-grant record (verb spec §3.4) — verification bookkeeping
+        /// consumed here by the M-LG3 host send / receive-verify path.
         /// </summary>
         internal static readonly PendingGrantStore Store = new PendingGrantStore();
 
+        private const string LootLogPrefix = "[ClassForge][CLASSFORGE_LOOT] ";
+
         private static bool _warnedOpValidation;
+
+        /// <summary>
+        /// Loot-grant SafeMode (verb spec §7.5b) — a SESSION-SCOPED latch local to this engine, distinct
+        /// from <see cref="ParityBridge.Blocked"/> (ClassForge's whole-engine parity SafeMode). Engaged
+        /// only by an OpsHash mismatch on receive (<see cref="ReportMismatch"/>); once set, the postfix
+        /// disables grant COMPUTATION for the remainder of the session on this peer. Already-applied
+        /// deltas are never retro-mutated (verb spec §7.5b — the lists are already on screen). Cleared at
+        /// the next session boundary by <see cref="AdventureDirectorInitialize_Postfix"/>, the same
+        /// anchor <see cref="ParityBridge"/> uses for its own latch.
+        /// </summary>
+        private static volatile bool _safeModeEngaged;
+
+        internal static bool SafeModeEngaged { get { return _safeModeEngaged; } }
 
         /// <summary>
         /// Postfix for <c>LootDropHelper.GetLootDropsFromEnemies</c>. Harmony binds postfix parameters by
@@ -38,6 +57,9 @@ namespace ClassForge.Plugin
                 if (!ClassForgePlugin.FeaturesActive) return;
                 if (ClassForgePlugin.EnableRecipeEngine == null || !ClassForgePlugin.EnableRecipeEngine.Value) return;
                 if (ClassForgePlugin.EnableLootGrants == null || !ClassForgePlugin.EnableLootGrants.Value) return;
+                // Loot-grant SafeMode (verb spec §7.5b): an OpsHash mismatch this session disables grant
+                // COMPUTATION on this peer for the rest of the session. Vanilla loot is untouched either way.
+                if (_safeModeEngaged) return;
                 if (RecipeEngineHost.Book == null || RecipeEngineHost.Book.Ordered.Count == 0) return;
                 if (__result == null || pParty == null || pParty.Count == 0) return;
 
@@ -102,14 +124,27 @@ namespace ClassForge.Plugin
                     ReconcileToReal(pending, __result);
                 }
 
-                // ---- Step 6: record for M-LG3 (host send / mismatch verification) ----
+                // ---- Step 6: record for verification (mirrors this peer's own future receive) ----
                 Store.Arm(grantKey, ops, opsHash);
 
-                if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
+                // ---- Step 7 (M-LG3): host send, over the MP posture in verb spec §7 ----
+                // SP fast path (§8.0): no transport resolution is attempted at all when offline.
+                bool onlineMultiplayer = NetworkSessionState.IsOnlineMultiplayer();
+                bool isHost = false;
+                bool transportAvailable = false;
+                bool sent = false;
+                if (onlineMultiplayer)
                 {
-                    ClassForgePlugin.Log.LogDebug(
-                        "[ClassForge] Loot grant: GrantKey=" + grantKey + " ops=" + ops.Count + " opsHash=" + opsHash);
+                    isHost = NetworkSessionState.IsHost();
+                    transportAvailable = LootGrantTransportBridge.CanSend();
+                    // Non-host peers never send (verb spec §7 feature table: host only).
+                    if (isHost && transportAvailable)
+                    {
+                        sent = SendGrant(grantKey, combatSeed, listDigest, ops, opsHash);
+                    }
                 }
+
+                LogGrantState(grantKey, ops.Count, opsHash, onlineMultiplayer, isHost, transportAvailable, sent);
             }
             catch (Exception ex)
             {
@@ -118,6 +153,241 @@ namespace ClassForge.Plugin
                 ClassForgePlugin.Log.LogError(
                     "[ClassForge] Loot-grant postfix failed (fail-safe, vanilla loot list unchanged): " + ex);
             }
+        }
+
+        // =====================================================================================
+        // M-LG3: transport init, host send, receive/verify, log-visible grant state
+        // =====================================================================================
+
+        /// <summary>
+        /// Registers the <c>CF_SYNC_LOOT_GRANT_V1</c> receiver with FTK2.DevKit's TransportService, and
+        /// the SafeMode-reset session hook. Called once from <c>ClassForgePlugin.Awake</c>, AFTER the
+        /// <c>[Skills]</c> knobs are bound. Deliberately gated the same way the postfix itself is gated
+        /// (recipe engine + loot grants both enabled) — "at plugin init, only when the loot engine is
+        /// enabled" (M-LG3 task scope): with the shipped dark default this registers nothing, so an
+        /// operator who never flips the knob sees zero new receive-side behavior.
+        /// </summary>
+        internal static void InitializeTransport()
+        {
+            if (ClassForgePlugin.EnableRecipeEngine == null || !ClassForgePlugin.EnableRecipeEngine.Value) return;
+            if (ClassForgePlugin.EnableLootGrants == null || !ClassForgePlugin.EnableLootGrants.Value) return;
+            LootGrantTransportBridge.RegisterReceiver(LootGrantCodec.ActionKey, OnLootGrantPayloadReceived);
+        }
+
+        /// <summary>
+        /// Postfix for <c>AdventureDirector.Initialize</c> — the same session-start anchor
+        /// <see cref="ParityBridge.AdventureDirectorInitialize_Postfix"/> uses to clear ITS latch, for
+        /// the same reason: a SafeMode engaged in a prior session must not silently disable grants in a
+        /// fresh session that never diverged. Re-derived, not merely cleared — a fresh mismatch this
+        /// session re-latches exactly as before.
+        /// </summary>
+        public static void AdventureDirectorInitialize_Postfix()
+        {
+            try
+            {
+                if (!_safeModeEngaged) return;
+                _safeModeEngaged = false;
+                ClassForgePlugin.Log.LogInfo(LootLogPrefix + "new session started -- clearing the previous session's loot-grant SafeMode latch.");
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(LootLogPrefix + "session-start SafeMode reset failed (non-fatal): " + ex);
+            }
+        }
+
+        /// <summary>
+        /// Encodes and sends this combat's grant over <see cref="LootGrantTransportBridge"/> (host only,
+        /// verb spec §3.1/§7). Digest-only degrade over DevKit's payload cap is handled inside
+        /// <see cref="LootGrantCodec.EncodeCapped"/> itself.
+        /// </summary>
+        private static bool SendGrant(string grantKey, int combatSeed, string listDigest,
+            IReadOnlyList<LootOp> ops, string opsHash)
+        {
+            try
+            {
+                LootGrantPayload payload = new LootGrantPayload
+                {
+                    SchemaVersion = LootGrantCodec.CurrentSchemaVersion,
+                    Mode = LootGrantMode.MIRROR,
+                    GrantKey = grantKey,
+                    CombatSeed = combatSeed,
+                    ListDigest = listDigest,
+                    Ops = new List<LootOp>(ops),
+                    OpsHash = opsHash
+                };
+                string json = LootGrantCodec.EncodeCapped(payload, LootGrantCodec.DefaultMaxPayloadBytes);
+                bool ok = LootGrantTransportBridge.Send(json);
+                if (!ok)
+                {
+                    ClassForgePlugin.Log.LogWarning(LootLogPrefix + "host send failed for GrantKey=" + grantKey +
+                        " -- this combat is logged unverified on peers (verb spec §7: transport failure has zero " +
+                        "gameplay effect, Mode M grants are identical on every peer regardless).");
+                }
+                return ok;
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(LootLogPrefix + "host send threw (fail-safe, ignored): " + ex);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// The CLASSFORGE_LOOT log-visible grant state (M-LG3 task item 4): GrantKey, op count, OpsHash
+        /// prefix, and a one-word status enough for an operator smoke script to assert against. Gated on
+        /// <c>[General] VerboseLogging</c> like every other per-combat debug line this engine emits.
+        /// </summary>
+        private static void LogGrantState(string grantKey, int opCount, string opsHash,
+            bool onlineMultiplayer, bool isHost, bool transportAvailable, bool sent)
+        {
+            if (ClassForgePlugin.VerboseLogging == null || !ClassForgePlugin.VerboseLogging.Value) return;
+
+            string status;
+            if (!onlineMultiplayer) status = "unverified (single-player, no host push expected)";
+            else if (sent) status = "unverified (sent, awaiting local verification)";
+            else if (isHost) status = "unverified (host send failed)";
+            else if (!transportAvailable) status = "unverified (transport unavailable)";
+            else status = "unverified (peer, awaiting host push)";
+
+            ClassForgePlugin.Log.LogDebug(LootLogPrefix + "GrantKey=" + grantKey +
+                " ops=" + opCount.ToString(CultureInfo.InvariantCulture) +
+                " opsHash=" + ShortHash(opsHash) + " status=" + status);
+        }
+
+        /// <summary>
+        /// The DevKit TransportService receiver for <c>CF_SYNC_LOOT_GRANT_V1</c> (M-LG3 task item 3),
+        /// registered by <see cref="InitializeTransport"/>. Decodes and dispatches per §3.4/§7: every
+        /// branch below is one row of the verb spec §7 failure-mode matrix. Never throws — this runs
+        /// straight off DevKit's network-hook prefix, and an exception here must never propagate into
+        /// the game's network pump (fail-safe rule, docs/CONVENTIONS.md; DevKit's own dispatcher also
+        /// isolates it, this is belt-and-braces).
+        /// </summary>
+        private static void OnLootGrantPayloadReceived(string json)
+        {
+            try
+            {
+                LootGrantPayload payload;
+                string decodeError;
+                if (!LootGrantCodec.TryDecode(json, out payload, out decodeError))
+                {
+                    // §7 row: "Payload malformed / unknown SchemaVersion" -> discard + one warning.
+                    ClassForgePlugin.Log.LogWarning(LootLogPrefix + "malformed CF_SYNC_LOOT_GRANT_V1 payload (discarded): " + decodeError);
+                    return;
+                }
+
+                LootReceiveResult result = Store.Receive(payload);
+                switch (result)
+                {
+                    case LootReceiveResult.Verified:
+                        LogReceive(payload, "verified");
+                        break;
+
+                    case LootReceiveResult.Mismatch:
+                        ReportMismatch(payload);
+                        break;
+
+                    case LootReceiveResult.Duplicate:
+                        // §7 row: "Payload duplicated" -> GrantKey match, no-op.
+                        LogReceive(payload, "duplicate (no-op)");
+                        break;
+
+                    case LootReceiveResult.Stale:
+                        // §7 row: "Payload reordered across combats" -> stale GrantKey, discard + log.
+                        LogReceive(payload, "stale GrantKey (discarded)");
+                        break;
+
+                    case LootReceiveResult.HeldInInbox:
+                        // §7 row: "Payload late (after loot screen)" / host-faster-than-client — held in
+                        // the single-slot inbox (§3.4), compared once the local postfix arms this key.
+                        LogReceive(payload, "held in single-slot inbox (host faster than this peer's local compute)");
+                        break;
+
+                    case LootReceiveResult.Malformed:
+                        ClassForgePlugin.Log.LogWarning(LootLogPrefix + "rejected CF_SYNC_LOOT_GRANT_V1 payload (v1 op-vocabulary gate), GrantKey=" + payload.GrantKey);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogError(LootLogPrefix + "receive handler failed (fail-safe, ignored): " + ex);
+            }
+        }
+
+        private static void LogReceive(LootGrantPayload payload, string status)
+        {
+            if (ClassForgePlugin.VerboseLogging == null || !ClassForgePlugin.VerboseLogging.Value) return;
+            ClassForgePlugin.Log.LogDebug(LootLogPrefix + "GrantKey=" + payload.GrantKey +
+                " ops=" + (payload.Ops != null ? payload.Ops.Count.ToString(CultureInfo.InvariantCulture) : "(digest-only)") +
+                " opsHash=" + ShortHash(payload.OpsHash) + " status=" + status);
+        }
+
+        /// <summary>
+        /// §7 row: "OpsHash mismatch (real divergence)" -> loud banner naming the mod + offending op
+        /// Source, engage loot-grant SafeMode. The already-applied local delta is never retro-mutated
+        /// (§7.5b) — this only reports and latches; nothing here touches the loot list.
+        /// </summary>
+        private static void ReportMismatch(LootGrantPayload payload)
+        {
+            PendingGrant current = Store.Current;
+            string localHash = ShortHash(current != null ? current.LocalOpsHash : string.Empty);
+            string remoteHash = ShortHash(payload.OpsHash);
+            string offending = FindOffendingSource(current, payload);
+
+            ClassForgePlugin.Log.LogError(
+                "==================================================================\n" +
+                "  ClassForge LOOT-GRANT MISMATCH -- GrantKey=" + payload.GrantKey + "\n" +
+                "==================================================================\n" +
+                "  local  OpsHash : " + localHash + "\n" +
+                "  remote OpsHash : " + remoteHash + "\n" +
+                "  offending op   : " + (offending ?? "(could not be isolated -- digest-only payload or op-count differs)") + "\n" +
+                "------------------------------------------------------------------\n" +
+                "  This peer's locally computed loot-grant delta disagrees with the host's for this\n" +
+                "  combat (verb spec §7.5b). The delta ALREADY APPLIED to this peer's loot screen is\n" +
+                "  NOT retro-mutated. Loot-grant SafeMode is now ENGAGED for the REST OF THIS SESSION:\n" +
+                "  grant computation on this peer is disabled going forward (see [Skills]\n" +
+                "  EnableLootGrants). This is a LOCAL, verb-scoped latch -- it does not block the rest\n" +
+                "  of ClassForge (contrast ParityBridge's whole-engine Block policy). FIX: verify every\n" +
+                "  peer's ClassPacks are byte-identical, then start a new session.\n" +
+                "==================================================================");
+
+            _safeModeEngaged = true;
+        }
+
+        /// <summary>
+        /// Best-effort per-op diff between the local record and the received payload, for the mismatch
+        /// banner's "offending op" line (verb spec §7.5b: "names the recipe via Source"). Returns null
+        /// (banner falls back to a generic note) when either side has no <c>Ops</c> to diff — the
+        /// digest-only degrade path (§3.1) carries no <c>Ops</c> at all.
+        /// </summary>
+        private static string FindOffendingSource(PendingGrant current, LootGrantPayload payload)
+        {
+            if (current == null || current.LocalOps == null || payload.Ops == null) return null;
+            IReadOnlyList<LootOp> local = current.LocalOps;
+            List<LootOp> remote = payload.Ops;
+            int max = local.Count > remote.Count ? local.Count : remote.Count;
+            for (int i = 0; i < max; i++)
+            {
+                LootOp l = i < local.Count ? local[i] : null;
+                LootOp r = i < remote.Count ? remote[i] : null;
+                string lRow = l != null ? l.ToCanonicalRow() : "(missing)";
+                string rRow = r != null ? r.ToCanonicalRow() : "(missing)";
+                if (string.Equals(lRow, rRow, StringComparison.Ordinal)) continue;
+
+                string source = l != null && !string.IsNullOrEmpty(l.Source) ? l.Source
+                    : (r != null ? r.Source : null);
+                return "index " + i.ToString(CultureInfo.InvariantCulture) + " Source='" + (source ?? "(unknown)") +
+                       "' local=[" + lRow + "] remote=[" + rRow + "]";
+            }
+            return null;
+        }
+
+        private static string ShortHash(string opsHash)
+        {
+            if (string.IsNullOrEmpty(opsHash)) return "(none)";
+            const string prefix = "sha256:";
+            if (opsHash.StartsWith(prefix, StringComparison.Ordinal) && opsHash.Length >= prefix.Length + 12)
+                return prefix + opsHash.Substring(prefix.Length, 12);
+            return opsHash.Length > 12 ? opsHash.Substring(0, 12) : opsHash;
         }
 
         // =====================================================================================

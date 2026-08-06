@@ -50,9 +50,13 @@ namespace ClassForge.Plugin
         internal static ConfigEntry<bool> EnableRecipeEngine;
 
         /// <summary>Gates the loot-grant sync verb's <c>LootDropHelper.GetLootDropsFromEnemies</c> postfix
-        /// (see <see cref="LootGrantPatches"/>). Default FALSE: M-LG2 ships dark per charter rule 3 (the
-        /// disabled-by-default carrier while unproven — docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md
-        /// §10 M-LG2). Also requires <see cref="EnableRecipeEngine"/> = true.</summary>
+        /// AND its M-LG3 MP send/receive/verify path (see <see cref="LootGrantPatches"/>). Default FALSE:
+        /// ships dark per charter rule 3 (the disabled-by-default carrier while unproven —
+        /// docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md §10). M-LG3 wired the transport, the
+        /// full §7 failure-mode matrix and the loot-grant SafeMode latch, all OFFLINE-verified, but the
+        /// default flip to true is explicitly deferred: it is gated on the in-game V-1 measurement
+        /// (real 2-peer DrawMark/ListDigest agreement, §8.2) which is operator scope, not part of this
+        /// milestone. Also requires <see cref="EnableRecipeEngine"/> = true.</summary>
         internal static ConfigEntry<bool> EnableLootGrants;
 
         /// <summary>Dev-only diagnostic: when true, the loot-grant postfix calls
@@ -109,9 +113,12 @@ namespace ClassForge.Plugin
                 "combat state or feeds something that does.");
             EnableLootGrants = Config.Bind("Skills", "EnableLootGrants", false,
                 "Master switch for the loot-grant sync verb (ON_COMBAT_LOOT recipes: SCAVENGER/TREASURE_SENSE/" +
-                "SCHOLARS_HABIT/OF_SCAVENGING loot halves). Ships DARK (default false) at M-LG2 -- the game-side " +
-                "compute+apply path is wired but unproven in real combat; M-LG3 flips this default to true once " +
-                "MP verification lands. Requires EnableRecipeEngine = true as well.");
+                "SCHOLARS_HABIT/OF_SCAVENGING loot halves) AND its MP host-send/receive/verify path. Ships DARK " +
+                "(default false). The compute+apply path, the MP transport wire-up and the full failure-mode " +
+                "matrix are all offline-verified as of M-LG3, but this default deliberately stays false: the " +
+                "flip to true is gated on an in-game V-1 measurement (real 2-peer DrawMark/ListDigest agreement) " +
+                "that is OPERATOR scope, not part of any milestone's automated work. Requires EnableRecipeEngine " +
+                "= true as well.");
             DebugLogCombatRandomDraws = Config.Bind("Skills", "DebugLogCombatRandomDraws", false,
                 "DIAGNOSTIC ONLY -- do not enable outside a debugging session. When true, the loot-grant postfix " +
                 "calls GameRandom.LogCalls(true) on the SHARED combat stream so its per-call log can be inspected " +
@@ -119,6 +126,10 @@ namespace ClassForge.Plugin
                 "of the session once enabled.");
 
             ApplyPatches();
+
+            // M-LG3: registers the CF_SYNC_LOOT_GRANT_V1 receiver with FTK2.DevKit's TransportService.
+            // No-op (gated internally) unless both EnableRecipeEngine and EnableLootGrants are true.
+            LootGrantPatches.InitializeTransport();
 
             Log.LogInfo($"{Name} {Version} awakened. Enabled={Enabled.Value}. " +
                         "Pack discovery/merge runs from the ConfigsHelper.LoadConfigs/ReloadConfigs postfixes.");
@@ -252,6 +263,12 @@ namespace ClassForge.Plugin
             // (default false -- ships dark, docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md §10).
             Patch(harmony, typeof(LootDropHelper), "GetLootDropsFromEnemies",
                 postfix: M(typeof(LootGrantPatches), nameof(LootGrantPatches.GetLootDropsFromEnemies_Postfix)));
+
+            // M-LG3 — the loot-grant SafeMode latch's own session-start reset, on the SAME anchor
+            // ParityBridge uses for its (unrelated, whole-engine) latch. A separate patch registration so
+            // this file never has to touch ParityBridge.cs for a verb-local concern.
+            Patch(harmony, typeof(AdventureDirector), "Initialize",
+                postfix: M(typeof(LootGrantPatches), nameof(LootGrantPatches.AdventureDirectorInitialize_Postfix)));
         }
 
         private static HarmonyMethod M(Type owner, string method)

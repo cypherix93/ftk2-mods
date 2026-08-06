@@ -25,6 +25,7 @@ namespace ClassForge.Plugin
         private static PropertyInfo _envProperty;
         private static FieldInfo _networkDataField;
         private static FieldInfo _playingOnlineField;
+        private static FieldInfo _isHostField;
 
         /// <summary>
         /// True if this session is (or this method cannot prove it is not) an online multiplayer session.
@@ -54,6 +55,36 @@ namespace ClassForge.Plugin
             }
         }
 
+        /// <summary>
+        /// True only if <c>NetworkData.IsHost</c> can be read AND is true. Deliberately the OPPOSITE
+        /// fail-closed direction from <see cref="IsOnlineMultiplayer"/> (M-LG3, loot-grant verb spec §7
+        /// "non-host peers never send"): a peer that cannot prove it is host must not broadcast the
+        /// <c>CF_SYNC_LOOT_GRANT_V1</c> host-push, so any resolution failure or exception here reads as
+        /// "not host", never "assume host". Grant COMPUTATION is unaffected either way — every peer
+        /// computes the identical Mode-M delta regardless of send eligibility (verb spec §2).
+        /// </summary>
+        internal static bool IsHost()
+        {
+            try
+            {
+                EnsureResolved();
+                if (_envProperty == null || _networkDataField == null || _isHostField == null) return false;
+
+                var env = _envProperty.GetValue(null);
+                if (env == null) return false;
+
+                var networkData = _networkDataField.GetValue(env);
+                if (networkData == null) return false;
+
+                var value = _isHostField.GetValue(networkData);
+                return value is bool isHost && isHost;
+            }
+            catch
+            {
+                return false; // fail-closed (opposite direction from IsOnlineMultiplayer, see above).
+            }
+        }
+
         private static void EnsureResolved()
         {
             if (_resolved) return;
@@ -69,12 +100,14 @@ namespace ClassForge.Plugin
                 if (_networkDataField == null) return;
 
                 _playingOnlineField = _networkDataField.FieldType.GetField("PlayingOnlineMultiplayer", BindingFlags.Public | BindingFlags.Instance);
+                _isHostField = _networkDataField.FieldType.GetField("IsHost", BindingFlags.Public | BindingFlags.Instance);
             }
             catch
             {
                 _envProperty = null;
                 _networkDataField = null;
                 _playingOnlineField = null;
+                _isHostField = null;
             }
         }
     }
