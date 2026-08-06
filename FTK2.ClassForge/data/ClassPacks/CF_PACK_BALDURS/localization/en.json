@@ -59,4 +59,10 @@
   "CF_ITEM_NECROTIC_STAFF_DESCRIPTION": "A staff humming with the cold power of the grave.",
   "CF_ITEM_BONE_CLAWS": "Bone Claws",
   "CF_ITEM_BONE_CLAWS_DESCRIPTION": "Jagged bone claws grown from an animated skeleton's own hands."
+,
+
+  "UI_TOOLTIP_CF_WARLOCK_HEXBLADE_DESCRIPTION": "A duelist bound to a pact that trades vitality for arcane power.",
+  "UI_TOOLTIP_CF_BATTLEMASTER_DESCRIPTION": "A martial tactician whose maneuvers control the battlefield row by row.",
+  "UI_TOOLTIP_CF_NECROMANCER_DESCRIPTION": "A caster who raises the fallen to fight at their command.",
+  "UI_TOOLTIP_CF_SKELETON_WARRIOR_DESCRIPTION": "An animated skeleton bound to fight for its summoner."
 }
