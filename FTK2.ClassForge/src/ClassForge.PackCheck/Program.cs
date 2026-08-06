@@ -28,12 +28,14 @@ namespace ClassForge.PackCheck
             }
             else
             {
-                // Convenience default: both packs this tool is chartered to check, resolved relative to the
+                // Convenience default: the packs this tool is chartered to check, resolved relative to the
                 // repo layout (FTK2.ClassForge/data/ClassPacks/<id>), searched upward from the executable.
                 var eor = FindDefaultPack("CF_PACK_EOR_CLASSES");
                 var baldurs = FindDefaultPack("CF_PACK_BALDURS");
+                var encounterModifiers = FindDefaultPack("CF_PACK_ENCOUNTER_MODIFIERS");
                 if (eor != null) packDirs.Add(eor);
                 if (baldurs != null) packDirs.Add(baldurs);
+                if (encounterModifiers != null) packDirs.Add(encounterModifiers);
             }
 
             if (packDirs.Count == 0)
@@ -113,9 +115,12 @@ namespace ClassForge.PackCheck
             Console.WriteLine("Traits (Class=TRAIT): " + result.MergePlan.TraitIds.Count);
             Console.WriteLine("Things total (traits+items): " + result.MergePlan.Things.Count);
             Console.WriteLine("Abilities:          " + result.MergePlan.Abilities.Count);
+            Console.WriteLine("StatusEffects:      " + result.MergePlan.StatusEffects.Count);
             Console.WriteLine("Localization keys:  " + result.MergePlan.Localization.Count);
             Console.WriteLine("Icons:              " + result.MergePlan.Icons.Count);
             Console.WriteLine("Portraits:          " + result.MergePlan.Portraits.Count);
+            var modifierRowCount = result.MergePlan.ModifierTables.Sum(t => t.Modifiers.Count);
+            Console.WriteLine("Modifier entries:   " + modifierRowCount + " (across " + result.MergePlan.ModifierTables.Count + " modifiers.json table(s))");
 
             Console.WriteLine();
             Console.WriteLine("-- Core Findings (" + result.Findings.Count + ") --");

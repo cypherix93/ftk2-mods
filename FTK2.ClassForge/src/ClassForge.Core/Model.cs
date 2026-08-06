@@ -80,11 +80,57 @@ namespace ClassForge.Core
         public Dictionary<string, JsonValue> Traits = new Dictionary<string, JsonValue>(System.StringComparer.Ordinal);
         public Dictionary<string, JsonValue> Abilities = new Dictionary<string, JsonValue>(System.StringComparer.Ordinal);
         public Dictionary<string, JsonValue> Items = new Dictionary<string, JsonValue>(System.StringComparer.Ordinal);
+        /// <summary>statuses.json (Encounter Modifiers spec §3.1) — StatusEffectConfig-shaped entries, keyed
+        /// by id (convention <c>STATUS_CF_*</c>, loader-warned not hard-failed). Entries with an unresolvable
+        /// <c>Type</c> are dropped (Error); individual <c>Passives</c> entries that resolve to neither a
+        /// same-pack recipe id nor a <c>SKILL_</c>-prefixed token are dropped from the array (Error), the rest
+        /// of the status entry is kept.</summary>
+        public Dictionary<string, JsonValue> Statuses = new Dictionary<string, JsonValue>(System.StringComparer.Ordinal);
         public Dictionary<string, string> Localization = new Dictionary<string, string>(System.StringComparer.Ordinal);
         /// <summary>content id (filename without extension) -> file path.</summary>
         public Dictionary<string, string> Icons = new Dictionary<string, string>(System.StringComparer.Ordinal);
         /// <summary>content id (filename without extension) -> file path.</summary>
         public Dictionary<string, string> Portraits = new Dictionary<string, string>(System.StringComparer.Ordinal);
+        /// <summary>modifiers.json (Encounter Modifiers spec §3.2), or null if this pack ships none.
+        /// ClassForge-owned registry model — like skillrecipes.json, this is NOT a <c>Configs.*</c> merge
+        /// category (MergePlan carries it separately as <see cref="MergePlan.ModifierTables"/>).</summary>
+        public ModifierTable ModifierTable;
+    }
+
+    /// <summary>One <c>Rewards</c> block on a <see cref="ModifierEntry"/> (Encounter Modifiers spec §3.2).
+    /// Declarative metadata only at this milestone — consumed by the loot-grant verb engine when it lands
+    /// (M-EM4); until then it parses, validates, and no-ops (spec §11).</summary>
+    public sealed class ModifierRewards
+    {
+        public int? XpBonusPercent;
+        public int? GoldBonusPercent;
+        public int? ExtraLootChancePercent;
+    }
+
+    /// <summary>One row of a pack's modifiers.json <c>Modifiers</c> array (Encounter Modifiers spec §3.2).
+    /// Authored-array order is load-bearing (it is the weighted-pick walk order, §6.3) and is preserved by
+    /// the parser/merge — never re-sorted.</summary>
+    public sealed class ModifierEntry
+    {
+        public string Id;
+        public int Weight;
+        public string Status;
+        public int? MaxHpPercent;
+        public ModifierRewards Rewards;
+    }
+
+    /// <summary>One pack's modifiers.json, parsed (Encounter Modifiers spec §3.2). ClassForge-owned registry
+    /// model — like skillrecipes.json, NOT a <c>Configs.*</c> merge category. <see cref="Modifiers"/>
+    /// preserves authored order.</summary>
+    public sealed class ModifierTable
+    {
+        public string PackId;
+        public string SchemaVersion;
+        /// <summary>The combat-scoped selection recipe (§6) this table feeds — <c>Selection.Recipe</c>.
+        /// Recorded here for M-EM2/M-EM3; not itself validated at Core scope (recipe ids are
+        /// ClassForge.Recipes' domain, out of scope this wave).</summary>
+        public string SelectionRecipe;
+        public List<ModifierEntry> Modifiers = new List<ModifierEntry>();
     }
 
     /// <summary>One resolved merge instruction: "put this id's raw JSON value into the target Configs.* dictionary, sourced from this pack."</summary>
@@ -114,6 +160,14 @@ namespace ClassForge.Core
         public List<MergeOp> Things = new List<MergeOp>();
         /// <summary>-&gt; Configs.Abilities, from abilities.json.</summary>
         public List<MergeOp> Abilities = new List<MergeOp>();
+        /// <summary>-&gt; Configs.StatusEffects, from statuses.json (Encounter Modifiers spec §3.1/§3.4). Same
+        /// adds-only / last-pack-wins-among-packs / live-id-refused (M0) semantics as Characters/Things/
+        /// Abilities. The actual write into <c>Env.Configs.StatusEffects</c> is a Plugin concern deferred to
+        /// M-EM2 — this milestone only builds and carries the plan.</summary>
+        public List<MergeOp> StatusEffects = new List<MergeOp>();
+        /// <summary>One entry per pack that shipped a modifiers.json (Encounter Modifiers spec §3.2), in
+        /// resolved pack load order. Not a Configs.* merge category — see <see cref="ModifierTable"/>.</summary>
+        public List<ModifierTable> ModifierTables = new List<ModifierTable>();
         /// <summary>-&gt; Lang backing dictionary, from localization/en.json. Last pack wins per key.</summary>
         public Dictionary<string, string> Localization = new Dictionary<string, string>(System.StringComparer.Ordinal);
         /// <summary>content id -&gt; file path, from icons/*.png. Last pack wins per id.</summary>
@@ -178,7 +232,7 @@ namespace ClassForge.Core
     /// </summary>
     public sealed class LiveIdSets
     {
-        public static readonly LiveIdSets Empty = new LiveIdSets(null, null, null);
+        public static readonly LiveIdSets Empty = new LiveIdSets(null, null, null, null);
 
         /// <summary>Live keys of <c>Configs.Characters</c> (classes.json target).</summary>
         public ISet<string> Characters { get; }
@@ -186,12 +240,19 @@ namespace ClassForge.Core
         public ISet<string> Things { get; }
         /// <summary>Live keys of <c>Configs.Abilities</c> (abilities.json target).</summary>
         public ISet<string> Abilities { get; }
+        /// <summary>Live keys of <c>Configs.StatusEffects</c> (statuses.json target, Encounter Modifiers spec
+        /// §3.1/§3.4). Optional/trailing so every pre-existing 3-arg caller (e.g. ClassForge.Plugin's
+        /// <c>ConfigMergePatches</c>, out of scope this wave) keeps compiling unchanged — it simply supplies
+        /// no live status ids until its own M-EM2 wiring lands, at which point M0 enforcement for
+        /// StatusEffects becomes live for free.</summary>
+        public ISet<string> StatusEffects { get; }
 
-        public LiveIdSets(IEnumerable<string> characters, IEnumerable<string> things, IEnumerable<string> abilities)
+        public LiveIdSets(IEnumerable<string> characters, IEnumerable<string> things, IEnumerable<string> abilities, IEnumerable<string> statusEffects = null)
         {
             Characters = ToSet(characters);
             Things = ToSet(things);
             Abilities = ToSet(abilities);
+            StatusEffects = ToSet(statusEffects);
         }
 
         private static ISet<string> ToSet(IEnumerable<string> source)

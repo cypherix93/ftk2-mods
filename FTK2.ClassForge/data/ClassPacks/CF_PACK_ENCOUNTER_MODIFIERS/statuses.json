@@ -1,0 +1,72 @@
+{
+  "STATUS_CF_ENCMOD_ARMORED": {
+    "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+    "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+    "TileSync": false, "GroupSync": false,
+    "Passives": [], "AddProperties": [],
+    "Stats": { "DEF": 2, "SPD": -5 }, "CustomStats": {}
+  },
+  "STATUS_CF_ENCMOD_RESISTANT": {
+    "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+    "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+    "TileSync": false, "GroupSync": false,
+    "Passives": [], "AddProperties": [],
+    "Stats": { "RES": 2, "SPD": -5 }, "CustomStats": {}
+  },
+  "STATUS_CF_ENCMOD_FRENZIED": {
+    "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+    "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+    "TileSync": false, "GroupSync": false,
+    "Passives": [], "AddProperties": [],
+    "Stats": { "PHY": 2, "DEF": -1 }, "CustomStats": {}
+  },
+  "STATUS_CF_ENCMOD_SWIFT": {
+    "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+    "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+    "TileSync": false, "GroupSync": false,
+    "Passives": [], "AddProperties": [],
+    "Stats": { "SPD": 10 }, "CustomStats": {}
+  },
+  "STATUS_CF_ENCMOD_VETERAN": {
+    "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+    "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+    "TileSync": false, "GroupSync": false,
+    "Passives": [], "AddProperties": [],
+    "Stats": { "ATK": 1 }, "CustomStats": {}
+  },
+  "STATUS_CF_ENCMOD_WEALTHY": {
+    "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+    "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+    "TileSync": false, "GroupSync": false,
+    "Passives": [], "AddProperties": [],
+    "Stats": {}, "CustomStats": {}
+  },
+  "STATUS_CF_ENCMOD_CURSED": {
+    "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+    "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+    "TileSync": false, "GroupSync": false,
+    "Passives": ["SKILL_CF_ENCMOD_CURSE_ON_HIT"], "AddProperties": [],
+    "Stats": { "RES": 1 }, "CustomStats": {}
+  },
+  "STATUS_CF_ENCMOD_REGENERATING": {
+    "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+    "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+    "TileSync": false, "GroupSync": false,
+    "Passives": ["SKILL_CF_ENCMOD_REGEN_TICK"], "AddProperties": [],
+    "Stats": {}, "CustomStats": {}
+  },
+  "STATUS_CF_ENCMOD_GLASSCANNON": {
+    "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+    "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+    "TileSync": false, "GroupSync": false,
+    "Passives": [], "AddProperties": [],
+    "Stats": { "ATK": 3 }, "CustomStats": {}
+  },
+  "STATUS_CF_ENCMOD_TREASUREGUARDED": {
+    "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+    "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+    "TileSync": false, "GroupSync": false,
+    "Passives": [], "AddProperties": [],
+    "Stats": {}, "CustomStats": {}
+  }
+}

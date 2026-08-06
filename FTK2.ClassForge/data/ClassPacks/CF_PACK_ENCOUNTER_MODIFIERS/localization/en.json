@@ -1,0 +1,33 @@
+{
+  "CF_ENCMOD_BANNER": "{0} Encounter! {1}",
+
+  "CF_ENCMOD_ARMORED": "Armored",
+  "CF_ENCMOD_ARMORED_DESCRIPTION": "Enemies gain +2 Armor but lose 5 Speed.",
+
+  "CF_ENCMOD_RESISTANT": "Resistant",
+  "CF_ENCMOD_RESISTANT_DESCRIPTION": "Enemies gain +2 Resistance but lose 5 Speed.",
+
+  "CF_ENCMOD_FRENZIED": "Frenzied",
+  "CF_ENCMOD_FRENZIED_DESCRIPTION": "Enemies gain +2 Physical Damage but lose 1 Armor.",
+
+  "CF_ENCMOD_SWIFT": "Swift",
+  "CF_ENCMOD_SWIFT_DESCRIPTION": "Enemies gain +10 Speed but lose 10% Max Health.",
+
+  "CF_ENCMOD_VETERAN": "Veteran",
+  "CF_ENCMOD_VETERAN_DESCRIPTION": "Enemies gain +10% Max Health and +1 Damage. Rewards grant +10% XP.",
+
+  "CF_ENCMOD_WEALTHY": "Wealthy",
+  "CF_ENCMOD_WEALTHY_DESCRIPTION": "Enemies gain +10% Max Health but drop 25% more Gold.",
+
+  "CF_ENCMOD_CURSED": "Cursed",
+  "CF_ENCMOD_CURSED_DESCRIPTION": "Enemies gain +1 Resistance and may curse heroes on hit. Rewards grant +10% XP.",
+
+  "CF_ENCMOD_REGENERATING": "Regenerating",
+  "CF_ENCMOD_REGENERATING_DESCRIPTION": "Enemies recover health at the start of their turns.",
+
+  "CF_ENCMOD_GLASSCANNON": "Glass Cannon",
+  "CF_ENCMOD_GLASSCANNON_DESCRIPTION": "Enemies gain +3 Damage but lose 20% Max Health.",
+
+  "CF_ENCMOD_TREASUREGUARDED": "Treasure-Guarded",
+  "CF_ENCMOD_TREASUREGUARDED_DESCRIPTION": "Enemies gain +15% Max Health and may yield extra loot."
+}

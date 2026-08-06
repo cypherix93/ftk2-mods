@@ -1,0 +1,22 @@
+{
+  "SchemaVersion": "1.0",
+  "Selection": {
+    "Recipe": "SKILL_CF_ENCMOD_SELECT"
+  },
+  "Modifiers": [
+    { "Id": "ARMORED",     "Weight": 12, "Status": "STATUS_CF_ENCMOD_ARMORED" },
+    { "Id": "RESISTANT",   "Weight": 12, "Status": "STATUS_CF_ENCMOD_RESISTANT" },
+    { "Id": "FRENZIED",    "Weight": 10, "Status": "STATUS_CF_ENCMOD_FRENZIED" },
+    { "Id": "SWIFT",       "Weight": 10, "Status": "STATUS_CF_ENCMOD_SWIFT",     "MaxHpPercent": -10 },
+    { "Id": "VETERAN",     "Weight": 10, "Status": "STATUS_CF_ENCMOD_VETERAN",   "MaxHpPercent": 10,
+      "Rewards": { "XpBonusPercent": 10 } },
+    { "Id": "WEALTHY",     "Weight": 8,  "Status": "STATUS_CF_ENCMOD_WEALTHY",   "MaxHpPercent": 10,
+      "Rewards": { "GoldBonusPercent": 25 } },
+    { "Id": "CURSED",      "Weight": 6,  "Status": "STATUS_CF_ENCMOD_CURSED",
+      "Rewards": { "XpBonusPercent": 10 } },
+    { "Id": "REGENERATING","Weight": 6,  "Status": "STATUS_CF_ENCMOD_REGENERATING" },
+    { "Id": "GLASSCANNON", "Weight": 6,  "Status": "STATUS_CF_ENCMOD_GLASSCANNON", "MaxHpPercent": -20 },
+    { "Id": "TREASUREGUARDED", "Weight": 5, "Status": "STATUS_CF_ENCMOD_TREASUREGUARDED",
+      "MaxHpPercent": 15, "Rewards": { "ExtraLootChancePercent": 20 } }
+  ]
+}

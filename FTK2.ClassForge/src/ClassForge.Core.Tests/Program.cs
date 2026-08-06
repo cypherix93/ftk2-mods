@@ -439,6 +439,305 @@ Test("Merge: a null live-id set (e.g. ClassForge.PackCheck) refuses nothing (MP 
 });
 
 // ---------------------------------------------------------------------
+// 8. Encounter Modifiers (M-EM1): statuses.json + modifiers.json loader/validation/merge-plan (spec §12.5).
+// ---------------------------------------------------------------------
+
+Test("Encounter Modifiers: statuses.json + modifiers.json parse and merge cleanly (authored order preserved)", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_TESTMOD/pack.json", MakePackJson("CF_PACK_TESTMOD"));
+    fs.AddFile("root/CF_PACK_TESTMOD/statuses.json", """
+    {
+      "STATUS_CF_TM_ONE": { "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+        "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+        "TileSync": false, "GroupSync": false, "Passives": [], "AddProperties": [],
+        "Stats": { "DEF": 1 }, "CustomStats": {} },
+      "STATUS_CF_TM_TWO": { "Type": "DEBUFF", "Duration": -1, "TickFrequency": 1,
+        "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+        "TileSync": false, "GroupSync": false, "Passives": [], "AddProperties": [],
+        "Stats": { "DEF": -1 }, "CustomStats": {} }
+    }
+    """);
+    fs.AddFile("root/CF_PACK_TESTMOD/modifiers.json", """
+    {
+      "SchemaVersion": "1.0",
+      "Selection": { "Recipe": "SKILL_CF_TM_SELECT" },
+      "Modifiers": [
+        { "Id": "ZETA", "Weight": 3, "Status": "STATUS_CF_TM_TWO" },
+        { "Id": "ALPHA", "Weight": 7, "Status": "STATUS_CF_TM_ONE" }
+      ]
+    }
+    """);
+
+    var result = new PackLoader().Load(fs, new[] { "root" });
+
+    var errors = result.Findings.Where(f => f.Severity == FindingSeverity.Error).ToList();
+    Assert(errors.Count == 0, "Unexpected Error findings: " + string.Join(" | ", errors.Select(e => e.ToString())));
+
+    AssertEqual(2, result.MergePlan.StatusEffects.Count, "StatusEffects count");
+    Assert(result.MergePlan.StatusEffects.Any(m => m.Id == "STATUS_CF_TM_ONE"), "STATUS_CF_TM_ONE should be merged");
+    Assert(result.MergePlan.StatusEffects.Any(m => m.Id == "STATUS_CF_TM_TWO"), "STATUS_CF_TM_TWO should be merged");
+
+    AssertEqual(1, result.MergePlan.ModifierTables.Count, "One modifiers.json table expected");
+    var table = result.MergePlan.ModifierTables[0];
+    AssertEqual("SKILL_CF_TM_SELECT", table.SelectionRecipe, "Selection.Recipe");
+    AssertEqual("1.0", table.SchemaVersion, "SchemaVersion");
+    AssertEqual(2, table.Modifiers.Count, "Modifiers count");
+    // Authored array order is load-bearing (spec §6.3 weighted-pick walk order) -- ZETA before ALPHA,
+    // NOT re-sorted alphabetically or by weight.
+    Assert(table.Modifiers.Select(m => m.Id).SequenceEqual(new[] { "ZETA", "ALPHA" }),
+        "Modifiers authored order must be preserved, got: " + string.Join(",", table.Modifiers.Select(m => m.Id)));
+});
+
+Test("Encounter Modifiers: a non-STATUS_CF_-prefixed status id produces a CF_STATUS_ID_PREFIX warning but still merges", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_TM_PREFIX/pack.json", MakePackJson("CF_PACK_TM_PREFIX"));
+    fs.AddFile("root/CF_PACK_TM_PREFIX/statuses.json", """
+    { "MYSTATUS_BAD": { "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+        "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+        "TileSync": false, "GroupSync": false, "Passives": [], "AddProperties": [],
+        "Stats": {}, "CustomStats": {} } }
+    """);
+
+    var result = new PackLoader().Load(fs, new[] { "root" });
+
+    var warnings = result.Findings.Where(f => f.Code == "CF_STATUS_ID_PREFIX").ToList();
+    Assert(warnings.Count == 1, $"Expected 1 CF_STATUS_ID_PREFIX warning, got {warnings.Count}");
+    Assert(warnings[0].Severity == FindingSeverity.Warning, "Id-convention mismatch must be a Warning, not an Error (mirrors CF_TRAIT_PREFIX)");
+    Assert(result.MergePlan.StatusEffects.Any(m => m.Id == "MYSTATUS_BAD"), "The status must still merge despite the naming warning");
+});
+
+Test("Encounter Modifiers: an unknown Type is an Error and the whole status entry is dropped", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_TM_BADTYPE/pack.json", MakePackJson("CF_PACK_TM_BADTYPE"));
+    fs.AddFile("root/CF_PACK_TM_BADTYPE/statuses.json", """
+    { "STATUS_CF_BAD_TYPE": { "Type": "NOT_A_REAL_TYPE", "Duration": -1, "TickFrequency": 1,
+        "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+        "TileSync": false, "GroupSync": false, "Passives": [], "AddProperties": [],
+        "Stats": {}, "CustomStats": {} } }
+    """);
+
+    var result = new PackLoader().Load(fs, new[] { "root" });
+
+    var errors = result.Findings.Where(f => f.Code == "CF_STATUS_TYPE_UNKNOWN").ToList();
+    Assert(errors.Count == 1, $"Expected 1 CF_STATUS_TYPE_UNKNOWN error, got {errors.Count}");
+    Assert(errors[0].Severity == FindingSeverity.Error, "Unresolvable Type must be an Error");
+    Assert(!result.MergePlan.StatusEffects.Any(m => m.Id == "STATUS_CF_BAD_TYPE"), "A status with an unresolvable Type must not merge");
+});
+
+Test("Encounter Modifiers: a Passives entry that resolves to neither a same-pack recipe nor SKILL_ is dropped, the status entry survives", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_TM_PASSIVE/pack.json", MakePackJson("CF_PACK_TM_PASSIVE"));
+    fs.AddFile("root/CF_PACK_TM_PASSIVE/statuses.json", """
+    { "STATUS_CF_TM_PASSIVE": { "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+        "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+        "TileSync": false, "GroupSync": false, "Passives": ["BOGUS_NOT_A_SKILL"], "AddProperties": [],
+        "Stats": {}, "CustomStats": {} } }
+    """);
+
+    var result = new PackLoader().Load(fs, new[] { "root" });
+
+    var errors = result.Findings.Where(f => f.Code == "CF_STATUS_PASSIVE_UNRESOLVED").ToList();
+    Assert(errors.Count == 1, $"Expected 1 CF_STATUS_PASSIVE_UNRESOLVED error, got {errors.Count}");
+    var op = result.MergePlan.StatusEffects.SingleOrDefault(m => m.Id == "STATUS_CF_TM_PASSIVE");
+    Assert(op != null, "The status entry itself must survive (only the bad Passives entry is dropped)");
+    AssertEqual(0, op!.Value.GetStringArray("Passives").Count, "The unresolved Passives entry must be dropped from the array");
+});
+
+Test("Encounter Modifiers: M0 -- a statuses.json entry colliding with a live StatusEffects id is refused", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_TM_LIVE/pack.json", MakePackJson("CF_PACK_TM_LIVE"));
+    fs.AddFile("root/CF_PACK_TM_LIVE/statuses.json", """
+    { "STATUS_CF_LIVE_TEST": { "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+        "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+        "TileSync": false, "GroupSync": false, "Passives": [], "AddProperties": [],
+        "Stats": {}, "CustomStats": {} } }
+    """);
+
+    var liveIds = new LiveIdSets(null, null, null, new[] { "STATUS_CF_LIVE_TEST" });
+    var result = new PackLoader().Load(fs, new[] { "root" }, null, liveIds);
+
+    AssertEqual(0, result.MergePlan.StatusEffects.Count, "The live-colliding status must be refused, not merged");
+    var refusals = result.Findings.Where(f => f.Code == "CF_LIVE_ID_COLLISION").ToList();
+    Assert(refusals.Count == 1, $"Expected 1 CF_LIVE_ID_COLLISION finding, got {refusals.Count}");
+    Assert(refusals[0].Severity == FindingSeverity.Error, "A live-id collision must be an Error");
+    Assert(refusals[0].Message.Contains("StatusEffect"), "Finding should label the category: " + refusals[0].Message);
+});
+
+Test("Encounter Modifiers: a modifiers.json Status ref that resolves nowhere is a dangling-ref Error and the entry is dropped", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_TM_DANGLE/pack.json", MakePackJson("CF_PACK_TM_DANGLE"));
+    fs.AddFile("root/CF_PACK_TM_DANGLE/statuses.json", "{}");
+    fs.AddFile("root/CF_PACK_TM_DANGLE/modifiers.json", """
+    { "SchemaVersion": "1.0", "Selection": { "Recipe": "SKILL_CF_TM_SELECT" },
+      "Modifiers": [ { "Id": "GHOST", "Weight": 1, "Status": "STATUS_CF_DOES_NOT_EXIST_ANYWHERE" } ] }
+    """);
+
+    var result = new PackLoader().Load(fs, new[] { "root" });
+
+    var errors = result.Findings.Where(f => f.Code == "CF_MODIFIER_STATUS_DANGLING").ToList();
+    Assert(errors.Count == 1, $"Expected 1 CF_MODIFIER_STATUS_DANGLING error, got {errors.Count}");
+    Assert(errors[0].Severity == FindingSeverity.Error, "A dangling Status ref must be an Error");
+    var table = result.MergePlan.ModifierTables.Single();
+    Assert(!table.Modifiers.Any(m => m.Id == "GHOST"), "A modifier with a dangling Status ref must be dropped");
+});
+
+Test("Encounter Modifiers: a modifiers.json Status ref matching a plausible vanilla status name is deferred (Info), not an Error", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_TM_VANILLA/pack.json", MakePackJson("CF_PACK_TM_VANILLA"));
+    fs.AddFile("root/CF_PACK_TM_VANILLA/statuses.json", "{}");
+    fs.AddFile("root/CF_PACK_TM_VANILLA/modifiers.json", """
+    { "SchemaVersion": "1.0", "Selection": { "Recipe": "SKILL_CF_TM_SELECT" },
+      "Modifiers": [ { "Id": "VANILLA_CURSE", "Weight": 1, "Status": "CURSE" } ] }
+    """);
+
+    var result = new PackLoader().Load(fs, new[] { "root" });
+
+    Assert(!result.Findings.Any(f => f.Code == "CF_MODIFIER_STATUS_DANGLING"), "A vanilla-plausible ref must not be flagged dangling");
+    var deferred = result.Findings.Where(f => f.Code == "CF_MODIFIER_STATUS_VANILLA_DEFERRED").ToList();
+    Assert(deferred.Count == 1, $"Expected 1 CF_MODIFIER_STATUS_VANILLA_DEFERRED note, got {deferred.Count}");
+    Assert(deferred[0].Severity == FindingSeverity.Info, "The deferred vanilla-id check is Info-level, not blocking");
+    var table = result.MergePlan.ModifierTables.Single();
+    Assert(table.Modifiers.Any(m => m.Id == "VANILLA_CURSE"), "The modifier still parses through (resolution just deferred to the Plugin, M-EM2)");
+});
+
+Test("Encounter Modifiers: duplicate Modifier Id is an Error and only the first occurrence is kept", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_TM_DUPE/pack.json", MakePackJson("CF_PACK_TM_DUPE"));
+    fs.AddFile("root/CF_PACK_TM_DUPE/statuses.json", """
+    { "STATUS_CF_TM_DUPE": { "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+        "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+        "TileSync": false, "GroupSync": false, "Passives": [], "AddProperties": [],
+        "Stats": {}, "CustomStats": {} } }
+    """);
+    fs.AddFile("root/CF_PACK_TM_DUPE/modifiers.json", """
+    { "SchemaVersion": "1.0", "Selection": { "Recipe": "SKILL_CF_TM_SELECT" },
+      "Modifiers": [
+        { "Id": "DUPE", "Weight": 1, "Status": "STATUS_CF_TM_DUPE" },
+        { "Id": "DUPE", "Weight": 2, "Status": "STATUS_CF_TM_DUPE" }
+      ] }
+    """);
+
+    var result = new PackLoader().Load(fs, new[] { "root" });
+
+    var errors = result.Findings.Where(f => f.Code == "CF_MODIFIER_DUP_ID").ToList();
+    Assert(errors.Count == 1, $"Expected 1 CF_MODIFIER_DUP_ID error, got {errors.Count}");
+    Assert(errors[0].Severity == FindingSeverity.Error, "Duplicate Modifier Id must be an Error");
+    var table = result.MergePlan.ModifierTables.Single();
+    AssertEqual(1, table.Modifiers.Count(m => m.Id == "DUPE"), "Only the first occurrence of a duplicate Id should be kept");
+    AssertEqual(1, table.Modifiers.Single(m => m.Id == "DUPE").Weight, "The kept occurrence should be the first one authored (Weight 1)");
+});
+
+Test("Encounter Modifiers: Weight < 1 is an Error and the entry is dropped", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_TM_WEIGHT/pack.json", MakePackJson("CF_PACK_TM_WEIGHT"));
+    fs.AddFile("root/CF_PACK_TM_WEIGHT/statuses.json", """
+    { "STATUS_CF_TM_WEIGHT": { "Type": "BUFF", "Duration": -1, "TickFrequency": 1,
+        "TickOverworld": false, "TickCombat": false, "TickExpire": false,
+        "TileSync": false, "GroupSync": false, "Passives": [], "AddProperties": [],
+        "Stats": {}, "CustomStats": {} } }
+    """);
+    fs.AddFile("root/CF_PACK_TM_WEIGHT/modifiers.json", """
+    { "SchemaVersion": "1.0", "Selection": { "Recipe": "SKILL_CF_TM_SELECT" },
+      "Modifiers": [
+        { "Id": "ZEROWEIGHT", "Weight": 0, "Status": "STATUS_CF_TM_WEIGHT" },
+        { "Id": "NEGWEIGHT", "Weight": -3, "Status": "STATUS_CF_TM_WEIGHT" },
+        { "Id": "OKWEIGHT", "Weight": 1, "Status": "STATUS_CF_TM_WEIGHT" }
+      ] }
+    """);
+
+    var result = new PackLoader().Load(fs, new[] { "root" });
+
+    var errors = result.Findings.Where(f => f.Code == "CF_MODIFIER_WEIGHT_RANGE").ToList();
+    Assert(errors.Count == 2, $"Expected 2 CF_MODIFIER_WEIGHT_RANGE errors (0 and -3), got {errors.Count}");
+    Assert(errors.All(e => e.Severity == FindingSeverity.Error), "Weight < 1 must be an Error");
+    var table = result.MergePlan.ModifierTables.Single();
+    AssertEqual(1, table.Modifiers.Count, "Only the Weight>=1 entry should survive");
+    AssertEqual("OKWEIGHT", table.Modifiers.Single().Id, "The surviving entry should be OKWEIGHT");
+});
+
+Test("Encounter Modifiers: dataHash changes when a modifiers.json Weight changes (and when statuses.json changes)", () =>
+{
+    var fsBase = new InMemoryFileSource();
+    fsBase.AddFile("root/CF_PACK_TM_HASH/pack.json", MakePackJson("CF_PACK_TM_HASH"));
+    fsBase.AddFile("root/CF_PACK_TM_HASH/statuses.json",
+        "{\"STATUS_CF_TM_HASH\":{\"Type\":\"BUFF\",\"Stats\":{}}}");
+    fsBase.AddFile("root/CF_PACK_TM_HASH/modifiers.json",
+        "{\"SchemaVersion\":\"1.0\",\"Selection\":{\"Recipe\":\"SKILL_CF_TM_SELECT\"}," +
+        "\"Modifiers\":[{\"Id\":\"ONE\",\"Weight\":5,\"Status\":\"STATUS_CF_TM_HASH\"}]}");
+
+    var fsWeightChanged = new InMemoryFileSource();
+    fsWeightChanged.AddFile("root/CF_PACK_TM_HASH/pack.json", MakePackJson("CF_PACK_TM_HASH"));
+    fsWeightChanged.AddFile("root/CF_PACK_TM_HASH/statuses.json",
+        "{\"STATUS_CF_TM_HASH\":{\"Type\":\"BUFF\",\"Stats\":{}}}");
+    fsWeightChanged.AddFile("root/CF_PACK_TM_HASH/modifiers.json",
+        "{\"SchemaVersion\":\"1.0\",\"Selection\":{\"Recipe\":\"SKILL_CF_TM_SELECT\"}," +
+        "\"Modifiers\":[{\"Id\":\"ONE\",\"Weight\":6,\"Status\":\"STATUS_CF_TM_HASH\"}]}"); // only the Weight differs
+
+    var fsStatusChanged = new InMemoryFileSource();
+    fsStatusChanged.AddFile("root/CF_PACK_TM_HASH/pack.json", MakePackJson("CF_PACK_TM_HASH"));
+    fsStatusChanged.AddFile("root/CF_PACK_TM_HASH/statuses.json",
+        "{\"STATUS_CF_TM_HASH\":{\"Type\":\"BUFF\",\"Stats\":{\"DEF\":1}}}"); // statuses.json content differs
+    fsStatusChanged.AddFile("root/CF_PACK_TM_HASH/modifiers.json",
+        "{\"SchemaVersion\":\"1.0\",\"Selection\":{\"Recipe\":\"SKILL_CF_TM_SELECT\"}," +
+        "\"Modifiers\":[{\"Id\":\"ONE\",\"Weight\":5,\"Status\":\"STATUS_CF_TM_HASH\"}]}");
+
+    var baseResult = new PackLoader().Load(fsBase, new[] { "root" });
+    var weightChangedResult = new PackLoader().Load(fsWeightChanged, new[] { "root" });
+    var statusChangedResult = new PackLoader().Load(fsStatusChanged, new[] { "root" });
+
+    Assert(!string.IsNullOrEmpty(baseResult.DataHash), "Base dataHash must not be empty");
+    Assert(baseResult.DataHash != weightChangedResult.DataHash,
+        "Changing a modifiers.json Weight must change the pack dataHash (both files fold into the existing hash-every-file rule automatically)");
+    Assert(baseResult.DataHash != statusChangedResult.DataHash,
+        "Changing statuses.json content must change the pack dataHash");
+});
+
+// ---------------------------------------------------------------------
+// 9. CF_PACK_ENCOUNTER_MODIFIERS end-to-end fixture (real pack on disk), mirrors the CF_PACK_BALDURS test.
+// ---------------------------------------------------------------------
+var encModDir = Path.Combine(classPacksDir, "CF_PACK_ENCOUNTER_MODIFIERS");
+
+Test("CF_PACK_ENCOUNTER_MODIFIERS: loads cleanly with zero Error findings", () =>
+{
+    var fs = new FileSystemFileSource();
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { classPacksDir }, id => string.Equals(id, "CF_PACK_ENCOUNTER_MODIFIERS", StringComparison.Ordinal));
+
+    var errors = result.Findings.Where(f => f.Severity == FindingSeverity.Error).ToList();
+    Assert(errors.Count == 0, "Unexpected Error findings: " + string.Join(" | ", errors.Select(e => e.ToString())));
+    AssertEqual(1, result.EnabledOrderedPacks.Count, $"Expected 1 enabled pack, got {result.EnabledOrderedPacks.Count}");
+    AssertEqual("CF_PACK_ENCOUNTER_MODIFIERS", result.EnabledOrderedPacks[0].Id, "Enabled pack id mismatch");
+
+    AssertEqual(10, result.MergePlan.StatusEffects.Count, "Expected all 10 shipped statuses to merge");
+    AssertEqual(1, result.MergePlan.ModifierTables.Count, "Expected exactly one modifiers.json table");
+    var table = result.MergePlan.ModifierTables[0];
+    AssertEqual(10, table.Modifiers.Count, "Expected all 10 shipped modifier rows");
+    AssertEqual(85, table.Modifiers.Sum(m => m.Weight), "Shipped weights must sum to 85 (spec §1.1)");
+
+    // Authored order (spec §3.2, load-bearing for the weighted-pick walk, §6.3).
+    var expectedOrder = new[]
+    {
+        "ARMORED", "RESISTANT", "FRENZIED", "SWIFT", "VETERAN", "WEALTHY", "CURSED",
+        "REGENERATING", "GLASSCANNON", "TREASUREGUARDED"
+    };
+    Assert(table.Modifiers.Select(m => m.Id).SequenceEqual(expectedOrder),
+        "Modifiers authored order must match spec §3.2 exactly, got: " + string.Join(",", table.Modifiers.Select(m => m.Id)));
+
+    Assert(!result.Findings.Any(f => f.Code == "CF_STATUS_ID_PREFIX"), "All shipped status ids should be STATUS_CF_-prefixed");
+    Assert(!result.Findings.Any(f => f.Code == "CF_MODIFIER_STATUS_DANGLING"), "Every shipped Status ref should resolve within the pack");
+    Assert(!result.Findings.Any(f => f.Code == "CF_STATUS_PASSIVE_UNRESOLVED"), "CURSED/REGENERATING Passives must resolve against the pack's own skillrecipes.json");
+});
+
+// ---------------------------------------------------------------------
 Console.WriteLine();
 Console.WriteLine($"{passed} passed, {failed} failed.");
 return failed == 0 ? 0 : 1;

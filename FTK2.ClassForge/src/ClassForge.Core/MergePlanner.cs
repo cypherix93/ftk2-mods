@@ -28,6 +28,7 @@ namespace ClassForge.Core
             var characters = new Dictionary<string, MergeOp>(StringComparer.Ordinal);
             var things = new Dictionary<string, MergeOp>(StringComparer.Ordinal);
             var abilities = new Dictionary<string, MergeOp>(StringComparer.Ordinal);
+            var statusEffects = new Dictionary<string, MergeOp>(StringComparer.Ordinal);
 
             foreach (var entry in orderedContents)
             {
@@ -38,15 +39,23 @@ namespace ClassForge.Core
                 MergeCategory(things, packId, content.Traits, findings, "Trait/Thing", live.Things);
                 MergeCategory(things, packId, content.Items, findings, "Item/Thing", live.Things);
                 MergeCategory(abilities, packId, content.Abilities, findings, "Ability", live.Abilities);
+                MergeCategory(statusEffects, packId, content.Statuses, findings, "StatusEffect", live.StatusEffects);
 
                 MergeStringDict(plan.Localization, packId, content.Localization, findings, "CF_LOC_OVERRIDE", "Localization key");
                 MergeStringDict(plan.Icons, packId, content.Icons, findings, "CF_ICON_OVERRIDE", "Icon id");
                 MergeStringDict(plan.Portraits, packId, content.Portraits, findings, "CF_PORTRAIT_OVERRIDE", "Portrait id");
+
+                // modifiers.json is ClassForge's own registry (like skillrecipes.json), not a Configs.* merge
+                // category (Encounter Modifiers spec §3.2/§3.4) — collected in resolved pack load order,
+                // authored Modifiers array order preserved untouched within each table.
+                if (content.ModifierTable != null)
+                    plan.ModifierTables.Add(content.ModifierTable);
             }
 
             plan.Characters = characters.Values.OrderBy(m => m.Id, StringComparer.Ordinal).ToList();
             plan.Things = things.Values.OrderBy(m => m.Id, StringComparer.Ordinal).ToList();
             plan.Abilities = abilities.Values.OrderBy(m => m.Id, StringComparer.Ordinal).ToList();
+            plan.StatusEffects = statusEffects.Values.OrderBy(m => m.Id, StringComparer.Ordinal).ToList();
 
             // Class:"TRAIT" entries register with the trait registry (SPEC.md §3), regardless of which source
             // file (traits.json vs. items.json) they came from.
