@@ -130,6 +130,27 @@ namespace ClassForge.Recipes.Model
         public int? PerUnit;
         public int? Min;
         public int? Max;
+
+        // --- Loot-grant effects (ON_COMBAT_LOOT only, SchemaVersion 1.2) — verb spec §6.2 ---
+
+        // GOLD_GRANT
+        public int? MinGold;
+        public int? MaxGold;
+
+        // ITEM_TAG_GRANT
+        public string Tag;
+        /// <summary>Optional; null means "any rarity" (matches EOR's SCHOLARS_HABIT). Not enum-validated
+        /// by this pure-C# core — <c>eItemRarities</c> membership is a game-ref concern deferred to the
+        /// M-LG2 Plugin unit (no decompile evidence for its members is available inside this assembly).</summary>
+        public string Rarity;
+        public int Stack = 1;
+
+        // LOOT_SCALE (reuses Percent above); ConfigName is the currency Thing to scale
+        public string ConfigName;
+
+        // AFFIX_ROLL — reserved, always validator-rejected in v1 (M-LG4)
+        public int? ChancePct;
+        public string Table;
     }
 
     /// <summary><c>Budget</c> block — SPEC-DELTA-v1.1 §5.1.</summary>
@@ -174,6 +195,14 @@ namespace ClassForge.Recipes.Model
 
         /// <summary>Rounds; 0 = none. Tracked per battle only (§6).</summary>
         public int Cooldown;
+
+        /// <summary>
+        /// <c>ON_COMBAT_LOOT</c> only (loot-grant verb spec §6.1): after the proc roll passes, exactly
+        /// one entry of <see cref="Effects"/> is selected uniformly (one grant-stream draw), mirroring
+        /// EOR's nested 50/50 shape. Requires <see cref="Effects"/>.Count &gt;= 2. The validator rejects
+        /// this field set true on any other trigger.
+        /// </summary>
+        public bool PickOneEffect;
 
         /// <summary>Deterministic evaluation order; ties broken by ordinal recipe id (§5.1, §5.2 invariant 4).</summary>
         public int Priority;

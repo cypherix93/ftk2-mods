@@ -17,7 +17,8 @@ namespace ClassForge.Recipes.Parsing
         private static readonly string[] RecipeFields =
         {
             "SchemaVersion", "DisplayName", "Enabled", "Trigger", "Conditions", "Effects",
-            "ProcChance", "AiProcChance", "Budget", "Cooldown", "Priority", "VerboseLogTag"
+            "ProcChance", "AiProcChance", "Budget", "Cooldown", "Priority", "VerboseLogTag",
+            "PickOneEffect"
         };
 
         private static readonly string[] BudgetFields = { "Scope", "ConsumeOn", "Key" };
@@ -34,7 +35,9 @@ namespace ClassForge.Recipes.Parsing
             "Stat", "StatChangeType", "FlatValue", "FlatPercent", "Blockable", "IsSilent",
             "SummonType", "CharacterConfig", "Count",
             "Percent", "Flat", "MinDelta", "Scope", "Name", "Delta", "Value",
-            "FlatValueFrom", "PercentFrom", "PerUnit", "Min", "Max"
+            "FlatValueFrom", "PercentFrom", "PerUnit", "Min", "Max",
+            // loot-grant effects (ON_COMBAT_LOOT only, SchemaVersion 1.2, verb spec §6.2)
+            "MinGold", "MaxGold", "Tag", "Rarity", "Stack", "ConfigName", "ChancePct", "Table"
         };
 
         private static readonly string[] RankFields = { "Stat", "Order", "Where", "ExcludeSelf" };
@@ -118,6 +121,7 @@ namespace ClassForge.Recipes.Parsing
             r.AiProcChance = Int(set, r, node, "AiProcChance", r.ProcChance, "AiProcChance");
             r.Cooldown = Int(set, r, node, "Cooldown", 0, "Cooldown");
             r.Priority = Int(set, r, node, "Priority", 0, "Priority");
+            r.PickOneEffect = Bool(set, r, node, "PickOneEffect", false);
 
             var budgetNode = node.Get("Budget");
             if (budgetNode != null)
@@ -416,6 +420,16 @@ namespace ClassForge.Recipes.Parsing
             e.PerUnit = OptInt(set, r, node, "PerUnit", path);
             e.Min = OptInt(set, r, node, "Min", path);
             e.Max = OptInt(set, r, node, "Max", path);
+
+            // loot-grant effects (ON_COMBAT_LOOT only, SchemaVersion 1.2, verb spec §6.2)
+            e.MinGold = OptInt(set, r, node, "MinGold", path);
+            e.MaxGold = OptInt(set, r, node, "MaxGold", path);
+            e.Tag = Str(node, "Tag", null);
+            e.Rarity = Str(node, "Rarity", null);
+            e.Stack = Int(set, r, node, "Stack", 1, path + ".Stack");
+            e.ConfigName = Str(node, "ConfigName", null);
+            e.ChancePct = OptInt(set, r, node, "ChancePct", path);
+            e.Table = Str(node, "Table", null);
 
             return e;
         }

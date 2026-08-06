@@ -21,6 +21,7 @@ namespace ClassForge.Recipes.Tests
             BudgetTests.Run(runner);
             DeterminismTests.Run(runner);
             MechanicTests.Run(runner);
+            LootTests.Run(runner);
             return runner.Report();
         }
     }

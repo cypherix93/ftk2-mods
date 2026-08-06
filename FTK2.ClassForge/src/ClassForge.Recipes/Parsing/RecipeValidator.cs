@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using ClassForge.Recipes.Loot;
 using ClassForge.Recipes.Model;
 
 namespace ClassForge.Recipes.Parsing
@@ -63,11 +64,13 @@ namespace ClassForge.Recipes.Parsing
         {
             bool isV11 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionCurrent, StringComparison.Ordinal);
             bool isV10 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionLegacy, StringComparison.Ordinal);
-            if (!isV11 && !isV10)
+            bool isV12 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionLoot, StringComparison.Ordinal);
+            if (!isV11 && !isV10 && !isV12)
             {
                 RecipeParser.Err(set, r, "SchemaVersion", "E_SCHEMA_UNSUPPORTED",
                     "SchemaVersion '" + r.SchemaVersion + "' cannot be run by this engine (supported: " +
-                    Vocabulary.SchemaVersionLegacy + ", " + Vocabulary.SchemaVersionCurrent + ")");
+                    Vocabulary.SchemaVersionLegacy + ", " + Vocabulary.SchemaVersionCurrent + ", " +
+                    Vocabulary.SchemaVersionLoot + ")");
                 return; // nothing else is meaningful once the vocabulary version is unknown
             }
 
@@ -89,7 +92,40 @@ namespace ClassForge.Recipes.Parsing
                         "Budget requires SchemaVersion " + Vocabulary.SchemaVersionCurrent);
             }
 
+            // --- SchemaVersion gate on v1.2-only tokens (loot-grant verb spec §6, M-LG1) ---
+            if (isV10 || isV11)
+            {
+                if (Contains(Vocabulary.V12OnlyTriggers, r.Trigger))
+                    RecipeParser.Err(set, r, "Trigger", "E_SCHEMA_GATE",
+                        "trigger " + r.Trigger + " requires SchemaVersion " + Vocabulary.SchemaVersionLoot);
+            }
+
+            // --- ON_COMBAT_LOOT restricted vocabulary (verb spec §6.1): the trigger is intrinsically
+            //     once-per-combat, so Budget/Cooldown are rejected outright. ---
+            if (r.Trigger == TriggerKind.ON_COMBAT_LOOT)
+            {
+                if (r.Budget.Scope != BudgetScope.NONE)
+                    RecipeParser.Err(set, r, "Budget.Scope", "E_LOOT_BUDGET",
+                        "Budget is rejected on ON_COMBAT_LOOT (the trigger is intrinsically once-per-combat)");
+                if (r.Cooldown > 0)
+                    RecipeParser.Err(set, r, "Cooldown", "E_LOOT_COOLDOWN",
+                        "Cooldown is rejected on ON_COMBAT_LOOT (the trigger is intrinsically once-per-combat)");
+            }
+
+            // --- PickOneEffect (verb spec §6.1): ON_COMBAT_LOOT only, requires >= 2 Effects. ---
+            if (r.PickOneEffect)
+            {
+                if (r.Trigger != TriggerKind.ON_COMBAT_LOOT)
+                    RecipeParser.Err(set, r, "PickOneEffect", "E_PICKONE_TRIGGER_SCOPE",
+                        "PickOneEffect is only valid on ON_COMBAT_LOOT");
+                if (r.Effects.Count < 2)
+                    RecipeParser.Err(set, r, "PickOneEffect", "E_PICKONE_COUNT",
+                        "PickOneEffect requires at least 2 Effects");
+            }
+
             ValidateConditionList(set, r, r.Conditions, "Conditions", isV10);
+            if (r.Trigger == TriggerKind.ON_COMBAT_LOOT)
+                ValidateLootConditionScope(set, r, r.Conditions, "Conditions");
 
             for (int i = 0; i < r.Effects.Count; i++)
             {
@@ -107,9 +143,43 @@ namespace ClassForge.Recipes.Parsing
                         RecipeParser.Err(set, r, path + ".Conditions", "E_SCHEMA_GATE",
                             "per-effect Conditions require SchemaVersion " + Vocabulary.SchemaVersionCurrent);
                 }
+                if (isV10 || isV11)
+                {
+                    if (Contains(Vocabulary.V12OnlyEffects, e.Type))
+                        RecipeParser.Err(set, r, path + ".Type", "E_SCHEMA_GATE",
+                            "effect " + e.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionLoot);
+                }
                 ValidateConditionList(set, r, e.Conditions, path + ".Conditions", isV10);
+                if (r.Trigger == TriggerKind.ON_COMBAT_LOOT)
+                    ValidateLootConditionScope(set, r, e.Conditions, path + ".Conditions");
                 if (e.Rank != null) ValidateConditionList(set, r, e.Rank.Where, path + ".Rank.Where", isV10);
                 ValidateEffect(set, r, e, path);
+            }
+        }
+
+        /// <summary>Loot-grant effect vocabulary — verb spec §6.1/§6.2. AFFIX_ROLL is further always
+        /// rejected (reserved for M-LG4).</summary>
+        private static readonly EffectKind[] LootGrantEffects =
+        {
+            EffectKind.GOLD_GRANT, EffectKind.ITEM_TAG_GRANT, EffectKind.LOOT_SCALE, EffectKind.AFFIX_ROLL
+        };
+
+        /// <summary>Conditions permitted on ON_COMBAT_LOOT — verb spec §6.1: "the pure-replicated-read
+        /// subset"; combat-turn conditions (ROLL_TIER, FOCUS_SPENT, ...) have no context at combat end.</summary>
+        private static readonly ConditionKind[] LootAllowedConditions =
+        {
+            ConditionKind.HP_THRESHOLD, ConditionKind.CHARACTER_TYPE
+        };
+
+        private static void ValidateLootConditionScope(RecipeSet set, SkillRecipe r, List<RecipeCondition> list, string path)
+        {
+            if (list == null) return;
+            for (int i = 0; i < list.Count; i++)
+            {
+                string p = path + "[" + i.ToString(CultureInfo.InvariantCulture) + "]";
+                if (!Contains(LootAllowedConditions, list[i].Type))
+                    RecipeParser.Err(set, r, p + ".Type", "E_LOOT_COND_SCOPE",
+                        list[i].Type + " is not permitted on ON_COMBAT_LOOT (only HP_THRESHOLD, CHARACTER_TYPE, Negate)");
             }
         }
 
@@ -127,6 +197,25 @@ namespace ClassForge.Recipes.Parsing
                     r.Trigger + " carries no trigger source; this effect will be a no-op");
             if (e.Target == TargetKind.ALLY_BY_RANK && e.Rank == null)
                 RecipeParser.Err(set, r, path + ".Rank", "E_RANK_MISSING", "ALLY_BY_RANK requires a Rank block");
+
+            // --- loot-grant effect scope (verb spec §6.1/§6.2): grant effects only fire ON_COMBAT_LOOT,
+            //     and ON_COMBAT_LOOT accepts only grant effects. AFFIX_ROLL is further always reserved. ---
+            bool isGrantEffect = Contains(LootGrantEffects, e.Type);
+            if (r.Trigger == TriggerKind.ON_COMBAT_LOOT)
+            {
+                if (!isGrantEffect)
+                    RecipeParser.Err(set, r, path + ".Type", "E_LOOT_EFFECT_SCOPE",
+                        e.Type + " is not part of the ON_COMBAT_LOOT restricted vocabulary (only GOLD_GRANT, " +
+                        "ITEM_TAG_GRANT, LOOT_SCALE; AFFIX_ROLL is reserved)");
+            }
+            else if (isGrantEffect)
+            {
+                RecipeParser.Err(set, r, path + ".Type", "E_LOOT_EFFECT_SCOPE",
+                    e.Type + " is only valid on ON_COMBAT_LOOT");
+            }
+            if (e.Type == EffectKind.AFFIX_ROLL)
+                RecipeParser.Err(set, r, path, "E_LOOT_RESERVED",
+                    "AFFIX_ROLL is reserved; the v1 validator rejects it until M-LG4");
 
             switch (e.Type)
             {
@@ -211,6 +300,38 @@ namespace ClassForge.Recipes.Parsing
                 {
                     if (string.IsNullOrEmpty(e.Name))
                         RecipeParser.Err(set, r, path + ".Name", "E_COUNTER_NAME", e.Type + " requires Name");
+                    break;
+                }
+                case EffectKind.GOLD_GRANT:
+                {
+                    if (!e.MinGold.HasValue || !e.MaxGold.HasValue)
+                        RecipeParser.Err(set, r, path, "E_GOLD_RANGE_MISSING", "GOLD_GRANT requires MinGold and MaxGold");
+                    else if (e.MinGold.Value > e.MaxGold.Value)
+                        RecipeParser.Err(set, r, path, "E_GOLD_RANGE_INVALID", "GOLD_GRANT MinGold must be <= MaxGold");
+                    else if (e.MinGold.Value < 0)
+                        RecipeParser.Err(set, r, path + ".MinGold", "E_RANGE", "GOLD_GRANT MinGold must be >= 0");
+                    break;
+                }
+                case EffectKind.ITEM_TAG_GRANT:
+                {
+                    if (string.IsNullOrEmpty(e.Tag))
+                        RecipeParser.Err(set, r, path + ".Tag", "E_ITEM_TAG_MISSING", "ITEM_TAG_GRANT requires Tag");
+                    if (e.Stack < 1)
+                        RecipeParser.Err(set, r, path + ".Stack", "E_RANGE", "ITEM_TAG_GRANT Stack must be >= 1");
+                    // Rarity, when present, is NOT enum-validated here: eItemRarities membership is a
+                    // game-ref concern with no decompile evidence available inside this pure-C# core
+                    // (deferred to the M-LG2 Plugin unit, which has EGT §2 in scope).
+                    break;
+                }
+                case EffectKind.LOOT_SCALE:
+                {
+                    if (string.IsNullOrEmpty(e.ConfigName))
+                        RecipeParser.Err(set, r, path + ".ConfigName", "E_LOOT_SCALE_CONFIG_MISSING", "LOOT_SCALE requires ConfigName");
+                    else if (!Contains(LootVocabulary.ScaleStackConfigNames, e.ConfigName))
+                        RecipeParser.Err(set, r, path + ".ConfigName", "E_LOOT_SCALE_CONFIG",
+                            "LOOT_SCALE ConfigName must be one of PARTY_XP, XP, CURRENCY_ADVENTURE, CURRENCY_LORE");
+                    if (!e.Percent.HasValue)
+                        RecipeParser.Err(set, r, path + ".Percent", "E_VALUE_MISSING", "LOOT_SCALE requires Percent");
                     break;
                 }
             }

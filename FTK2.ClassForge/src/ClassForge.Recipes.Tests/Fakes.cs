@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using ClassForge.Recipes.Abstractions;
+using ClassForge.Recipes.Loot;
 using ClassForge.Recipes.Runtime;
 
 namespace ClassForge.Recipes.Tests
@@ -186,6 +187,33 @@ namespace ClassForge.Recipes.Tests
             if (_scriptedInt.Count > 0) return _scriptedInt.Dequeue();
             if (maxExclusive <= minInclusive) return minInclusive;
             return minInclusive + (int)(NextState() % (uint)(maxExclusive - minInclusive));
+        }
+    }
+
+    /// <summary>Test double for the loot-grant item-candidate seam (GATE B). Keys are
+    /// <c>Tag</c> or <c>Tag|Rarity</c>; a rarity-specific entry is preferred when both are registered.</summary>
+    public sealed class FakeCandidateSource : IItemCandidateSource
+    {
+        private readonly Dictionary<string, List<string>> _byKey = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+
+        public FakeCandidateSource Add(string tag, string rarity, params string[] configNames)
+        {
+            _byKey[Key(tag, rarity)] = new List<string>(configNames);
+            return this;
+        }
+
+        public IReadOnlyList<string> GetCandidates(string tag, string rarity)
+        {
+            List<string> exact;
+            if (!string.IsNullOrEmpty(rarity) && _byKey.TryGetValue(Key(tag, rarity), out exact)) return exact;
+            List<string> anyRarity;
+            if (_byKey.TryGetValue(Key(tag, null), out anyRarity)) return anyRarity;
+            return new List<string>();
+        }
+
+        private static string Key(string tag, string rarity)
+        {
+            return (tag ?? "") + "|" + (rarity ?? "");
         }
     }
 

@@ -22,7 +22,9 @@ namespace ClassForge.Recipes.Model
         ON_STATUS_APPLIED,         // T5
         ON_CONSUMABLE_USED,        // T6
         ON_ENEMY_ABILITY_RESOLVED, // T7
-        ON_HEAL_PENDING            // T8
+        ON_HEAL_PENDING,           // T8
+        // --- added in v1.2, loot-grant verb spec (docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md §6.1) ---
+        ON_COMBAT_LOOT
     }
 
     /// <summary>Condition tokens — SPEC-DELTA-v1.1 §3 (8 v1 + 15 added = 23 tokens).</summary>
@@ -65,7 +67,12 @@ namespace ClassForge.Recipes.Model
         ROLL_STAT_BONUS, // E1
         HEAL_MODIFIER,   // E2
         COUNTER_ADD,     // E3
-        COUNTER_SET      // E4
+        COUNTER_SET,     // E4
+        // --- added in v1.2, loot-grant verb spec §6.2 (ON_COMBAT_LOOT-only; emit LootOp deltas) ---
+        GOLD_GRANT,
+        ITEM_TAG_GRANT,
+        LOOT_SCALE,
+        AFFIX_ROLL       // reserved: parses, but the v1 validator always rejects it (M-LG4)
     }
 
     /// <summary>Target tokens — SPEC-DELTA-v1.1 §4.3 (5 v1 + 4 added = 9 tokens).</summary>
@@ -166,6 +173,10 @@ namespace ClassForge.Recipes.Model
         public const string SchemaVersionCurrent = "1.1";
         public const string SchemaVersionLegacy = "1.0";
 
+        /// <summary>Schema version gating <c>ON_COMBAT_LOOT</c> + the loot-grant effect vocabulary
+        /// (loot-grant verb spec §6, M-LG1). Additive over 1.1 — nothing 1.1-authored breaks.</summary>
+        public const string SchemaVersionLoot = "1.2";
+
         /// <summary>Status token meaning "the status carried by the trigger" — SPEC-DELTA-v1.1 §4.1.</summary>
         public const string TriggerStatusToken = "TRIGGER_STATUS";
 
@@ -214,6 +225,19 @@ namespace ClassForge.Recipes.Model
         public static readonly IReadOnlyList<TargetKind> V11OnlyTargets = new[]
         {
             TargetKind.TRIGGER_SOURCE, TargetKind.ALLY_ALL_OTHERS, TargetKind.ENEMY_ALL, TargetKind.ALLY_BY_RANK
+        };
+
+        /// <summary>Triggers added in v1.2 (loot-grant verb spec §6.1). A recipe declaring SchemaVersion
+        /// 1.0 or 1.1 may not use these.</summary>
+        public static readonly IReadOnlyList<TriggerKind> V12OnlyTriggers = new[]
+        {
+            TriggerKind.ON_COMBAT_LOOT
+        };
+
+        /// <summary>Effects added in v1.2 (loot-grant verb spec §6.2).</summary>
+        public static readonly IReadOnlyList<EffectKind> V12OnlyEffects = new[]
+        {
+            EffectKind.GOLD_GRANT, EffectKind.ITEM_TAG_GRANT, EffectKind.LOOT_SCALE, EffectKind.AFFIX_ROLL
         };
 
         /// <summary>Conditions the <c>Of</c> selector is defined for — SPEC-DELTA-v1.1 §3.</summary>
