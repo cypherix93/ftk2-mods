@@ -197,7 +197,15 @@
   "SKILL_CF_MENDERS_TOUCH": "Mender's Touch",
   "UI_ENCYCLOPEDIA_SKILL_CF_MENDERS_TOUCH": "Healing consumables you use restore +10 extra Health.",
   "SKILL_CF_DRUNKEN_COURAGE": "Drunken Courage",
-  "UI_ENCYCLOPEDIA_SKILL_CF_DRUNKEN_COURAGE": "After drinking alcohol, gain Attack Up."
+  "UI_ENCYCLOPEDIA_SKILL_CF_DRUNKEN_COURAGE": "After drinking alcohol, gain Attack Up.",
+  "SKILL_CF_TRAIT_SCAVENGER_LOOT": "Scavenger",
+  "UI_ENCYCLOPEDIA_SKILL_CF_TRAIT_SCAVENGER_LOOT": "After winning a fight, 25% chance to find extra gold (8-20) or a common herb.",
+  "SKILL_CF_TRAIT_TREASURE_SENSE_LOOT": "Treasure Sense",
+  "UI_ENCYCLOPEDIA_SKILL_CF_TRAIT_TREASURE_SENSE_LOOT": "After winning a fight, 20% chance to find extra gold (8-20).",
+  "SKILL_CF_TRAIT_SCHOLARS_HABIT_LOOT": "Scholar's Habit",
+  "UI_ENCYCLOPEDIA_SKILL_CF_TRAIT_SCHOLARS_HABIT_LOOT": "After winning a fight, 20% chance to find an extra scroll.",
+  "SKILL_CF_AFFIX_OF_SCAVENGING_LOOT": "Of Scavenging",
+  "UI_ENCYCLOPEDIA_SKILL_CF_AFFIX_OF_SCAVENGING_LOOT": "After winning a fight, 10% chance to find extra gold (5-10) or a common herb."
 ,
 
   "UI_TOOLTIP_CF_EOR_ARCANIST_DESCRIPTION": "A disciplined spellcaster who turns stored focus into precise magical pressure.",

@@ -49,6 +49,19 @@ namespace ClassForge.Plugin
         /// SPEC-DELTA-v1.1 §5.3 forbids a partial recipe subset.</summary>
         internal static ConfigEntry<bool> EnableRecipeEngine;
 
+        /// <summary>Gates the loot-grant sync verb's <c>LootDropHelper.GetLootDropsFromEnemies</c> postfix
+        /// (see <see cref="LootGrantPatches"/>). Default FALSE: M-LG2 ships dark per charter rule 3 (the
+        /// disabled-by-default carrier while unproven — docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md
+        /// §10 M-LG2). Also requires <see cref="EnableRecipeEngine"/> = true.</summary>
+        internal static ConfigEntry<bool> EnableLootGrants;
+
+        /// <summary>Dev-only diagnostic: when true, the loot-grant postfix calls
+        /// <c>GameRandom.LogCalls(true)</c> on the SHARED combat stream (<c>CombatState.Random</c>, passed
+        /// into the postfix as <c>pGameRandom</c>) so a diagnostic session can visually confirm the
+        /// zero-shared-draw invariant (verb spec §4.1) held. Per-draw log spam -- leave false outside a
+        /// diagnostic session. Never affects the private grant stream, which is never logged this way.</summary>
+        internal static ConfigEntry<bool> DebugLogCombatRandomDraws;
+
         /// <summary>
         /// The one gate every patch body consults. False when the master switch is off <b>or</b> when a
         /// multiplayer parity mismatch has latched ClassForge's <c>Block</c> policy
@@ -94,6 +107,16 @@ namespace ClassForge.Plugin
                 "Master switch for the skill-recipe engine (skillrecipes.json). All-or-nothing by design: " +
                 "SPEC-DELTA-v1.1 §5.3 forbids running a subset, because every recipe primitive either mutates " +
                 "combat state or feeds something that does.");
+            EnableLootGrants = Config.Bind("Skills", "EnableLootGrants", false,
+                "Master switch for the loot-grant sync verb (ON_COMBAT_LOOT recipes: SCAVENGER/TREASURE_SENSE/" +
+                "SCHOLARS_HABIT/OF_SCAVENGING loot halves). Ships DARK (default false) at M-LG2 -- the game-side " +
+                "compute+apply path is wired but unproven in real combat; M-LG3 flips this default to true once " +
+                "MP verification lands. Requires EnableRecipeEngine = true as well.");
+            DebugLogCombatRandomDraws = Config.Bind("Skills", "DebugLogCombatRandomDraws", false,
+                "DIAGNOSTIC ONLY -- do not enable outside a debugging session. When true, the loot-grant postfix " +
+                "calls GameRandom.LogCalls(true) on the SHARED combat stream so its per-call log can be inspected " +
+                "to confirm zero draws were taken on the loot-grant path. Produces per-draw log spam for the rest " +
+                "of the session once enabled.");
 
             ApplyPatches();
 
@@ -223,6 +246,12 @@ namespace ClassForge.Plugin
             {
                 CombatHookPatches.WarnTurnHookMissing();
             }
+
+            // M-LG2 ON_COMBAT_LOOT — LootDropHelper.GetLootDropsFromEnemies postfix (the loot-grant sync
+            // verb's single compute+apply point). Gated inside LootGrantPatches on [Skills] EnableLootGrants
+            // (default false -- ships dark, docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md §10).
+            Patch(harmony, typeof(LootDropHelper), "GetLootDropsFromEnemies",
+                postfix: M(typeof(LootGrantPatches), nameof(LootGrantPatches.GetLootDropsFromEnemies_Postfix)));
         }
 
         private static HarmonyMethod M(Type owner, string method)

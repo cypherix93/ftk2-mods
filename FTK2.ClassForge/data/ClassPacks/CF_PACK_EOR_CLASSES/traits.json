@@ -67,7 +67,7 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "LCK": 10 }, "Passives": [], "MaxCharges": 0 },
+    "Equippable": { "Slots": [], "Stats": { "LCK": 10 }, "Passives": ["SKILL_CF_TRAIT_TREASURE_SENSE_LOOT"], "MaxCharges": 0 },
     "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
     "Expansion": ""
   },
@@ -103,7 +103,7 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "INT": 10 }, "Passives": [], "MaxCharges": 0 },
+    "Equippable": { "Slots": [], "Stats": { "INT": 10 }, "Passives": ["SKILL_CF_TRAIT_SCHOLARS_HABIT_LOOT"], "MaxCharges": 0 },
     "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
     "Expansion": ""
   },
@@ -139,7 +139,7 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": {}, "Passives": [], "MaxCharges": 0 },
+    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_TRAIT_SCAVENGER_LOOT"], "MaxCharges": 0 },
     "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
     "Expansion": ""
   },

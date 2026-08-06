@@ -793,5 +793,57 @@
     "AiProcChance": 100,
     "VerboseLogTag": "Drunken Courage",
     "_source": "coverage-matrix §2 row 19; BM T2 DRUNKEN_COURAGE L24628-24632; reused verbatim from ClassForge.Recipes.Tests/fixtures/drunken_courage.json. Gate is the vanilla ThingConfig.Class == 'DRINK' rather than EOR's ConfigName.StartsWith('DRINK_') prefix match"
+  },
+  "SKILL_CF_TRAIT_SCAVENGER_LOOT": {
+    "SchemaVersion": "1.2",
+    "DisplayName": "Scavenger",
+    "Enabled": true,
+    "Trigger": "ON_COMBAT_LOOT",
+    "ProcChance": 25,
+    "PickOneEffect": true,
+    "Effects": [
+      { "Type": "GOLD_GRANT", "MinGold": 8, "MaxGold": 20 },
+      { "Type": "ITEM_TAG_GRANT", "Tag": "HERB", "Rarity": "COMMON" }
+    ],
+    "VerboseLogTag": "Scavenger (loot)",
+    "_source": "loot-grant verb spec §6.3 consumer 1; EOR BM L16357-16377 (TRAIT_SCAVENGER 25% -> gold 8-20 or COMMON HERB). Ported to the loot-grant private grant stream (docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md) instead of the shared combat stream. Carrier: TRAIT_SCAVENGER (traits.json Equippable.Passives)."
+  },
+  "SKILL_CF_TRAIT_TREASURE_SENSE_LOOT": {
+    "SchemaVersion": "1.2",
+    "DisplayName": "Treasure Sense",
+    "Enabled": true,
+    "Trigger": "ON_COMBAT_LOOT",
+    "ProcChance": 20,
+    "Effects": [
+      { "Type": "GOLD_GRANT", "MinGold": 8, "MaxGold": 20 }
+    ],
+    "VerboseLogTag": "Treasure Sense (loot)",
+    "_source": "loot-grant verb spec §6.3 consumer 2; EOR BM L16379-16388 (TRAIT_TREASURE_SENSE 20% -> gold 8-20). Carrier: TRAIT_TREASURE_SENSE (traits.json Equippable.Passives)."
+  },
+  "SKILL_CF_TRAIT_SCHOLARS_HABIT_LOOT": {
+    "SchemaVersion": "1.2",
+    "DisplayName": "Scholar's Habit",
+    "Enabled": true,
+    "Trigger": "ON_COMBAT_LOOT",
+    "ProcChance": 20,
+    "Effects": [
+      { "Type": "ITEM_TAG_GRANT", "Tag": "SCROLL" }
+    ],
+    "VerboseLogTag": "Scholar's Habit (loot)",
+    "_source": "loot-grant verb spec §6.3 consumer 3; EOR BM L16389-16396 (TRAIT_SCHOLARS_HABIT 20% -> SCROLL, Rarity null = any). Carrier: TRAIT_SCHOLARS_HABIT (traits.json Equippable.Passives)."
+  },
+  "SKILL_CF_AFFIX_OF_SCAVENGING_LOOT": {
+    "SchemaVersion": "1.2",
+    "DisplayName": "Of Scavenging",
+    "Enabled": true,
+    "Trigger": "ON_COMBAT_LOOT",
+    "ProcChance": 10,
+    "PickOneEffect": true,
+    "Effects": [
+      { "Type": "GOLD_GRANT", "MinGold": 5, "MaxGold": 10 },
+      { "Type": "ITEM_TAG_GRANT", "Tag": "HERB", "Rarity": "COMMON" }
+    ],
+    "VerboseLogTag": "Of Scavenging (loot)",
+    "_source": "loot-grant verb spec §6.3 consumer 4; EOR BM L16397-16419 (OF_SCAVENGING affix 10% -> gold 5-10 or COMMON HERB). CARRIER-LESS at M-LG2: no pre-minted _OF_SCAVENGING variant items exist yet (CM §3 row 21's deterministic pre-mint registry is parked M-LG4); this recipe ships defined but unequippable by any live item until that lands."
   }
 }
