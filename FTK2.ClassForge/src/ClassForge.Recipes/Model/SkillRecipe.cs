@@ -162,8 +162,40 @@ namespace ClassForge.Recipes.Model
 
         // ADD_STATUS / REMOVE_STATUS extension
         /// <summary>Mutually exclusive with <see cref="Status"/>/<see cref="StatusOneOf"/>. Resolves the
-        /// status id from <c>CombatRuntime.Selections[StatusFromSelection]</c>; empty selection ⇒ no-op.</summary>
+        /// status id from <c>CombatRuntime.Selections[StatusFromSelection]</c>; empty selection ⇒ no-op.
+        /// <para>Table-driven variant (M-EM3, mirrors <see cref="PercentFromSelectionTable"/>): when
+        /// <see cref="StatusFromSelectionTable"/> is also populated, the stored selection value is looked
+        /// up in that table instead of being used AS the status id directly — this is what lets
+        /// <c>CombatRuntime.Selections</c> canonically hold a MODIFIER id (spec §11's "activeModifierId",
+        /// and what <c>ModifierReconstruction</c> already stores) while still resolving to the right
+        /// STATUS id here. No table authored ⇒ the original raw-echo behavior, unchanged (every
+        /// hand-authored/test use of <c>StatusFromSelection</c> pre-M-EM3 keeps working exactly as
+        /// before).</para></summary>
         public string StatusFromSelection;
+
+        /// <summary>The <c>modifier id → status id</c> rows for <see cref="StatusFromSelection"/> (M-EM3).
+        /// Populated only by the engine's generator; never hand-authored.</summary>
+        public List<SelectionStatusEntry> StatusFromSelectionTable;
+
+        // STAT_CHANGE extension — Encounter Modifiers spec §6.1 "PercentFromSelection" sugar (M-EM3).
+        /// <summary>Selection-slot key (same <c>CombatRuntime.Selections</c> namespace as
+        /// <see cref="StatusFromSelection"/>) whose CURRENTLY STORED value picks a row out of
+        /// <see cref="PercentFromSelectionTable"/> to feed <c>TARGET_MXHP_PCT</c>'s (GATE C)
+        /// <c>Percent</c> input, per-selection instead of a single authored <see cref="Percent"/>. Only
+        /// meaningful alongside <c>FlatValueFrom: "TARGET_MXHP_PCT"</c>; mutually exclusive in practice
+        /// with the plain <see cref="Percent"/> field (an authored <see cref="Percent"/>, if present,
+        /// still wins — see <c>ValueSources.RawTargetMxhpPct</c>). No selection stored, or the selected
+        /// value has no row (0/absent), resolves to 0 — and per the generator's "table-driven emission"
+        /// design, a 0 result omits the WHOLE STAT_CHANGE effect (no zero-value action), never a no-op
+        /// action with <c>FlatValue=0</c>.</summary>
+        public string PercentFromSelection;
+
+        /// <summary>The per-selection-value percent rows for <see cref="PercentFromSelection"/> — one
+        /// entry per modifier that actually carries a non-zero <c>MaxHpPercent</c> (M-EM1's
+        /// <c>ModifierEntry.MaxHpPercent</c>); modifiers without one are simply absent from this table,
+        /// which is exactly the "0/absent ⇒ omitted" rule. Populated only by the engine's generator
+        /// (<c>ClassForge.Recipes.Generation.ModifierRecipeGenerator</c>) — never hand-authored.</summary>
+        public List<SelectionPercentEntry> PercentFromSelectionTable;
 
         // EVENT_BANNER — [LOCAL] presentation only, never gates gameplay (spec §5, §9)
         public string LocKey;
@@ -182,6 +214,25 @@ namespace ClassForge.Recipes.Model
     {
         public string Value;
         public int Weight;
+    }
+
+    /// <summary>One <c>{Value, Percent}</c> row of <c>STAT_CHANGE.PercentFromSelectionTable</c> —
+    /// Encounter Modifiers spec §6.1 "PercentFromSelection" sugar (M-EM3 generation design). <c>Value</c>
+    /// is a selection value (a modifier id, e.g. <c>"VETERAN"</c>); <c>Percent</c> is that modifier's
+    /// <c>MaxHpPercent</c>.</summary>
+    public sealed class SelectionPercentEntry
+    {
+        public string Value;
+        public int Percent;
+    }
+
+    /// <summary>One <c>{Value, StatusId}</c> row of <c>ADD_STATUS.StatusFromSelectionTable</c> — M-EM3
+    /// generation design (mirrors <see cref="SelectionPercentEntry"/>). <c>Value</c> is a selection value
+    /// (a modifier id, e.g. <c>"VETERAN"</c>); <c>StatusId</c> is that modifier's <c>Status</c>.</summary>
+    public sealed class SelectionStatusEntry
+    {
+        public string Value;
+        public string StatusId;
     }
 
     /// <summary>One row of <see cref="ProcChanceFormula.Base"/>/<see cref="ProcChanceFormula.Adjustments"/> —

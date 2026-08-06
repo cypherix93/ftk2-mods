@@ -1,10 +1,10 @@
 {
   "author": "ftk2mods",
   "dependencies": [],
-  "description": "EOR's 10 weighted encounter modifiers (Armored, Resistant, Frenzied, Swift, Veteran, Wealthy, Cursed, Regenerating, Glass Cannon, Treasure-Guarded), re-hosted as pack-shipped status configs + a modifier table per docs/superpowers/plans/2026-08-05-encounter-modifiers-spec.md. M-EM1 (this milestone): statuses.json + modifiers.json ship inert -- no engine consumer yet (Scope:COMBAT selection/application recipes land in M-EM2/M-EM3).",
+  "description": "EOR's 10 weighted encounter modifiers (Armored, Resistant, Frenzied, Swift, Veteran, Wealthy, Cursed, Regenerating, Glass Cannon, Treasure-Guarded), re-hosted as pack-shipped status configs + a modifier table per docs/superpowers/plans/2026-08-05-encounter-modifiers-spec.md. M-EM1..3: statuses.json + modifiers.json ship live -- the engine generates SKILL_CF_ENCMOD_SELECT/APPLY from this table at load (single source of truth, never hand-authored); Cursed/Regenerating per-turn behaviors ship as ordinary status-attached recipes. M-EM4: the Veteran/Wealthy/Cursed/Treasure-Guarded Rewards blocks are consumed by the loot-grant verb engine -- inert until [Skills] EnableLootGrants is flipped on (ships dark, per charter rule 3).",
   "enabled": true,
   "id": "CF_PACK_ENCOUNTER_MODIFIERS",
   "loadOrder": 200,
   "name": "Encounter Modifiers (re-hosted)",
-  "version": "0.1.0"
+  "version": "0.3.0"
 }

@@ -41,12 +41,32 @@ namespace ClassForge.Recipes.Loot
         /// <param name="grantRandom">The private grant stream. See the GATE A note above.</param>
         /// <param name="candidateSource">The <c>ITEM_TAG_GRANT</c> candidate seam (GATE B). May be
         /// null — any <c>ITEM_TAG_GRANT</c> effect then draws nothing and emits no op.</param>
+        /// <param name="modifierRewards">
+        /// Encounter Modifiers spec §11/§6.3 item 6 (M-EM4), optional. When non-null, ONE additional pass
+        /// runs after every owner's recipe ops above are computed, appending the active encounter
+        /// modifier's reward ops in FIXED order — <c>XpBonusPercent</c> → <c>SCALE_STACK</c> on
+        /// <c>PARTY_XP</c>; <c>GoldBonusPercent</c> → <c>SCALE_STACK</c> on <c>CURRENCY_ADVENTURE</c>;
+        /// <c>ExtraLootChancePercent</c> → the one grant-stream <c>NextChance</c> draw (see
+        /// <paramref name="preGrantList"/>). Null (the default) reproduces M-LG1..3's exact behavior —
+        /// existing callers are unaffected.
+        /// </param>
+        /// <param name="preGrantList">
+        /// The PRE-GRANT vanilla loot snapshot (the same list <c>LootGrantKey.ComputeListDigest</c> is fed,
+        /// per the Plugin's own Step 1) — needed only by <c>ExtraLootChancePercent</c>'s "duplicate the
+        /// first non-currency loot entry" rule (EOR L16646-16662 semantics). Using the PRE-GRANT list
+        /// (rather than anything this same computation is about to append) keeps "first non-currency
+        /// entry" well-defined and a pure function of replicated state, identical on every peer — the same
+        /// property every other draw on this seam already leans on. Ignored when
+        /// <paramref name="modifierRewards"/> is null or its <c>ExtraLootChancePercent</c> is &lt;= 0.
+        /// </param>
         public static IReadOnlyList<LootOp> Compute(
             RecipeSet recipes,
             IReadOnlyList<ICombatEntity> owners,
             string grantKey,
             IRandomSource grantRandom,
-            IItemCandidateSource candidateSource)
+            IItemCandidateSource candidateSource,
+            ModifierRewardsInput modifierRewards = null,
+            IReadOnlyList<ILootThingSnapshot> preGrantList = null)
         {
             List<LootOp> ops = new List<LootOp>();
             if (recipes == null || owners == null || owners.Count == 0 || grantRandom == null) return ops;
@@ -69,7 +89,76 @@ namespace ClassForge.Recipes.Loot
                     EvaluateRecipe(r, owner, grantKey, grantRandom, candidateSource, ops);
                 }
             }
+
+            if (modifierRewards != null)
+                EmitModifierRewards(modifierRewards, preGrantList, grantKey, grantRandom, ops);
+
             return ops;
+        }
+
+        /// <summary>
+        /// Encounter Modifiers spec §6.3 item 6 (M-EM4) — reward-half emission, fixed order:
+        /// <c>XpBonusPercent</c>, then <c>GoldBonusPercent</c>, then <c>ExtraLootChancePercent</c>. A pure
+        /// function of (replicated selection, grant stream) — the SAME private grant stream every other op
+        /// on this seam draws from, never <c>CombatState.Random</c> (a recorded, deliberate improvement
+        /// over EOR L16646, which drew this exact roll from the SHARED stream). The
+        /// <c>ExtraLootChancePercent</c> draw is taken ONLY when it is &gt; 0 — itself a pure function of
+        /// the replicated selection, so it is either taken by every peer or by none, never asymmetrically.
+        /// </summary>
+        private static void EmitModifierRewards(ModifierRewardsInput rewards,
+            IReadOnlyList<ILootThingSnapshot> preGrantList, string grantKey, IRandomSource grantRandom, List<LootOp> ops)
+        {
+            const string source = "CF_ENCMOD_REWARDS";
+
+            if (rewards.XpBonusPercent != 0)
+                ops.Add(new LootOp
+                {
+                    Kind = LootOpKind.SCALE_STACK, ConfigName = "PARTY_XP", Percent = rewards.XpBonusPercent, Source = source
+                });
+
+            if (rewards.GoldBonusPercent != 0)
+                ops.Add(new LootOp
+                {
+                    Kind = LootOpKind.SCALE_STACK, ConfigName = "CURRENCY_ADVENTURE", Percent = rewards.GoldBonusPercent, Source = source
+                });
+
+            if (rewards.ExtraLootChancePercent > 0)
+            {
+                bool proc = grantRandom.NextChance(rewards.ExtraLootChancePercent / 100m);
+                if (!proc) return;
+
+                // EOR L16646-16662 semantics: duplicate the first non-currency loot entry (Stack 1,
+                // deterministic id); if none exists, +15 gold instead.
+                string firstNonCurrency = FindFirstNonCurrencyConfigName(preGrantList);
+                int opIndex = ops.Count; // this op's own eventual position in Ops[] (§3.3)
+                if (firstNonCurrency != null)
+                {
+                    ops.Add(new LootOp
+                    {
+                        Kind = LootOpKind.ADD_ITEM,
+                        ConfigName = firstNonCurrency,
+                        Stack = 1,
+                        ThingId = LootThingId.Mint(grantKey, opIndex),
+                        Source = source
+                    });
+                }
+                else
+                {
+                    ops.Add(new LootOp { Kind = LootOpKind.ADD_GOLD, Amount = 15, Source = source });
+                }
+            }
+        }
+
+        private static string FindFirstNonCurrencyConfigName(IReadOnlyList<ILootThingSnapshot> preGrantList)
+        {
+            if (preGrantList == null) return null;
+            for (int i = 0; i < preGrantList.Count; i++)
+            {
+                ILootThingSnapshot entry = preGrantList[i];
+                if (entry == null || string.IsNullOrEmpty(entry.ConfigName)) continue;
+                if (!LootVocabulary.IsScaleStackConfigName(entry.ConfigName)) return entry.ConfigName;
+            }
+            return null;
         }
 
         private static bool Holds(ICombatEntity e, string recipeId)

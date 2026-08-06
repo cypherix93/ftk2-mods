@@ -401,7 +401,7 @@ namespace ClassForge.Core
                     if (loot.Kind == JsonKind.Number) entry.Rewards.ExtraLootChancePercent = (int)loot.AsNumber;
 
                     findings.Add(Finding.Info("CF_MODIFIER_REWARDS_DEFERRED",
-                        $"Modifier '{id}' in pack '{pack.Manifest.Id}' declares Rewards; the loot-grant verb engine that consumes them has not shipped (M-EM4, spec §11) — parsed and validated, currently inert.",
+                        $"Modifier '{id}' in pack '{pack.Manifest.Id}' declares Rewards; consumed by the loot-grant verb engine (M-EM4, spec §11) via the read-only activeModifierId/Rewards interface when this combat's modifier is selected. Inert only while [Skills] EnableLootGrants stays at its shipped-dark default (false) or EnableRecipeEngine is off.",
                         pack.Manifest.Id));
                 }
 

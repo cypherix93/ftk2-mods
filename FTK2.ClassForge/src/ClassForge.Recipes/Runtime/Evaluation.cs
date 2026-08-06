@@ -523,18 +523,43 @@ namespace ClassForge.Recipes.Runtime
         /// <c>flat = sign(Percent) * max(1, round(|targetMaxHp * Percent| / 100))</c> — so the emitted
         /// action is a plain <c>FlatValue</c> STAT_CHANGE on Stat "MXHP" through the native verb, never a
         /// FlatPercent one. <c>Percent == 0</c> or no resolvable target/MXHP ⇒ 0 (no-op delta).
+        /// <para>Encounter Modifiers spec §6.1 "PercentFromSelection" sugar (M-EM3): when the effect
+        /// carries no authored <see cref="RecipeEffect.Percent"/> but does carry
+        /// <see cref="RecipeEffect.PercentFromSelection"/>, the percent is instead looked up — by the
+        /// CURRENTLY STORED <c>CombatRuntime.Selections</c> value under that name — in
+        /// <see cref="RecipeEffect.PercentFromSelectionTable"/>. A missing selection or a selection value
+        /// with no table row resolves to percent 0, which (via the <c>pct == 0</c> early-out below) is a
+        /// no-op delta exactly like an authored <c>Percent: 0</c> — i.e. the "0/absent ⇒ omitted" rule.</para>
         /// </summary>
         private static int RawTargetMxhpPct(RecipeEffect effect, TriggerContext t)
         {
             var e = t.TriggerTarget;
             if (e == null) return 0;
-            int pct = effect.Percent.HasValue ? effect.Percent.Value : 0;
+            int pct = effect.Percent.HasValue
+                ? effect.Percent.Value
+                : (!string.IsNullOrEmpty(effect.PercentFromSelection) ? ResolvePercentFromSelection(effect, t) : 0);
             if (pct == 0) return 0;
             int maxHp = e.GetStat("MXHP");
             if (maxHp <= 0) return 0;
             decimal magnitudeRaw = Math.Abs((decimal)maxHp * pct) / 100m;
             int magnitude = (int)Math.Max(1m, Math.Round(magnitudeRaw, MidpointRounding.AwayFromZero));
             return pct < 0 ? -magnitude : magnitude;
+        }
+
+        /// <summary>Table lookup for <see cref="RecipeEffect.PercentFromSelection"/> — a pure per-battle
+        /// state read (<c>CombatRuntime.Selections</c>), zero RNG. Public so tests and the STAT_CHANGE
+        /// "omit the whole effect on 0" check (<c>RecipeDispatcher.PlanEffect</c>) can call it without
+        /// re-deriving <see cref="RawTargetMxhpPct"/>'s full rounding.</summary>
+        public static int ResolvePercentFromSelection(RecipeEffect effect, TriggerContext t)
+        {
+            if (effect == null || t == null || t.Runtime == null) return 0;
+            if (string.IsNullOrEmpty(effect.PercentFromSelection) || effect.PercentFromSelectionTable == null) return 0;
+            string selectionValue = t.Runtime.GetSelection(effect.PercentFromSelection);
+            if (string.IsNullOrEmpty(selectionValue)) return 0;
+            var table = effect.PercentFromSelectionTable;
+            for (int i = 0; i < table.Count; i++)
+                if (string.Equals(table[i].Value, selectionValue, StringComparison.Ordinal)) return table[i].Percent;
+            return 0;
         }
     }
 }

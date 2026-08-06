@@ -256,7 +256,13 @@ namespace ClassForge.Recipes.Parsing
             // --- target/trigger compatibility ---
             if (e.Target == TargetKind.TRIGGER_TARGET || e.Target == TargetKind.TRIGGER_TARGET_POSITION)
             {
-                if (!Contains(TriggersWithTarget, r.Trigger))
+                // Encounter Modifiers spec §4.3: a COMBAT-scoped ON_COMBAT_START recipe IS bound a
+                // TRIGGER_TARGET (the entity being initialized, owned by no one) — unlike an OWNED
+                // ON_COMBAT_START recipe, which carries none (RecipeDispatcher.Fire's owned pass never
+                // sets TriggerTarget for this trigger). TriggersWithTarget therefore cannot simply list
+                // ON_COMBAT_START unconditionally; the COMBAT-scope carve-out is checked here instead.
+                bool combatStartWithTarget = r.Trigger == TriggerKind.ON_COMBAT_START && r.Scope == RecipeScope.COMBAT;
+                if (!combatStartWithTarget && !Contains(TriggersWithTarget, r.Trigger))
                     RecipeParser.Warn(set, r, path + ".Target", "W_NO_TRIGGER_TARGET",
                         r.Trigger + " carries no trigger target; this effect will be a no-op");
             }
@@ -347,11 +353,14 @@ namespace ClassForge.Recipes.Parsing
                     // GATE C (Encounter Modifiers spec §5/§8.1): FlatValueFrom "TARGET_MXHP_PCT" reads the
                     // effect's own Percent field (sign + magnitude) — a plain FlatPercent STAT_CHANGE on
                     // Stat "MXHP" is a DIFFERENT, unsupported native path (InteractableHelper.
-                    // GetStatChangePercentValue only handles "HP"/"XP" and throws for MXHP).
+                    // GetStatChangePercentValue only handles "HP"/"XP" and throws for MXHP). A
+                    // PercentFromSelection table (§6.1 "PercentFromSelection" sugar, M-EM3) is an
+                    // equally-valid alternative source of Percent, authored only by the generator — it
+                    // must not trip this "no Percent at all" warning.
                     if (string.Equals(e.FlatValueFrom, Vocabulary.SourceTargetMxhpPct, StringComparison.Ordinal)
-                        && !e.Percent.HasValue)
+                        && !e.Percent.HasValue && string.IsNullOrEmpty(e.PercentFromSelection))
                         RecipeParser.Warn(set, r, path + ".Percent", "W_MXHP_PCT_NO_PERCENT",
-                            "FlatValueFrom TARGET_MXHP_PCT with no Percent authored always resolves to 0 (no-op)");
+                            "FlatValueFrom TARGET_MXHP_PCT with no Percent/PercentFromSelection authored always resolves to 0 (no-op)");
                     if (string.Equals(e.Stat, "MXHP", StringComparison.Ordinal) && e.FlatPercent.HasValue)
                         RecipeParser.Err(set, r, path + ".FlatPercent", "E_MXHP_FLATPERCENT_UNSUPPORTED",
                             "STAT_CHANGE Stat \"MXHP\" + FlatPercent throws natively (InteractableHelper." +

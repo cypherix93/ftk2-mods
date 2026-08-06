@@ -86,6 +86,36 @@ namespace ClassForge.Recipes.Loot
         int ILootThingSnapshot.Stack { get { return Stack; } }
     }
 
+    /// <summary>
+    /// Encounter Modifiers spec §11 reward-half interface, as consumed by the loot-grant verb (spec §6.3
+    /// item 6, M-EM4). Read-only input to <see cref="LootDeltaComputer.Compute"/>: the CURRENT combat's
+    /// active modifier's <c>Rewards</c> block, already resolved by the Plugin (which is the one layer that
+    /// can see both <c>CombatRuntime.Selections</c> and the pack's <c>ModifierTable</c> registry — this
+    /// pure-C# core has neither). All three fields are 0 when absent — a pure "no bonus of this kind"
+    /// value, so a caller can build this unconditionally from a nullable-int source without translating
+    /// null to a sentinel.
+    /// <para>
+    /// <b>Recorded delta vs. the loot-grant verb spec's own sketch (§6.3 consumer-6 row).</b> That spec
+    /// anticipated Mode H (host-authoritative push, zero client computation) for encounter-modifier
+    /// rewards specifically because it assumed the modifier assignment would be host-private, like Nemesis
+    /// state — "Nemesis/encounter modifier assignments... where deterministic mirroring is impossible."
+    /// The Encounter Modifiers spec's actual design (§4.2/§4.5/§6.3) is different: the selection is a
+    /// <c>[SYNCED]</c> draw off <c>CombatState.Random</c> that every peer executing the path computes
+    /// identically, and a JIP/mid-combat-load peer re-derives the SAME selection from replicated statuses
+    /// (§4.5 reconstruction) rather than needing it pushed. The active modifier — and therefore its
+    /// Rewards — is symmetric and mirrored on every peer, exactly like the four trait-loot consumers
+    /// (1-4) this same computer already serves in Mode M. No host-private state is involved, so Mode M
+    /// suffices; this is a recorded correction of the loot-grant verb spec's anticipatory sketch, not a
+    /// new sync surface, a Mode-H implementation, or a deviation from this verb's shipped MP posture.
+    /// </para>
+    /// </summary>
+    public sealed class ModifierRewardsInput
+    {
+        public int XpBonusPercent;
+        public int GoldBonusPercent;
+        public int ExtraLootChancePercent;
+    }
+
     /// <summary>Shared vocabulary/constants for op validation and application — kept in ONE place
     /// (SPEC-DELTA-v1.1 §9 risk-5 discipline), consulted by both <see cref="Parsing.RecipeValidator"/>
     /// (authoring-time) and <see cref="LootOpApplier"/> (application-time, defense in depth).</summary>
@@ -161,6 +191,22 @@ namespace ClassForge.Recipes.Loot
             });
         }
 
+        /// <summary>
+        /// Round-AwayFromZero, floor-at-1 (M-LG1). Consumers 1-4's <c>LOOT_SCALE</c> effect and M-EM4's
+        /// encounter-modifier <c>XpBonusPercent</c>/<c>GoldBonusPercent</c> reward ops both ride this SAME
+        /// application — there is no separate reward-specific rounding path.
+        /// <para>
+        /// <b>Recorded delta vs. EOR</b> (Encounter Modifiers spec §11 / loot-grant verb spec §6.3 item 6):
+        /// EOR's own XP/gold percent-bump used ceiling, floor-at-1 (<c>max(1, ceil(stack × pct/100))</c>,
+        /// EOR L16674-16688). This engine's SCALE_STACK already shipped round-AwayFromZero, floor-at-1
+        /// (M-LG1, this method, unchanged by M-EM4) for its four existing consumers. Per the task's own
+        /// framing, the simpler option is taken deliberately: reuse the shipped semantics and record the
+        /// ceil→round-AwayFromZero delta here, rather than adding a per-op rounding-mode field for one
+        /// digit of EOR-parity that a stat-panel round-trip already renders moot (both floor at 1, and
+        /// round-AwayFromZero only differs from ceiling on exact <c>.5</c> boundaries rounding down instead
+        /// of up — a one-unit difference, at most, on values already estimating a percent bonus).
+        /// </para>
+        /// </summary>
         private static void ApplyScaleStack(List<PendingThing> pending, LootOp op)
         {
             if (string.IsNullOrEmpty(op.ConfigName)) return;

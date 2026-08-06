@@ -19,6 +19,7 @@ namespace ClassForge.Recipes.Runtime
         private readonly IRandomSource _rng;
         private readonly IRecipeLog _log;
         private readonly RecipeStateStore _state = new RecipeStateStore();
+        private readonly int? _debugProcChanceFormulaOverride;
         private bool _loggedNullRandom;
 
         /// <param name="recipes">Parsed + validated recipe book. Recipes with validation errors are skipped.</param>
@@ -27,11 +28,23 @@ namespace ClassForge.Recipes.Runtime
         /// Passing <c>null</c> means "no active combat": per §5.2 invariant 2 no recipe fires and a one-time
         /// skip is logged. It NEVER falls back to an ad-hoc seeded stream (EOR's non-lockstep anti-pattern).
         /// </param>
-        public RecipeDispatcher(RecipeSet recipes, IRandomSource random, IRecipeLog log)
+        /// <param name="log">Optional diagnostic sink.</param>
+        /// <param name="debugProcChanceFormulaOverride">
+        /// DIAGNOSTIC ONLY — Encounter Modifiers spec §12.6 smoke knob (plugin-bound <c>[Skills]
+        /// DebugEncounterModifierChance</c>). When set, REPLACES every <see cref="ProcChanceFormula"/>
+        /// result with this fixed 0..100 value instead of evaluating the formula's conditions — e.g. 100
+        /// forces every eligible encounter-modifier roll to succeed for an SP smoke test. Plain
+        /// <c>ProcChance</c> recipes (the vast majority of the book) are entirely unaffected; this only
+        /// ever substitutes for a <see cref="ProcChanceFormula"/> result. <c>null</c> (the default, and
+        /// what every non-diagnostic construction — including every test in this suite — passes) means
+        /// "no override": the formula's own conditions decide, exactly as shipped.
+        /// </param>
+        public RecipeDispatcher(RecipeSet recipes, IRandomSource random, IRecipeLog log, int? debugProcChanceFormulaOverride = null)
         {
             _recipes = recipes ?? new RecipeSet();
             _rng = random;
             _log = log;
+            _debugProcChanceFormulaOverride = debugProcChanceFormulaOverride;
         }
 
         /// <summary>Per-battle state table (§6). Exposed for tests and for the Plugin's reset hooks.</summary>
@@ -396,9 +409,19 @@ namespace ClassForge.Recipes.Runtime
             //    ProcChanceFormula (Encounter Modifiers spec §5) is a pure function of replicated state
             //    replacing the whole chance computation; a result <= 0 takes ZERO draws (symmetric skip).
             bool usesFormula = r.ProcChanceFormula != null;
-            int chance = usesFormula
-                ? EvaluateProcChanceFormula(r.ProcChanceFormula, t)
-                : (t.Owner != null && t.Owner.IsAiControlled ? r.AiProcChance : r.ProcChance);
+            int chance;
+            if (usesFormula)
+            {
+                // Encounter Modifiers spec §12.6 diagnostic override — see the constructor doc comment.
+                // Still clamped to a legal chance range even when the operator fat-fingers the knob.
+                chance = _debugProcChanceFormulaOverride.HasValue
+                    ? Clamp0To100(_debugProcChanceFormulaOverride.Value)
+                    : EvaluateProcChanceFormula(r.ProcChanceFormula, t);
+            }
+            else
+            {
+                chance = t.Owner != null && t.Owner.IsAiControlled ? r.AiProcChance : r.ProcChance;
+            }
 
             if (usesFormula && chance <= 0) return;   // excluded/clamped fight — zero draws, full stop.
 
@@ -462,6 +485,13 @@ namespace ClassForge.Recipes.Runtime
             if (f.Min.HasValue && total < f.Min.Value) total = f.Min.Value;
             if (f.Max.HasValue && total > f.Max.Value) total = f.Max.Value;
             return total;
+        }
+
+        private static int Clamp0To100(int v)
+        {
+            if (v < 0) return 0;
+            if (v > 100) return 100;
+            return v;
         }
 
         private static bool HasSelectionSet(SkillRecipe r)
@@ -615,6 +645,15 @@ namespace ClassForge.Recipes.Runtime
                     int? pct = e.FlatPercent;
                     if (!pct.HasValue && !string.IsNullOrEmpty(e.PercentFrom))
                         pct = ValueSources.Resolve(e.PercentFrom, e, t);
+
+                    // Encounter Modifiers spec §6.1 "PercentFromSelection" sugar (M-EM3): a resolved flat
+                    // value of 0 off a PercentFromSelection lookup means "the selected modifier carries no
+                    // MaxHpPercent" (or no selection is stored at all) — the WHOLE effect is omitted, never
+                    // a zero-value STAT_CHANGE action. This does not affect plain FlatValue/FlatValueFrom
+                    // authoring (e.g. an authored Percent of 0), which is unchanged from today.
+                    if (!string.IsNullOrEmpty(e.PercentFromSelection) && (!flat.HasValue || flat.Value == 0))
+                        return;
+
                     for (int i = 0; i < targets.Count; i++)
                         plan.Add(new StatChangeAction
                         {
@@ -681,11 +720,32 @@ namespace ClassForge.Recipes.Runtime
         /// zero RNG. An empty/absent selection resolves to null, which the ADD_STATUS/REMOVE_STATUS caller
         /// treats as a no-op — and, with <c>Budget.ConsumeOn: EFFECT_APPLIED</c>, that no-op does not burn
         /// the budget (same "no target resolved" pattern ALLY_BY_RANK already uses, §4.3).</para>
+        /// <para><b>Table-driven variant (M-EM3):</b> when <see cref="RecipeEffect.StatusFromSelectionTable"/>
+        /// is also populated, the stored selection value is looked up in that table (a plain
+        /// <c>modifier id → status id</c> map, generator-authored) rather than being used AS the status id
+        /// directly — this is what lets <c>CombatRuntime.Selections</c> canonically hold a MODIFIER id
+        /// (matching <c>ModifierReconstruction</c>'s already-shipped choice and spec §11's
+        /// "activeModifierId") while an <c>ADD_STATUS</c> effect still resolves to the right STATUS id. No
+        /// table authored ⇒ the original raw-echo behavior, unchanged — every pre-M-EM3 use of
+        /// <c>StatusFromSelection</c> (including this suite's own generic mechanism test) keeps working
+        /// exactly as before. A selection value with no row in an AUTHORED table is a fail-safe no-op
+        /// (never a mis-applied status), mirroring <c>PercentFromSelectionTable</c>'s "0/absent ⇒ omitted".</para>
         /// </summary>
         private string ResolveStatus(RecipeEffect e, TriggerContext t)
         {
             if (!string.IsNullOrEmpty(e.StatusFromSelection))
-                return t.Runtime != null ? t.Runtime.GetSelection(e.StatusFromSelection) : null;
+            {
+                string selectionValue = t.Runtime != null ? t.Runtime.GetSelection(e.StatusFromSelection) : null;
+                if (string.IsNullOrEmpty(selectionValue)) return null;
+                if (e.StatusFromSelectionTable != null && e.StatusFromSelectionTable.Count > 0)
+                {
+                    var table = e.StatusFromSelectionTable;
+                    for (int i = 0; i < table.Count; i++)
+                        if (string.Equals(table[i].Value, selectionValue, StringComparison.Ordinal)) return table[i].StatusId;
+                    return null; // selection value has no mapped status in an AUTHORED table -- fail-safe no-op
+                }
+                return selectionValue; // original raw-echo semantics, unchanged, when no table is authored
+            }
             if (e.StatusOneOf != null && e.StatusOneOf.Count > 0)
             {
                 int idx = _rng.NextInt(0, e.StatusOneOf.Count);

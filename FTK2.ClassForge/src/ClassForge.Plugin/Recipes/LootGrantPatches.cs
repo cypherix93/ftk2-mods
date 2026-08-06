@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using ClassForge.Recipes.Abstractions;
 using ClassForge.Recipes.Loot;
+using ClassForge.Recipes.Runtime;
 
 namespace ClassForge.Plugin
 {
@@ -98,7 +99,15 @@ namespace ClassForge.Plugin
                 // ---- Step 3: compute the delta (pure; owns its own fixed iteration order, §4.3) ----
                 List<ICombatEntity> owners = BuildOwners(pParty, pEnv);
                 IItemCandidateSource candidateSource = new ThingCandidateSource();
-                IReadOnlyList<LootOp> ops = LootDeltaComputer.Compute(RecipeEngineHost.Book, owners, grantKey, grantRandom, candidateSource);
+
+                // Encounter Modifiers spec §11/§6.3 item 6 (M-EM4) — the read-only reward-half interface,
+                // resolved for THIS combat's already-cached CombatRuntime (the SAME single-slot dispatcher
+                // every ON_COMBAT_START hook synced; TryBegin here reuses it, never reallocates, since the
+                // CombatState/seed identity has not changed between combat end and this postfix).
+                ModifierRewardsInput modifierRewards = ResolveModifierRewardsInput();
+
+                IReadOnlyList<LootOp> ops = LootDeltaComputer.Compute(
+                    RecipeEngineHost.Book, owners, grantKey, grantRandom, candidateSource, modifierRewards, pending);
 
                 // Defense in depth (§8.1 item 6): Compute() can never emit a reserved op today (no v1 recipe
                 // effect maps to REPLACE_ITEM), but a future consumer effect must not be able to smuggle one
@@ -152,6 +161,48 @@ namespace ClassForge.Plugin
                 // computed above is ever written back to it once an exception has been thrown.
                 ClassForgePlugin.Log.LogError(
                     "[ClassForge] Loot-grant postfix failed (fail-safe, vanilla loot list unchanged): " + ex);
+            }
+        }
+
+        // =====================================================================================
+        // M-EM4: reward-half interface (Encounter Modifiers spec §11) -> ModifierRewardsInput
+        // =====================================================================================
+
+        /// <summary>
+        /// Resolves this combat's active-modifier rewards, if any, via the read-only §11 interface
+        /// (<see cref="RecipeEngineHost.ResolveActiveModifierRewards"/>). <c>TryBegin</c> here reuses the
+        /// SAME single-slot <c>(CombatKey, RecipeDispatcher)</c> cache every <c>ON_COMBAT_START</c> hook
+        /// already synced this combat — the CombatState/seed identity has not changed between combat end
+        /// and this postfix, so this call reallocates nothing and re-runs no §4.5 reconstruction; it is a
+        /// pure read of state already computed. Returns null (⇒ zero reward ops appended) whenever the
+        /// recipe engine cannot resolve the current combat at all, no pack shipped a
+        /// <c>modifiers.json</c>, or no modifier was selected — the ordinary "no encounter modifier this
+        /// combat" case, identical on every peer since the selection itself is (§4.5/§6.3).
+        /// </summary>
+        private static ModifierRewardsInput ResolveModifierRewardsInput()
+        {
+            try
+            {
+                CombatContextAdapter ctx; RecipeDispatcher dispatcher;
+                if (!RecipeEngineHost.TryBegin(out ctx, out dispatcher)) return null;
+
+                var active = RecipeEngineHost.ResolveActiveModifierRewards(dispatcher.State.Current);
+                if (active == null) return null;
+                if (active.XpBonusPercent == 0 && active.GoldBonusPercent == 0 && active.ExtraLootChancePercent == 0)
+                    return null; // an active modifier with an empty/zero Rewards block -- nothing to emit
+
+                return new ModifierRewardsInput
+                {
+                    XpBonusPercent = active.XpBonusPercent,
+                    GoldBonusPercent = active.GoldBonusPercent,
+                    ExtraLootChancePercent = active.ExtraLootChancePercent
+                };
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    LootLogPrefix + "modifier-reward resolution failed (fail-safe, zero reward ops emitted): " + ex);
+                return null;
             }
         }
 

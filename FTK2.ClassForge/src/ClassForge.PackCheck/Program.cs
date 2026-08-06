@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using ClassForge.Core;
 using ClassForge.Core.IO;
+using ClassForge.Recipes.Generation;
+using ClassForge.Recipes.Model;
 using ClassForge.Recipes.Parsing;
 
 namespace ClassForge.PackCheck
@@ -151,6 +153,46 @@ namespace ClassForge.PackCheck
             else
             {
                 Console.WriteLine("Recipes:            0 (no skillrecipes.json present)");
+            }
+
+            // M-EM3 — engine-generated encounter-modifier recipes (Encounter Modifiers spec §6.1). Exercises
+            // the SAME generator RecipeEngineHost.LoadBook calls, against this pack's REAL modifiers.json
+            // (not a test fixture copy) end to end through ClassForge.Core's own parse/merge.
+            if (result.MergePlan.ModifierTables.Count > 0)
+            {
+                Console.WriteLine();
+                for (int ti = 0; ti < result.MergePlan.ModifierTables.Count; ti++)
+                {
+                    var table = result.MergePlan.ModifierTables[ti];
+                    var input = new ModifierTableInput { SelectionRecipeId = table.SelectionRecipe };
+                    for (int i = 0; i < table.Modifiers.Count; i++)
+                    {
+                        var m = table.Modifiers[i];
+                        input.Modifiers.Add(new ModifierRow { Id = m.Id, Weight = m.Weight, Status = m.Status, MaxHpPercent = m.MaxHpPercent });
+                    }
+
+                    var generated = ModifierRecipeGenerator.Generate(input);
+                    if (generated == null)
+                    {
+                        Console.WriteLine("-- Generated recipes (table '" + table.SelectionRecipe + "') --");
+                        Console.WriteLine("ERROR: generation returned null (empty/malformed table) -- ships inert.");
+                        packHasErrors = true;
+                        continue;
+                    }
+
+                    var genSet = new RecipeSet();
+                    genSet.Add(generated.Select);
+                    genSet.Add(generated.Apply);
+                    RecipeValidator.Validate(genSet);
+
+                    Console.WriteLine("-- Generated recipes (from '" + table.SelectionRecipe + "', selection name '" + generated.SelectionName + "') --");
+                    Console.WriteLine("Generated recipe ids: " + generated.Select.Id + ", " + generated.Apply.Id);
+                    Console.WriteLine("Generated Findings (" + genSet.Findings.Count + "):");
+                    foreach (var f in genSet.Findings)
+                        Console.WriteLine(FormatRecipeFinding(f));
+                    if (genSet.Findings.Count == 0) Console.WriteLine("(none)");
+                    if (genSet.HasErrors) packHasErrors = true;
+                }
             }
 
             Console.WriteLine();

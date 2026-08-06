@@ -23,6 +23,8 @@ namespace ClassForge.Recipes.Tests
             MechanicTests.Run(runner);
             LootTests.Run(runner);
             EncounterModifierTests.Run(runner);
+            ModifierGenerationTests.Run(runner);
+            ModifierRewardsLootTests.Run(runner);
             return runner.Report();
         }
     }

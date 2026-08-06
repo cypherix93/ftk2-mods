@@ -67,6 +67,22 @@ namespace ClassForge.Plugin
         internal static ConfigEntry<bool> DebugLogCombatRandomDraws;
 
         /// <summary>
+        /// DIAGNOSTIC ONLY — Encounter Modifiers spec §12.6's SP smoke knob. -1 (default) = off, the
+        /// formula's own conditions decide exactly as shipped. 0..100 overrides EVERY
+        /// <c>ProcChanceFormula</c> result (currently only the generated <c>SKILL_CF_ENCMOD_SELECT</c>
+        /// recipe uses one) with this fixed value — e.g. 100 forces every eligible encounter to roll a
+        /// modifier, for an operator to visually confirm the banner/status/MXHP delta without waiting on
+        /// the real 10-30% base chance. Plain <c>ProcChance</c> recipes are entirely unaffected. There is
+        /// deliberately NO separate <c>[Skills] EnableEncounterModifiers</c> knob: the encounter-modifier
+        /// recipes are ordinary generated content riding the existing pack-level gate
+        /// (<c>[Packs] CF_PACK_ENCOUNTER_MODIFIERS.Enabled</c>, auto-bound by
+        /// <see cref="EnsurePackKnobsBound"/>) plus <see cref="EnableRecipeEngine"/> — the same two-knob
+        /// gating every other pack's recipes already use, per charter rule 3's "prefer the existing
+        /// mechanism" posture.
+        /// </summary>
+        internal static ConfigEntry<int> DebugEncounterModifierChance;
+
+        /// <summary>
         /// The one gate every patch body consults. False when the master switch is off <b>or</b> when a
         /// multiplayer parity mismatch has latched ClassForge's <c>Block</c> policy
         /// (<see cref="ParityBridge.Blocked"/>, SPEC.md §9.5 / SPEC-DELTA-v1.1 §5.3 — whole engine off,
@@ -124,6 +140,14 @@ namespace ClassForge.Plugin
                 "calls GameRandom.LogCalls(true) on the SHARED combat stream so its per-call log can be inspected " +
                 "to confirm zero draws were taken on the loot-grant path. Produces per-draw log spam for the rest " +
                 "of the session once enabled.");
+            DebugEncounterModifierChance = Config.Bind("Skills", "DebugEncounterModifierChance", -1,
+                "DIAGNOSTIC ONLY -- do not enable outside a debugging/SP-smoke session (Encounter Modifiers spec " +
+                "§12.6). -1 = off (default): the ProcChanceFormula's own conditions decide, exactly as shipped. " +
+                "0..100 forces every eligible encounter's modifier-selection roll to this fixed chance instead -- " +
+                "e.g. 100 makes every eligible fight roll a modifier, for visually confirming the banner/status/ " +
+                "MXHP delta without waiting on the real 10-30% base chance. Requires EnableRecipeEngine = true; " +
+                "affects only ProcChanceFormula-bearing recipes (today: the generated encounter-modifier " +
+                "selection recipe), never plain ProcChance recipes.");
 
             ApplyPatches();
 

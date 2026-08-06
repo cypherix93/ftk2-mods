@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using ClassForge.Core;
+using ClassForge.Recipes.Generation;
+using ClassForge.Recipes.Loot;
 using ClassForge.Recipes.Model;
 using ClassForge.Recipes.Parsing;
 using ClassForge.Recipes.Runtime;
@@ -133,7 +135,10 @@ namespace ClassForge.Plugin
 
             _cachedState = state;
             _cachedSeed = seed;
-            _cachedDispatcher = new RecipeDispatcher(Book, new GameRandomSource(state.Random), LogAdapter);
+            int? debugChance = null;
+            if (ClassForgePlugin.DebugEncounterModifierChance != null && ClassForgePlugin.DebugEncounterModifierChance.Value >= 0)
+                debugChance = ClassForgePlugin.DebugEncounterModifierChance.Value;
+            _cachedDispatcher = new RecipeDispatcher(Book, new GameRandomSource(state.Random), LogAdapter, debugChance);
 
             if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
             {
@@ -173,14 +178,10 @@ namespace ClassForge.Plugin
                     var table = tables[ti];
                     if (table == null || string.IsNullOrEmpty(table.SelectionRecipe)) continue;
 
-                    SkillRecipe selRecipe = null;
-                    for (int i = 0; i < book.Count; i++)
-                        if (string.Equals(book[i].Id, table.SelectionRecipe, StringComparison.Ordinal)) { selRecipe = book[i]; break; }
+                    SkillRecipe selRecipe = FindRecipe(book, table.SelectionRecipe);
                     if (selRecipe == null || !selRecipe.IsLive) continue;
 
-                    string selectionName = null;
-                    for (int i = 0; i < selRecipe.Effects.Count; i++)
-                        if (selRecipe.Effects[i].Type == EffectKind.SELECTION_SET) { selectionName = selRecipe.Effects[i].Name; break; }
+                    string selectionName = DiscoverSelectionName(selRecipe);
                     if (string.IsNullOrEmpty(selectionName)) continue;
 
                     SkillRecipe applyRecipe = null;
@@ -303,6 +304,13 @@ namespace ClassForge.Plugin
                     }
                 }
 
+                // M-EM3 — engine-generated encounter-modifier recipes (Encounter Modifiers spec §6.1).
+                // Single source = the pack's modifiers.json; the two combat-scoped recipes are synthesized
+                // here, never hand-authored (upserted into the SAME byId/order staging the file pass just
+                // built, so a same-id hand-authored recipe would collide through the identical warned path
+                // a two-pack skillrecipes.json collision already uses).
+                GenerateModifierRecipes(result.MergePlan, byId, order, ref errors, ref warnings);
+
                 // RecipeSet.Add re-sorts to (Priority, ordinal id) itself; `order` only keeps the dedupe
                 // deterministic, it is not the evaluation order (§5.2 invariant 4 owns that).
                 for (int i = 0; i < order.Count; i++)
@@ -332,6 +340,204 @@ namespace ClassForge.Plugin
                     warnings.ToString(CultureInfo.InvariantCulture) + " warning(s). " +
                     "Recipes with validation errors are disabled and never evaluated (fail-safe).");
             }
+        }
+
+        // =====================================================================================
+        // M-EM3 — engine-owned recipe generation (Encounter Modifiers spec §6.1)
+        // =====================================================================================
+
+        /// <summary>
+        /// For every pack that shipped a <c>modifiers.json</c> (<see cref="MergePlan.ModifierTables"/>,
+        /// M-EM1), synthesizes the SELECT + APPLY recipe pair via
+        /// <see cref="ModifierRecipeGenerator.Generate"/> and upserts both into the SAME
+        /// <paramref name="byId"/>/<paramref name="order"/> staging <see cref="LoadBook"/> just populated
+        /// from every pack's <c>skillrecipes.json</c> — so a hand-authored recipe sharing a generated
+        /// recipe's id collides through the identical warned last-writer-wins path a two-pack
+        /// skillrecipes.json id collision already uses (spec §6.1: "hand-authored copies must not exist";
+        /// this makes a violation loud rather than silently ignored).
+        /// </summary>
+        private static void GenerateModifierRecipes(
+            MergePlan plan, Dictionary<string, SkillRecipe> byId, List<string> order, ref int errors, ref int warnings)
+        {
+            var tables = plan != null ? plan.ModifierTables : null;
+            if (tables == null) return;
+
+            for (int ti = 0; ti < tables.Count; ti++)
+            {
+                var table = tables[ti];
+                if (table == null) continue;
+
+                GeneratedModifierRecipes generated;
+                try { generated = ModifierRecipeGenerator.Generate(ToGeneratorInput(table)); }
+                catch (Exception ex)
+                {
+                    errors++;
+                    ClassForgePlugin.Log.LogError(
+                        "[ClassForge] Encounter-modifier recipe generation failed for pack '" + table.PackId +
+                        "' (fail-safe — this pack's modifiers.json ships inert this load): " + ex);
+                    continue;
+                }
+                // Generate() itself returns null for a malformed/empty table (no Selection.Recipe id, or
+                // zero Modifiers) -- ships inert rather than emitting broken recipes (mirrors M-EM1 posture).
+                if (generated == null) continue;
+
+                UpsertGenerated(generated.Select, table.PackId, byId, order, ref errors, ref warnings);
+                UpsertGenerated(generated.Apply, table.PackId, byId, order, ref errors, ref warnings);
+            }
+        }
+
+        private static ModifierTableInput ToGeneratorInput(ModifierTable table)
+        {
+            var input = new ModifierTableInput { SelectionRecipeId = table.SelectionRecipe };
+            if (table.Modifiers != null)
+            {
+                for (int i = 0; i < table.Modifiers.Count; i++)
+                {
+                    var m = table.Modifiers[i];
+                    if (m == null) continue;
+                    input.Modifiers.Add(new ModifierRow
+                    {
+                        Id = m.Id,
+                        Weight = m.Weight,
+                        Status = m.Status,
+                        MaxHpPercent = m.MaxHpPercent
+                    });
+                }
+            }
+            return input;
+        }
+
+        /// <summary>Validates ONE generated recipe in isolation (a throwaway <see cref="RecipeSet"/> is the
+        /// validator's only entry point) so a malformed table (e.g. a dangling/duplicate id upstream)
+        /// disables cleanly rather than corrupting the rest of the book, then upserts it into the shared
+        /// staging with the same collision-warning posture <see cref="LoadBook"/> uses for hand-authored
+        /// duplicates.</summary>
+        private static void UpsertGenerated(SkillRecipe recipe, string packId,
+            Dictionary<string, SkillRecipe> byId, List<string> order, ref int errors, ref int warnings)
+        {
+            if (recipe == null || string.IsNullOrEmpty(recipe.Id)) return;
+
+            var temp = new RecipeSet();
+            temp.Add(recipe);
+            RecipeValidator.Validate(temp);
+            for (int f = 0; f < temp.Findings.Count; f++)
+            {
+                var finding = temp.Findings[f];
+                if (finding.Severity == ClassForge.Recipes.Model.FindingSeverity.Error)
+                {
+                    errors++;
+                    ClassForgePlugin.Log.LogError("[ClassForge] generated recipe (pack '" + packId + "'): " + finding);
+                }
+                else
+                {
+                    warnings++;
+                    ClassForgePlugin.Log.LogWarning("[ClassForge] generated recipe (pack '" + packId + "'): " + finding);
+                }
+            }
+
+            if (byId.ContainsKey(recipe.Id))
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] Generated encounter-modifier recipe '" + recipe.Id + "' (pack '" + packId +
+                    "') collides with a same-id recipe already in the book — the generated recipe wins " +
+                    "(Encounter Modifiers spec §6.1: hand-authored copies of these two recipes must not exist).");
+            }
+            else
+            {
+                order.Add(recipe.Id);
+            }
+            byId[recipe.Id] = recipe;
+        }
+
+        // =====================================================================================
+        // M-EM4 — reward-half interface (Encounter Modifiers spec §11)
+        // =====================================================================================
+
+        /// <summary>The read-only <c>(activeModifierId, Rewards{...})</c> interface spec §11 promises the
+        /// loot-grant verb engine, resolved for the CURRENT <c>CombatKey</c>'s runtime.</summary>
+        internal sealed class ActiveModifierRewards
+        {
+            internal string ModifierId;
+            internal int XpBonusPercent;
+            internal int GoldBonusPercent;
+            internal int ExtraLootChancePercent;
+        }
+
+        /// <summary>
+        /// Spec §11's interface: "the modifier engine exposes read-only (activeModifierId,
+        /// Rewards{XpBonusPercent, GoldBonusPercent, ExtraLootChancePercent}) for the current CombatKey".
+        /// Implemented as a small accessor over the SAME two things §4.5 reconstruction already reads —
+        /// <c>CombatRuntime.Selections</c> (via <paramref name="runtime"/>) and the pack's own
+        /// <c>ModifierTable</c> registry (<c>ClassForgePlugin.CurrentMergePlan.ModifierTables</c>) — reusing
+        /// the identical SELECT-recipe → SELECTION_SET-Name auto-discovery <see cref="RunModifierReconstruction"/>
+        /// uses, so there is exactly one place that knows how to find a table's selection-slot name.
+        /// <para>Returns null when no table has an active (non-empty) selection this combat, or when the
+        /// active modifier's <c>Rewards</c> block is entirely absent/zero — the loot-grant postfix then
+        /// emits zero reward ops, which is the correct "no encounter modifier this combat" behavior.</para>
+        /// </summary>
+        internal static ActiveModifierRewards ResolveActiveModifierRewards(CombatRuntime runtime)
+        {
+            try
+            {
+                if (runtime == null) return null;
+                var plan = ClassForgePlugin.CurrentMergePlan;
+                var tables = plan != null ? plan.ModifierTables : null;
+                if (tables == null || tables.Count == 0) return null;
+
+                var book = Book.Ordered;
+                for (int ti = 0; ti < tables.Count; ti++)
+                {
+                    var table = tables[ti];
+                    if (table == null || string.IsNullOrEmpty(table.SelectionRecipe)) continue;
+
+                    var selRecipe = FindRecipe(book, table.SelectionRecipe);
+                    if (selRecipe == null || !selRecipe.IsLive) continue;
+
+                    string selectionName = DiscoverSelectionName(selRecipe);
+                    if (string.IsNullOrEmpty(selectionName)) continue;
+
+                    string activeId = runtime.GetSelection(selectionName);
+                    if (string.IsNullOrEmpty(activeId)) continue;
+
+                    for (int mi = 0; mi < table.Modifiers.Count; mi++)
+                    {
+                        var m = table.Modifiers[mi];
+                        if (m == null || !string.Equals(m.Id, activeId, StringComparison.Ordinal)) continue;
+
+                        var rewards = m.Rewards;
+                        return new ActiveModifierRewards
+                        {
+                            ModifierId = activeId,
+                            XpBonusPercent = rewards != null && rewards.XpBonusPercent.HasValue ? rewards.XpBonusPercent.Value : 0,
+                            GoldBonusPercent = rewards != null && rewards.GoldBonusPercent.HasValue ? rewards.GoldBonusPercent.Value : 0,
+                            ExtraLootChancePercent = rewards != null && rewards.ExtraLootChancePercent.HasValue ? rewards.ExtraLootChancePercent.Value : 0
+                        };
+                    }
+                    // This table has an active selection but no matching row (should not happen for a
+                    // consistent table) -- fall through and keep scanning any other shipped table.
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogError(
+                    "[ClassForge] Active-modifier reward resolution failed (fail-safe, zero reward ops emitted): " + ex);
+                return null;
+            }
+        }
+
+        private static SkillRecipe FindRecipe(IReadOnlyList<SkillRecipe> book, string id)
+        {
+            for (int i = 0; i < book.Count; i++)
+                if (string.Equals(book[i].Id, id, StringComparison.Ordinal)) return book[i];
+            return null;
+        }
+
+        private static string DiscoverSelectionName(SkillRecipe selRecipe)
+        {
+            for (int i = 0; i < selRecipe.Effects.Count; i++)
+                if (selRecipe.Effects[i].Type == EffectKind.SELECTION_SET) return selRecipe.Effects[i].Name;
+            return null;
         }
 
         // =====================================================================================
