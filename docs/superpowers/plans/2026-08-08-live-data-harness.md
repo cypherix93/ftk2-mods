@@ -8,6 +8,21 @@
 
 **Tech Stack:** C# / `net10.0` / `System.Text.Json` (BCL only, no NuGet) · `System.Reflection` · existing repo console-runner pattern (`FTK2.ClassForge/src/ClassForge.Recipes.Tests/Harness.cs`) · PowerShell wrapper.
 
+## Acceptance criteria
+
+The plan is done when every one of these is true and evidenced. They are checkable conditions, not judgment calls — an executing session evaluates itself against this list before claiming completion, and states plainly any that are unmet.
+
+- [ ] **AC1 — Green on a pristine install.** `pwsh -File tools/run-harness.ps1` exits `0` against an install whose `Configs.Characters` reads **2095**, with every registered check reporting PASS.
+- [ ] **AC2 — The provenance gate actually rejects contamination.** The same command exits `1` against an install carrying third-party content on disk, naming the offending ids. Captured as evidence *before* the install is restored, since a contaminated install cannot be manufactured afterwards.
+- [ ] **AC3 — No check is vacuous.** Every check family has a negative control or a deliberately-broken fixture, and inverting it makes that check FAIL. Task 3's fixture inversion is run explicitly; the rest are asserted by their in-suite negative-control cases.
+- [ ] **AC4 — Skip, not fail, without a game.** `pwsh -File tools/run-harness.ps1 -GameDir "Z:\nope"` exits `2` and prints a skip message. The project builds on a machine with no game installed (no compile-time game reference).
+- [ ] **AC5 — Deterministic.** Two consecutive processes produce byte-identical JSON reports.
+- [ ] **AC6 — No placeholders shipped.** Zero occurrences of `NotImplementedException`, `TODO`, or `TBD` in `FTK2.DevKit/sandbox/LiveDataHarness/`.
+- [ ] **AC7 — Repo build rules honored.** No NuGet `PackageReference` in the harness csproj; no compile-time reference to `FTK2.dll`, `UnityEngine*.dll`, or `BepInEx.dll`; every other project in the repo still builds.
+- [ ] **AC8 — The game folder is untouched.** `git status` in the game directory is not applicable, so instead: no harness code path writes outside the repo, verified by inspection of every `File.`/`Directory.` write call in the project.
+- [ ] **AC9 — Findings surfaced, not silenced.** Any check that fires against real pack content is reported as a finding with its evidence. A check weakened to make it green is a failed acceptance, not a passed one.
+- [ ] **AC10 — Documented.** `FTK2.DevKit/sandbox/LiveDataHarness/README.md` exists and states the one command, the exit codes, the check inventory, and explicitly what the harness cannot catch.
+
 ## Global Constraints
 
 - **No NuGet packages anywhere in this project.** BCL + `ProjectReference` only. (`FTK2.DevKit/src/DevKit.Plugin/DevKit.Plugin.csproj:31` states the repo build rule; `ClassForge.PackCheck.csproj` and every `*.Core.Tests` project comply.)
