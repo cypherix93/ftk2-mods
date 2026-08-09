@@ -20,3 +20,6 @@ tools/bin/
 tools/.venv/
 __pycache__/
 *.pyc
+
+# Claude Code local state (settings, worktrees)
+.claude/
