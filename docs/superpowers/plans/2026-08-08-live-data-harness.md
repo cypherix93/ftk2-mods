@@ -14,7 +14,8 @@
 - **No compile-time reference to `FTK2.dll`, `UnityEngine*.dll`, or `BepInEx.dll`.** All game access is reflective. This is what keeps the harness buildable and reviewable without a game install and immune to game-update binary drift.
 - **No Harmony, no Unity shim.** Empirically verified 2026-08-08: `ConfigsHelper.LoadConfigs` completes in ~1.6–1.9 s in a plain net10 process with **zero** Harmony patches applied. Do not add a Harmony dependency; if a future code path needs one, that is a separate plan.
 - **Target framework `net10.0`**, `LangVersion 7.3`, `ImplicitUsings disable`, `Nullable disable` — matching `ClassForge.PackCheck.csproj` exactly.
-- **The harness never writes to the game directory.** Read-only access to `For The King II_Data\Managed` and `For The King II_Data\StreamingAssets\Assets`. It is safe to run while the game is open.
+- **The harness never writes to the game directory.** Read-only access to `For The King II_Data\Managed` and `For The King II_Data\StreamingAssets\Assets`. It is safe to run while the game is open. **It also never requires the mods to be deployed** — pack content is read from the repo's `data/ClassPacks` folders, so a clean game install is the correct and preferred setup.
+- **The baseline must be a pristine install.** Third-party mods can write content directly into `StreamingAssets\Assets\Configs\JSON~` (verified 2026-08-08: EOR injects 31 `EOR_*` classes into `Characters.json`), which silently changes what "live ids" means and can mask or fabricate collisions. Task 1 gates every other check on a provenance assertion; restore with Steam's *Verify integrity of game files* before trusting a run.
 - **Exit codes:** `0` = all checks passed · `1` = at least one `Error` finding · `2` = game install not found / configs unloadable (skipped, not failed).
 - **`Warning` findings never fail the run** (same posture as `ClassForge.PackCheck`, which tolerates `CF_PACK_BALDURS`'s known `CF_TRAIT_` prefix warning).
 - **Every check must be self-testing:** it must be demonstrated failing against a deliberately-broken fixture before it is accepted as passing against real packs. Fixtures live in `FTK2.DevKit/sandbox/LiveDataHarness/fixtures/`.
@@ -25,7 +26,8 @@
 | Fact | Value | Why it matters |
 |---|---|---|
 | `ConfigsHelper.LoadConfigs` | `public static Configs LoadConfigs(string basePath)` | The one entry point. `basePath` = `<game>\For The King II_Data\StreamingAssets\Assets` |
-| Live counts | `Things` 1847 · `Characters` 2126 · `Abilities` 992 · `SkillConfigs` 68 · `StatusEffects` 189 · `Followers` 48 · `Langs` 15 | Sanity floors for the smoke check. Note `Characters` is **2126**, not the 2095 recorded in older docs — the data drifts, which is the point of this harness |
+| Live counts (**pristine vanilla**) | `Things` 1847 · `Characters` 2095 · `Abilities` 992 · `SkillConfigs` 68 · `StatusEffects` 189 · `Followers` 48 · `Langs` 15 | Sanity floors for the smoke check |
+| Contaminated-install counts | `Characters` **2126** when third-party EOR is installed | EOR writes 31 `EOR_*` classes directly into `StreamingAssets\...\JSON~\Characters.json` on disk — it is **not** a pure runtime patcher. The 2095↔2126 gap is contamination, not game-update drift. Every other dictionary was clean of `EOR_` ids in the contaminated install measured 2026-08-08 |
 | `Configs` dictionaries | `SerializedSortedDictionary<string, T>` with a working `.Keys` property | How id sets are snapshotted |
 | Value types | `Characters`→`CharacterConfig` · `Things`→`ThingConfig` · `Abilities`→`CombatAbilityConfig` · `SkillConfigs`→`SkillConfig` · `StatusEffects`→`StatusEffectConfig` · `Langs`→`Dictionary<string,string>` | Reflection targets |
 | `CharacterConfig` fields | `Stats`, `Things`, `Passives`, `CampQuery`, `SwarmQuery`, `LootID`, `LocKey`, `Rarity` (`eItemRarities`), `Level`, `Threat`, `BaseType` (String), `DefaultBodyType` (String), `Tags`, `OnDeathAbility`, `Expansion` (`eExpansions`) | The reference-checker's field map |
@@ -430,8 +432,38 @@ namespace LiveDataHarness
                 Check.True(data.Lang("en") != null, "Configs.Langs contains 'en'");
             });
 
+            runner.Case("install is a pristine baseline (no third-party content on disk)", () =>
+            {
+                // Third-party mods can write straight into StreamingAssets\...\JSON~. Verified 2026-08-08:
+                // EOR injects 31 EOR_* classes into Characters.json, pushing Configs.Characters from 2095 to
+                // 2126. That silently redefines "live ids" for every downstream adds-only and reference check,
+                // so it is a hard gate, not a warning. Fix: Steam -> Verify integrity of game files.
+                var foreign = new List<string>();
+                foreach (var dict in new[] { "Characters", "Things", "Abilities", "SkillConfigs", "StatusEffects", "Followers" })
+                    foreach (var id in data.Ids(dict))
+                        foreach (var prefix in ForeignIdPrefixes)
+                            if (id.StartsWith(prefix, StringComparison.Ordinal))
+                                foreign.Add(dict + "." + id + " (matches third-party prefix '" + prefix + "')");
+
+                Check.Empty(foreign,
+                    "third-party content found on disk in StreamingAssets — restore with Steam's " +
+                    "'Verify integrity of game files' before trusting any result below");
+            });
+
             return runner.Report();
         }
+
+        /// <summary>
+        /// Id prefixes that must never appear in a pristine install's Configs. "EOR_" is the verified
+        /// offender (Enhanced Overhaul writes 31 classes into Characters.json on disk). Our own packs use
+        /// CF_EOR_/SMN_/BLSS_/ARM_ prefixes and are read from the repo, never from the game folder, so they
+        /// are deliberately NOT listed here — if one shows up in the game's Configs, that is also
+        /// contamination and this check should catch it.
+        /// </summary>
+        internal static readonly string[] ForeignIdPrefixes =
+        {
+            "EOR_", "CF_", "SMN_", "BLSS_", "ARM_", "WB_",
+        };
 
         internal static string ArgValue(string[] args, string name)
         {
@@ -447,7 +479,9 @@ namespace LiveDataHarness
 - [ ] **Step 6: Verify it builds and runs green**
 
 Run: `dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release`
-Expected: prints the game path, `ConfigsHelper.LoadConfigs OK in <~1500-2500> ms`, `PASS  live Configs are populated`, `checks: 1  passed: 1  failed: 0`, exit code 0.
+Expected: prints the game path, `ConfigsHelper.LoadConfigs OK in <~1500-2500> ms`, both cases PASS, `checks: 2  passed: 2  failed: 0`, exit code 0.
+
+If the provenance case FAILS listing `EOR_*` ids, the install still has third-party content on disk: run Steam → *Verify integrity of game files*, re-run, and confirm `Configs.Characters` drops to **2095**. Do not proceed to Task 2 against a contaminated baseline — every downstream check would be measuring the wrong thing. Add `using System;` and `using System.Collections.Generic;` to `Program.cs` for this case.
 
 - [ ] **Step 7: Verify the no-install path**
 
