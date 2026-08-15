@@ -6,7 +6,7 @@ namespace LiveDataHarness
     /// <summary>
     /// Runs the repo's .Core logic against the real game's Configs.
     /// Exit 0 = green, 1 = a check failed, 2 = no usable game install (skipped, not failed).
-    /// Usage: LiveDataHarness [--game-dir &lt;path&gt;]
+    /// Usage: LiveDataHarness [--game-dir &lt;path&gt;] [--json &lt;out.json&gt;]
     /// </summary>
     public static class Program
     {
@@ -109,7 +109,18 @@ namespace LiveDataHarness
 
             Checks.RecipeChecks.Register(runner, data, cfResult);
 
-            return runner.Report();
+            Checks.DeterminismChecks.Register(runner, data, cfResult);
+
+            var exit = runner.Report();
+
+            var jsonOut = ArgValue(args, "--json");
+            if (!string.IsNullOrEmpty(jsonOut))
+            {
+                Report.Write(jsonOut, install.Root, runner.Passed, runner.Failed, runner.Failures);
+                Console.WriteLine("report: " + System.IO.Path.GetFullPath(jsonOut));
+            }
+
+            return exit;
         }
 
         /// <summary>

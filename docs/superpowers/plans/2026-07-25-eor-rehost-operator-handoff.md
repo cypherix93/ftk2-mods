@@ -110,6 +110,32 @@ visual-fallback layer; only use it if you have no EOR install to drop into.
 
 ## (c) 15-minute smoke script
 
+### Run the offline harness first
+
+Before launching anything, run:
+
+```
+pwsh -File tools/run-harness.ps1
+```
+
+It loads the real game's `Configs` out-of-process (no Unity, no BepInEx, no running game, mods need not be
+deployed) and runs every pack's `.Core` logic against that live data. See
+[FTK2.DevKit/sandbox/LiveDataHarness](../../../FTK2.DevKit/sandbox/LiveDataHarness/README.md). Exit `0`
+means green, `1` means a check failed, `2` means no install was found (skipped).
+
+It now covers offline, so a failure here should be fixed before spending a launch on it:
+
+- adds-only enforcement against live `Configs` ids (ClassForge classes/things/abilities/statuses, and
+  Summoner followers/characters)
+- reference integrity for every merged class field
+- localization coverage, plus pack keys shadowing vanilla ones
+- the Blessings fail-closed roster gate — previously only observable by launching and reading a log line
+- recipe parse/validate, and every applied `StatusEffect` id resolving against the live game
+- `dataHash` / merge-ordering determinism, within one process and across two
+
+**It does not replace any check below.** Harmony patch application, UI injection, combat behaviour, and
+everything multiplayer still require a real launch, and no manual check has been removed on account of it.
+
 Run this in order; each step should take well under a minute except where noted. Have the BepInEx console
 window (or `BepInEx/LogOutput.log`) visible throughout.
 
