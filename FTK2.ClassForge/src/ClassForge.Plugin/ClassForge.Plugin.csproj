@@ -66,6 +66,10 @@
       <HintPath>$(ManagedDirResolved)\UnityEngine.UIElementsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(ManagedDirResolved)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
       <HintPath>$(ManagedDirResolved)\UnityEngine.ImageConversionModule.dll</HintPath>
       <Private>false</Private>
