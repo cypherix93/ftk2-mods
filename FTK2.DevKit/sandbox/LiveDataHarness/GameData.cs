@@ -27,12 +27,7 @@ namespace LiveDataHarness
         public static GameData Load(GameInstall install)
         {
             var managed = install.ManagedDir;
-            AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
-            {
-                var name = new AssemblyName(e.Name).Name;
-                var probe = Path.Combine(managed, name + ".dll");
-                return File.Exists(probe) ? Assembly.LoadFrom(probe) : null;
-            };
+            InstallResolver(managed);
 
             var ftk2 = Assembly.LoadFrom(Path.Combine(managed, "FTK2.dll"));
             var helper = ftk2.GetType("ConfigsHelper", true);
@@ -43,6 +38,33 @@ namespace LiveDataHarness
             if (configs == null) throw new InvalidOperationException("ConfigsHelper.LoadConfigs returned null.");
 
             return new GameData { Configs = configs, ManagedDir = managed };
+        }
+
+        private static bool _resolverInstalled;
+        private static string _resolveDir;
+
+        /// <summary>
+        /// Subscribes the Managed-folder fallback exactly once per process. The handler must stay attached
+        /// after the load returns — enum harvesting and field-level reflection pull further assemblies in
+        /// lazily — but re-subscribing on a second load would stack duplicate handlers, so registration is
+        /// idempotent and the target folder is updated in place.
+        /// </summary>
+        private static void InstallResolver(string managed)
+        {
+            _resolveDir = managed;
+            if (_resolverInstalled) return;
+            _resolverInstalled = true;
+            AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
+            {
+                var name = new AssemblyName(e.Name).Name;
+                // A referenced assembly's simple name is never a path. Anything carrying a directory
+                // separator or a ".." segment would probe outside the Managed folder, so it is refused
+                // rather than resolved.
+                if (string.IsNullOrEmpty(name) || !string.Equals(Path.GetFileName(name), name, StringComparison.Ordinal))
+                    return null;
+                var probe = Path.Combine(_resolveDir, name + ".dll");
+                return File.Exists(probe) ? Assembly.LoadFrom(probe) : null;
+            };
         }
 
         private object Dict(string dictName)

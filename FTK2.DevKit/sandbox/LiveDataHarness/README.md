@@ -39,6 +39,14 @@ a full run against a copied config tree left all 1278 files byte-identical. It i
 while the game is open, and it never requires the mods to be deployed — pack content is read from the
 repo's `data/` folders, so a clean install is the correct setup.
 
+Reading is not the same as trusting. `-GameDir` / `--game-dir` is a code-execution boundary: the harness
+`Assembly.LoadFrom`s that install's `Managed/FTK2.dll` — and, through the resolve fallback, its neighbours
+in that folder — then invokes `ConfigsHelper.LoadConfigs`, which runs that assembly's static initializers
+and loader code inside this process. Point it only at an install you trust. The read-only guarantee covers
+what the harness itself writes, not what the code it loads is capable of.
+
+The report path is the one caller-controlled write, and it is refused if it resolves outside the repo.
+
 ## The pristine-baseline gate
 
 Every other check is gated on the install being free of third-party content, because a mod that writes into
@@ -102,6 +110,9 @@ signature skills as dangling.
 `BaseType` and `DefaultBodyType` are plain strings with a closed de-facto vocabulary, not dictionary keys;
 checking them against `Configs.Characters` produces 31 more false findings.
 
+The `Rarity`, `Expansion` and `Tags` rows are membership tests against one flat enum vocabulary, not against
+the specific enum each field is typed as — see "What this cannot catch".
+
 ## What this cannot catch
 
 The harness stops where the game engine begins. It does **not** exercise:
@@ -112,6 +123,9 @@ The harness stops where the game engine begins. It does **not** exercise:
 - combat behaviour, damage numbers, status application at runtime
 - multiplayer: the parity handshake, desync detection, join-in-progress
 - anything requiring a running game at all
+- enum-value typos that land on the wrong enum: `Rarity`, `Expansion` and `Tags` are checked against one
+  flat set of every member name across all 395 `FTK2.dll` enums, because the merge plan carries no type
+  information for a `JsonValue` field. `Rarity: "MELEE"` — a weapon-type value — therefore passes
 
 Those still need a game launch. The in-game checks live in the operator smoke script under
 `docs/superpowers/plans/`. This harness reduces what must be checked by hand; it does not replace the

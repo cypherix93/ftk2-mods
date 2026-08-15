@@ -36,7 +36,13 @@ namespace LiveDataHarness
             catch (Exception ex)
             {
                 // A game that is present but unloadable is still "cannot measure", not "content is broken".
-                Console.WriteLine("LiveDataHarness: SKIPPED — could not load Configs: " + ex.Message);
+                // The reflective invoke wraps everything in TargetInvocationException, whose own message says
+                // nothing useful; the inner exception is the only thing a maintainer can act on, so it is
+                // unwrapped and printed in full.
+                var root = ex is System.Reflection.TargetInvocationException && ex.InnerException != null
+                    ? ex.InnerException : ex;
+                Console.WriteLine("LiveDataHarness: SKIPPED — the install at " + install.Root +
+                                  " was found but its Configs could not be loaded: " + root);
                 return 2;
             }
 
@@ -116,11 +122,34 @@ namespace LiveDataHarness
             var jsonOut = ArgValue(args, "--json");
             if (!string.IsNullOrEmpty(jsonOut))
             {
-                Report.Write(jsonOut, install.Root, runner.Passed, runner.Failed, runner.Failures);
-                Console.WriteLine("report: " + System.IO.Path.GetFullPath(jsonOut));
+                if (Report.Write(jsonOut, install.Root, cfResult.DataHash, MergeOrderDigest(cfResult),
+                                 runner.Passed, runner.Failed, runner.Failures))
+                    Console.WriteLine("report: " + System.IO.Path.GetFullPath(jsonOut));
+                else
+                    Console.WriteLine("report: REFUSED — the requested path resolves outside the repo: " +
+                                      System.IO.Path.GetFullPath(jsonOut));
             }
 
             return exit;
+        }
+
+        /// <summary>
+        /// SHA-256 over the resolved pack order and every merge op's id. Carried in the report so that
+        /// comparing two processes' reports actually covers ordering — the in-process determinism checks
+        /// cannot reach the cross-process case, and that is the one that decides whether two players'
+        /// installs agree.
+        /// </summary>
+        private static string MergeOrderDigest(ClassForge.Core.PackLoadResult result)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var p in result.EnabledOrderedPacks) sb.Append("P:").Append(p.Id).Append('\n');
+            foreach (var op in result.MergePlan.Characters) sb.Append("C:").Append(op.Id).Append('\n');
+            foreach (var op in result.MergePlan.Things) sb.Append("T:").Append(op.Id).Append('\n');
+            foreach (var op in result.MergePlan.Abilities) sb.Append("A:").Append(op.Id).Append('\n');
+            foreach (var op in result.MergePlan.StatusEffects) sb.Append("S:").Append(op.Id).Append('\n');
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+                return BitConverter.ToString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sb.ToString())))
+                    .Replace("-", "").ToLowerInvariant();
         }
 
         /// <summary>

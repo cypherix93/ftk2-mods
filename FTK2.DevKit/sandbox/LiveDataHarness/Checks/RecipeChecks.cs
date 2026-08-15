@@ -23,17 +23,33 @@ namespace LiveDataHarness.Checks
 
             var files = PackRoots.ShippedRecipeFiles().ToList();
 
-            runner.Case("every shipped skillrecipes.json parses and validates clean", () =>
+            // Parsed once and shared by the cases below: the files are immutable for the run, and running the
+            // validator twice over the same set would also duplicate its findings. Lazy rather than eager so
+            // that a malformed file still surfaces as a failing case instead of escaping the runner.
+            List<KeyValuePair<string, RecipeSet>> parsed = null;
+            Func<List<KeyValuePair<string, RecipeSet>>> sets = () =>
             {
-                Check.AtLeast(3, files.Count, "shipped skillrecipes.json files found");
-                var offenders = new List<string>();
+                if (parsed != null) return parsed;
+                parsed = new List<KeyValuePair<string, RecipeSet>>();
                 foreach (var path in files)
                 {
                     var set = RecipeParser.Parse(File.ReadAllText(path));
                     RecipeValidator.Validate(set);
+                    parsed.Add(new KeyValuePair<string, RecipeSet>(path, set));
+                }
+                return parsed;
+            };
+
+            runner.Case("every shipped skillrecipes.json parses and validates clean", () =>
+            {
+                Check.AtLeast(3, files.Count, "shipped skillrecipes.json files found");
+                var offenders = new List<string>();
+                foreach (var entry in sets())
+                {
+                    var set = entry.Value;
                     if (set.HasErrors)
                         foreach (var f in set.Findings.Where(x => x.Severity == ClassForge.Recipes.Model.FindingSeverity.Error))
-                            offenders.Add(PackNameOf(path) + ": " + f);
+                            offenders.Add(PackNameOf(entry.Key) + ": " + f);
                 }
                 Check.Empty(offenders, "recipe validation errors");
             });
@@ -44,13 +60,11 @@ namespace LiveDataHarness.Checks
                 foreach (var op in result.MergePlan.StatusEffects) resolvable.Add(op.Id);
 
                 var offenders = new List<string>();
-                foreach (var path in files)
+                foreach (var entry in sets())
                 {
-                    var set = RecipeParser.Parse(File.ReadAllText(path));
-                    RecipeValidator.Validate(set);
-                    foreach (var pair in ReferencedStatusIds(set))
+                    foreach (var pair in ReferencedStatusIds(entry.Value))
                         if (!resolvable.Contains(pair.Value))
-                            offenders.Add(PackNameOf(path) + " / " + pair.Key + " -> status '" + pair.Value + "' not in Configs.StatusEffects nor merged statuses");
+                            offenders.Add(PackNameOf(entry.Key) + " / " + pair.Key + " -> status '" + pair.Value + "' not in Configs.StatusEffects nor merged statuses");
                 }
                 Check.Empty(offenders, "recipes referencing unknown StatusEffect ids");
             });

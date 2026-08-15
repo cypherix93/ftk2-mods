@@ -2,30 +2,76 @@ LiveDataHarness
   game: E:\Games\Steam\steamapps\common\For The King II
 Warning: No parser found for config 'EncyclopediaDatas' in parent 'EncyclopediaDatas.json'
 Warning: No parser found for config 'Materials' in parent 'Materials.json'
-  ConfigsHelper.LoadConfigs OK in 1550 ms
+  ConfigsHelper.LoadConfigs OK in 1646 ms
 
 == Live config sanity ==
   PASS  live Configs are populated
   FAIL  install is a pristine baseline (no third-party content on disk)
-        third-party content found on disk in StreamingAssets — restore with Steam's 'Verify integrity of game files' before trusting any result below: 533 offender(s)
-            Things.ARM_ASHEN_CINDERROD (matches third-party prefix 'ARM_')
-            Things.ARM_ASHEN_COVENANT_CHALICE (matches third-party prefix 'ARM_')
-            Things.ARM_ASHEN_DEBTORS_NOOSE (matches third-party prefix 'ARM_')
-            Things.ARM_ASHEN_OATHBRAND (matches third-party prefix 'ARM_')
-            Things.ARM_ASHEN_PENITENT_PLATE (matches third-party prefix 'ARM_')
-            Things.ARM_BRAMBLE_AEGIS (matches third-party prefix 'ARM_')
-            Things.ARM_BRAMBLE_CUIRASS (matches third-party prefix 'ARM_')
-            Things.ARM_BRAMBLE_HEART (matches third-party prefix 'ARM_')
-            Things.ARM_BRAMBLE_HELM (matches third-party prefix 'ARM_')
-            Things.ARM_BRAMBLE_MACE (matches third-party prefix 'ARM_')
-            Things.ARM_EOR_ANCIENT_ADVENTURE_BOOTS (matches third-party prefix 'ARM_')
-            Things.ARM_EOR_ANCIENT_ADVENTURE_HAT (matches third-party prefix 'ARM_')
-            Things.ARM_EOR_ANCIENT_BEASTMAN_HELM (matches third-party prefix 'ARM_')
-            Things.ARM_EOR_ANCIENT_BEASTMAN_ROBES (matches third-party prefix 'ARM_')
-            Things.ARM_EOR_ANCIENT_BLOOM_BLUDGEON (matches third-party prefix 'ARM_')
-            ... and 518 more
+        third-party content found on disk in StreamingAssets — restore with Steam's 'Verify integrity of game files' before trusting any result below: 417 offender(s)
+            Things.ARM_EOR_ANCIENT_ADVENTURE_BOOTS (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_ADVENTURE_HAT (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_BEASTMAN_HELM (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_BEASTMAN_ROBES (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_BLOOM_BLUDGEON (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_COMPOSITE_BOW (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_CULTIST_AXE (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_FANCY_VEST (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_GREATHAMMER (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_MAGE_ROBE (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_ORNATE_ARCHLUTE (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_PEARL_STAFF (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_SUNRING (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ANCIENT_TOME (contains third-party marker 'EOR_')
+            Things.ARM_EOR_ASH_BONE_BOW (contains third-party marker 'EOR_')
+            ... and 402 more
+
+== Game vocabulary ==
+  PASS  enum + learned vocabularies are populated
+
+== ClassForge — pack load against live Configs ==
+  PASS  shipped packs load with zero Error findings
+  PASS  no pack id collides with a live vanilla id
+  PASS  negative fixture: a vanilla-colliding pack IS refused
+
+== ClassForge — reference integrity vs live Configs ==
+  FAIL  every class reference resolves
+        dangling references in shipped pack classes.json: 1 offender(s)
+            CF_SKELETON_WARRIOR.Tags -> CF_SUMMON (not a vanilla tag, enum member, or loaded pack id)
+  PASS  negative fixture: a dangling Passive IS caught
+
+== Localization coverage ==
+  PASS  every merged class has a name and a tooltip key
+  PASS  every merged trait has a name key
+  PASS  no pack localization key overwrites a vanilla key
+  PASS  negative control: a key we never ship is reported missing
+
+== Blessings — fail-closed roster gate ==
+  PASS  blessings.json parses without errors
+  PASS  every roster TraitId resolves (plugin will NOT self-disable)
+  PASS  negative control: an invented TraitId would be caught
+
+== Summoner — follower packs vs live Configs ==
+  PASS  follower packs load
+  PASS  no follower or character id collides with live Configs
+  PASS  negative control: live Followers set is real
+
+== ClassForge — recipes vs live Configs ==
+  PASS  every shipped skillrecipes.json parses and validates clean
+  FAIL  every referenced StatusEffect id resolves
+        recipes referencing unknown StatusEffect ids: 2 offender(s)
+            CF_PACK_BALDURS / SKILL_CF_CURSED_STRIKES -> status 'CURSE' not in Configs.StatusEffects nor merged statuses
+            CF_PACK_ENCOUNTER_MODIFIERS / SKILL_CF_ENCMOD_CURSE_ON_HIT -> status 'CURSE' not in Configs.StatusEffects nor merged statuses
+  PASS  modifier tables generate valid recipes
+  PASS  negative control: an invented status id would not resolve
+
+== Determinism ==
+  PASS  dataHash is well-formed and stable across two loads
+  PASS  merge-op ordering is stable across two loads
+  PASS  pack load order is stable across two loads
 
 ---------------------------------------------
-checks: 2  passed: 1  failed: 1
+checks: 25  passed: 22  failed: 3
 FAILED: install is a pristine baseline (no third-party content on disk)
+FAILED: every class reference resolves
+FAILED: every referenced StatusEffect id resolves
 ---------------------------------------------
