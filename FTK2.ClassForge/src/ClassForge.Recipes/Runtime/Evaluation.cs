@@ -16,6 +16,10 @@ namespace ClassForge.Recipes.Runtime
         public CombatRuntime Runtime;
         public TriggerKind Trigger;
 
+        /// <summary>Diagnostic sink (may be null) — needed by STATE_HASH_CHANCE's §3.3 resolver-throw
+        /// warn path. Populated by the dispatcher from its own log; carries no gameplay meaning.</summary>
+        public IRecipeLog Log;
+
         /// <summary>The recipe owner. Which hook parameter this is depends on the trigger (§2).</summary>
         public ICombatEntity Owner;
 
@@ -253,6 +257,11 @@ namespace ClassForge.Recipes.Runtime
                 // CHARACTER_TYPE (proven unable to express it).
                 case ConditionKind.IS_ENEMY:
                     return e != null && e.IsEnemy == Want(c);
+
+                // v1.3 — state-hash-chance spec §2: a deterministic, draw-free verdict over declared
+                // replicated state. NOT a roll; correlated across identical re-evaluations (spec §6).
+                case ConditionKind.STATE_HASH_CHANCE:
+                    return StateHashChance.Evaluate(c, t);
 
                 default:
                     return false;

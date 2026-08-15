@@ -425,16 +425,28 @@ multi-trigger recipe. `Trigger` stays a single token.
 
 ### 5.2 Determinism invariants (binding — these are what make §9.3b Designs A *and* B safe)
 
-1. **One RNG source, always.** Every roll draws from `Env.GameRun.CombatState.Random` — a `GameRandom`
+1. **One RNG source, always.** Every **roll** draws from `Env.GameRun.CombatState.Random` — a `GameRandom`
    (PSN §10: `public GameRandom Random;` on `CombatState`; `GameRandom` is backed by a single seeded
    `System.Random`, seeded from `NetworkDebuggingHelper.MultiplayerSeed` in online MP). `ProcChance` uses
    `NextChance(decimal)`; `StatusOneOf` uses `GetRandomElementFromList<T>`. **`System.Random`,
    `UnityEngine.Random`, and constructing a fresh `GameRandom` are all forbidden.**
-2. **Null stream ⇒ no fire, ever.** If `Env.GameRun?.CombatState?.Random` is null (no active combat), the
-   recipe **does not fire** and logs a one-time skip. It **never** falls back to a seeded ad-hoc `GameRandom`.
+   *(Amended for v1.3, state-hash-chance spec §4: `STATE_HASH_CHANCE` is **not a roll** — it takes zero
+   draws and introduces no RNG object of any kind; it is a pure function of declared replicated state.
+   The forbidden-sources clause stands unchanged and still binds — that distinction is exactly what
+   separates it from EOR's `TryCreateSharedSeededGameplayRandom`, which this invariant exists to forbid.)*
+2. **Null stream ⇒ no fire, ever** *(amended for v1.3: applies to recipes that **roll**)*. If
+   `Env.GameRun?.CombatState?.Random` is null (no active combat), a recipe that rolls **does not fire** and
+   logs a one-time skip. It **never** falls back to a seeded ad-hoc `GameRandom`.
    This is the explicit anti-pattern from EOR's `TryCreateSharedSeededGameplayRandom` /
    `RollSelectableTraitChance(random: null, …)` path (BM Legend; TM §6 hazard 1), which made ARCANE_MEMORY and
    OF_SPELLKEEPING non-lockstep. It is also the reason `SUPPRESS_CONSUME` is parked (§7.2).
+   *(v1.3 note: a recipe whose only chance gate is `STATE_HASH_CHANCE` and whose effects take no draw MAY in
+   principle fire with a null stream — there is no stream to be non-lockstep with. The current engine still
+   gates all dispatch on a live `CombatState.Random` (`RecipeEngineHost.TryBegin`); that plumbing relaxes
+   only when a first out-of-combat consumer ships, per the state-hash-chance spec's ARCANE_MEMORY
+   disposition. Invariant 6 is deliberately **unchanged** by v1.3 — OQ-SH1: the SHIELDBEARER postfix
+   mutates a return value and never suppresses, so weakening the suppression invariant speculatively was
+   declined.)*
 3. **Draw count is a pure function of replicated state.** Evaluation order is: `Enabled` → `Trigger` match →
    `Conditions` → `Cooldown` → `Budget` → **roll** → `Effects`. Because the roll is last, no draw is taken on a
    path a peer could skip for a state-dependent reason. `ProcChance == 100` takes zero draws.
@@ -555,17 +567,29 @@ inside combat, so the shared stream is available. **Semantic delta to record:** 
 and then removed rather than never applied — any on-apply side effect fires once, and the application is
 visible for an instant. WARDBOUND and OF_STABILITY are therefore **PORT-MODIFIED**, not PARK.
 
-### 7.4 `DAMAGE_TAKEN_MULT` — **PARK.**
+### 7.4 `DAMAGE_TAKEN_MULT` — ~~PARK~~ **RETIRED 2026-08-15 (v1.3, state-hash-chance spec M-SH3).**
 
-`InteractableHelper.CalculateFinalDamage(Entity, int, decimal, eDamageType, bool, bool)` (PSN §2 L1708) has
-**no `GameRandom` parameter**. A chance-gated reduction there must reach into
-`Env.GameRun.CombatState.Random` statically and take a draw at a point that, under SPEC §9.3b Design A, only
-the host executes — an asymmetric advance of the shared stream, i.e. charter rule 2's named failure. There is
-also no authority signal on the call to distinguish "I am deciding" from "I am replaying a decision."
+The original park reason, kept for the record: `InteractableHelper.CalculateFinalDamage(Entity, int,
+decimal, eDamageType, bool, bool)` (PSN §2 L1708) has **no `GameRandom` parameter** — a chance-gated
+reduction there must take a draw at a point no peer may legally advance the shared stream. Every word of
+that stays true. What it did not consider is the third option EOR 0.7.0.62 shipped (delta audit §2.3):
+**take no draw at all.** `STATE_HASH_CHANCE` (a v1.3 condition; FNV-1a over a declared tuple of replicated
+state + salt, verdict `h % 100 < Percent`) expresses the chance gate with zero draws, so
+`DAMAGE_TAKEN_MULT` now ships: an `ON_DAMAGE_PENDING` trigger on the `CalculateFinalDamage` **postfix**
+(mutates the return value — invariant 6 is not engaged) with the effect's arithmetic mirroring EOR
+verbatim (`delta = sign(Percent) × max(MinDelta, ceil(damage × |Percent|/100))`, floor 0). The trigger is
+validator-enforced RNG-free: authored `ProcChance` and any draw-taking effect are rejected on it.
 
-Note the deterministic (no-roll) variant is trivially addable and is *not* parked on principle — nothing in the
-EOR corpus needs it, so it is simply not built. **Consequence:** SHIELDBEARER → PORT-MODIFIED as a flat
-`DEF` stat trait (§coverage matrix), which needs zero primitives.
+**Author-facing caveat (binding, state-hash-chance spec §6):** a state hash is deterministic, not random —
+the same input tuple always yields the same verdict. No independent retries; correlated within a batch
+unless the tuple includes `SELF_GUID`; streaky per-player even though the rate over the input space is
+`Percent`; never describe it as "a 20% roll" — it is a gate that passes for about 20% of states. Tuples
+should include a per-evaluation-varying input (`TRIGGER_DAMAGE`) and `COMBAT_SEED` (the validator warns
+when the latter is absent).
+
+**Consequence:** SHIELDBEARER's flat-`DEF` substitute is replaced by the real mechanic
+(`SKILL_CF_TRAIT_SHIELDBEARER_MITIGATE`: 20% state-hash gate, −25% damage, min 2 — EOR62 L26733/L26754
+verbatim); coverage-matrix §2 row 15 → **PORT**.
 
 ### 7.5 `STEAL_STATUS` — **PARK.** 1 mechanic (THIEF). Needs a "first status present on X from an ordered
 allowlist" selector plus a bound "same status id" reference between two effects plus a not-found fallback

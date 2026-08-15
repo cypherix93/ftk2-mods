@@ -26,6 +26,7 @@ namespace ClassForge.Recipes.Tests
             ModifierGenerationTests.Run(runner);
             ModifierRewardsLootTests.Run(runner);
             StatModifierTests.Run(runner);
+            StateHashTests.Run(runner);
             return runner.Report();
         }
     }

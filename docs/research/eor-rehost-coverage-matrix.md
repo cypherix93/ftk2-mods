@@ -387,3 +387,24 @@ describing a version that no longer exists.
    and `InventoryHelper_Consume_Prefix` still suppresses an authoritative change per-client on the
    `random: null` path. This matters for §5 note 1's framing: our PARKs remain deliberate MP-safety
    deferrals against an upstream that still has no authority model.
+
+## Implementation updates (2026-08-15) — STATE_HASH_CHANCE shipped, SHIELDBEARER unparked
+
+1. **§2 row 15 `TRAIT_SHIELDBEARER`: PORT-MODIFIED → PORT.** The v1.3 `STATE_HASH_CHANCE` condition
+   (state-hash-chance spec M-SH1–M-SH3) shipped: FNV-1a over a declared replicated-state tuple + salt,
+   verdict `h % 100 < Percent`, zero draws — EOR 0.7.0.62's `ShouldShieldbearerMitigate` technique
+   (DA §2.3, EOR62 L26754) generalized into vocabulary. SHIELDBEARER's flat `DEF +1` substitute (and its
+   recorded "≈2× stronger" balance debt) is retired; `SKILL_CF_TRAIT_SHIELDBEARER_MITIGATE` now rides the
+   new `ON_DAMAGE_PENDING` trigger (`CalculateFinalDamage` postfix, physical damage only — upstream's own
+   gate) with `DAMAGE_TAKEN_MULT{Percent:-25, MinDelta:2}` and a 20% hash gate over
+   `[SELF_GUID, COMBAT_ROUND, SELF_HP, TRIGGER_DAMAGE, COMBAT_SEED]`. Deviation, recorded: our tuple adds
+   `COMBAT_SEED` (OQ-SH3) and uses a CF-prefixed salt, so per-instance verdicts differ from EOR's while
+   the 20% rate and arithmetic match exactly.
+2. **SPEC-DELTA §5.2 invariants 1 and 2 amended, invariant 6 unchanged** (OQ-SH1 resolved as recommended:
+   no suppression consumer shipped, so the suppression invariant was not weakened). §7.4's park is retired
+   in place with the author-facing correlation caveat (spec §6) recorded as binding.
+3. **§2 row 14 `TRAIT_ARCANE_MEMORY` / §3 row 7 `OF_SPELLKEEPING`: still PARKED, reason narrowed** — from
+   "no legal RNG exists out of combat" to "pending the spec §5.2 Leg-3 verification (does
+   `InventoryHelper.Consume` execute on every peer?) and a fail-closed-parity decision under an amended
+   invariant 6". §2 row 8 `WARDBOUND` / §3 row 13 `OF_STABILITY`: hash-gated true prevention was
+   **declined** (spec §5.3) — the shipped apply-then-cleanse redesign stays.

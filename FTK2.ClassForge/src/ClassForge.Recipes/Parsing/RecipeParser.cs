@@ -28,7 +28,9 @@ namespace ClassForge.Recipes.Parsing
         private static readonly string[] ConditionFields =
         {
             "Type", "Negate", "Of", "Value", "Comparator", "Percent", "Flat",
-            "Category", "Types", "Name"
+            "Category", "Types", "Name",
+            // STATE_HASH_CHANCE (state-hash-chance spec §2, v1.3)
+            "Salt", "Inputs"
         };
 
         private static readonly string[] EffectFields =
@@ -362,6 +364,26 @@ namespace ClassForge.Recipes.Parsing
                 if (string.IsNullOrEmpty(c.Value) || !TryEnum(c.Value, out tier))
                     Err(set, r, path + ".Value", "E_TIER_UNKNOWN", "ROLL_TIER Value must be PERFECT|SUCCESS|FAIL|CRIT_FAIL");
                 else c.Tier = tier;
+            }
+
+            // STATE_HASH_CHANCE (state-hash-chance spec §2): Salt + ordered Inputs tuple. Bounds and
+            // token membership are the validator's concern; the parser only captures shape.
+            c.Salt = Str(node, "Salt", null);
+            var inputsNode = node.Get("Inputs");
+            if (inputsNode != null)
+            {
+                if (inputsNode.Kind != JsonKind.Array)
+                    Err(set, r, path + ".Inputs", "E_SHAPE", "Inputs must be an array of input-token strings");
+                else
+                {
+                    c.Inputs = new List<string>();
+                    for (int i = 0; i < inputsNode.Items.Count; i++)
+                    {
+                        if (inputsNode.Items[i].Kind != JsonKind.String)
+                            Err(set, r, path + ".Inputs", "E_SHAPE", "Inputs entries must be strings");
+                        else c.Inputs.Add(inputsNode.Items[i].StringValue);
+                    }
+                }
             }
 
             return c;

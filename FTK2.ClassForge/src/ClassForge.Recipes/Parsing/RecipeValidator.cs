@@ -48,6 +48,14 @@ namespace ClassForge.Recipes.Parsing
             TriggerKind.ON_CONSUMABLE_USED, TriggerKind.ON_HEAL_PENDING
         };
 
+        /// <summary>Triggers whose context carries a DAMAGE magnitude — the legal scope of the
+        /// STATE_HASH_CHANCE <c>TRIGGER_DAMAGE</c> input token (spec §2.1). <c>ON_HEAL_PENDING</c>'s
+        /// Amount is a heal and is deliberately absent.</summary>
+        private static readonly TriggerKind[] TriggersWithDamage =
+        {
+            TriggerKind.ON_DAMAGE_DEALT, TriggerKind.ON_DAMAGE_TAKEN, TriggerKind.ON_DAMAGE_PENDING
+        };
+
         private static readonly TriggerKind[] TriggersWithFocus =
         {
             TriggerKind.ON_ABILITY_DECLARED, TriggerKind.ON_ABILITY_USED
@@ -58,6 +66,45 @@ namespace ClassForge.Recipes.Parsing
         public static void Validate(RecipeSet set)
         {
             for (int i = 0; i < set.Ordered.Count; i++) ValidateRecipe(set, set.Ordered[i]);
+            ValidateHashSaltUniqueness(set);
+        }
+
+        /// <summary>state-hash-chance spec §2: a duplicate (Salt, Inputs) pair across the set means two
+        /// gates share one verdict stream — the decorrelation the salt exists for is silently lost, so it
+        /// is an Error, not a warning. Walks every condition surface a recipe has.</summary>
+        private static void ValidateHashSaltUniqueness(RecipeSet set)
+        {
+            var seen = new Dictionary<string, string>(StringComparer.Ordinal);
+            for (int i = 0; i < set.Ordered.Count; i++)
+            {
+                var r = set.Ordered[i];
+                CheckSaltList(set, r, r.Conditions, "Conditions", seen);
+                for (int j = 0; j < r.Effects.Count; j++)
+                {
+                    var e = r.Effects[j];
+                    string p = "Effects[" + j.ToString(CultureInfo.InvariantCulture) + "]";
+                    CheckSaltList(set, r, e.Conditions, p + ".Conditions", seen);
+                    if (e.Rank != null) CheckSaltList(set, r, e.Rank.Where, p + ".Rank.Where", seen);
+                }
+            }
+        }
+
+        private static void CheckSaltList(RecipeSet set, SkillRecipe r, List<RecipeCondition> list, string path, Dictionary<string, string> seen)
+        {
+            if (list == null) return;
+            for (int i = 0; i < list.Count; i++)
+            {
+                var c = list[i];
+                if (c == null || c.Type != ConditionKind.STATE_HASH_CHANCE || string.IsNullOrEmpty(c.Salt)) continue;
+                string key = c.Salt + "|" + (c.Inputs != null ? string.Join(",", c.Inputs) : "");
+                string firstOwner;
+                if (seen.TryGetValue(key, out firstOwner))
+                    RecipeParser.Err(set, r, path + "[" + i.ToString(CultureInfo.InvariantCulture) + "].Salt", "E_HASH_SALT_DUP",
+                        "duplicate (Salt, Inputs) pair '" + c.Salt + "' — first authored on '" + firstOwner +
+                        "'; two conditions sharing a tuple share one verdict stream (spec §2)");
+                else
+                    seen[key] = r.Id;
+            }
         }
 
         private static void ValidateRecipe(RecipeSet set, SkillRecipe r)
@@ -65,12 +112,13 @@ namespace ClassForge.Recipes.Parsing
             bool isV11 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionCurrent, StringComparison.Ordinal);
             bool isV10 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionLegacy, StringComparison.Ordinal);
             bool isV12 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionLoot, StringComparison.Ordinal);
-            if (!isV11 && !isV10 && !isV12)
+            bool isV13 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionStateHash, StringComparison.Ordinal);
+            if (!isV11 && !isV10 && !isV12 && !isV13)
             {
                 RecipeParser.Err(set, r, "SchemaVersion", "E_SCHEMA_UNSUPPORTED",
                     "SchemaVersion '" + r.SchemaVersion + "' cannot be run by this engine (supported: " +
                     Vocabulary.SchemaVersionLegacy + ", " + Vocabulary.SchemaVersionCurrent + ", " +
-                    Vocabulary.SchemaVersionLoot + ")");
+                    Vocabulary.SchemaVersionLoot + ", " + Vocabulary.SchemaVersionStateHash + ")");
                 return; // nothing else is meaningful once the vocabulary version is unknown
             }
 
@@ -98,6 +146,32 @@ namespace ClassForge.Recipes.Parsing
                 if (Contains(Vocabulary.V12OnlyTriggers, r.Trigger))
                     RecipeParser.Err(set, r, "Trigger", "E_SCHEMA_GATE",
                         "trigger " + r.Trigger + " requires SchemaVersion " + Vocabulary.SchemaVersionLoot);
+            }
+
+            // --- SchemaVersion gate on v1.3-only tokens (state-hash-chance spec) ---
+            if (!isV13)
+            {
+                if (Contains(Vocabulary.V13OnlyTriggers, r.Trigger))
+                    RecipeParser.Err(set, r, "Trigger", "E_SCHEMA_GATE",
+                        "trigger " + r.Trigger + " requires SchemaVersion " + Vocabulary.SchemaVersionStateHash);
+            }
+
+            // --- ON_DAMAGE_PENDING restricted vocabulary (state-hash-chance spec M-SH3): the hook has no
+            //     GameRandom and no peer may advance the shared stream there (SPEC-DELTA §7.4's hazard),
+            //     so the trigger is RNG-free by construction: no proc chances, and only draw-free effects. ---
+            if (r.Trigger == TriggerKind.ON_DAMAGE_PENDING)
+            {
+                if (r.ProcChance != 100 || r.AiProcChance != 100)
+                    RecipeParser.Err(set, r, "ProcChance", "E_DMGPEND_RNG",
+                        "a chance-gated ON_DAMAGE_PENDING recipe is rejected — the hook has no legal RNG " +
+                        "(SPEC-DELTA §7.4); gate with STATE_HASH_CHANCE instead");
+                for (int i = 0; i < r.Effects.Count; i++)
+                {
+                    var kind = r.Effects[i].Type;
+                    if (kind != EffectKind.DAMAGE_TAKEN_MULT && kind != EffectKind.COUNTER_ADD && kind != EffectKind.COUNTER_SET)
+                        RecipeParser.Err(set, r, "Effects[" + i.ToString(CultureInfo.InvariantCulture) + "].Type", "E_DMGPEND_EFFECT",
+                            "only DAMAGE_TAKEN_MULT and COUNTER_ADD/COUNTER_SET may ride ON_DAMAGE_PENDING (draw-free set)");
+                }
             }
 
             // --- ON_COMBAT_LOOT restricted vocabulary (verb spec §6.1): the trigger is intrinsically
@@ -394,6 +468,19 @@ namespace ClassForge.Recipes.Parsing
                             "ROLL_STAT_BONUS requires Percent, Flat, PercentFrom or FlatValueFrom");
                     break;
                 }
+                case EffectKind.DAMAGE_TAKEN_MULT:
+                {
+                    // v1.3, state-hash-chance spec M-SH3 — the retired SPEC-DELTA §7.4 park.
+                    if (r.Trigger != TriggerKind.ON_DAMAGE_PENDING)
+                        RecipeParser.Err(set, r, path, "E_EFFECT_TRIGGER_SCOPE",
+                            "DAMAGE_TAKEN_MULT is ON_DAMAGE_PENDING only (it mutates CalculateFinalDamage's return value)");
+                    if (!e.Percent.HasValue || e.Percent.Value == 0 || e.Percent.Value < -99 || e.Percent.Value > 99)
+                        RecipeParser.Err(set, r, path + ".Percent", "E_VALUE_MISSING",
+                            "DAMAGE_TAKEN_MULT requires a non-zero Percent in -99..99 (negative reduces damage)");
+                    if (e.MinDelta.HasValue && e.MinDelta.Value < 1)
+                        RecipeParser.Err(set, r, path + ".MinDelta", "E_RANGE", "MinDelta must be >= 1 when authored");
+                    break;
+                }
                 case EffectKind.HEAL_MODIFIER:
                 {
                     if (r.Trigger != TriggerKind.ON_HEAL_PENDING)
@@ -458,6 +545,10 @@ namespace ClassForge.Recipes.Parsing
                 if (c.Type == ConditionKind.PARTY_HAS_FOLLOWER)
                     RecipeParser.Err(set, r, p + ".Type", "E_COND_CONTEXT",
                         "PARTY_HAS_FOLLOWER is legal only in statmodifiers.json (the combat dispatcher has no evaluator for it)");
+                if (Contains(Vocabulary.V13OnlyConditions, c.Type) &&
+                    !string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionStateHash, StringComparison.Ordinal))
+                    RecipeParser.Err(set, r, p + ".Type", "E_SCHEMA_GATE",
+                        "condition " + c.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionStateHash);
                 if (isV10 && Contains(Vocabulary.V11OnlyConditions, c.Type))
                     RecipeParser.Err(set, r, p + ".Type", "E_SCHEMA_GATE",
                         "condition " + c.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionCurrent);
@@ -605,6 +696,55 @@ namespace ClassForge.Recipes.Parsing
                     if (!c.ValueBool.HasValue)
                         RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING", "IS_ENEMY requires a boolean Value");
                     break;
+
+                // --- v1.3, state-hash-chance spec §2 ---
+                case ConditionKind.STATE_HASH_CHANCE:
+                {
+                    if (!c.Percent.HasValue || c.Percent.Value < 1 || c.Percent.Value > 99)
+                        RecipeParser.Err(set, r, p + ".Percent", "E_HASH_PERCENT",
+                            "STATE_HASH_CHANCE Percent must be 1..99 — 0 and 100 are constant gates, " +
+                            "which a hash must never express (use Enabled:false or omit the condition)");
+                    if (!IsValidHashSalt(c.Salt))
+                        RecipeParser.Err(set, r, p + ".Salt", "E_HASH_SALT",
+                            "STATE_HASH_CHANCE Salt is required and must match ^[A-Z0-9_]{4,64}$");
+                    if (c.Inputs == null || c.Inputs.Count < 2 || c.Inputs.Count > 8)
+                        RecipeParser.Err(set, r, p + ".Inputs", "E_HASH_INPUTS",
+                            "STATE_HASH_CHANCE requires 2..8 Inputs (a 1-token tuple is a near-constant gate, spec §6)");
+                    else
+                    {
+                        bool hasCombatSeed = false;
+                        for (int i = 0; i < c.Inputs.Count; i++)
+                        {
+                            var tok = c.Inputs[i];
+                            if (!Contains(Vocabulary.StateHashInputTokens, tok))
+                            {
+                                RecipeParser.Err(set, r, p + ".Inputs", "E_HASH_TOKEN",
+                                    "'" + tok + "' is not a STATE_HASH_CHANCE input token — the set is closed " +
+                                    "(spec §3.2: every token must argue its replication)");
+                                continue;
+                            }
+                            if (string.Equals(tok, "COMBAT_SEED", StringComparison.Ordinal)) hasCombatSeed = true;
+                            if (string.Equals(tok, "TRIGGER_DAMAGE", StringComparison.Ordinal) &&
+                                !Contains(TriggersWithDamage, r.Trigger))
+                                RecipeParser.Err(set, r, p + ".Inputs", "E_HASH_TOKEN_SCOPE",
+                                    "TRIGGER_DAMAGE is only legal under a damage-carrying trigger (spec §2.1 — " +
+                                    "a silently-empty input is the ROLL_TIER{EQ FAIL} mistake class)");
+                            if (string.Equals(tok, "TRIGGER_ITEM_ID", StringComparison.Ordinal) &&
+                                !Contains(TriggersWithItem, r.Trigger))
+                                RecipeParser.Err(set, r, p + ".Inputs", "E_HASH_TOKEN_SCOPE",
+                                    "TRIGGER_ITEM_ID is only legal under an item-carrying trigger (spec §2.1)");
+                            if (string.Equals(tok, "ABILITY_ID", StringComparison.Ordinal) &&
+                                !Contains(TriggersWithAbility, r.Trigger))
+                                RecipeParser.Err(set, r, p + ".Inputs", "E_HASH_TOKEN_SCOPE",
+                                    "ABILITY_ID is only legal under an ability-carrying trigger (spec §2.1)");
+                        }
+                        if (!hasCombatSeed)
+                            RecipeParser.Warn(set, r, p + ".Inputs", "W_HASH_NO_COMBAT_SEED",
+                                "tuple lacks COMBAT_SEED — verdicts will repeat across combats in identical " +
+                                "states (OQ-SH3 strongly recommends including it)");
+                    }
+                    break;
+                }
             }
 
             if (c.Type == ConditionKind.STATUS_TYPE && r.Trigger != TriggerKind.ON_STATUS_APPLIED)
@@ -622,6 +762,18 @@ namespace ClassForge.Recipes.Parsing
                 !Contains(TriggersWithAbility, r.Trigger))
                 RecipeParser.Warn(set, r, p, "W_NO_ABILITY",
                     r.Trigger + " carries no ability id; " + c.Type + " will evaluate false");
+        }
+
+        /// <summary>state-hash-chance spec §2: <c>^[A-Z0-9_]{4,64}$</c>, checked without a Regex dependency.</summary>
+        private static bool IsValidHashSalt(string salt)
+        {
+            if (string.IsNullOrEmpty(salt) || salt.Length < 4 || salt.Length > 64) return false;
+            for (int i = 0; i < salt.Length; i++)
+            {
+                char ch = salt[i];
+                if ((ch < 'A' || ch > 'Z') && (ch < '0' || ch > '9') && ch != '_') return false;
+            }
+            return true;
         }
 
         private static bool Contains<T>(IReadOnlyList<T> list, T value)

@@ -90,7 +90,7 @@
   "TRAIT_ARCANE_MEMORY": "Arcane Memory",
   "TRAIT_ARCANE_MEMORY_DESCRIPTION": "30% chance not to consume a scroll when used. (Effect not yet ported in this pack; selectable but currently inert.)",
   "TRAIT_SHIELDBEARER": "Shieldbearer",
-  "TRAIT_SHIELDBEARER_DESCRIPTION": "Gain +1 Armor.",
+  "TRAIT_SHIELDBEARER_DESCRIPTION": "When taking Physical Damage, has a 20% chance to reduce final damage by 25%, with a minimum reduction of 2.",
   "TRAIT_CF_FIELDMEDIC": "Field Medic",
   "TRAIT_CF_FIELDMEDIC_DESCRIPTION": "Healing you give or receive is increased by 25% (minimum +1).",
   "TRAIT_ARCANE_FOCUS": "Arcane Focus",
@@ -312,7 +312,7 @@
   "UI_ENCYCLOPEDIA_TRAIT_SCAVENGER": "Occasionally rewards gold or a herb after combat. (Loot effect not yet ported in this pack; selectable but currently inert.)",
   "UI_ENCYCLOPEDIA_TRAIT_BATTLE_RHYTHM": "After dealing damage in combat, gain Evade Up.",
   "UI_ENCYCLOPEDIA_TRAIT_ARCANE_MEMORY": "30% chance not to consume a scroll when used. (Effect not yet ported in this pack; selectable but currently inert.)",
-  "UI_ENCYCLOPEDIA_TRAIT_SHIELDBEARER": "Gain +1 Armor.",
+  "UI_ENCYCLOPEDIA_TRAIT_SHIELDBEARER": "When taking Physical Damage, has a 20% chance to reduce final damage by 25%, with a minimum reduction of 2.",
   "UI_ENCYCLOPEDIA_TRAIT_CF_FIELDMEDIC": "Healing you give or receive is increased by 25% (minimum +1).",
   "UI_ENCYCLOPEDIA_TRAIT_ARCANE_FOCUS": "Successful magical attacks grant Arcane Focus: +5% Magic Damage per stack, up to 3 stacks. Failing a magical attack or taking direct damage removes all stacks.",
   "UI_ENCYCLOPEDIA_TRAIT_MOMENTUM": "After landing a killing blow, gain Attack Up.",
@@ -334,5 +334,7 @@
   "STAT_CF_TRAIT_SCHOLARS_HABIT_INT": "+12% Intelligence",
   "STAT_CF_TRAIT_KNIFE_EDGE_HP": "-5% Max HP",
   "STAT_CF_TRAIT_PACK_TACTICS_PHY": "+10% Physical Damage while a pet or mercenary is with the party",
-  "STAT_CF_TRAIT_ARCANE_FOCUS_MAG": "+5% Magic Damage per Arcane Focus stack (max 3)"
+  "STAT_CF_TRAIT_ARCANE_FOCUS_MAG": "+5% Magic Damage per Arcane Focus stack (max 3)",
+  "SKILL_CF_TRAIT_SHIELDBEARER_MITIGATE": "20% chance to reduce incoming physical damage by 25% (min 2)",
+  "UI_ENCYCLOPEDIA_SKILL_CF_TRAIT_SHIELDBEARER_MITIGATE": "When taking Physical Damage, has a 20% chance to reduce final damage by 25%, with a minimum reduction of 2."
 }

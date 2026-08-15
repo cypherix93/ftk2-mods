@@ -24,7 +24,15 @@ namespace ClassForge.Recipes.Model
         ON_ENEMY_ABILITY_RESOLVED, // T7
         ON_HEAL_PENDING,           // T8
         // --- added in v1.2, loot-grant verb spec (docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md §6.1) ---
-        ON_COMBAT_LOOT
+        ON_COMBAT_LOOT,
+        // --- added in v1.3, state-hash-chance spec M-SH3 ---
+        /// <summary><c>InteractableHelper.CalculateFinalDamage</c> <b>Postfix</b> (PSN §2 L1708) — the
+        /// pre-application damage value, mutable via <c>DAMAGE_TAKEN_MULT</c>. The hook has no
+        /// <c>GameRandom</c> parameter, which is exactly why this trigger is validator-enforced RNG-free
+        /// and why chance gates on it must be <c>STATE_HASH_CHANCE</c>. v1.3 limitation (recorded): the
+        /// Plugin fires it for PHYSICAL damage only — its sole consumer (SHIELDBEARER) is physical-only
+        /// in EOR 0.7.0.62 (Plugin.cs L26733 gates <c>eDamageType == 0</c>).</summary>
+        ON_DAMAGE_PENDING
     }
 
     /// <summary>Condition tokens — SPEC-DELTA-v1.1 §3 (8 v1 + 15 v1.1 + 9 v1.2 encounter-modifiers = 32 tokens).</summary>
@@ -69,7 +77,11 @@ namespace ClassForge.Recipes.Model
         /// <summary>EOR62 <c>PartyHasPetOrMercenary()</c> (L24576): any player follower resolves to a
         /// pet or mercenary entity. Legal ONLY in a CONDITIONAL_STAT_MODIFIER context — the combat
         /// dispatcher has no evaluator for it, so <c>RecipeValidator</c> rejects it in skillrecipes.json.</summary>
-        PARTY_HAS_FOLLOWER
+        PARTY_HAS_FOLLOWER,
+        /// <summary>state-hash-chance spec §2: a deterministic, draw-free chance gate — FNV-1a over
+        /// <c>Salt|inputs…</c>, verdict <c>h % 100 &lt; Percent</c>. NOT a roll (SPEC-DELTA §5.2
+        /// invariant-1 amendment); correlated across re-evaluation with identical inputs (spec §6).</summary>
+        STATE_HASH_CHANCE
     }
 
     /// <summary>Effect tokens — SPEC-DELTA-v1.1 §4 (4 v1 + 4 v1.1 + 4 loot v1.2 + 2 encounter-modifiers v1.2 = 14 tokens).</summary>
@@ -90,7 +102,13 @@ namespace ClassForge.Recipes.Model
         AFFIX_ROLL,      // reserved: parses, but the v1 validator always rejects it (M-LG4)
         // --- added in v1.2, Encounter Modifiers spec §5 (M-EM2) ---
         SELECTION_SET,
-        EVENT_BANNER
+        EVENT_BANNER,
+        // --- added in v1.3, state-hash-chance spec M-SH3 ---
+        /// <summary>Mutates the pending damage on <c>ON_DAMAGE_PENDING</c> (the SPEC-DELTA §7.4 park,
+        /// retired): <c>delta = sign(Percent) * max(MinDelta, ceil(damage * |Percent| / 100))</c>,
+        /// result floored at 0 — EOR 0.7.0.62's SHIELDBEARER arithmetic verbatim (L26733:
+        /// <c>Max(2, CeilToInt(result * 0.25f))</c>). ON_DAMAGE_PENDING-only, validator-enforced.</summary>
+        DAMAGE_TAKEN_MULT
     }
 
     /// <summary>Recipe-level scope — Encounter Modifiers spec §4.2. <c>OWNED</c> is exactly today's v1.1
@@ -205,6 +223,10 @@ namespace ClassForge.Recipes.Model
         /// (loot-grant verb spec §6, M-LG1). Additive over 1.1 — nothing 1.1-authored breaks.</summary>
         public const string SchemaVersionLoot = "1.2";
 
+        /// <summary>Schema version gating <c>STATE_HASH_CHANCE</c> / <c>ON_DAMAGE_PENDING</c> /
+        /// <c>DAMAGE_TAKEN_MULT</c> (state-hash-chance spec). Additive over 1.2.</summary>
+        public const string SchemaVersionStateHash = "1.3";
+
         /// <summary>Status token meaning "the status carried by the trigger" — SPEC-DELTA-v1.1 §4.1.</summary>
         public const string TriggerStatusToken = "TRIGGER_STATUS";
 
@@ -275,6 +297,33 @@ namespace ClassForge.Recipes.Model
             ConditionKind.PARTY_AVG_LEVEL, ConditionKind.IS_DUNGEON, ConditionKind.BOSS_FIGHT,
             ConditionKind.ENCOUNTER_PROPERTY, ConditionKind.ENTITY_TAG, ConditionKind.CONFIG_NAME_CONTAINS,
             ConditionKind.COMBAT_START_REAL, ConditionKind.SELECTION_PRESENT, ConditionKind.IS_ENEMY
+        };
+
+        /// <summary>Triggers added in v1.3 (state-hash-chance spec M-SH3).</summary>
+        public static readonly IReadOnlyList<TriggerKind> V13OnlyTriggers = new[]
+        {
+            TriggerKind.ON_DAMAGE_PENDING
+        };
+
+        /// <summary>Conditions added in v1.3.</summary>
+        public static readonly IReadOnlyList<ConditionKind> V13OnlyConditions = new[]
+        {
+            ConditionKind.STATE_HASH_CHANCE
+        };
+
+        /// <summary>Effects added in v1.3.</summary>
+        public static readonly IReadOnlyList<EffectKind> V13OnlyEffects = new[]
+        {
+            EffectKind.DAMAGE_TAKEN_MULT
+        };
+
+        /// <summary>STATE_HASH_CHANCE's closed input-token set (spec §2.1). Adding a token is a spec
+        /// change that must argue its replication — the closed set IS the §3.2 correctness contract.</summary>
+        public static readonly IReadOnlyList<string> StateHashInputTokens = new[]
+        {
+            "SELF_GUID", "TRIGGER_SOURCE_GUID", "TRIGGER_TARGET_GUID", "COMBAT_ROUND", "COMBAT_SEED",
+            "SELF_HP", "SELF_FOCUS", "TRIGGER_DAMAGE", "TRIGGER_ITEM_ID", "ABILITY_ID",
+            "RUN_SEED", "ENCOUNTER_GUID"
         };
 
         /// <summary>Conditions the <c>Of</c> selector is defined for — SPEC-DELTA-v1.1 §3, extended by

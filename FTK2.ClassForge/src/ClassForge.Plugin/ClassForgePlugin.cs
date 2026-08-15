@@ -331,6 +331,16 @@ namespace ClassForge.Plugin
                 CombatHookPatches.WarnTurnHookMissing();
             }
 
+            // v1.3 ON_DAMAGE_PENDING — InteractableHelper.CalculateFinalDamage postfix (PSN §2 L1708;
+            // state-hash-chance spec M-SH3, the retired SPEC-DELTA §7.4 park). RNG-free by validator
+            // construction; SHIELDBEARER's STATE_HASH_CHANCE gate takes zero draws.
+            Patch(harmony, typeof(InteractableHelper), "CalculateFinalDamage",
+                postfix: M(typeof(CombatHookPatches), nameof(CombatHookPatches.CalculateFinalDamage_Postfix)),
+                argumentTypes: new[]
+                {
+                    typeof(Entity), typeof(int), typeof(decimal), typeof(eDamageType), typeof(bool), typeof(bool)
+                });
+
             // M-LG2 ON_COMBAT_LOOT — LootDropHelper.GetLootDropsFromEnemies postfix (the loot-grant sync
             // verb's single compute+apply point). Gated inside LootGrantPatches on [Skills] EnableLootGrants
             // (default false -- ships dark, docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md §10).

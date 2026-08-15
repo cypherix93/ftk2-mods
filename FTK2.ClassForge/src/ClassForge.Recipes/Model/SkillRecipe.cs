@@ -70,6 +70,13 @@ namespace ClassForge.Recipes.Model
 
         // ROLL_TIER
         public RollTier Tier;
+
+        // STATE_HASH_CHANCE (state-hash-chance spec §2). Percent reuses the shared field above.
+        /// <summary>Decorrelation salt, <c>^[A-Z0-9_]{4,64}$</c>, unique per authored condition.</summary>
+        public string Salt;
+        /// <summary>Ordered input-token tuple (2–8 entries from <see cref="Vocabulary.StateHashInputTokens"/>).
+        /// Authored order is the hash order.</summary>
+        public List<string> Inputs;
     }
 
     /// <summary><c>ALLY_BY_RANK.Rank</c> sub-schema — SPEC-DELTA-v1.1 §4.3.</summary>

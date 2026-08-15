@@ -4,12 +4,31 @@
     "DisplayName": "Arcane Overflow",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "ABILITY_STAT", "Value": "INT" }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "INT"
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "StatusOneOf": ["STATUS_FIRE_00", "STATUS_ICE_00", "STATUS_SHOCK_00"], "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "StatusOneOf": [
+          "STATUS_FIRE_00",
+          "STATUS_ICE_00",
+          "STATUS_SHOCK_00"
+        ],
+        "Duration": 1
+      }
     ],
     "ProcChance": 20,
     "AiProcChance": 20,
@@ -21,15 +40,48 @@
     "DisplayName": "Deathblow",
     "Trigger": "ON_ABILITY_DECLARED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "HP_THRESHOLD", "Of": "TRIGGER_TARGET", "Comparator": "LTE", "Percent": 15 }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "HP_THRESHOLD",
+        "Of": "TRIGGER_TARGET",
+        "Comparator": "LTE",
+        "Percent": 15
+      }
     ],
     "Effects": [
-      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 100,
-        "Conditions": [ { "Type": "CHARACTER_TYPE", "Of": "TRIGGER_TARGET", "Value": "BOSS", "Negate": true } ] },
-      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 25,
-        "Conditions": [ { "Type": "CHARACTER_TYPE", "Of": "TRIGGER_TARGET", "Value": "BOSS" } ] }
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Stat": "ATK",
+        "Percent": 100,
+        "Conditions": [
+          {
+            "Type": "CHARACTER_TYPE",
+            "Of": "TRIGGER_TARGET",
+            "Value": "BOSS",
+            "Negate": true
+          }
+        ]
+      },
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Stat": "ATK",
+        "Percent": 25,
+        "Conditions": [
+          {
+            "Type": "CHARACTER_TYPE",
+            "Of": "TRIGGER_TARGET",
+            "Value": "BOSS"
+          }
+        ]
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -42,11 +94,22 @@
     "Trigger": "ON_ABILITY_USED",
     "Priority": 0,
     "Conditions": [
-      { "Type": "ABILITY_STAT", "Value": "TAL" },
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "CRIT_FAIL" }
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "TAL"
+      },
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "CRIT_FAIL"
+      }
     ],
     "Effects": [
-      { "Type": "COUNTER_SET", "Name": "CRESCENDO", "Value": 0 }
+      {
+        "Type": "COUNTER_SET",
+        "Name": "CRESCENDO",
+        "Value": 0
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -59,17 +122,65 @@
     "Trigger": "ON_ABILITY_USED",
     "Priority": 1,
     "Conditions": [
-      { "Type": "ABILITY_STAT", "Value": "TAL" },
-      { "Type": "ROLL_TIER", "Comparator": "GTE", "Value": "SUCCESS" }
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "TAL"
+      },
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "GTE",
+        "Value": "SUCCESS"
+      }
     ],
     "Effects": [
-      { "Type": "COUNTER_ADD", "Name": "CRESCENDO", "Delta": 1, "Max": 3 },
-      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_00", "Duration": 2,
-        "Conditions": [ { "Type": "COUNTER", "Name": "CRESCENDO", "Comparator": "EQ", "Value": 1 } ] },
-      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_01", "Duration": 2,
-        "Conditions": [ { "Type": "COUNTER", "Name": "CRESCENDO", "Comparator": "EQ", "Value": 2 } ] },
-      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_02", "Duration": 2,
-        "Conditions": [ { "Type": "COUNTER", "Name": "CRESCENDO", "Comparator": "GTE", "Value": 3 } ] }
+      {
+        "Type": "COUNTER_ADD",
+        "Name": "CRESCENDO",
+        "Delta": 1,
+        "Max": 3
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_ALL",
+        "Status": "STATUS_ATTACKUP_00",
+        "Duration": 2,
+        "Conditions": [
+          {
+            "Type": "COUNTER",
+            "Name": "CRESCENDO",
+            "Comparator": "EQ",
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_ALL",
+        "Status": "STATUS_ATTACKUP_01",
+        "Duration": 2,
+        "Conditions": [
+          {
+            "Type": "COUNTER",
+            "Name": "CRESCENDO",
+            "Comparator": "EQ",
+            "Value": 2
+          }
+        ]
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_ALL",
+        "Status": "STATUS_ATTACKUP_02",
+        "Duration": 2,
+        "Conditions": [
+          {
+            "Type": "COUNTER",
+            "Name": "CRESCENDO",
+            "Comparator": "GTE",
+            "Value": 3
+          }
+        ]
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -81,11 +192,23 @@
     "DisplayName": "Pack Tactics (quarry)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "GTE", "Value": "SUCCESS" },
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "GTE",
+        "Value": "SUCCESS"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_MARKED_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_MARKED_00",
+        "Duration": 1
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -97,13 +220,29 @@
     "DisplayName": "Pack Tactics (pet)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "HAS_STATUS", "Of": "TRIGGER_TARGET", "Value": "STATUS_MARKED_00" }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "HAS_STATUS",
+        "Of": "TRIGGER_TARGET",
+        "Value": "STATUS_MARKED_00"
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_BLEED_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_BLEED_00",
+        "FallbackStatus": "STATUS_ATTACKDOWN_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Pack Tactics (pet)",
@@ -114,14 +253,34 @@
     "DisplayName": "Flowing Step",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_EVADEUP_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_HASTE_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_EVADEUP_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_HASTE_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Flowing Step",
@@ -132,14 +291,32 @@
     "DisplayName": "Time Slip",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
-      { "Type": "ABILITY_STAT", "Value": "INT" }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "INT"
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "ALLY_BY_RANK", "Status": "STATUS_HASTE_00", "Duration": 1,
-        "Rank": { "Stat": "SPD", "Order": "LOWEST" } }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_BY_RANK",
+        "Status": "STATUS_HASTE_00",
+        "Duration": 1,
+        "Rank": {
+          "Stat": "SPD",
+          "Order": "LOWEST"
+        }
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC"
+    },
     "ProcChance": 15,
     "AiProcChance": 15,
     "VerboseLogTag": "Time Slip",
@@ -150,11 +327,21 @@
     "DisplayName": "Boarding Action (attack)",
     "Trigger": "ON_ABILITY_DECLARED",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "MOVED_THIS_ROUND", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "MOVED_THIS_ROUND",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 20 }
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Stat": "ATK",
+        "Percent": 20
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -166,13 +353,29 @@
     "DisplayName": "Boarding Action (control)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "MOVED_THIS_ROUND", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "MOVED_THIS_ROUND",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_DAZE_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_DAZE_00",
+        "FallbackStatus": "STATUS_ATTACKDOWN_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC", "Key": "CF_CORSAIR_BOARDING" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC",
+      "Key": "CF_CORSAIR_BOARDING"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Boarding Action",
@@ -183,12 +386,24 @@
     "DisplayName": "Nature's Reprisal",
     "Trigger": "ON_DAMAGE_TAKEN",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_ENTANGLE_ROOTS_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_SOURCE",
+        "Status": "STATUS_ENTANGLE_ROOTS_00",
+        "FallbackStatus": "STATUS_ATTACKDOWN_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC"
+    },
     "ProcChance": 20,
     "AiProcChance": 20,
     "VerboseLogTag": "Nature's Reprisal",
@@ -199,14 +414,39 @@
     "DisplayName": "Lucky Break",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "CRIT_FAIL" }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "CRIT_FAIL"
+      }
     ],
     "Effects": [
-      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValue": 1, "Blockable": false,
-        "Conditions": [ { "Type": "FOCUS_SPENT", "Comparator": "GTE", "Value": 1 } ] },
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_EVADEUP_00", "Duration": 1 }
+      {
+        "Type": "STAT_CHANGE",
+        "Target": "SELF",
+        "Stat": "FOC",
+        "StatChangeType": "MAGICAL",
+        "FlatValue": 1,
+        "Blockable": false,
+        "Conditions": [
+          {
+            "Type": "FOCUS_SPENT",
+            "Comparator": "GTE",
+            "Value": 1
+          }
+        ]
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_EVADEUP_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "EVALUATION" },
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT",
+      "ConsumeOn": "EVALUATION"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Lucky Break",
@@ -217,10 +457,21 @@
     "DisplayName": "Double or Nothing (win)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "FOCUS_SPENT", "Comparator": "GTE", "Value": 2 }
+      {
+        "Type": "FOCUS_SPENT",
+        "Comparator": "GTE",
+        "Value": 2
+      }
     ],
     "Effects": [
-      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValueFrom": "FOCUS_SPENT", "Blockable": false }
+      {
+        "Type": "STAT_CHANGE",
+        "Target": "SELF",
+        "Stat": "FOC",
+        "StatChangeType": "MAGICAL",
+        "FlatValueFrom": "FOCUS_SPENT",
+        "Blockable": false
+      }
     ],
     "ProcChance": 25,
     "AiProcChance": 25,
@@ -232,11 +483,28 @@
     "DisplayName": "Double or Nothing (loss)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "FOCUS_SPENT", "Comparator": "GTE", "Value": 2 }
+      {
+        "Type": "FOCUS_SPENT",
+        "Comparator": "GTE",
+        "Value": 2
+      }
     ],
     "Effects": [
-      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValue": -1, "Blockable": false,
-        "Conditions": [ { "Type": "FOCUS_CURRENT", "Comparator": "GTE", "Value": 1 } ] }
+      {
+        "Type": "STAT_CHANGE",
+        "Target": "SELF",
+        "Stat": "FOC",
+        "StatChangeType": "MAGICAL",
+        "FlatValue": -1,
+        "Blockable": false,
+        "Conditions": [
+          {
+            "Type": "FOCUS_CURRENT",
+            "Comparator": "GTE",
+            "Value": 1
+          }
+        ]
+      }
     ],
     "ProcChance": 10,
     "AiProcChance": 10,
@@ -249,11 +517,30 @@
     "Trigger": "ON_CRIT",
     "Conditions": [],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_TAUNT_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ARMORUP_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_RESISTANCEUP_GROUP_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_TAUNT_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_ARMORUP_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_RESISTANCEUP_GROUP_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC", "Key": "CF_GLADIATOR_SHOWMANSHIP" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC",
+      "Key": "CF_GLADIATOR_SHOWMANSHIP"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Showmanship",
@@ -265,11 +552,30 @@
     "Trigger": "ON_KILL",
     "Conditions": [],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_TAUNT_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ARMORUP_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_RESISTANCEUP_GROUP_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_TAUNT_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_ARMORUP_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_RESISTANCEUP_GROUP_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC", "Key": "CF_GLADIATOR_SHOWMANSHIP" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC",
+      "Key": "CF_GLADIATOR_SHOWMANSHIP"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Showmanship",
@@ -280,11 +586,28 @@
     "DisplayName": "Malediction",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "StatusOneOf": ["STATUS_SHOCK_00", "STATUS_BLEED_00", "STATUS_ATTACKDOWN_00", "STATUS_RESISTANCEDOWN_00"], "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "StatusOneOf": [
+          "STATUS_SHOCK_00",
+          "STATUS_BLEED_00",
+          "STATUS_ATTACKDOWN_00",
+          "STATUS_RESISTANCEDOWN_00"
+        ],
+        "Duration": 1
+      }
     ],
     "ProcChance": 25,
     "AiProcChance": 25,
@@ -296,15 +619,45 @@
     "DisplayName": "Punchline",
     "Trigger": "ON_ENEMY_ABILITY_RESOLVED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "CRIT_FAIL" }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "CRIT_FAIL"
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_ATTACKDOWN_00", "Duration": 1,
-        "Conditions": [ { "Type": "CHARACTER_TYPE", "Of": "TRIGGER_SOURCE", "Value": "BOSS" } ] },
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_CONFUSE_00", "Duration": 1,
-        "Conditions": [ { "Type": "CHARACTER_TYPE", "Of": "TRIGGER_SOURCE", "Value": "BOSS", "Negate": true } ] }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_SOURCE",
+        "Status": "STATUS_ATTACKDOWN_00",
+        "Duration": 1,
+        "Conditions": [
+          {
+            "Type": "CHARACTER_TYPE",
+            "Of": "TRIGGER_SOURCE",
+            "Value": "BOSS"
+          }
+        ]
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_SOURCE",
+        "Status": "STATUS_CONFUSE_00",
+        "Duration": 1,
+        "Conditions": [
+          {
+            "Type": "CHARACTER_TYPE",
+            "Of": "TRIGGER_SOURCE",
+            "Value": "BOSS",
+            "Negate": true
+          }
+        ]
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC"
+    },
     "ProcChance": 20,
     "AiProcChance": 20,
     "VerboseLogTag": "Punchline",
@@ -316,14 +669,47 @@
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "ALLY_BY_RANK", "Status": "STATUS_PROTECT_00", "Duration": 1,
-        "Rank": { "Stat": "HP_PCT", "Order": "LOWEST", "ExcludeSelf": true,
-          "Where": [ { "Type": "HP_THRESHOLD", "Comparator": "LTE", "Percent": 25 } ] } },
-      { "Type": "ADD_STATUS", "Target": "ALLY_BY_RANK", "Status": "STATUS_ARMORUP_00", "Duration": 1,
-        "Rank": { "Stat": "HP_PCT", "Order": "LOWEST", "ExcludeSelf": true,
-          "Where": [ { "Type": "HP_THRESHOLD", "Comparator": "LTE", "Percent": 25 } ] } }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_BY_RANK",
+        "Status": "STATUS_PROTECT_00",
+        "Duration": 1,
+        "Rank": {
+          "Stat": "HP_PCT",
+          "Order": "LOWEST",
+          "ExcludeSelf": true,
+          "Where": [
+            {
+              "Type": "HP_THRESHOLD",
+              "Comparator": "LTE",
+              "Percent": 25
+            }
+          ]
+        }
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_BY_RANK",
+        "Status": "STATUS_ARMORUP_00",
+        "Duration": 1,
+        "Rank": {
+          "Stat": "HP_PCT",
+          "Order": "LOWEST",
+          "ExcludeSelf": true,
+          "Where": [
+            {
+              "Type": "HP_THRESHOLD",
+              "Comparator": "LTE",
+              "Percent": 25
+            }
+          ]
+        }
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "EFFECT_APPLIED" },
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT",
+      "ConsumeOn": "EFFECT_APPLIED"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Chivalry",
@@ -335,10 +721,24 @@
     "Trigger": "ON_CRIT",
     "Conditions": [],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_HASTE_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_ALL",
+        "Status": "STATUS_HASTE_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_ALL",
+        "Status": "STATUS_ATTACKUP_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC", "Key": "CF_MARSHAL_RALLY" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC",
+      "Key": "CF_MARSHAL_RALLY"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Rally",
@@ -350,10 +750,24 @@
     "Trigger": "ON_KILL",
     "Conditions": [],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_HASTE_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_ATTACKUP_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_ALL",
+        "Status": "STATUS_HASTE_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_ALL",
+        "Status": "STATUS_ATTACKUP_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC", "Key": "CF_MARSHAL_RALLY" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC",
+      "Key": "CF_MARSHAL_RALLY"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Rally",
@@ -364,13 +778,30 @@
     "DisplayName": "Premonition",
     "Trigger": "ON_ENEMY_ABILITY_RESOLVED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_ATTACKDOWN_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "ALLY_ALL", "Status": "STATUS_EVADEUP_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_SOURCE",
+        "Status": "STATUS_ATTACKDOWN_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_ALL",
+        "Status": "STATUS_EVADEUP_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "PROC" },
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT",
+      "ConsumeOn": "PROC"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Premonition",
@@ -381,11 +812,21 @@
     "DisplayName": "Wait Your Turn (attack)",
     "Trigger": "ON_ABILITY_DECLARED",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "ALL_ALLIES_ACTED", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "ALL_ALLIES_ACTED",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 10 }
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Stat": "ATK",
+        "Percent": 10
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -397,11 +838,22 @@
     "DisplayName": "Wait Your Turn (status)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "ALL_ALLIES_ACTED", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "ALL_ALLIES_ACTED",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ATTACKUP_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_ATTACKUP_00",
+        "Duration": 1
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -414,8 +866,18 @@
     "Trigger": "ON_HEAL",
     "Conditions": [],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_ARMORUP_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_RESISTANCEUP_GROUP_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_ARMORUP_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_RESISTANCEUP_GROUP_00",
+        "Duration": 1
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -427,11 +889,24 @@
     "DisplayName": "Round Up",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_ENTANGLE_ROOTS_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_ENTANGLE_ROOTS_00",
+        "FallbackStatus": "STATUS_ATTACKDOWN_00",
+        "Duration": 1
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -443,12 +918,28 @@
     "DisplayName": "Quarry (mark)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "ROLL_TIER", "Comparator": "GTE", "Value": "SUCCESS" },
-      { "Type": "LACKS_STATUS", "Of": "TRIGGER_TARGET", "Value": "STATUS_MARKED_00" }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "GTE",
+        "Value": "SUCCESS"
+      },
+      {
+        "Type": "LACKS_STATUS",
+        "Of": "TRIGGER_TARGET",
+        "Value": "STATUS_MARKED_00"
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_MARKED_00", "Duration": 2 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_MARKED_00",
+        "Duration": 2
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -460,10 +951,18 @@
     "DisplayName": "Quarry (bonus)",
     "Trigger": "ON_ABILITY_DECLARED",
     "Conditions": [
-      { "Type": "HAS_STATUS", "Of": "TRIGGER_TARGET", "Value": "STATUS_MARKED_00" }
+      {
+        "Type": "HAS_STATUS",
+        "Of": "TRIGGER_TARGET",
+        "Value": "STATUS_MARKED_00"
+      }
     ],
     "Effects": [
-      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 10 }
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Stat": "ATK",
+        "Percent": 10
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -475,15 +974,43 @@
     "DisplayName": "Runic Detonation (detonate)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "ABILITY_STAT", "Value": "INT" },
-      { "Type": "HAS_STATUS", "Of": "TRIGGER_TARGET", "Value": "STATUS_MARKED_00" }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "INT"
+      },
+      {
+        "Type": "HAS_STATUS",
+        "Of": "TRIGGER_TARGET",
+        "Value": "STATUS_MARKED_00"
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "ENEMY_ALL", "Status": "STATUS_RESISTANCEDOWN_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "ENEMY_ALL", "Status": "STATUS_ATTACKDOWN_00", "Duration": 1 },
-      { "Type": "REMOVE_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_MARKED_00" }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ENEMY_ALL",
+        "Status": "STATUS_RESISTANCEDOWN_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ENEMY_ALL",
+        "Status": "STATUS_ATTACKDOWN_00",
+        "Duration": 1
+      },
+      {
+        "Type": "REMOVE_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_MARKED_00"
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -495,13 +1022,32 @@
     "DisplayName": "Runic Detonation (mark)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "ABILITY_STAT", "Value": "INT" },
-      { "Type": "LACKS_STATUS", "Of": "TRIGGER_TARGET", "Value": "STATUS_MARKED_00" }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "INT"
+      },
+      {
+        "Type": "LACKS_STATUS",
+        "Of": "TRIGGER_TARGET",
+        "Value": "STATUS_MARKED_00"
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_MARKED_00", "Duration": 2 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_MARKED_00",
+        "Duration": 2
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -513,12 +1059,22 @@
     "DisplayName": "Exploit Opening (first hit)",
     "Trigger": "ON_ABILITY_DECLARED",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 10 }
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Stat": "ATK",
+        "Percent": 10
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_TARGET_PER_COMBAT", "ConsumeOn": "EVALUATION" },
+    "Budget": {
+      "Scope": "ONCE_PER_TARGET_PER_COMBAT",
+      "ConsumeOn": "EVALUATION"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Exploit Opening",
@@ -529,11 +1085,23 @@
     "DisplayName": "Exploit Opening (evade down)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_EVADEDOWN_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_EVADEDOWN_00",
+        "Duration": 1
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -545,12 +1113,24 @@
     "DisplayName": "Brace",
     "Trigger": "ON_DAMAGE_TAKEN",
     "Conditions": [
-      { "Type": "ABILITY_RANGED", "Value": false }
+      {
+        "Type": "ABILITY_RANGED",
+        "Value": false
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_SOURCE", "Status": "STATUS_DAZE_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_SOURCE",
+        "Status": "STATUS_DAZE_00",
+        "FallbackStatus": "STATUS_ATTACKDOWN_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_ROUND", "ConsumeOn": "PROC" },
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND",
+      "ConsumeOn": "PROC"
+    },
     "ProcChance": 25,
     "AiProcChance": 25,
     "VerboseLogTag": "Brace",
@@ -561,10 +1141,19 @@
     "DisplayName": "Zeal",
     "Trigger": "ON_ABILITY_DECLARED",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "PercentFrom": "STATUS_COUNT:HARMFUL", "PerUnit": 5, "Max": 20 }
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Stat": "ATK",
+        "PercentFrom": "STATUS_COUNT:HARMFUL",
+        "PerUnit": 5,
+        "Max": 20
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -576,14 +1165,33 @@
     "DisplayName": "Pinning Shot",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ROLL_TIER", "Comparator": "EQ", "Value": "PERFECT" },
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "ABILITY_RANGED", "Value": true }
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "ABILITY_RANGED",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_ENTANGLE_ROOTS_00", "FallbackStatus": "STATUS_ATTACKDOWN_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "Status": "STATUS_ENTANGLE_ROOTS_00",
+        "FallbackStatus": "STATUS_ATTACKDOWN_00",
+        "Duration": 1
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_TARGET_PER_ROUND", "ConsumeOn": "EVALUATION" },
+    "Budget": {
+      "Scope": "ONCE_PER_TARGET_PER_ROUND",
+      "ConsumeOn": "EVALUATION"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Pinning Shot",
@@ -594,11 +1202,24 @@
     "DisplayName": "Roots of Protection",
     "Trigger": "ON_TURN_END",
     "Conditions": [
-      { "Type": "MOVED_THIS_ROUND", "Value": false }
+      {
+        "Type": "MOVED_THIS_ROUND",
+        "Value": false
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "ALLY_ALL_OTHERS", "Status": "STATUS_ARMORUP_00", "Duration": 1 },
-      { "Type": "ADD_STATUS", "Target": "ALLY_ALL_OTHERS", "Status": "STATUS_RESISTANCEUP_GROUP_00", "Duration": 1 }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_ALL_OTHERS",
+        "Status": "STATUS_ARMORUP_00",
+        "Duration": 1
+      },
+      {
+        "Type": "ADD_STATUS",
+        "Target": "ALLY_ALL_OTHERS",
+        "Status": "STATUS_RESISTANCEUP_GROUP_00",
+        "Duration": 1
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -610,10 +1231,18 @@
     "DisplayName": "Battle Rage (build)",
     "Trigger": "ON_DAMAGE_TAKEN",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "COUNTER_ADD", "Name": "RAGE", "Delta": 1, "Max": 3 }
+      {
+        "Type": "COUNTER_ADD",
+        "Name": "RAGE",
+        "Delta": 1,
+        "Max": 3
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -625,12 +1254,30 @@
     "DisplayName": "Battle Rage (consume)",
     "Trigger": "ON_ABILITY_DECLARED",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "COUNTER", "Name": "RAGE", "Comparator": "GTE", "Value": 1 }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "COUNTER",
+        "Name": "RAGE",
+        "Comparator": "GTE",
+        "Value": 1
+      }
     ],
     "Effects": [
-      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "PercentFrom": "COUNTER:RAGE", "PerUnit": 10, "Max": 30 },
-      { "Type": "COUNTER_SET", "Name": "RAGE", "Value": 0 }
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Stat": "ATK",
+        "PercentFrom": "COUNTER:RAGE",
+        "PerUnit": 10,
+        "Max": 30
+      },
+      {
+        "Type": "COUNTER_SET",
+        "Name": "RAGE",
+        "Value": 0
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -642,11 +1289,21 @@
     "DisplayName": "Arcane Versatility",
     "Trigger": "ON_ABILITY_DECLARED",
     "Conditions": [
-      { "Type": "ABILITY_STAT", "Value": "INT" },
-      { "Type": "ABILITY_REPEATED", "Value": false }
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "INT"
+      },
+      {
+        "Type": "ABILITY_REPEATED",
+        "Value": false
+      }
     ],
     "Effects": [
-      { "Type": "ROLL_STAT_BONUS", "Stat": "ATK", "Percent": 15 }
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Stat": "ATK",
+        "Percent": 15
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -659,10 +1316,21 @@
     "Enabled": true,
     "Trigger": "ON_COMBAT_START",
     "Conditions": [
-      { "Type": "FOCUS_CURRENT", "Comparator": "LT", "Value": "MAX" }
+      {
+        "Type": "FOCUS_CURRENT",
+        "Comparator": "LT",
+        "Value": "MAX"
+      }
     ],
     "Effects": [
-      { "Type": "STAT_CHANGE", "Target": "SELF", "Stat": "FOC", "StatChangeType": "MAGICAL", "FlatValue": 1, "Blockable": false }
+      {
+        "Type": "STAT_CHANGE",
+        "Target": "SELF",
+        "Stat": "FOC",
+        "StatChangeType": "MAGICAL",
+        "FlatValue": 1,
+        "Blockable": false
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -676,13 +1344,26 @@
     "DisplayName": "Steady Aim",
     "Trigger": "ON_ABILITY_DECLARED",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true },
-      { "Type": "ABILITY_RANGED", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Type": "ABILITY_RANGED",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ROLL_STAT_BONUS", "Stat": "CRT", "Flat": 10 }
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Stat": "CRT",
+        "Flat": 10
+      }
     ],
-    "Budget": { "Scope": "ONCE_PER_COMBAT", "ConsumeOn": "PROC" },
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT",
+      "ConsumeOn": "PROC"
+    },
     "ProcChance": 100,
     "AiProcChance": 100,
     "VerboseLogTag": "Steady Aim",
@@ -693,12 +1374,22 @@
     "DisplayName": "Wardbound (curse)",
     "Trigger": "ON_STATUS_APPLIED",
     "Conditions": [
-      { "Type": "STATUS_TYPE", "Value": "CURSE" }
+      {
+        "Type": "STATUS_TYPE",
+        "Value": "CURSE"
+      }
     ],
     "Effects": [
-      { "Type": "REMOVE_STATUS", "Target": "SELF", "Status": "TRIGGER_STATUS" }
+      {
+        "Type": "REMOVE_STATUS",
+        "Target": "SELF",
+        "Status": "TRIGGER_STATUS"
+      }
     ],
-    "Budget": { "Scope": "NONE", "Key": "CF_WARDBOUND" },
+    "Budget": {
+      "Scope": "NONE",
+      "Key": "CF_WARDBOUND"
+    },
     "ProcChance": 20,
     "AiProcChance": 20,
     "Priority": 0,
@@ -710,12 +1401,22 @@
     "DisplayName": "Wardbound (debuff)",
     "Trigger": "ON_STATUS_APPLIED",
     "Conditions": [
-      { "Type": "STATUS_TYPE", "Value": "DEBUFF" }
+      {
+        "Type": "STATUS_TYPE",
+        "Value": "DEBUFF"
+      }
     ],
     "Effects": [
-      { "Type": "REMOVE_STATUS", "Target": "SELF", "Status": "TRIGGER_STATUS" }
+      {
+        "Type": "REMOVE_STATUS",
+        "Target": "SELF",
+        "Status": "TRIGGER_STATUS"
+      }
     ],
-    "Budget": { "Scope": "NONE", "Key": "CF_WARDBOUND" },
+    "Budget": {
+      "Scope": "NONE",
+      "Key": "CF_WARDBOUND"
+    },
     "ProcChance": 20,
     "AiProcChance": 20,
     "Priority": 1,
@@ -728,7 +1429,11 @@
     "Trigger": "ON_KILL",
     "Conditions": [],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ATTACKUP_00" }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_ATTACKUP_00"
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -740,10 +1445,17 @@
     "DisplayName": "Battle Rhythm",
     "Trigger": "ON_DAMAGE_DEALT",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_EVADEUP_00" }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_EVADEUP_00"
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -756,7 +1468,12 @@
     "Trigger": "ON_HEAL_PENDING",
     "Conditions": [],
     "Effects": [
-      { "Type": "HEAL_MODIFIER", "Scope": "RECEIVED", "Percent": 25, "MinDelta": 1 }
+      {
+        "Type": "HEAL_MODIFIER",
+        "Scope": "RECEIVED",
+        "Percent": 25,
+        "MinDelta": 1
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -768,10 +1485,17 @@
     "DisplayName": "Mender's Touch",
     "Trigger": "ON_HEAL_PENDING",
     "Conditions": [
-      { "Type": "ITEM_CONSUMABLE", "Value": true }
+      {
+        "Type": "ITEM_CONSUMABLE",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "HEAL_MODIFIER", "Scope": "GIVEN", "Flat": 10 }
+      {
+        "Type": "HEAL_MODIFIER",
+        "Scope": "GIVEN",
+        "Flat": 10
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -783,11 +1507,21 @@
     "DisplayName": "Drunken Courage",
     "Trigger": "ON_CONSUMABLE_USED",
     "Conditions": [
-      { "Type": "ITEM_CLASS", "Value": "DRINK" },
-      { "Type": "ITEM_CONSUMABLE", "Value": true }
+      {
+        "Type": "ITEM_CLASS",
+        "Value": "DRINK"
+      },
+      {
+        "Type": "ITEM_CONSUMABLE",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "SELF", "Status": "STATUS_ATTACKUP_00" }
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_ATTACKUP_00"
+      }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
@@ -802,8 +1536,16 @@
     "ProcChance": 25,
     "PickOneEffect": true,
     "Effects": [
-      { "Type": "GOLD_GRANT", "MinGold": 8, "MaxGold": 20 },
-      { "Type": "ITEM_TAG_GRANT", "Tag": "HERB", "Rarity": "COMMON" }
+      {
+        "Type": "GOLD_GRANT",
+        "MinGold": 8,
+        "MaxGold": 20
+      },
+      {
+        "Type": "ITEM_TAG_GRANT",
+        "Tag": "HERB",
+        "Rarity": "COMMON"
+      }
     ],
     "VerboseLogTag": "Scavenger (loot)",
     "_source": "loot-grant verb spec §6.3 consumer 1; EOR BM L16357-16377 (TRAIT_SCAVENGER 25% -> gold 8-20 or COMMON HERB). Ported to the loot-grant private grant stream (docs/superpowers/plans/2026-08-05-loot-grant-verb-spec.md) instead of the shared combat stream. Carrier: TRAIT_SCAVENGER (traits.json Equippable.Passives)."
@@ -815,7 +1557,11 @@
     "Trigger": "ON_COMBAT_LOOT",
     "ProcChance": 20,
     "Effects": [
-      { "Type": "GOLD_GRANT", "MinGold": 8, "MaxGold": 20 }
+      {
+        "Type": "GOLD_GRANT",
+        "MinGold": 8,
+        "MaxGold": 20
+      }
     ],
     "VerboseLogTag": "Treasure Sense (loot)",
     "_source": "loot-grant verb spec §6.3 consumer 2; EOR BM L16379-16388 (TRAIT_TREASURE_SENSE 20% -> gold 8-20). Carrier: TRAIT_TREASURE_SENSE (traits.json Equippable.Passives)."
@@ -827,7 +1573,10 @@
     "Trigger": "ON_COMBAT_LOOT",
     "ProcChance": 20,
     "Effects": [
-      { "Type": "ITEM_TAG_GRANT", "Tag": "SCROLL" }
+      {
+        "Type": "ITEM_TAG_GRANT",
+        "Tag": "SCROLL"
+      }
     ],
     "VerboseLogTag": "Scholar's Habit (loot)",
     "_source": "loot-grant verb spec §6.3 consumer 3; EOR BM L16389-16396 (TRAIT_SCHOLARS_HABIT 20% -> SCROLL, Rarity null = any). Carrier: TRAIT_SCHOLARS_HABIT (traits.json Equippable.Passives)."
@@ -840,8 +1589,16 @@
     "ProcChance": 10,
     "PickOneEffect": true,
     "Effects": [
-      { "Type": "GOLD_GRANT", "MinGold": 5, "MaxGold": 10 },
-      { "Type": "ITEM_TAG_GRANT", "Tag": "HERB", "Rarity": "COMMON" }
+      {
+        "Type": "GOLD_GRANT",
+        "MinGold": 5,
+        "MaxGold": 10
+      },
+      {
+        "Type": "ITEM_TAG_GRANT",
+        "Tag": "HERB",
+        "Rarity": "COMMON"
+      }
     ],
     "VerboseLogTag": "Of Scavenging (loot)",
     "_source": "loot-grant verb spec §6.3 consumer 4; EOR BM L16397-16419 (OF_SCAVENGING affix 10% -> gold 5-10 or COMMON HERB). CARRIER-LESS at M-LG2: no pre-minted _OF_SCAVENGING variant items exist yet (CM §3 row 21's deterministic pre-mint registry is parked M-LG4); this recipe ships defined but unequippable by any live item until that lands."
@@ -851,11 +1608,23 @@
     "DisplayName": "Arcane Focus (gain)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ABILITY_STAT", "Value": "INT" },
-      { "Type": "ROLL_TIER", "Comparator": "GTE", "Value": "SUCCESS" }
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "INT"
+      },
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "GTE",
+        "Value": "SUCCESS"
+      }
     ],
     "Effects": [
-      { "Type": "COUNTER_ADD", "Name": "arcane_focus", "Delta": 1, "Max": 3 }
+      {
+        "Type": "COUNTER_ADD",
+        "Name": "arcane_focus",
+        "Delta": 1,
+        "Max": 3
+      }
     ],
     "VerboseLogTag": "Arcane Focus"
   },
@@ -864,11 +1633,22 @@
     "DisplayName": "Arcane Focus (fizzle)",
     "Trigger": "ON_ABILITY_USED",
     "Conditions": [
-      { "Type": "ABILITY_STAT", "Value": "INT" },
-      { "Type": "ROLL_TIER", "Comparator": "LTE", "Value": "FAIL" }
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "INT"
+      },
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "LTE",
+        "Value": "FAIL"
+      }
     ],
     "Effects": [
-      { "Type": "COUNTER_SET", "Name": "arcane_focus", "Value": 0 }
+      {
+        "Type": "COUNTER_SET",
+        "Name": "arcane_focus",
+        "Value": 0
+      }
     ],
     "VerboseLogTag": "Arcane Focus"
   },
@@ -877,11 +1657,45 @@
     "DisplayName": "Arcane Focus (break)",
     "Trigger": "ON_DAMAGE_TAKEN",
     "Conditions": [
-      { "Type": "HOSTILE_ACTION", "Value": true }
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
     ],
     "Effects": [
-      { "Type": "COUNTER_SET", "Name": "arcane_focus", "Value": 0 }
+      {
+        "Type": "COUNTER_SET",
+        "Name": "arcane_focus",
+        "Value": 0
+      }
     ],
     "VerboseLogTag": "Arcane Focus"
+  },
+  "SKILL_CF_TRAIT_SHIELDBEARER_MITIGATE": {
+    "SchemaVersion": "1.3",
+    "DisplayName": "Shieldbearer (mitigate)",
+    "Trigger": "ON_DAMAGE_PENDING",
+    "Conditions": [
+      {
+        "Type": "STATE_HASH_CHANCE",
+        "Percent": 20,
+        "Salt": "CF_SHIELDBEARER_MITIGATE",
+        "Inputs": [
+          "SELF_GUID",
+          "COMBAT_ROUND",
+          "SELF_HP",
+          "TRIGGER_DAMAGE",
+          "COMBAT_SEED"
+        ]
+      }
+    ],
+    "Effects": [
+      {
+        "Type": "DAMAGE_TAKEN_MULT",
+        "Target": "SELF",
+        "Percent": -25,
+        "MinDelta": 2
+      }
+    ]
   }
 }

@@ -646,6 +646,72 @@ namespace ClassForge.Plugin
             catch { return null; }
         }
 
+        // =====================================================================================
+        // v1.3 ON_DAMAGE_PENDING — InteractableHelper.CalculateFinalDamage Postfix (PSN §2 L1708)
+        // =====================================================================================
+
+        /// <summary>
+        /// The retired SPEC-DELTA §7.4 park (state-hash-chance spec M-SH3): <c>DAMAGE_TAKEN_MULT</c>
+        /// mutates the computed damage before application. A postfix mutating a return value is NOT
+        /// suppression — §5.2 invariant 6 is not engaged (spec §5.1) — and this hook takes <b>zero RNG
+        /// draws</b> by validator construction (the only legal chance gate here is STATE_HASH_CHANCE).
+        /// <para>Fires for PHYSICAL damage only — the trigger's sole consumer (SHIELDBEARER) is
+        /// physical-only in EOR 0.7.0.62 (Plugin.cs L26733 gates <c>eDamageType == 0</c>); recorded
+        /// v1.3 limitation on the <c>ON_DAMAGE_PENDING</c> trigger doc.</para>
+        /// <para>Arithmetic per action mirrors EOR verbatim:
+        /// <c>magnitude = Max(MinDelta, CeilToInt(result * |Percent|/100f))</c>, result floored at 0.</para>
+        /// </summary>
+        public static void CalculateFinalDamage_Postfix(Entity pCharacterEntity, eDamageType pDamageType, ref int __result)
+        {
+            try
+            {
+                if (__result <= 0 || pCharacterEntity == null) return;
+                if (pDamageType != eDamageType.PHYSICAL) return;
+
+                CombatContextAdapter ctx; RecipeDispatcher d;
+                if (!RecipeEngineHost.TryBegin(out ctx, out d)) return;
+
+                var victim = ctx.Wrap(pCharacterEntity);
+                if (victim == null) return;
+
+                var plan = d.OnDamagePending(ctx, new DamagePendingEvent { Victim = victim, Amount = __result });
+                if (plan == null || plan.Count == 0) return;
+
+                string victimGuid = victim.Guid;
+                int result = __result;
+                var rest = new List<EngineAction>();
+
+                for (int i = 0; i < plan.Count; i++)
+                {
+                    var mult = plan[i] as DamageTakenMultAction;
+                    if (mult == null) { rest.Add(plan[i]); continue; }
+                    if (!string.Equals(mult.TargetGuid, victimGuid, StringComparison.Ordinal)) continue;
+                    if (mult.Percent == 0 || result <= 0) continue;
+
+                    int min = mult.MinDelta.HasValue ? mult.MinDelta.Value : 1;
+                    float fraction = Math.Abs(mult.Percent) / 100f;
+                    int magnitude = Math.Max(min, (int)Math.Ceiling((double)((float)result * fraction)));
+                    result = mult.Percent < 0 ? Math.Max(0, result - magnitude) : result + magnitude;
+                }
+
+                if (result != __result)
+                {
+                    if (ClassForgePlugin.VerboseLogging.Value)
+                        ClassForgePlugin.Log.LogDebug("[ClassForge] DAMAGE_TAKEN_MULT adjusted incoming damage " +
+                            __result.ToString(System.Globalization.CultureInfo.InvariantCulture) + " -> " +
+                            result.ToString(System.Globalization.CultureInfo.InvariantCulture) + " for " + victimGuid + ".");
+                    __result = result;
+                }
+
+                // COUNTER_* riders (the only other validator-legal effects here) are engine-side state
+                // writes already performed at plan time; anything routed to the executor would be a
+                // vocabulary drift — still forwarded for symmetry with the other hooks.
+                if (rest.Count > 0)
+                    RecipeActionExecutor.Execute(rest, new RecipeExecEnvironment { Ctx = ctx });
+            }
+            catch (Exception ex) { Fail("CalculateFinalDamage(postfix)", ex); }
+        }
+
         /// <summary>Fail-safe (CONVENTIONS.md): every patch body swallows, logs, and defers to vanilla.</summary>
         private static void Fail(string where, Exception ex)
         {
