@@ -99,6 +99,8 @@ namespace LiveDataHarness
             var cfResult = Checks.ClassForgeChecks.LoadAll(data);
             Checks.ClassForgeChecks.RegisterAddsOnly(runner, data, cfResult);
 
+            Checks.ReferenceChecks.Register(runner, data, vocab, cfResult);
+
             return runner.Report();
         }
 

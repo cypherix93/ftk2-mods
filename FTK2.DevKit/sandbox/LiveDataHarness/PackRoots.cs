@@ -47,5 +47,16 @@ namespace LiveDataHarness
         {
             return Path.Combine(System.AppContext.BaseDirectory, "fixtures");
         }
+
+        /// <summary>Every shipped pack's skillrecipes.json, in pack-directory order.</summary>
+        public static IEnumerable<string> ShippedRecipeFiles()
+        {
+            foreach (var root in ClassPackRoots())
+                foreach (var packDir in Directory.GetDirectories(root))
+                {
+                    var p = Path.Combine(packDir, "skillrecipes.json");
+                    if (File.Exists(p)) yield return p;
+                }
+        }
     }
 }

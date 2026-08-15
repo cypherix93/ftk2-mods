@@ -1,0 +1,10 @@
+{
+  "author": "ftk2mods",
+  "dependencies": [],
+  "description": "Harness negative fixture: deliberately references a Passive skill id that exists nowhere, to prove the reference-integrity check bites. Never deployed.",
+  "enabled": true,
+  "id": "CF_HARNESS_DANGLING",
+  "loadOrder": 100,
+  "name": "Harness dangling-reference fixture",
+  "version": "1.0.0"
+}
