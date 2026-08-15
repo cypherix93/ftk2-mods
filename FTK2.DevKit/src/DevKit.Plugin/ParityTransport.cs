@@ -82,6 +82,31 @@ namespace DevKit.Plugin
         private static MethodInfo _sendMethod;
         private static ParameterInfo[] _sendParameters;
         private static object _directorInstance;
+        /// <summary>Any live director (party management included) — the <c>_env</c> source for the
+        /// static fallback path. Distinct from <see cref="_directorInstance"/>, which must stay
+        /// strictly an <c>AdventureDirector</c> (the legacy invoke target).</summary>
+        private static object _networkSourceInstance;
+
+        // ---- static fallback path (task #11): AdventureActionData.Create + NetworkHelper.Broadcast ----
+        // The adventure sender is a thin wrapper: with null entities, _createAdventureAction contributes
+        // pPlayerIndex=-1 and a null display name (AdventureDirector.cs:15155-15165), so the whole send
+        // collapses to two STATIC calls — AdventureActionData.Create(...) (AdventureActionData.cs:195)
+        // and NetworkHelper.BroadcastActionMessage(eActionType.AdventureAction, action, true, networkData)
+        // (NetworkHelper.cs:91). Neither needs a director, which is what makes party-phase sending
+        // possible at all: PartyManagementDirector has no _trySendNetworkAction (it broadcasts its own
+        // action types via NetworkHelper directly, PartyManagementDirector.cs:3907).
+        private static MethodInfo _createMethod;
+        private static ParameterInfo[] _createParameters;
+        private static MethodInfo _broadcastMethod;
+        private static object _actionTypeAdventureValue;
+        private static object _fallbackTownServiceNone;
+        private static object _fallbackSkillNone;
+        private static object _fallbackAdventureActionValue;
+        private static object _fallbackEncounterActionValue;
+        private static bool _fallbackPayloadIsPlainString;
+        private static Type _fallbackTupleType;
+        private static bool _fallbackResolveAttempted;
+        private static bool _fallbackUnresolvable;
 
         // Enum constants resolved once against the live assembly.
         private static object _adventureActionValue;
@@ -98,10 +123,17 @@ namespace DevKit.Plugin
         private static bool _sendDisabledThisSession;
         private static int _sendFailuresThisSession;
 
-        /// <summary>True once the sender resolved a usable target and is not disabled this session.</summary>
+        /// <summary>True once EITHER send path resolved a usable target and sending is not disabled
+        /// this session (the static fallback counts — task #11).</summary>
         internal static bool CanSend
         {
-            get { return !_unresolvable && !_sendDisabledThisSession && _sendMethod != null; }
+            get
+            {
+                if (_sendDisabledThisSession) return false;
+                bool legacy = !_unresolvable && _sendMethod != null;
+                bool fallback = !_fallbackUnresolvable && _broadcastMethod != null;
+                return legacy || fallback;
+            }
         }
 
         /// <summary>
@@ -118,40 +150,78 @@ namespace DevKit.Plugin
         /// <summary>
         /// Caches the live <c>AdventureDirector</c> seen by a patch, so sending never has to guess at
         /// a singleton accessor. Called from both patch bodies.
+        /// <para>Type-guarded (task #11): patches now also fire on <c>PartyManagementDirector</c>, and
+        /// caching one here would make the legacy invoke throw <c>TargetException</c> three times and
+        /// lock sending out for the session. Non-adventure directors go to
+        /// <see cref="RememberNetworkSource"/> instead.</para>
         /// </summary>
         internal static void RememberDirector(object instance)
         {
-            if (instance != null) _directorInstance = instance;
+            if (instance == null) return;
+            for (Type t = instance.GetType(); t != null; t = t.BaseType)
+            {
+                if (string.Equals(t.Name, DirectorTypeName, StringComparison.Ordinal))
+                {
+                    _directorInstance = instance;
+                    return;
+                }
+            }
         }
 
-        /// <summary>The cached director, for the session-flag probe. May be null before any patch fires.</summary>
-        internal static object CurrentDirector { get { return _directorInstance; } }
+        /// <summary>
+        /// Caches ANY live director (party management included) as the session-flag / NetworkData
+        /// source for the static fallback send path (task #11). Every director inherits
+        /// <c>DirectorBase._env</c>, which is all <see cref="GameSurface"/> needs.
+        /// </summary>
+        internal static void RememberNetworkSource(object instance)
+        {
+            if (instance != null) _networkSourceInstance = instance;
+        }
 
-        /// <summary>Sends one payload. Returns false if it could not be sent. Never throws.</summary>
+        /// <summary>The cached director, for the session-flag probe. May be null before any patch fires.
+        /// Falls back to the network-source director so party-phase flag reads work too.</summary>
+        internal static object CurrentDirector
+        {
+            get { return _directorInstance != null ? _directorInstance : _networkSourceInstance; }
+        }
+
+        /// <summary>
+        /// Sends one payload. Returns false if it could not be sent. Never throws.
+        /// Two paths, tried in order:
+        ///  1. the proven adventure-phase invoke through <c>AdventureDirector._trySendNetworkAction</c>
+        ///     (requires a live adventure director);
+        ///  2. the static fallback — <c>AdventureActionData.Create</c> +
+        ///     <c>NetworkHelper.BroadcastActionMessage</c> — which needs only a live director of ANY
+        ///     kind for its <c>NetworkData</c>, and is what makes party-phase handshakes work (task #11).
+        /// Both produce byte-identical wire traffic: same action type, same payload slot, same
+        /// <c>pWaitUntilServerResponse: true</c> the wrapper passes (AdventureDirector.cs:15148).
+        /// </summary>
         internal static bool Send(string payload)
         {
             if (string.IsNullOrEmpty(payload)) return false;
             try
             {
-                if (!Resolve()) return false;
                 if (_sendDisabledThisSession) return false;
 
-                object target = ResolveDirectorInstance();
-                if (target == null)
+                if (Resolve() && _directorInstance == null) ResolveDirectorInstance();
+                if (_sendMethod != null && _directorInstance != null)
                 {
-                    DevKitPlugin.Log.LogWarning("ParityService: no live " + DirectorTypeName
-                        + " instance to send through; parity payload dropped.");
-                    return false;
+                    object[] args = BuildArguments(payload);
+                    if (args != null)
+                    {
+                        _sendMethod.Invoke(_directorInstance, args);
+                        _sendFailuresThisSession = 0;
+                        DevKitPlugin.Verbose("ParityService: sent " + ParityPayloadCodec.PeekAction(payload)
+                            + " (" + payload.Length + " bytes) via " + DescribeChannel() + ".");
+                        return true;
+                    }
                 }
 
-                object[] args = BuildArguments(payload);
-                if (args == null) return false;
+                if (SendViaStaticFallback(payload)) return true;
 
-                _sendMethod.Invoke(target, args);
-                _sendFailuresThisSession = 0;
-                DevKitPlugin.Verbose("ParityService: sent " + ParityPayloadCodec.PeekAction(payload)
-                    + " (" + payload.Length + " bytes) via " + DescribeChannel() + ".");
-                return true;
+                DevKitPlugin.Log.LogWarning("ParityService: no live director to send through "
+                    + "(adventure sender and static fallback both unavailable); parity payload dropped.");
+                return false;
             }
             catch (Exception ex)
             {
@@ -159,13 +229,158 @@ namespace DevKit.Plugin
                 bool giveUp = _sendFailuresThisSession >= MaxSendFailuresPerSession;
                 if (giveUp) _sendDisabledThisSession = true;
                 DevKitPlugin.Log.LogError("ParityService: send failed (" + _sendFailuresThisSession + "/"
-                    + MaxSendFailuresPerSession + ") through " + DirectorTypeName + "." + SendMethodName
+                    + MaxSendFailuresPerSession + ")"
                     + (giveUp
                         ? " - outbound parity disabled FOR THIS SESSION; it is re-probed on the next session start."
                         : " - will retry on the next parity send this session.")
                     + " " + ex);
                 return false;
             }
+        }
+
+        /// <summary>
+        /// The director-independent send (task #11). Resolves once; any resolution failure disables
+        /// only this path ("Target NOT found" convention), never the legacy one. Invoke exceptions
+        /// propagate to <see cref="Send"/>'s failure accounting.
+        /// </summary>
+        private static bool SendViaStaticFallback(string payload)
+        {
+            if (!ResolveFallback()) return false;
+
+            object networkData = GameSurface.GetNetworkData(_networkSourceInstance != null
+                ? _networkSourceInstance : _directorInstance);
+            if (networkData == null)
+            {
+                DevKitPlugin.Verbose("ParityService: static fallback has no NetworkData source yet.");
+                return false;
+            }
+
+            object[] createArgs = new object[_createParameters.Length];
+            createArgs[0] = _fallbackAdventureActionValue;
+            createArgs[1] = _fallbackEncounterActionValue;
+            createArgs[2] = -1;      // pPlayerIndex: what _createAdventureAction passes for a null entity (:15155)
+            createArgs[3] = null;    // pEncounterEntity display name: null for a null entity (:15156)
+            createArgs[4] = _fallbackPayloadIsPlainString
+                ? (object)payload
+                : Activator.CreateInstance(_fallbackTupleType, new object[] { payload, 0 });
+            createArgs[5] = false;   // pMove
+            createArgs[6] = false;   // pTeamUp
+            createArgs[7] = Activator.CreateInstance(_createParameters[7].ParameterType);   // (0,0)
+            createArgs[8] = 0;       // pFocusUsed
+            createArgs[9] = _fallbackTownServiceNone;
+            createArgs[10] = -1;     // pThingIndex
+            createArgs[11] = _fallbackSkillNone;
+
+            object action = _createMethod.Invoke(null, createArgs);
+            if (action == null) return false;
+
+            // NetworkHelper.BroadcastActionMessage(eActionType, GameActionDataBase, bool, NetworkData)
+            // — pWaitUntilServerResponse: true, exactly as the adventure wrapper passes (:15148).
+            _broadcastMethod.Invoke(null, new object[] { _actionTypeAdventureValue, action, true, networkData });
+            _sendFailuresThisSession = 0;
+            DevKitPlugin.Verbose("ParityService: sent " + ParityPayloadCodec.PeekAction(payload)
+                + " (" + payload.Length + " bytes) via static fallback (party-phase capable).");
+            return true;
+        }
+
+        private static bool ResolveFallback()
+        {
+            if (_fallbackUnresolvable) return false;
+            if (_broadcastMethod != null) return true;
+            if (_fallbackResolveAttempted) return false;
+            _fallbackResolveAttempted = true;
+
+            try
+            {
+                Type createOwner = AccessTools.TypeByName("AdventureActionData");
+                Type networkHelper = AccessTools.TypeByName("NetworkHelper");
+                if (createOwner == null || networkHelper == null)
+                    return FallbackUnresolvable("AdventureActionData / NetworkHelper (type unresolved)");
+
+                // AdventureActionData.Create — static, 12 params (AdventureActionData.cs:195). Shape-
+                // anchored like the legacy overload: enums at 0/1/9/11, int at 2, string at 3, the
+                // object payload slot at 4, and the 2-arity ValueTuple donor at 7.
+                MethodInfo create = null;
+                MethodInfo[] methods = createOwner.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                for (int i = 0; i < methods.Length; i++)
+                {
+                    if (!string.Equals(methods[i].Name, "Create", StringComparison.Ordinal)) continue;
+                    if (methods[i].GetParameters().Length != 12) continue;
+                    create = methods[i];
+                    break;
+                }
+                if (create == null) return FallbackUnresolvable("AdventureActionData.Create (12-arg overload)");
+                ParameterInfo[] p = create.GetParameters();
+                bool shapeOk = p[0].ParameterType.IsEnum && p[1].ParameterType.IsEnum
+                    && p[2].ParameterType == typeof(int) && p[3].ParameterType == typeof(string)
+                    && p[4].ParameterType == typeof(object)
+                    && p[7].ParameterType.IsValueType && p[7].ParameterType.IsGenericType
+                        && p[7].ParameterType.GetGenericArguments().Length == 2
+                    && p[9].ParameterType.IsEnum && p[10].ParameterType == typeof(int)
+                    && p[11].ParameterType.IsEnum;
+                if (!shapeOk)
+                    return FallbackUnresolvable("AdventureActionData.Create has 12 parameters but not the expected shape");
+
+                // NetworkHelper.BroadcastActionMessage(eActionType, GameActionDataBase, bool, NetworkData)
+                MethodInfo broadcast = null;
+                methods = networkHelper.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                for (int i = 0; i < methods.Length; i++)
+                {
+                    if (!string.Equals(methods[i].Name, "BroadcastActionMessage", StringComparison.Ordinal)) continue;
+                    ParameterInfo[] bp = methods[i].GetParameters();
+                    if (bp.Length != 4) continue;
+                    if (!bp[0].ParameterType.IsEnum || bp[2].ParameterType != typeof(bool)) continue;
+                    broadcast = methods[i];
+                    break;
+                }
+                if (broadcast == null)
+                    return FallbackUnresolvable("NetworkHelper.BroadcastActionMessage (4-arg overload)");
+
+                _actionTypeAdventureValue = ParseEnum(broadcast.GetParameters()[0].ParameterType, "AdventureAction");
+                _fallbackTownServiceNone = ParseEnum(p[9].ParameterType, "NONE");
+                _fallbackSkillNone = ParseEnum(p[11].ParameterType, "NONE");
+                if (_actionTypeAdventureValue == null || _fallbackTownServiceNone == null || _fallbackSkillNone == null)
+                    return FallbackUnresolvable("eActionType.AdventureAction / NONE members");
+
+                // Same channel decision as the legacy path (see ResolveChannelConstants for the full
+                // rationale): default DEBUG_GET_SPECIFIC_THING (inert on every receiver), EOR-identical
+                // ENCOUNTER_ACTION behind the config knob.
+                if (DevKitPlugin.UseEorParityChannel())
+                {
+                    _fallbackAdventureActionValue = ParseEnum(p[0].ParameterType, "ENCOUNTER_ACTION");
+                    _fallbackEncounterActionValue = ParseEnum(p[1].ParameterType, "TOWN_SERVICES");
+                    _fallbackPayloadIsPlainString = true;
+                }
+                else
+                {
+                    _fallbackAdventureActionValue = ParseEnum(p[0].ParameterType, "DEBUG_GET_SPECIFIC_THING");
+                    _fallbackEncounterActionValue = ParseEnum(p[1].ParameterType, "NONE");
+                    _fallbackPayloadIsPlainString = false;
+                    _fallbackTupleType = p[7].ParameterType.GetGenericTypeDefinition()
+                        .MakeGenericType(typeof(string), typeof(int));
+                }
+                if (_fallbackAdventureActionValue == null || _fallbackEncounterActionValue == null)
+                    return FallbackUnresolvable("fallback channel enum members");
+
+                _createMethod = create;
+                _createParameters = p;
+                _broadcastMethod = broadcast;
+                DevKitPlugin.Log.LogInfo("Target found: AdventureActionData.Create + NetworkHelper.BroadcastActionMessage"
+                    + " (static parity fallback; party-phase sends enabled).");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return FallbackUnresolvable("static fallback resolution threw: " + ex.Message);
+            }
+        }
+
+        private static bool FallbackUnresolvable(string what)
+        {
+            _fallbackUnresolvable = true;
+            DevKitPlugin.Log.LogError("Target NOT found: " + what
+                + " - the party-phase parity fallback is disabled (adventure-phase sending unaffected).");
+            return false;
         }
 
         private static bool Resolve()
@@ -463,14 +678,17 @@ namespace DevKit.Plugin
         /// <summary>Diagnostics for <c>dk_dump_parity</c>: what the sender resolved to, if anything.</summary>
         internal static string DescribeState()
         {
-            if (_unresolvable) return "send: DISABLED (target unresolved; receive-only for this process)";
             if (_sendDisabledThisSession) return "send: disabled for THIS SESSION after "
                 + MaxSendFailuresPerSession + " failures (re-probed next session)";
-            if (_sendMethod == null) return "send: not resolved yet";
             List<string> notes = new List<string>();
-            notes.Add(DevKitPlugin.DescribeSignature(_sendMethod));
-            notes.Add("channel=" + DescribeChannel());
-            notes.Add("instance=" + (_directorInstance != null ? "cached" : "none"));
+            if (_unresolvable) notes.Add("legacy=UNRESOLVED");
+            else if (_sendMethod == null) notes.Add("legacy=not resolved yet");
+            else notes.Add("legacy=" + DevKitPlugin.DescribeSignature(_sendMethod)
+                + " channel=" + DescribeChannel()
+                + " instance=" + (_directorInstance != null ? "cached" : "none"));
+            if (_fallbackUnresolvable) notes.Add("fallback=UNRESOLVED");
+            else notes.Add("fallback=" + (_broadcastMethod != null ? "resolved" : "not resolved yet")
+                + " source=" + (_networkSourceInstance != null ? "cached" : "none"));
             return "send: " + string.Join(" | ", notes.ToArray());
         }
     }

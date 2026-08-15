@@ -136,6 +136,16 @@ namespace DevKit.Plugin
             // handshake simply never auto-fires; nothing else breaks.
             Patch(harmony, "AdventureDirector", "Initialize",
                 null, nameof(ParityPatches.AdventureDirectorInitializePostfix));
+
+            // Task #11 — the handshake must also run during PARTY MANAGEMENT so ClassForge's trait
+            // loadout gate can see a verified Match before the loadout pool is built. Same observe-only
+            // receive posture; unknown action types in the party phase fall to GameplayDirectorBase.
+            // _network_OnMiscGameAction's else-arm (LogError + _tryPlayNextNetworkAction, decompile
+            // :2995) — pump advanced, zero simulation effects, symmetric on every peer.
+            Patch(harmony, "PartyManagementDirector", "_handleNetworkAction",
+                nameof(ParityPatches.HandleNetworkActionPrefix), null);
+            Patch(harmony, "PartyManagementDirector", "Initialize",
+                null, nameof(ParityPatches.PartyManagementInitializePostfix));
         }
 
         /// <summary>

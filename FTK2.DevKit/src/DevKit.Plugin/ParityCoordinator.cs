@@ -75,7 +75,7 @@ namespace DevKit.Plugin
         /// possible late joiner) ask the host for a fresh one rather than trusting stale state
         /// (SPEC §3 late-join re-query).
         /// </summary>
-        internal static void OnSessionStarted(object directorInstance)
+        internal static void OnSessionStarted(object directorInstance, string phase = "adventure")
         {
             if (!_initialized) return;
 
@@ -100,8 +100,9 @@ namespace DevKit.Plugin
 
             bool isHost = GameSurface.IsHost(directorInstance);
             ParityService.SetIsHost(isHost);
-            DevKitPlugin.Log.LogInfo("ParityService: online multiplayer session detected, isHost="
-                + (isHost ? "true" : "false") + "; running the FTK2MODS_PARITY_V1 handshake.");
+            DevKitPlugin.Log.LogInfo("ParityService: online multiplayer session detected (" + phase
+                + " phase), isHost=" + (isHost ? "true" : "false")
+                + "; running the FTK2MODS_PARITY_V1 handshake.");
 
             string snapshot = ParityService.BuildCappedSnapshotPayload();
             bool sent = ParityTransport.Send(snapshot);

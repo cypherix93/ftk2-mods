@@ -61,6 +61,28 @@ namespace DevKit.Plugin
             return ReadFlag(directorInstance, _isHostField);
         }
 
+        /// <summary>
+        /// Resolves the live <c>NetworkData</c> object off any director (task #11: the static parity
+        /// fallback hands it to <c>NetworkHelper.BroadcastActionMessage</c>). Same resolved chain as
+        /// the flag reads; null when anything is unresolved — the caller treats that as "cannot send".
+        /// </summary>
+        internal static object GetNetworkData(object directorInstance)
+        {
+            try
+            {
+                if (directorInstance == null) return null;
+                if (!Resolve(directorInstance.GetType())) return null;
+                object env = _envField.GetValue(directorInstance);
+                if (env == null) return null;
+                return _networkDataField.GetValue(env);
+            }
+            catch (Exception ex)
+            {
+                DevKitPlugin.Verbose("ParityService: NetworkData read failed (treated as unavailable): " + ex.Message);
+                return null;
+            }
+        }
+
         private static bool ReadFlag(object directorInstance, FieldInfo flagField)
         {
             try

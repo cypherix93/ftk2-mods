@@ -23,6 +23,7 @@ namespace FTK2Mods.DevKit.Tests
             PolicyTests.RunAll();
             RegistryTests.RunAll();
             HandshakeTests.RunAll();
+            VerdictCallbackTests.RunAll();
 
             return TestHarness.Report();
         }
