@@ -101,6 +101,12 @@ namespace LiveDataHarness
 
             Checks.ReferenceChecks.Register(runner, data, vocab, cfResult);
 
+            Checks.LocalizationChecks.Register(runner, data, cfResult);
+
+            Checks.BlessingsChecks.Register(runner, data, cfResult);
+
+            Checks.SummonerChecks.Register(runner, data);
+
             return runner.Report();
         }
 
