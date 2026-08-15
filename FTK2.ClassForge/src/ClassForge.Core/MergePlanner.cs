@@ -83,6 +83,16 @@ namespace ClassForge.Core
                             "Configs.Things id nor a merged pack Thing — the item will render without a 3D model " +
                             "(the runtime finalizer degrades this safely, but the fallback is doing nothing).", null));
                     }
+
+                    // Task #9: fallback KEYS are not restricted to same-pack Things — a fallback-only pack
+                    // (CF_PACK_ARMORY_VISUALS) legitimately targets LIVE ids the Armory ships through the
+                    // game's own config folder. A key resolving to neither is authoring debris.
+                    if (!mergedThingIds.Contains(kv.Key) && !live.Things.Contains(kv.Key))
+                    {
+                        findings.Add(Finding.Warning("CF_VISUALFALLBACK_KEY_DANGLING",
+                            $"Visual fallback key '{kv.Key}' is neither a merged pack Thing nor a live " +
+                            "Configs.Things id — the entry can never match anything and does nothing.", null));
+                    }
                 }
             }
 

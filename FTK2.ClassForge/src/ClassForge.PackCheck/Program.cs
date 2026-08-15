@@ -35,9 +35,11 @@ namespace ClassForge.PackCheck
                 var eor = FindDefaultPack("CF_PACK_EOR_CLASSES");
                 var baldurs = FindDefaultPack("CF_PACK_BALDURS");
                 var encounterModifiers = FindDefaultPack("CF_PACK_ENCOUNTER_MODIFIERS");
+                var armoryVisuals = FindDefaultPack("CF_PACK_ARMORY_VISUALS");
                 if (eor != null) packDirs.Add(eor);
                 if (baldurs != null) packDirs.Add(baldurs);
                 if (encounterModifiers != null) packDirs.Add(encounterModifiers);
+                if (armoryVisuals != null) packDirs.Add(armoryVisuals);
             }
 
             if (packDirs.Count == 0)
@@ -125,24 +127,29 @@ namespace ClassForge.PackCheck
             Console.WriteLine("Modifier entries:   " + modifierRowCount + " (across " + result.MergePlan.ModifierTables.Count + " modifiers.json table(s))");
             Console.WriteLine("Visual fallbacks:   " + result.MergePlan.VisualFallbacks.Count);
 
-            // visualfallbacks.json keys must be ids this pack actually ships (items.json/traits.json →
-            // MergePlan.Things); a fallback for a Thing that does not exist is authoring debris (task #8).
+            // visualfallbacks.json keys may target this pack's own Things OR live game/Armory ids
+            // (task #9 relaxation: CF_PACK_ARMORY_VISUALS is a fallback-only pack keyed on ids the
+            // Armory ships through the game's config folder). PackCheck has no live game to resolve
+            // against, so non-same-pack keys are a single summary WARNING here — merge-time validation
+            // (CF_VISUALFALLBACK_KEY_DANGLING in MergePlanner, live-id gated) covers the real check.
             if (result.MergePlan.VisualFallbacks.Count > 0)
             {
                 var shippedThingIds = new HashSet<string>(result.MergePlan.Things.Select(t => t.Id), StringComparer.Ordinal);
+                int foreignKeys = 0;
                 foreach (var kv in result.MergePlan.VisualFallbacks.OrderBy(k => k.Key, StringComparer.Ordinal))
                 {
-                    if (!shippedThingIds.Contains(kv.Key))
-                    {
-                        Console.WriteLine("ERROR [CF_VISUALFALLBACK_KEY_DANGLING] visualfallbacks.json key '" + kv.Key +
-                            "' is not an id shipped by this pack's items.json/traits.json.");
-                        packHasErrors = true;
-                    }
+                    if (!shippedThingIds.Contains(kv.Key)) foreignKeys++;
                     if (string.IsNullOrEmpty(kv.Value))
                     {
                         Console.WriteLine("ERROR [CF_VISUALFALLBACK_EMPTY] visualfallbacks.json entry '" + kv.Key + "' has an empty donor id.");
                         packHasErrors = true;
                     }
+                }
+                if (foreignKeys > 0)
+                {
+                    Console.WriteLine("WARNING [CF_VISUALFALLBACK_KEY_FOREIGN] " + foreignKeys +
+                        " visualfallbacks.json key(s) are not shipped by this pack — expected for fallback-only " +
+                        "packs targeting live/Armory ids; validated for real at merge time against live Configs.Things.");
                 }
             }
 

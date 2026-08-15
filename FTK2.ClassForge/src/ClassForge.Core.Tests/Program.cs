@@ -869,6 +869,46 @@ Test("CF_PACK_EOR_CLASSES: visualfallbacks cover exactly the 31 starter items", 
         "in-pack run: donors are live-game ids, but with no live set supplied they must not warn either");
 });
 
+Test("VisualFallbacks: a key may be a pack Thing OR a live Things id — anything else is a Warning", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_VF/pack.json", MakePackJson("CF_PACK_VF"));
+    fs.AddFile("root/CF_PACK_VF/items.json", "{\"CF_ITEM_A\":{\"Class\":\"WHIP\"}}");
+    fs.AddFile("root/CF_PACK_VF/visualfallbacks.json",
+        "{\"CF_ITEM_A\":\"LIVE_DONOR\",\"ARM_LIVE_ITEM\":\"LIVE_DONOR\",\"NO_SUCH_KEY\":\"LIVE_DONOR\"}");
+
+    var live = new LiveIdSets(null,
+        new HashSet<string>(StringComparer.Ordinal) { "LIVE_DONOR", "ARM_LIVE_ITEM" }, null, null);
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { "root" }, id => true, live);
+
+    var foreignKeys = result.Findings.Where(f => f.Code == "CF_VISUALFALLBACK_KEY_DANGLING").ToList();
+    AssertEqual(1, foreignKeys.Count, "only the key that is neither pack Thing nor live id warns");
+    Assert(foreignKeys[0].Message.Contains("NO_SUCH_KEY"), "warning names the dangling key");
+    Assert(foreignKeys.All(f => f.Severity == FindingSeverity.Warning), "dangling key is a Warning");
+
+    // Offline gate: with no live set the check must stay silent (PackCheck/tests have no game).
+    var offline = loader.Load(fs, new[] { "root" }, id => true);
+    Assert(!offline.Findings.Any(f => f.Code == "CF_VISUALFALLBACK_KEY_DANGLING"),
+        "no live set supplied: key check is skipped, not spammed");
+});
+
+Test("CF_PACK_ARMORY_VISUALS: fallback-only pack covers the shipped Armory catalog", () =>
+{
+    var fs = new FileSystemFileSource();
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { classPacksDir }, id => string.Equals(id, "CF_PACK_ARMORY_VISUALS", StringComparison.Ordinal));
+
+    AssertEqual(1, result.EnabledOrderedPacks.Count, "pack discovered and enabled");
+    AssertEqual(0, result.MergePlan.Things.Count, "ships no Things of its own");
+    AssertEqual(502, result.MergePlan.VisualFallbacks.Count, "one fallback per shipped Armory item");
+    Assert(result.MergePlan.VisualFallbacks.Keys.All(k => k.StartsWith("ARM_", StringComparison.Ordinal)),
+        "every key is an ARM_ id");
+    Assert(!result.MergePlan.VisualFallbacks.Keys.Any(k => k.Contains("EOR_STARTER")),
+        "starter fallbacks live in CF_PACK_EOR_CLASSES, not here");
+    Assert(result.MergePlan.VisualFallbacks.Values.All(v => !string.IsNullOrEmpty(v)), "every donor non-empty");
+});
+
 // ---------------------------------------------------------------------
 Console.WriteLine();
 Console.WriteLine($"{passed} passed, {failed} failed.");
