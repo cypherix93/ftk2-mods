@@ -27,7 +27,7 @@ The plan is done when every one of these is true and evidenced. They are checkab
 
 - **No NuGet packages anywhere in this project.** BCL + `ProjectReference` only. (`FTK2.DevKit/src/DevKit.Plugin/DevKit.Plugin.csproj:31` states the repo build rule; `ClassForge.PackCheck.csproj` and every `*.Core.Tests` project comply.)
 - **No compile-time reference to `FTK2.dll`, `UnityEngine*.dll`, or `BepInEx.dll`.** All game access is reflective. This is what keeps the harness buildable and reviewable without a game install and immune to game-update binary drift.
-- **No Harmony, no Unity shim.** Empirically verified 2026-08-08: `ConfigsHelper.LoadConfigs` completes in ~1.6–1.9 s in a plain net10 process with **zero** Harmony patches applied. Do not add a Harmony dependency; if a future code path needs one, that is a separate plan.
+- **No Harmony, no Unity shim.** Empirically verified 2026-08-08/09: `ConfigsHelper.LoadConfigs` completes in a plain net10 process with **zero** Harmony patches applied — ~1.6–1.9 s warm, ~10 s on a cold file cache. Do not add a Harmony dependency; if a future code path needs one, that is a separate plan.
 - **Target framework `net10.0`**, `LangVersion 7.3`, `ImplicitUsings disable`, `Nullable disable` — matching `ClassForge.PackCheck.csproj` exactly.
 - **The harness never writes to the game directory.** Read-only access to `For The King II_Data\Managed` and `For The King II_Data\StreamingAssets\Assets`. It is safe to run while the game is open. **It also never requires the mods to be deployed** — pack content is read from the repo's `data/ClassPacks` folders, so a clean game install is the correct and preferred setup.
 - **The baseline must be a pristine install.** Third-party mods can write content directly into `StreamingAssets\Assets\Configs\JSON~` (verified 2026-08-08: EOR injects 31 `EOR_*` classes into `Characters.json`), which silently changes what "live ids" means and can mask or fabricate collisions. Task 1 gates every other check on a provenance assertion; restore with Steam's *Verify integrity of game files* before trusting a run.
@@ -494,7 +494,9 @@ namespace LiveDataHarness
 - [ ] **Step 6: Verify it builds and runs green**
 
 Run: `dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release`
-Expected: prints the game path, `ConfigsHelper.LoadConfigs OK in <~1500-2500> ms`, both cases PASS, `checks: 2  passed: 2  failed: 0`, exit code 0.
+Expected: prints the game path, `ConfigsHelper.LoadConfigs OK in <N> ms` (roughly 1500–2500 ms warm, up to ~10000 ms on a cold file cache — do not assert on the number), both cases PASS, `checks: 2  passed: 2  failed: 0`, exit code 0.
+
+The pristine baseline this must run against, confirmed 2026-08-09 after a full Steam re-verify: `Things` 1847 · `Characters` **2095** · `Abilities` 992 · `StatusEffects` 189 · `Followers` 48 · `Langs` 15.
 
 If the provenance case FAILS listing `EOR_*` ids, the install still has third-party content on disk: run Steam → *Verify integrity of game files*, re-run, and confirm `Configs.Characters` drops to **2095**. Do not proceed to Task 2 against a contaminated baseline — every downstream check would be measuring the wrong thing. Add `using System;` and `using System.Collections.Generic;` to `Program.cs` for this case.
 

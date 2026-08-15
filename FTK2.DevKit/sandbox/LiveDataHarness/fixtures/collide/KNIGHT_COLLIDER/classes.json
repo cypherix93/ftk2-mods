@@ -1,0 +1,15 @@
+{
+  "ALCHEMIST": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "ALCHEMIST",
+    "Passives": [],
+    "Rarity": "COMMON",
+    "Stats": { "HP": 30 },
+    "Tags": [ "PLAYER" ],
+    "Things": {},
+    "Threat": 0
+  }
+}
