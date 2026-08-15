@@ -254,6 +254,17 @@ namespace ClassForge.Plugin
                 postfix: M(typeof(TraitLoadoutPatches), nameof(TraitLoadoutPatches.GetAdventureLoadOut_Postfix)),
                 argumentTypes: new[] { typeof(string), typeof(GameRandom) });
 
+            // ---- MP trait-loadout refresh (task #11 ClassForge half — see TraitLoadoutRefresh header) ----
+            // The pool is built once at PartyManagementDirector.Initialize and cached; when DevKit's
+            // party-phase handshake (979bd17) delivers a Match verdict a moment later, TraitLoadoutRefresh
+            // re-runs the game's own rebuild path so the traits appear without leaving the screen.
+            // Resolved by NAME ONLY: single overload, and its parameter list drifted once already (the
+            // pSyncData default), so a fully-typed lookup would go stale on the next callback-shape change.
+            Patch(harmony, typeof(PartyManagementDirector), "Initialize",
+                postfix: M(typeof(TraitLoadoutRefresh), nameof(TraitLoadoutRefresh.PartyInitialize_Postfix)));
+            Patch(harmony, typeof(AdventureDirector), "Initialize",
+                postfix: M(typeof(TraitLoadoutRefresh), nameof(TraitLoadoutRefresh.AdventureStarted_Postfix)));
+
             // ---- MP session lifecycle (M1) ----
             // Same anchor FTK2.DevKit's own ParityCoordinator uses to reset its session state
             // (AdventureDirector.Initialize) — see ParityBridge.AdventureDirectorInitialize_Postfix for why

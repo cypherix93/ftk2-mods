@@ -44,6 +44,8 @@ namespace ClassForge.Plugin
 
         private static bool _loggedDevKitAbsent;
         private static bool _blocked;
+        private static bool _verdictCallbackSubscribed;
+        private static bool _loggedNoVerdictCallback;
 
         /// <summary>
         /// True once a parity mismatch has been reported for ClassForge THIS SESSION. Latching within a
@@ -79,6 +81,8 @@ namespace ClassForge.Plugin
                     }
                     return;
                 }
+
+                TrySubscribeVerdictCallback(service);
 
                 var withCallback = service.GetMethod("RegisterWithCallback",
                     BindingFlags.Public | BindingFlags.Static, null,
@@ -193,6 +197,73 @@ namespace ClassForge.Plugin
             catch
             {
                 return false; // fail closed: an unreadable verdict set is not a verified match.
+            }
+        }
+
+        /// <summary>
+        /// Subscribes to DevKit's verdict-arrival surface (task #11): <c>RegisterVerdictCallback(string,
+        /// Action&lt;string[]&gt;)</c>, args <c>[remotePeerId, "Match"|"Mismatch"]</c>, fired on verdict
+        /// TRANSITIONS only (DevKit m13 dedupe). Deliberately a separate method on DevKit's side — never an
+        /// overload — so the documented typeless <c>GetMethod("RegisterWithCallback")</c> recipe other mods
+        /// use cannot become ambiguous. An older DevKit without it degrades exactly like the
+        /// <c>RegisterWithCallback</c> fallback pattern above: logged once, feature off (MP traits then
+        /// require leaving and re-entering party management after the handshake), nothing throws.
+        /// Idempotent per merge — DevKit stores one callback per guid, so re-registration just replaces it.
+        /// </summary>
+        private static void TrySubscribeVerdictCallback(Type service)
+        {
+            try
+            {
+                var method = service.GetMethod("RegisterVerdictCallback",
+                    BindingFlags.Public | BindingFlags.Static, null,
+                    new[] { typeof(string), typeof(Action<string[]>) }, null);
+
+                if (method == null)
+                {
+                    if (!_loggedNoVerdictCallback)
+                    {
+                        _loggedNoVerdictCallback = true;
+                        ClassForgePlugin.Log.LogInfo(
+                            "[ClassForge] This DevKit build has no RegisterVerdictCallback — the MP trait-loadout " +
+                            "refresh is off (traits appear after leaving and re-entering party management once the " +
+                            "handshake completes). Update FTK2.DevKit for day-one MP traits.");
+                    }
+                    return;
+                }
+
+                method.Invoke(null, new object[] { ClassForgePlugin.Guid, new Action<string[]>(OnVerdict) });
+                if (!_verdictCallbackSubscribed)
+                {
+                    _verdictCallbackSubscribed = true;
+                    ClassForgePlugin.Log.LogInfo(
+                        "[ClassForge] Subscribed to DevKit verdict-arrival callbacks (MP trait-loadout refresh armed).");
+                }
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] Verdict-callback subscription failed (non-fatal; MP trait refresh off): " + ex);
+            }
+        }
+
+        /// <summary>
+        /// DevKit's verdict-arrival callback: <c>[remotePeerId, "Match"|"Mismatch"]</c>. Runs on the Unity
+        /// main thread (dispatched synchronously from the network-action receive path — see
+        /// <see cref="TraitLoadoutRefresh"/>'s threading note). Mismatch needs no action here:
+        /// <see cref="OnParityFailed"/> already latches Block, and a blocked session injects nothing.
+        /// </summary>
+        private static void OnVerdict(string[] args)
+        {
+            try
+            {
+                if (args == null || args.Length < 2) return;
+                if (!string.Equals(args[1], KindMatch, StringComparison.Ordinal)) return;
+                TraitLoadoutRefresh.OnVerifiedMatch();
+            }
+            catch (Exception ex)
+            {
+                // DevKit isolates a throwing subscriber anyway, but never rely on that from a callback.
+                ClassForgePlugin.Log.LogWarning("[ClassForge] Verdict callback handling failed (non-fatal): " + ex);
             }
         }
 
