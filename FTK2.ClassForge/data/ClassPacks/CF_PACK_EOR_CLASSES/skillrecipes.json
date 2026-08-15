@@ -845,5 +845,43 @@
     ],
     "VerboseLogTag": "Of Scavenging (loot)",
     "_source": "loot-grant verb spec §6.3 consumer 4; EOR BM L16397-16419 (OF_SCAVENGING affix 10% -> gold 5-10 or COMMON HERB). CARRIER-LESS at M-LG2: no pre-minted _OF_SCAVENGING variant items exist yet (CM §3 row 21's deterministic pre-mint registry is parked M-LG4); this recipe ships defined but unequippable by any live item until that lands."
+  },
+  "SKILL_CF_TRAIT_ARCFOCUS_GAIN": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Arcane Focus (gain)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ABILITY_STAT", "Value": "INT" },
+      { "Type": "ROLL_TIER", "Comparator": "GTE", "Value": "SUCCESS" }
+    ],
+    "Effects": [
+      { "Type": "COUNTER_ADD", "Name": "arcane_focus", "Delta": 1, "Max": 3 }
+    ],
+    "VerboseLogTag": "Arcane Focus"
+  },
+  "SKILL_CF_TRAIT_ARCFOCUS_FIZZLE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Arcane Focus (fizzle)",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      { "Type": "ABILITY_STAT", "Value": "INT" },
+      { "Type": "ROLL_TIER", "Comparator": "LTE", "Value": "FAIL" }
+    ],
+    "Effects": [
+      { "Type": "COUNTER_SET", "Name": "arcane_focus", "Value": 0 }
+    ],
+    "VerboseLogTag": "Arcane Focus"
+  },
+  "SKILL_CF_TRAIT_ARCFOCUS_BREAK": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Arcane Focus (break)",
+    "Trigger": "ON_DAMAGE_TAKEN",
+    "Conditions": [
+      { "Type": "HOSTILE_ACTION", "Value": true }
+    ],
+    "Effects": [
+      { "Type": "COUNTER_SET", "Name": "arcane_focus", "Value": 0 }
+    ],
+    "VerboseLogTag": "Arcane Focus"
   }
 }

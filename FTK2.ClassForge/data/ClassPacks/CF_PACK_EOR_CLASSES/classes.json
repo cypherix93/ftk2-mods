@@ -34,8 +34,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOOK_SCHOLAR_BASIC_00": 1,
-      "SCROLL_TELEPORT_01": 1
+      "ARM_EOR_STARTER_ARCANIST_PRISM_WAND": 1,
+      "HERB_GOLDENROOT_01": 1,
+      "SCROLL_IDENTIFY_01": 1
     },
     "Threat": 0
   },
@@ -74,7 +75,8 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOW_HUNTER_BASIC_00": 1,
+      "ARM_EOR_STARTER_ASSASSIN_QUIET_FANG": 1,
+      "TOOL_LOCKPICKS_01": 1,
       "HERB_HERMIT_01": 1
     },
     "Threat": 0
@@ -113,8 +115,8 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "HERB_SCHOLARWORT_01": 1,
-      "LUTE_MINSTREL_BASIC_00": 1
+      "ARM_EOR_STARTER_BARD_TRAVELERS_LUTE": 1,
+      "HERB_SCHOLARWORT_01": 1
     },
     "Threat": 0
   },
@@ -153,9 +155,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOOMERANG_PATHFINDER_BASIC_00": 1,
-      "TOOL_RALLYBANNER_01": 4,
-      "TRINKET_COMPASS_00": 1
+      "ARM_EOR_STARTER_BEASTMASTER_TAMERS_BOW": 1,
+      "CHESTARMOR_MILITIA_LIGHT_00": 1,
+      "TOOL_KIBBLE_01": 1
     },
     "Threat": 0
   },
@@ -195,8 +197,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "HERB_GOLDENROOT_01": 1,
-      "LONGSTAFF_MONK_BASIC_00": 1
+      "ARM_EOR_STARTER_BLADEDANCER_RIBBON_SABRE": 1,
+      "BOOTS_MILITIA_LIGHT_00": 1,
+      "HERB_GOLDENROOT_01": 1
     },
     "Threat": 0
   },
@@ -235,8 +238,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOOK_ASTRONOMER_BASIC_00": 1,
-      "TRINKET_SPYGLASS_00": 1
+      "ARM_EOR_STARTER_CHRONOMANCER_HOURGLASS_DIRK": 1,
+      "TRINKET_SPYGLASS_00": 1,
+      "HERB_GOLDENROOT_01": 1
     },
     "Threat": 0
   },
@@ -277,8 +281,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "HERB_GOLDENROOT_01": 1,
-      "LONGSTAFF_MONK_BASIC_00": 1
+      "ARM_EOR_STARTER_CORSAIR_SALTWORN_PISTOL": 1,
+      "TRINKET_COMPASS_00": 1,
+      "HERB_NETTLE_01": 1
     },
     "Threat": 0
   },
@@ -317,8 +322,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "HERB_GODSBEARD_01": 1,
-      "STAFF_HERBALIST_BASIC_00": 1
+      "ARM_EOR_STARTER_DRUID_GROVE_SLING": 1,
+      "TRINKET_BUFF_RESIST": 1,
+      "HERB_GODSBEARD_01": 1
     },
     "Threat": 0
   },
@@ -357,8 +363,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "HERB_GOLDENROOT_01": 1,
-      "LONGSTAFF_MONK_BASIC_00": 1
+      "ARM_EOR_STARTER_DUELIST_PRACTICE_RAPIER": 1,
+      "TRINKET_STAT_SPEED": 1,
+      "HERB_GOLDENROOT_01": 1
     },
     "Threat": 0
   },
@@ -397,8 +404,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "LUTE_BUSKER_BASIC_00": 1,
-      "TOOL_LOCKPICKS_01": 1
+      "ARM_EOR_STARTER_FORTUNEBORN_LUCKY_NAIL": 1,
+      "TRINKET_LUCK_00": 1,
+      "HERB_NETTLE_01": 1
     },
     "Threat": 0
   },
@@ -438,8 +446,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "LUTE_BUSKER_BASIC_00": 1,
-      "TOOL_LOCKPICKS_01": 1
+      "ARM_EOR_STARTER_GAMBLER_LOADED_DICE": 1,
+      "TOOL_FORTUNETELLER_DECK_01": 1,
+      "HERB_NETTLE_01": 1
     },
     "Threat": 0
   },
@@ -479,9 +488,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BLUNT_BLACKSMITH_BASIC_00": 1,
-      "SHIELD_BLACKSMITH_BASIC_00": 1,
-      "TOOL_VEHICLE_REPAIR_01": 1
+      "ARM_EOR_STARTER_GLADIATOR_ARENA_MAUL": 1,
+      "TRINKET_BUFF_ARMOR": 1,
+      "HERB_GODSBEARD_01": 1
     },
     "Threat": 0
   },
@@ -520,9 +529,10 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BLUNT_BLACKSMITH_BASIC_00": 1,
-      "SHIELD_BLACKSMITH_BASIC_00": 1,
-      "TOOL_VEHICLE_REPAIR_01": 1
+      "ARM_EOR_STARTER_HEXBLADE_DULL_HEXSABER": 1,
+      "TOOL_FORTUNETELLER_DECK_01": 1,
+      "TRINKET_BUFF_RESIST": 1,
+      "HERB_GOLDENROOT_01": 1
     },
     "Threat": 0
   },
@@ -559,8 +569,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "LUTE_BUSKER_BASIC_00": 1,
-      "TOOL_LOCKPICKS_01": 1
+      "ARM_EOR_STARTER_JESTER_MOCKING_MANDOLIN": 1,
+      "HERB_NETTLE_01": 1,
+      "MISC_MUSHROOM_01": 1
     },
     "Threat": 0
   },
@@ -599,9 +610,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BLUNT_BLACKSMITH_BASIC_00": 1,
-      "SHIELD_BLACKSMITH_BASIC_00": 1,
-      "TOOL_VEHICLE_REPAIR_01": 1
+      "ARM_EOR_STARTER_KNIGHT_SQUIRES_SHIELDBLADE": 1,
+      "CHESTARMOR_MILITIA_HEAVY_00": 1,
+      "HERB_GODSBEARD_01": 1
     },
     "Threat": 0
   },
@@ -641,9 +652,8 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOOMERANG_PATHFINDER_BASIC_00": 1,
-      "TOOL_RALLYBANNER_01": 4,
-      "TRINKET_COMPASS_00": 1
+      "ARM_EOR_STARTER_MARSHAL_MILITIA_HALBERD": 1,
+      "TOOL_RALLYBANNER_01": 1
     },
     "Threat": 0
   },
@@ -682,8 +692,10 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOOK_SCHOLAR_BASIC_00": 1,
-      "SCROLL_TELEPORT_01": 1
+      "ARM_EOR_STARTER_ORACLE_CLOUDED_EYE_SLING": 1,
+      "TOOL_FORTUNETELLER_DECK_01": 1,
+      "SCROLL_VISION_01": 1,
+      "HERB_GOLDENROOT_01": 1
     },
     "Threat": 0
   },
@@ -722,9 +734,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BLUNT_FRIAR_BASIC_00": 1,
-      "DRINK_IRONSPIRIT_01": 1,
-      "SHIELD_FRIAR_BASIC_00": 1
+      "ARM_EOR_STARTER_PALADIN_INITIATES_BULWARK": 1,
+      "TRINKET_BUFF_RESIST": 1,
+      "HERB_GODSBEARD_01": 1
     },
     "Threat": 0
   },
@@ -764,8 +776,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "CORNDOG_BASIC_01": 1,
-      "POLEARM_FARMER_BASIC_00": 1
+      "ARM_EOR_STARTER_PEASANT_FARMHAND_PITCHFORK": 1,
+      "TOOL_TINDER_01": 1,
+      "HERB_GODSBEARD_01": 1
     },
     "Threat": 0
   },
@@ -804,9 +817,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BLUNT_FRIAR_BASIC_00": 1,
-      "DRINK_IRONSPIRIT_01": 1,
-      "SHIELD_FRIAR_BASIC_00": 1
+      "ARM_EOR_STARTER_PRIEST_CHAPLAINS_STAFF": 1,
+      "TRINKET_BUFF_RESIST": 1,
+      "HERB_GODSBEARD_01": 1
     },
     "Threat": 0
   },
@@ -845,8 +858,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BLADE_STABLEBOY_BASIC_00": 1,
-      "HERB_NETTLE_01": 1
+      "ARM_EOR_STARTER_RANCHER_CATTLE_WHIP": 1,
+      "BOOTS_LOADOUT_LIGHT_00": 1,
+      "TOOL_KIBBLE_01": 1
     },
     "Threat": 0
   },
@@ -886,9 +900,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOOMERANG_PATHFINDER_BASIC_00": 1,
-      "TOOL_RALLYBANNER_01": 4,
-      "TRINKET_COMPASS_00": 1
+      "ARM_EOR_STARTER_RANGER_FIELD_BOW": 1,
+      "TOOL_TINDER_01": 1,
+      "HERB_GODSBEARD_01": 1
     },
     "Threat": 0
   },
@@ -928,8 +942,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOOK_ASTRONOMER_BASIC_00": 1,
-      "TRINKET_SPYGLASS_00": 1
+      "ARM_EOR_STARTER_RUNEMAGE_CHALK_RUNE_STAFF": 1,
+      "HERB_GOLDENROOT_01": 1,
+      "SCROLL_IDENTIFY_01": 1
     },
     "Threat": 0
   },
@@ -969,9 +984,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOOMERANG_PATHFINDER_BASIC_00": 1,
-      "TOOL_RALLYBANNER_01": 4,
-      "TRINKET_COMPASS_00": 1
+      "ARM_EOR_STARTER_SCOUT_TRAIL_KNIFE": 1,
+      "TOOL_TINDER_01": 1,
+      "SCROLL_VISION_01": 1
     },
     "Threat": 0
   },
@@ -1010,9 +1025,8 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BLUNT_BLACKSMITH_BASIC_00": 1,
-      "SHIELD_BLACKSMITH_BASIC_00": 1,
-      "TOOL_VEHICLE_REPAIR_01": 1
+      "ARM_EOR_STARTER_SENTINEL_GUARD_SPEAR": 1,
+      "CHESTARMOR_MILITIA_HEAVY_00": 1
     },
     "Threat": 0
   },
@@ -1052,9 +1066,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BLUNT_FRIAR_BASIC_00": 1,
-      "DRINK_IRONSPIRIT_01": 1,
-      "SHIELD_FRIAR_BASIC_00": 1
+      "ARM_EOR_STARTER_TEMPLAR_OATHBOUND_MACE": 1,
+      "TRINKET_IMMUNITY_CURSE": 1,
+      "SCROLL_PURIFY_01": 1
     },
     "Threat": 0
   },
@@ -1091,8 +1105,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "MISC_TREASUREMAP_01": 1,
-      "WHIP_TREASUREHUNTER_BASIC_00": 1
+      "ARM_EOR_STARTER_THIEF_CUTPURSE_DAGGER": 1,
+      "TOOL_LOCKPICKS_01": 1,
+      "HERB_HERMIT_01": 1
     },
     "Threat": 0
   },
@@ -1131,8 +1146,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOW_HUNTER_BASIC_00": 1,
-      "HERB_HERMIT_01": 1
+      "ARM_EOR_STARTER_TRICKSHOT_BENT_PISTOL": 1,
+      "TRINKET_SPYGLASS_00": 1,
+      "HERB_GOLDENROOT_01": 1
     },
     "Threat": 0
   },
@@ -1171,9 +1187,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BLUNT_BLACKSMITH_BASIC_00": 1,
-      "SHIELD_BLACKSMITH_BASIC_00": 1,
-      "TOOL_VEHICLE_REPAIR_01": 1
+      "ARM_EOR_STARTER_WARDEN_BRIAR_GUARD_SPEAR": 1,
+      "CHESTARMOR_MILITIA_LIGHT_00": 1,
+      "TOOL_TINDER_01": 1
     },
     "Threat": 0
   },
@@ -1213,9 +1229,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BLUNT_BLACKSMITH_BASIC_00": 1,
-      "SHIELD_BLACKSMITH_BASIC_00": 1,
-      "TOOL_VEHICLE_REPAIR_01": 1
+      "ARM_EOR_STARTER_WARRIOR_CHIPPED_AXE": 1,
+      "TRINKET_BUFF_ARMOR": 1,
+      "HERB_GODSBEARD_01": 1
     },
     "Threat": 0
   },
@@ -1254,8 +1270,9 @@
       "CF_PACK_EOR_CLASSES"
     ],
     "Things": {
-      "BOOK_SCHOLAR_BASIC_00": 1,
-      "SCROLL_TELEPORT_01": 1
+      "ARM_EOR_STARTER_WIZARD_APPRENTICE_STAFF": 1,
+      "HERB_GOLDENROOT_01": 1,
+      "SCROLL_IDENTIFY_01": 1
     },
     "Threat": 0
   }

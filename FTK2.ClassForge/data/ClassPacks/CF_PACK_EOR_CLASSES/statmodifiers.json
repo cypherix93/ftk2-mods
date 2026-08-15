@@ -1,0 +1,24 @@
+{
+  "STAT_CF_TRAIT_LIGHT_FOOTED_EVD": { "Stat": "EVD", "Percent": 20 },
+  "STAT_CF_TRAIT_TREASURE_SENSE_LCK": { "Stat": "LCK", "Percent": 15 },
+  "STAT_CF_TRAIT_TOUGHENED_HP": { "Stat": "HP", "Percent": 20 },
+  "STAT_CF_TRAIT_TOUGHENED_DEF": { "Stat": "DEF", "Percent": 15 },
+  "STAT_CF_TRAIT_STEADY_AIM_AWR": { "Stat": "AWR", "Percent": 12 },
+  "STAT_CF_TRAIT_STREETWISE_TAL": { "Stat": "TAL", "Percent": 15 },
+  "STAT_CF_TRAIT_WARDBOUND_RES": { "Stat": "RES", "Percent": 20 },
+  "STAT_CF_TRAIT_SCHOLARS_HABIT_INT": { "Stat": "INT", "Percent": 12 },
+  "STAT_CF_TRAIT_KNIFE_EDGE_HP": { "Stat": "HP", "Percent": -5 },
+  "STAT_CF_TRAIT_PACK_TACTICS_PHY": {
+    "Stat": "PHY",
+    "Percent": 10,
+    "RequiresPositiveBase": false,
+    "Conditions": [{ "Type": "PARTY_HAS_FOLLOWER" }]
+  },
+  "STAT_CF_TRAIT_ARCANE_FOCUS_MAG": {
+    "Stat": "MAG",
+    "PercentFrom": "COUNTER:arcane_focus",
+    "PerUnit": 5,
+    "Max": 15,
+    "RequiresPositiveBase": false
+  }
+}

@@ -1,158 +1,219 @@
 {
   "CF_EOR_ARCANIST": {
     "EorId": "EOR_ARCANIST",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_ASSASSIN": {
     "EorId": "EOR_ASSASSIN",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_BARD": {
     "EorId": "EOR_BARD",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_BEASTMASTER": {
     "EorId": "EOR_BEASTMASTER",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_BLADEDANCER": {
     "EorId": "EOR_BLADEDANCER",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_CHRONOMANCER": {
     "EorId": "EOR_CHRONOMANCER",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_CORSAIR": {
     "EorId": "EOR_CORSAIR",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_DRUID": {
     "EorId": "EOR_DRUID",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_DUELIST": {
     "EorId": "EOR_DUELIST",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_FORTUNEBORN": {
     "EorId": "EOR_FORTUNEBORN",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_GAMBLER": {
     "EorId": "EOR_GAMBLER",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_GLADIATOR": {
     "EorId": "EOR_GLADIATOR",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_HEXBLADE": {
     "EorId": "EOR_HEXBLADE",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_JESTER": {
     "EorId": "EOR_JESTER",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_KNIGHT": {
     "EorId": "EOR_KNIGHT",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_MARSHAL": {
     "EorId": "EOR_MARSHAL",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_ORACLE": {
     "EorId": "EOR_ORACLE",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_PALADIN": {
     "EorId": "EOR_PALADIN",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_PEASANT": {
     "EorId": "EOR_PEASANT",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_PRIEST": {
     "EorId": "EOR_PRIEST",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_RANCHER": {
     "EorId": "EOR_RANCHER",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_RANGER": {
     "EorId": "EOR_RANGER",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_RUNEMAGE": {
     "EorId": "EOR_RUNEMAGE",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_SCOUT": {
     "EorId": "EOR_SCOUT",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_SENTINEL": {
     "EorId": "EOR_SENTINEL",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_TEMPLAR": {
     "EorId": "EOR_TEMPLAR",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_THIEF": {
     "EorId": "EOR_THIEF",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_TRICKSHOT": {
     "EorId": "EOR_TRICKSHOT",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_WARDEN": {
     "EorId": "EOR_WARDEN",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_WARRIOR": {
     "EorId": "EOR_WARRIOR",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "CF_EOR_WIZARD": {
     "EorId": "EOR_WIZARD",
-    "PackageVersion": "0.7.0.60",
-    "Source": "eor-import"
+    "PackageVersion": "0.7.0.62",
+    "Source": "eor-import",
+    "ThingsUpdatedIn": "0.7.0.62",
+    "ThingsSource": "OverhaulCustomStartingKits runtime table (EOR62 Plugin.cs L31753), starter weapons remapped EOR_STARTER_*->ARM_EOR_STARTER_*"
   },
   "_authored_content": {
     "_note": "Added by the traits.json/skillrecipes.json authoring pass. Authority: docs/research/eor-rehost-coverage-matrix.md (dispositions) + docs/research/eor-behavior-matrix.md (BM, exact numbers) + FTK2.ClassForge/SPEC-DELTA-v1.1.md (recipe vocabulary). Every recipe also carries an inline \"_source\" field citing its coverage-matrix row and BM line range.",
@@ -318,5 +379,17 @@
       "BEASTMASTER's ported quarry link (STATUS_MARKED_00) newly inherits that status's vanilla +30 crit-chance bonus",
       "GAMBLER's loss chance changes from EOR's chained 7.5% to v1.1's independent-rolls 10% (deliberate, SPEC-DELTA §5.1 ProcChance semantics)"
     ]
+  },
+  "_delta_updates": {
+    "_note": "Changes applied to this pack AFTER its original eor-import run, by a targeted delta pass rather than a converter re-run. tools/eor_import.py deliberately refuses to regenerate this pack (--force-classes would destroy the hand-authored layer recorded in _authored_content, and there is no supported three-way merge), so upstream deltas that touch only converter-owned fields are applied surgically and recorded here.",
+    "2026-08-08-eor-0762-things": {
+      "source_package": "Release 29 0.7.0.62 2026-08-04T03-16Z kgQJdw2QN",
+      "from_version": "0.7.0.60",
+      "to_version": "0.7.0.62",
+      "scope": "Starting-inventory `Things` map only, on the 30 classes EOR changed (all but CF_EOR_BARD). No Stats, Abilities, Passives, Tags, Equippable or authored content touched.",
+      "authority": "docs/research/eor-0762-delta-audit.md §5",
+      "method": "Verified all 31 classes' Things were byte-identical to the 0.7.0.60 source first, then copied the 0.7.0.62 Things verbatim. All 42 distinct referenced item ids checked present in tools/out/vocab-index.json (zero dangling). ClassForge.PackCheck: zero errors.",
+      "classes_patched": 30
+    }
   }
 }
