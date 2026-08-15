@@ -107,6 +107,8 @@ namespace LiveDataHarness
 
             Checks.SummonerChecks.Register(runner, data);
 
+            Checks.RecipeChecks.Register(runner, data, cfResult);
+
             return runner.Report();
         }
 
