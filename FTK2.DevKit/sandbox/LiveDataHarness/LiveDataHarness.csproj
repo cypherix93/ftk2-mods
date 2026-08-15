@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <RootNamespace>LiveDataHarness</RootNamespace>
+    <AssemblyName>LiveDataHarness</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <!-- Runs the repo's host-agnostic .Core logic against the REAL game's Configs, loaded
+         out-of-process by reflection. No game/BepInEx/Unity compile-time references and no
+         NuGet packages: the game is reached only via Assembly.LoadFrom at runtime, so this
+         project builds and is reviewable on a machine with no game installed, and a game
+         update cannot break the build — only the runtime reflection lookups. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\FTK2.ClassForge\src\ClassForge.Core\ClassForge.Core.csproj" />
+    <ProjectReference Include="..\..\..\FTK2.ClassForge\src\ClassForge.Recipes\ClassForge.Recipes.csproj" />
+    <ProjectReference Include="..\..\..\FTK2.Summoner\src\Summoner.Core\Summoner.Core.csproj" />
+    <ProjectReference Include="..\..\..\FTK2.Blessings\src\Blessings.Core\Blessings.Core.csproj" />
+    <ProjectReference Include="..\..\src\DevKit.Core\DevKit.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

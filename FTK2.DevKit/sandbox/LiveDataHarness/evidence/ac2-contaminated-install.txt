@@ -1,0 +1,31 @@
+LiveDataHarness
+  game: E:\Games\Steam\steamapps\common\For The King II
+Warning: No parser found for config 'EncyclopediaDatas' in parent 'EncyclopediaDatas.json'
+Warning: No parser found for config 'Materials' in parent 'Materials.json'
+  ConfigsHelper.LoadConfigs OK in 1550 ms
+
+== Live config sanity ==
+  PASS  live Configs are populated
+  FAIL  install is a pristine baseline (no third-party content on disk)
+        third-party content found on disk in StreamingAssets — restore with Steam's 'Verify integrity of game files' before trusting any result below: 533 offender(s)
+            Things.ARM_ASHEN_CINDERROD (matches third-party prefix 'ARM_')
+            Things.ARM_ASHEN_COVENANT_CHALICE (matches third-party prefix 'ARM_')
+            Things.ARM_ASHEN_DEBTORS_NOOSE (matches third-party prefix 'ARM_')
+            Things.ARM_ASHEN_OATHBRAND (matches third-party prefix 'ARM_')
+            Things.ARM_ASHEN_PENITENT_PLATE (matches third-party prefix 'ARM_')
+            Things.ARM_BRAMBLE_AEGIS (matches third-party prefix 'ARM_')
+            Things.ARM_BRAMBLE_CUIRASS (matches third-party prefix 'ARM_')
+            Things.ARM_BRAMBLE_HEART (matches third-party prefix 'ARM_')
+            Things.ARM_BRAMBLE_HELM (matches third-party prefix 'ARM_')
+            Things.ARM_BRAMBLE_MACE (matches third-party prefix 'ARM_')
+            Things.ARM_EOR_ANCIENT_ADVENTURE_BOOTS (matches third-party prefix 'ARM_')
+            Things.ARM_EOR_ANCIENT_ADVENTURE_HAT (matches third-party prefix 'ARM_')
+            Things.ARM_EOR_ANCIENT_BEASTMAN_HELM (matches third-party prefix 'ARM_')
+            Things.ARM_EOR_ANCIENT_BEASTMAN_ROBES (matches third-party prefix 'ARM_')
+            Things.ARM_EOR_ANCIENT_BLOOM_BLUDGEON (matches third-party prefix 'ARM_')
+            ... and 518 more
+
+---------------------------------------------
+checks: 2  passed: 1  failed: 1
+FAILED: install is a pristine baseline (no third-party content on disk)
+---------------------------------------------
