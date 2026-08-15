@@ -80,6 +80,25 @@ namespace LiveDataHarness
                     "'Verify integrity of game files' before trusting any result below");
             });
 
+            var vocab = GameVocabulary.Build(data);
+
+            runner.Section("Game vocabulary");
+            runner.Case("enum + learned vocabularies are populated", () =>
+            {
+                // These floors exist to catch the vocabulary silently coming back empty, which would make
+                // every reference check below vacuously green rather than loudly broken.
+                Check.AtLeast(2000, vocab.EnumMembers.Count, "distinct enum member names in FTK2.dll");
+                Check.True(vocab.EnumMembers.Contains("COMMON"), "enum vocabulary contains COMMON");
+                Check.True(vocab.EnumMembers.Contains("MELEE"), "enum vocabulary contains MELEE");
+                Check.AtLeast(20, vocab.BaseTypes.Count, "learned CharacterConfig.BaseType values");
+                Check.True(vocab.BaseTypes.Contains("HUMAN"), "BaseType vocabulary contains HUMAN");
+                Check.True(vocab.BodyTypes.Contains("M") && vocab.BodyTypes.Contains("F"), "BodyType vocabulary is {F,M}");
+                Check.True(vocab.CharacterTags.Contains("PLAYER"), "tag vocabulary contains PLAYER");
+            });
+
+            var cfResult = Checks.ClassForgeChecks.LoadAll(data);
+            Checks.ClassForgeChecks.RegisterAddsOnly(runner, data, cfResult);
+
             return runner.Report();
         }
 

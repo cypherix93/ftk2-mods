@@ -1,0 +1,10 @@
+{
+  "author": "ftk2mods",
+  "dependencies": [],
+  "description": "Harness negative fixture: deliberately ships a class id that already exists in vanilla Configs.Characters, to prove the adds-only live-id check bites. Never deployed.",
+  "enabled": true,
+  "id": "KNIGHT_COLLIDER",
+  "loadOrder": 100,
+  "name": "Harness collide fixture",
+  "version": "1.0.0"
+}
