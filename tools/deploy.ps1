@@ -6,13 +6,19 @@
 #   PAYLOAD mode (this file sitting next to payload.json inside an extracted package):
 #                installs/uninstalls from the payload only — no repo, no dotnet needed.
 #
+# The payload (and therefore the zip) is laid out as a GAME-DIRECTORY OVERLAY: every file
+# sits at its real path relative to "...\steamapps\common\For The King II". Users can either
+# extract the zip straight into the game folder (merge/overwrite, EOR-style — installs ALL
+# mods, no manifest) or run install.ps1/install.bat for a selective, manifest-tracked,
+# uninstallable install. Keep it that way: install.ps1 assumes payload path == target path.
+#
 # Every file written to the game directory is recorded in
 #   <game>\ftk2mods-deploy-manifest.json
 # and any pre-existing file it overwrites is backed up under <game>\ftk2mods-backup\.
 # -Uninstall reverses the install from that manifest (per-mod or everything).
 #
 # Examples:
-#   .\tools\deploy.ps1                                   # build + install default mods (devkit, classforge, summoner)
+#   .\tools\deploy.ps1                                   # build + install default mods (devkit, classforge, summoner, wardrobe)
 #   .\tools\deploy.ps1 -Mods devkit,classforge           # choose mods
 #   .\tools\deploy.ps1 -Package -StageOnly               # build the shareable zip for friends, install nothing
 #   .\tools\deploy.ps1 -DryRun                           # show what would happen
@@ -80,48 +86,45 @@ function Resolve-GameDir {
 }
 
 # ---------------------------------------------------------------- mod table
-# stage      : scriptblock(repo, payloadDir) — repo mode only
-# payloadSub : folder inside payload holding this mod's files
-# targetSub  : where payloadSub's contents land, relative to game root
+# sub : the mod's game-relative path. It is BOTH where the mod is staged inside the payload
+#       and where it lands under the game root — the payload is a game-directory overlay,
+#       which is what makes the packaged zip extract-into-game-folder installable.
 $ModDefs = [ordered]@{
     devkit = @{
-        payloadSub = 'plugins\ftk2mods.devkit'
-        targetSub  = 'BepInEx\plugins\ftk2mods.devkit'
-        note       = 'MP parity engine — required by classforge/summoner parity registration'
+        sub  = 'BepInEx\plugins\ftk2mods.devkit'
+        note = 'MP parity engine — required by classforge/summoner parity registration'
     }
     classforge = @{
-        payloadSub = 'plugins\ftk2mods.classforge'
-        targetSub  = 'BepInEx\plugins\ftk2mods.classforge'
-        note       = '31 EOR classes + 3 Baldur''s classes, 20 traits, 48 skill recipes'
+        sub  = 'BepInEx\plugins\ftk2mods.classforge'
+        note = '31 EOR classes + 3 Baldur''s classes, 20 traits, 48 skill recipes'
     }
     summoner = @{
-        payloadSub = 'plugins\ftk2mods.summoner'
-        targetSub  = 'BepInEx\plugins\ftk2mods.summoner'
-        note       = '200 EOR mercs/pets in recruitment'
+        sub  = 'BepInEx\plugins\ftk2mods.summoner'
+        note = '200 EOR mercs/pets in recruitment'
     }
     wardrobe = @{
-        payloadSub = 'plugins\ftk2mods.wardrobe'
-        targetSub  = 'BepInEx\plugins\ftk2mods.wardrobe'
-        note       = 'all non-DLC cosmetics + class models selectable at character creation (pure client)'
+        sub  = 'BepInEx\plugins\ftk2mods.wardrobe'
+        note = 'all non-DLC cosmetics + class models selectable at character creation (pure client)'
     }
     warbrain = @{
-        payloadSub = 'plugins\FTK2.WarBrain'
-        targetSub  = 'BepInEx\plugins\FTK2.WarBrain'
-        note       = 'enemy battle AI — ALL peers need identical files+config or MP desyncs'
+        sub  = 'BepInEx\plugins\FTK2.WarBrain'
+        note = 'enemy battle AI — ALL peers need identical files+config or MP desyncs'
     }
     armory = @{
-        payloadSub = 'armory-things'
-        targetSub  = 'For The King II_Data\StreamingAssets\Assets\Configs\JSON~\Things'
-        note       = '533 items via game-owned config folder (no EOR visual-fallback layer: some items may show placeholder/no art)'
+        sub  = 'For The King II_Data\StreamingAssets\Assets\Configs\JSON~\Things'
+        note = '533 items via game-owned config folder (no EOR visual-fallback layer: some items may show placeholder/no art)'
     }
     blessings = @{
-        payloadSub = 'plugins\ftk2mods.blessings'
-        targetSub  = 'BepInEx\plugins\ftk2mods.blessings'
-        note       = 'Risky Blessings (15-blessing EOR table). Needs classforge installed AND its ' +
-                     '[Packs] AdditionalRoots pointed at BepInEx\plugins\ftk2mods.blessings\ClassPacks ' +
-                     'so the BLSS_PACK_EOR_BLESSINGS content pack is discovered (off by default: [Blessings] Mode=Disabled).'
+        sub  = 'BepInEx\plugins\ftk2mods.blessings'
+        note = 'Risky Blessings (15-blessing EOR table). Needs classforge installed AND its ' +
+               '[Packs] AdditionalRoots pointed at BepInEx\plugins\ftk2mods.blessings\ClassPacks ' +
+               'so the BLSS_PACK_EOR_BLESSINGS content pack is discovered (off by default: [Blessings] Mode=Disabled).'
     }
 }
+
+# BepInEx core pieces, game-relative — staged at these exact paths too. The core is installed
+# by install.ps1 only when the game has no BepInEx (copy-paste installs simply merge it in).
+$BepInExCoreItems = @('winhttp.dll', 'doorstop_config.ini', '.doorstop_version', 'BepInEx\core')
 
 # ---------------------------------------------------------------- staging (repo mode)
 function Copy-Tree([string]$From, [string]$To) {
@@ -154,16 +157,16 @@ function Stage-Payload {
         }
     }
 
-    # BepInEx core (bootstrap files + core folder only — never the source package's plugins)
+    # BepInEx core (bootstrap files + core folder only — never the source package's plugins),
+    # staged at its REAL game-relative paths so the zip overlays cleanly.
     if (Test-Path (Join-Path $BepInExSource 'BepInEx\core\BepInEx.dll')) {
-        $bep = Join-Path $PayloadDir 'BepInEx-core'
-        New-Item -ItemType Directory -Force (Join-Path $bep 'BepInEx') | Out-Null
-        Copy-Item (Join-Path $BepInExSource 'winhttp.dll')          $bep
-        Copy-Item (Join-Path $BepInExSource 'doorstop_config.ini')  $bep
+        New-Item -ItemType Directory -Force (Join-Path $PayloadDir 'BepInEx') | Out-Null
+        Copy-Item (Join-Path $BepInExSource 'winhttp.dll')          $PayloadDir
+        Copy-Item (Join-Path $BepInExSource 'doorstop_config.ini')  $PayloadDir
         if (Test-Path (Join-Path $BepInExSource '.doorstop_version')) {
-            Copy-Item (Join-Path $BepInExSource '.doorstop_version') $bep
+            Copy-Item (Join-Path $BepInExSource '.doorstop_version') $PayloadDir
         }
-        Copy-Item (Join-Path $BepInExSource 'BepInEx\core') (Join-Path $bep 'BepInEx') -Recurse
+        Copy-Item (Join-Path $BepInExSource 'BepInEx\core') (Join-Path $PayloadDir 'BepInEx') -Recurse
     } else {
         Log "WARNING: BepInEx source not found at '$BepInExSource' — payload will not carry BepInEx core. Installs will require BepInEx 5.4.23 to be present already."
     }
@@ -171,13 +174,13 @@ function Stage-Payload {
     # devkit: plugin+core dlls side by side, data\ subfolder next to the dll
     # (ParityCoordinator hashes <plugin>\data\ — flattening the files produces an empty dataHash
     # and a guaranteed parity mismatch on every peer)
-    $d = Join-Path $PayloadDir $ModDefs.devkit.payloadSub
+    $d = Join-Path $PayloadDir $ModDefs.devkit.sub
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.DevKit\src\DevKit.Plugin\bin\Release\net472\*.dll') $d
     Copy-Tree (Join-Path $RepoRoot 'FTK2.DevKit\data') (Join-Path $d 'data')
 
     # classforge: all three dlls + ClassPacks at plugin-folder root (loader expects <plugin>\ClassPacks\)
-    $d = Join-Path $PayloadDir $ModDefs.classforge.payloadSub
+    $d = Join-Path $PayloadDir $ModDefs.classforge.sub
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.ClassForge\src\ClassForge.Plugin\bin\Release\net472\*.dll') $d
     Copy-Tree (Join-Path $RepoRoot 'FTK2.ClassForge\data\ClassPacks') (Join-Path $d 'ClassPacks')
@@ -188,24 +191,24 @@ function Stage-Payload {
     }
 
     # summoner: dlls + data\FollowerPacks (loader expects <plugin>\data\FollowerPacks\)
-    $d = Join-Path $PayloadDir $ModDefs.summoner.payloadSub
+    $d = Join-Path $PayloadDir $ModDefs.summoner.sub
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.Summoner\src\Summoner.Plugin\bin\Release\net472\*.dll') $d
     Copy-Tree (Join-Path $RepoRoot 'FTK2.Summoner\data') (Join-Path $d 'data')
 
     # wardrobe: single plugin dll, no data
-    $d = Join-Path $PayloadDir $ModDefs.wardrobe.payloadSub
+    $d = Join-Path $PayloadDir $ModDefs.wardrobe.sub
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.Wardrobe\src\Wardrobe.Plugin\bin\Release\net472\*.dll') $d
 
     # warbrain: dlls + data next to dll
-    $d = Join-Path $PayloadDir $ModDefs.warbrain.payloadSub
+    $d = Join-Path $PayloadDir $ModDefs.warbrain.sub
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.WarBrain\src\WarBrain.Plugin\bin\Release\net472\*.dll') $d
     Copy-Tree (Join-Path $RepoRoot 'FTK2.WarBrain\data') (Join-Path $d 'data')
 
     # armory: data-only json packs
-    $d = Join-Path $PayloadDir $ModDefs.armory.payloadSub
+    $d = Join-Path $PayloadDir $ModDefs.armory.sub
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.Armory\data\Things\*.json') $d
 
@@ -215,7 +218,7 @@ function Stage-Payload {
     # and the payload README below). Blessings.Plugin also reads blessings.json straight out of this
     # same staged copy (BlessingsPlugin.LoadRegistry) -- there is exactly one copy of the file on disk,
     # not a plugin-side duplicate plus a pack-side duplicate.
-    $d = Join-Path $PayloadDir $ModDefs.blessings.payloadSub
+    $d = Join-Path $PayloadDir $ModDefs.blessings.sub
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.Blessings\src\Blessings.Plugin\bin\Release\net472\*.dll') $d
     Copy-Tree (Join-Path $RepoRoot 'FTK2.Blessings\data\ClassPacks') (Join-Path $d 'ClassPacks')
@@ -247,16 +250,25 @@ FTK2 mods — install package (built $($meta.created), commit $($meta.commit))
 EVERY PLAYER IN A MULTIPLAYER SESSION MUST INSTALL THIS SAME ZIP THE SAME WAY.
 Mismatched installs are detected and the mods switch off on the mismatched peer.
 
-Install (default set: devkit + classforge + summoner):
-    double-click install.bat
+OPTION 1 — copy-paste (simplest, installs ALL mods):
+    1. Open your game folder:  ...\Steam\steamapps\common\For The King II\
+    2. Extract EVERYTHING from this zip into it.
+    3. Allow files to merge / overwrite when prompted.
+    4. Launch the game.
+  The zip is laid out exactly like the game folder, so it drops straight in.
+  Note: uninstall.bat can NOT undo a copy-paste install (no manifest is
+  written) — to remove the mods, verify game files in Steam and delete the
+  BepInEx folder.
+
+OPTION 2 — installer (selective mods, clean uninstall):
+    double-click install.bat        (default set: devkit + classforge +
+                                     summoner + wardrobe)
   or, from PowerShell, choosing mods:
-    .\install.ps1 -Mods devkit,classforge,summoner
-    .\install.ps1 -Mods devkit,classforge,summoner,warbrain,armory   # everything
-
-If your game is not at the default Steam path:
+    .\install.ps1 -Mods devkit,classforge,summoner,wardrobe
+    .\install.ps1 -Mods devkit,classforge,summoner,wardrobe,warbrain,armory   # everything
+  If your game is not at the default Steam path:
     .\install.ps1 -GameDir "D:\SteamLibrary\steamapps\common\For The King II"
-
-Uninstall (restores every original file from backup):
+  Uninstall (installer-mode installs only; restores originals from backup):
     double-click uninstall.bat            (removes mods, leaves BepInEx)
     .\install.ps1 -Uninstall -All         (also removes BepInEx core files)
 
@@ -270,9 +282,10 @@ What's in here:
   armory     - (optional) 533 new items. Installs into game config folder; some
                items may show placeholder art. If anyone installs it, everyone must.
   blessings  - (optional) Risky Blessings: EOR's 15-blessing run-start table.
-               Needs classforge + its [Packs] AdditionalRoots pointed at
-               BepInEx\plugins\ftk2mods.blessings\ClassPacks (see that mod's own
-               ClassPacks folder after install). Off by default (Mode=Disabled).
+               Ships in this package either way but stays OFF by default
+               ([Blessings] Mode=Disabled). Needs classforge + its [Packs]
+               AdditionalRoots pointed at BepInEx\plugins\ftk2mods.blessings\
+               ClassPacks (see that mod's own ClassPacks folder after install).
 
 First launch after install: a console window / BepInEx log appears; the first
 load takes a little longer. That is normal.
@@ -307,9 +320,16 @@ function Save-Manifest([string]$Game, [hashtable]$Entries) {
 # ---------------------------------------------------------------- install
 function Install-Files {
     param([string]$Game, [string]$FromDir, [string]$TargetSub, [string]$ModName, [hashtable]$Manifest, [string]$BackupRoot)
-    $files = Get-ChildItem -Recurse -File $FromDir
+    # $FromDir may also be a single FILE (BepInEx bootstrap pieces live at the payload root).
+    if (Test-Path $FromDir -PathType Leaf) {
+        $files = @(Get-Item $FromDir)
+        $base = Split-Path -Parent $FromDir
+    } else {
+        $files = Get-ChildItem -Recurse -File $FromDir
+        $base = $FromDir
+    }
     foreach ($f in $files) {
-        $rel = $f.FullName.Substring($FromDir.Length + 1)
+        $rel = $f.FullName.Substring($base.Length + 1)
         if ($TargetSub) { $rel = Join-Path $TargetSub $rel }
         $dest = Join-Path $Game $rel
         # Skip byte-identical files: a reinstall while the game is running would otherwise die on
@@ -343,29 +363,33 @@ function Do-Install {
     Log "== Installing to: $game"
     $manifest = Get-Manifest $game
 
-    # BepInEx core first
-    $bepPayload = Join-Path $PayloadDir 'BepInEx-core'
+    # BepInEx core first — staged at real game-relative paths (see $BepInExCoreItems)
     $bepPresent = Test-Path (Join-Path $game 'BepInEx\core\BepInEx.dll')
     if (-not $bepPresent -and -not $NoBepInEx) {
-        if (-not (Test-Path $bepPayload)) {
+        if (-not (Test-Path (Join-Path $PayloadDir 'BepInEx\core\BepInEx.dll'))) {
             throw 'Game has no BepInEx and this payload carries none. Install BepInEx 5.4.23 first or restage with a valid -BepInExSource.'
         }
         Log '-- BepInEx core (game had none)'
-        Install-Files -Game $game -FromDir $bepPayload -TargetSub '' -ModName 'bepinex' -Manifest $manifest -BackupRoot $game
+        foreach ($item in $BepInExCoreItems) {
+            $src = Join-Path $PayloadDir $item
+            if (-not (Test-Path $src)) { continue }
+            $sub = if (Test-Path $src -PathType Leaf) { '' } else { $item }
+            Install-Files -Game $game -FromDir $src -TargetSub $sub -ModName 'bepinex' -Manifest $manifest -BackupRoot $game
+        }
     } elseif ($bepPresent) {
         Log '-- BepInEx already present, leaving it alone'
     }
 
     foreach ($m in $Mods) {
         $def = $ModDefs[$m]
-        $src = Join-Path $PayloadDir $def.payloadSub
+        $src = Join-Path $PayloadDir $def.sub
         if (-not (Test-Path $src)) { Log "-- $m : NOT IN PAYLOAD, skipped"; continue }
         if ($m -eq 'armory') {
-            $thingsDir = Join-Path $game $def.targetSub
-            if (-not (Test-Path $thingsDir)) { Log "-- armory: game Things config folder not found at '$($def.targetSub)' — SKIPPED (game layout drifted?)"; continue }
+            $thingsDir = Join-Path $game $def.sub
+            if (-not (Test-Path $thingsDir)) { Log "-- armory: game Things config folder not found at '$($def.sub)' — SKIPPED (game layout drifted?)"; continue }
         }
         Log "-- $m : $($def.note)"
-        Install-Files -Game $game -FromDir $src -TargetSub $def.targetSub -ModName $m -Manifest $manifest -BackupRoot $game
+        Install-Files -Game $game -FromDir $src -TargetSub $def.sub -ModName $m -Manifest $manifest -BackupRoot $game
     }
 
     if (-not $DryRun) { Save-Manifest $game $manifest }
