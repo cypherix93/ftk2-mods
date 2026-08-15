@@ -24,6 +24,7 @@ namespace FTK2Mods.DevKit.Tests
             RegistryTests.RunAll();
             HandshakeTests.RunAll();
             VerdictCallbackTests.RunAll();
+            HandshakeLatchTests.RunAll();
 
             return TestHarness.Report();
         }

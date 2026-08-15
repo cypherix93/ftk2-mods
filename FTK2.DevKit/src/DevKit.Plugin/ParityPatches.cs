@@ -65,6 +65,12 @@ namespace DevKit.Plugin
                     ParityTransport.RememberDirector(__instance);
                     ParityTransport.RememberNetworkSource(__instance);
                 }
+
+                // Task #12: received traffic proves the session is live even when the Initialize
+                // postfix raced PlayingOnlineMultiplayer and withheld the kickoff. One bool read
+                // once the handshake has completed; fires the kickoff at most once per session.
+                ParityCoordinator.OnNetworkTrafficObserved(__instance);
+
                 if (__args == null || __args.Length == 0) return;
 
                 string payload = ExtractPayload(__args[0]);
