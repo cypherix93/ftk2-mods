@@ -44,6 +44,7 @@ namespace ClassForge.Core
                 MergeStringDict(plan.Localization, packId, content.Localization, findings, "CF_LOC_OVERRIDE", "Localization key");
                 MergeStringDict(plan.Icons, packId, content.Icons, findings, "CF_ICON_OVERRIDE", "Icon id");
                 MergeStringDict(plan.Portraits, packId, content.Portraits, findings, "CF_PORTRAIT_OVERRIDE", "Portrait id");
+                MergeStringDict(plan.VisualFallbacks, packId, content.VisualFallbacks, findings, "CF_VISUALFALLBACK_OVERRIDE", "Visual fallback");
 
                 // modifiers.json is ClassForge's own registry (like skillrecipes.json), not a Configs.* merge
                 // category (Encounter Modifiers spec §3.2/§3.4) — collected in resolved pack load order,
@@ -64,6 +65,26 @@ namespace ClassForge.Core
                 .Select(m => m.Id)
                 .OrderBy(x => x, StringComparer.Ordinal)
                 .ToList();
+
+            // Visual-fallback donor resolution (task #8). Only when a live Things id set was actually
+            // supplied — offline tools (PackCheck, tests) have no live game to resolve against, and a
+            // vanilla donor id is unknowable there; warning on every vanilla donor would be pure noise.
+            // (LiveIdSets coalesces null to an empty set, so "supplied" is Count > 0 — a real game always
+            // has vanilla Things.)
+            if (live.Things != null && live.Things.Count > 0)
+            {
+                var mergedThingIds = new HashSet<string>(things.Keys, StringComparer.Ordinal);
+                foreach (var kv in plan.VisualFallbacks.OrderBy(e => e.Key, StringComparer.Ordinal))
+                {
+                    if (!live.Things.Contains(kv.Value) && !mergedThingIds.Contains(kv.Value))
+                    {
+                        findings.Add(Finding.Warning("CF_VISUALFALLBACK_DANGLING",
+                            $"Visual fallback for '{kv.Key}' names donor '{kv.Value}', which is neither a live " +
+                            "Configs.Things id nor a merged pack Thing — the item will render without a 3D model " +
+                            "(the runtime finalizer degrades this safely, but the fallback is doing nothing).", null));
+                    }
+                }
+            }
 
             plan.Findings = findings;
             return plan;

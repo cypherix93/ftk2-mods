@@ -95,6 +95,12 @@ namespace ClassForge.Core
         /// ClassForge-owned registry model — like skillrecipes.json, this is NOT a <c>Configs.*</c> merge
         /// category (MergePlan carries it separately as <see cref="MergePlan.ModifierTables"/>).</summary>
         public ModifierTable ModifierTable;
+
+        /// <summary>visualfallbacks.json — flat <c>packItemId -&gt; donorThingId</c> map (same shape as the
+        /// reference implementation's CustomItems/VisualFallbacks.json). A pack item with no
+        /// <c>dEquipmentPrefab</c> record renders its donor's 3D equipment visual instead of NRE-ing
+        /// <c>CharacterVisualHelper.VisualReEquip</c> (task #8 crash).</summary>
+        public Dictionary<string, string> VisualFallbacks = new Dictionary<string, string>(System.StringComparer.Ordinal);
     }
 
     /// <summary>One <c>Rewards</c> block on a <see cref="ModifierEntry"/> (Encounter Modifiers spec §3.2).
@@ -174,6 +180,10 @@ namespace ClassForge.Core
         public Dictionary<string, string> Icons = new Dictionary<string, string>(System.StringComparer.Ordinal);
         /// <summary>content id -&gt; file path, from portraits/*.png. Last pack wins per id.</summary>
         public Dictionary<string, string> Portraits = new Dictionary<string, string>(System.StringComparer.Ordinal);
+        /// <summary>pack item id -&gt; donor Thing id, from visualfallbacks.json. Last pack wins per id.
+        /// Consumed by the Plugin's <c>EquipmentVisualHelper.GetITMEquipmentPrefab</c> prefix so pack items
+        /// without <c>dEquipmentPrefab</c> records borrow the donor's 3D equipment visual (task #8).</summary>
+        public Dictionary<string, string> VisualFallbacks = new Dictionary<string, string>(System.StringComparer.Ordinal);
         /// <summary>Ids within <see cref="Things"/> whose Class == "TRAIT" — candidates for the trait registry
         /// (SPEC-DELTA-v1.1 §1 OQ#1: grant/remove is native via the TRAIT_ ConfigName prefix, no bridge needed).</summary>
         public List<string> TraitIds = new List<string>();

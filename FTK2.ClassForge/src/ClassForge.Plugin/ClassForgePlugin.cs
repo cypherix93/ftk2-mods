@@ -45,9 +45,18 @@ namespace ClassForge.Plugin
         /// (see <see cref="TraitLoadoutPatches"/>).</summary>
         internal static ConfigEntry<bool> EnableTraitLoadoutInjection;
 
+        /// <summary>Gates the pack-skill rows in the character-creation and party-summary skill lists
+        /// (see <see cref="SkillDisplayPatches"/>). Purely presentational.</summary>
+        internal static ConfigEntry<bool> EnableSkillDisplay;
+
         /// <summary>Gates the whole skill-recipe engine (see <c>Recipes/</c>). All-or-nothing by design:
         /// SPEC-DELTA-v1.1 §5.3 forbids a partial recipe subset.</summary>
         internal static ConfigEntry<bool> EnableRecipeEngine;
+
+        /// <summary>Gates the CONDITIONAL_STAT_MODIFIER read path (<see cref="StatModifierPatches"/> on the
+        /// terminal <c>CharacterHelper.GetStat</c> overload). Gameplay-relevant and parity-registered:
+        /// stats feed combat, so all MP peers must agree on it.</summary>
+        internal static ConfigEntry<bool> EnableStatModifiers;
 
         /// <summary>Gates the loot-grant sync verb's <c>LootDropHelper.GetLootDropsFromEnemies</c> postfix
         /// AND its M-LG3 MP send/receive/verify path (see <see cref="LootGrantPatches"/>). Default FALSE:
@@ -118,11 +127,21 @@ namespace ClassForge.Plugin
                 "Serve pack icons/portraits from the pack's icons//portraits/ folders via " +
                 "AssetLoader.GetImage/GetRender. Purely presentational: with this off, pack content shows the " +
                 "vanilla missing-asset result (a blank icon), nothing breaks.");
+            EnableSkillDisplay = Config.Bind("UI", "EnableSkillDisplay", true,
+                "Render pack-granted class skills (SKILL_CF_*) as extra rows in the character-creation " +
+                "and in-game party-summary skill lists. The vanilla panels only show passives that exist " +
+                "in the compiled eSkills enum, so without this, pack skills work in combat but are " +
+                "invisible in the UI. Purely presentational: off = vanilla panels, skills still function.");
             EnableTraitLoadoutInjection = Config.Bind("Traits", "EnableTraitLoadoutInjection", true,
                 "Append pack TRAIT_-prefixed traits to the adventure loadout pool " +
                 "(LootDropHelper.GetAdventureLoadOut), so they can be picked on the party-setup screen. " +
                 "Only ids that literally start with 'TRAIT_' are injected — that prefix IS the native trait " +
                 "mechanism, not a naming convention.");
+            EnableStatModifiers = Config.Bind("Skills", "EnableStatModifiers", true,
+                "CONDITIONAL_STAT_MODIFIER read path (statmodifiers.json): re-tunes the 10 rebalanced " +
+                "selectable traits to EOR 0.7.0.62's percentage-of-computed-stat behavior (e.g. Light-Footed " +
+                "EVD +20% instead of flat +10). Gameplay-relevant: ALL multiplayer peers must use the same " +
+                "value — it is part of the parity registration.");
             EnableRecipeEngine = Config.Bind("Skills", "EnableRecipeEngine", true,
                 "Master switch for the skill-recipe engine (skillrecipes.json). All-or-nothing by design: " +
                 "SPEC-DELTA-v1.1 §5.3 forbids running a subset, because every recipe primitive either mutates " +
@@ -179,6 +198,27 @@ namespace ClassForge.Plugin
             Patch(harmony, typeof(CharacterCustomizationViewHelper), "RenderClassList",
                 prefix: M(typeof(ClassSelectPatches), nameof(ClassSelectPatches.RenderClassList_Prefix)));
 
+            // ---- conditional stat modifiers (see StatModifierPatches header) ----
+            // The TERMINAL GetStat overload (CH L422, the `out pBonuses` one) — all seven public
+            // overloads funnel into it, so one postfix covers every read. Patching a second overload in
+            // the funnel (e.g. L416, EOR's choice) would double-apply every bonus (spec §1.1): exactly
+            // one overload is patched, ever.
+            Patch(harmony, typeof(CharacterHelper), "GetStat",
+                postfix: M(typeof(StatModifierPatches), nameof(StatModifierPatches.GetStat_Postfix)),
+                argumentTypes: new[]
+                {
+                    typeof(Entity), typeof(string), typeof(eGetStatEquippedFilters),
+                    typeof(List<(string, int)>).MakeByRefType(), typeof(bool), typeof(bool)
+                });
+
+            // ---- pack-skill display (see SkillDisplayPatches header) ----
+            // Both vanilla skill lists drop any Passive that fails Enum.TryParse<eSkills>; these
+            // postfixes render the pack-granted skills the recipe engine actually runs.
+            Patch(harmony, typeof(CharacterCustomizationViewHelper), "RenderStatsContainer",
+                postfix: M(typeof(SkillDisplayPatches), nameof(SkillDisplayPatches.RenderStatsContainer_Postfix)));
+            Patch(harmony, typeof(CharacterSummaryViewHelper), "_showClassSkills",
+                postfix: M(typeof(SkillDisplayPatches), nameof(SkillDisplayPatches.ShowClassSkills_Postfix)));
+
             // ---- pack-class visual remap (see VisualRemapPatches header) ----
             // Pack classes have no dCharacter model record; without these three patches, SELECTING
             // one strips the avatar, NREs on the null record, and leaves the UI input-locked.
@@ -189,6 +229,15 @@ namespace ClassForge.Plugin
                 postfix: M(typeof(VisualRemapPatches), nameof(VisualRemapPatches.GetConfigNameWithBodyType_Postfix)));
             Patch(harmony, typeof(PartyManagementDirector), "_rebuildCharactertAsNewConfigType",
                 postfix: M(typeof(VisualRemapPatches), nameof(VisualRemapPatches.RebuildAsNewConfigType_Postfix)));
+
+            // ---- equipment 3D-visual fallback + crash guard (task #8, see EquipmentVisualPatches header) ----
+            // String overload is the terminal one (the VisualEquipment overload funnels into it).
+            Patch(harmony, typeof(EquipmentVisualHelper), "GetITMEquipmentPrefab",
+                prefix: M(typeof(EquipmentVisualPatches), nameof(EquipmentVisualPatches.GetITMEquipmentPrefab_Prefix)),
+                argumentTypes: new[] { typeof(string), typeof(eActorBodies), typeof(eActorBodies) });
+            // Finalizer registered unconditionally — a crash guard must not be toggleable off into a freeze.
+            Patch(harmony, typeof(CharacterVisualHelper), "VisualReEquip",
+                finalizer: M(typeof(EquipmentVisualPatches), nameof(EquipmentVisualPatches.VisualReEquip_Finalizer)));
 
             // ---- icon / portrait fallback ----
             // `out Color` MUST be declared as MakeByRefType() or AccessTools returns null and the patch
