@@ -23,7 +23,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet('devkit', 'classforge', 'summoner', 'wardrobe', 'warbrain', 'armory', 'blessings')]
+    [ValidateSet('devkit', 'classforge', 'summoner', 'wardrobe', 'warbrain', 'armory', 'blessings', 'crucible')]
     [string[]]$Mods = @('devkit', 'classforge', 'summoner', 'wardrobe'),
 
     [string]$GameDir = '',
@@ -121,6 +121,12 @@ $ModDefs = [ordered]@{
                      '[Packs] AdditionalRoots pointed at BepInEx\plugins\ftk2mods.blessings\ClassPacks ' +
                      'so the BLSS_PACK_EOR_BLESSINGS content pack is discovered (off by default: [Blessings] Mode=Disabled).'
     }
+    crucible = @{
+        payloadSub = 'plugins\ftk2mods.crucible'
+        targetSub  = 'BepInEx\plugins\ftk2mods.crucible'
+        note       = 'DEV TOOLING ONLY — testing/automation harness (console, screenshots, loopback RPC, MCP). ' +
+                     'Never in the default set and inert until [General] Enabled=true.'
+    }
 }
 
 # ---------------------------------------------------------------- staging (repo mode)
@@ -143,7 +149,10 @@ function Stage-Payload {
             @('FTK2.Summoner\src\Summoner.Plugin',     $false),
             @('FTK2.Wardrobe\src\Wardrobe.Plugin',     $false),
             @('FTK2.WarBrain\src\WarBrain.Plugin',     $true),
-            @('FTK2.Blessings\src\Blessings.Plugin',   $false)
+            @('FTK2.Blessings\src\Blessings.Plugin',   $false),
+            # $false: Crucible references UnityEngine.ScreenCaptureModule/InputLegacyModule, which the
+            # tools\bin\refs snapshot does not carry — it builds against the live game's Managed dir.
+            @('FTK2.Crucible\src\Crucible.Plugin',     $false)
         )
         foreach ($b in $builds) {
             $proj = Join-Path $RepoRoot $b[0]
@@ -203,6 +212,14 @@ function Stage-Payload {
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.WarBrain\src\WarBrain.Plugin\bin\Release\net472\*.dll') $d
     Copy-Tree (Join-Path $RepoRoot 'FTK2.WarBrain\data') (Join-Path $d 'data')
+
+    # crucible: plugin+core dlls side by side, data\ subfolder, and the MCP server next to them so
+    # the harness ships as one self-contained folder (the MCP server is plain Node, no npm install)
+    $d = Join-Path $PayloadDir $ModDefs.crucible.payloadSub
+    New-Item -ItemType Directory -Force $d | Out-Null
+    Copy-Item (Join-Path $RepoRoot 'FTK2.Crucible\src\Crucible.Plugin\bin\Release\net472\*.dll') $d
+    Copy-Tree (Join-Path $RepoRoot 'FTK2.Crucible\data') (Join-Path $d 'data')
+    Copy-Tree (Join-Path $RepoRoot 'FTK2.Crucible\mcp')  (Join-Path $d 'mcp')
 
     # armory: data-only json packs
     $d = Join-Path $PayloadDir $ModDefs.armory.payloadSub

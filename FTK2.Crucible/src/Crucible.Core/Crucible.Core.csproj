@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <RootNamespace>FTK2Mods.Crucible</RootNamespace>
+    <!-- Assembly name is the plugin GUID on purpose, matching the DevKit convention: siblings can
+         resolve this API with Type.GetType("FTK2Mods.Crucible.X, ftk2mods.crucible").
+         Host-agnostic engine: no BepInEx, no Unity, no game refs, no NuGet package references. -->
+    <AssemblyName>ftk2mods.crucible</AssemblyName>
+    <Version>0.1.0</Version>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!-- MiniJson is internal (ported from DevKit.Core); the test runner and the plugin both need it. -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Crucible.Core.Tests</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>FTK2.Crucible</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

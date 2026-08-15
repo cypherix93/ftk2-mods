@@ -1,0 +1,18 @@
+{
+  "_comment": [
+    "Field-path globs excluded from the state digest (SPEC §4).",
+    "These are values that legitimately differ between healthy peers or tick on their own;",
+    "leaving them in would make every cross-peer comparison report a false desync.",
+    "Paths are dotted (e.g. 'network.playerCount'); glob syntax matches DevKit's GlobMatcher."
+  ],
+  "Globs": [
+    "instance",
+    "warnings",
+    "console",
+    "network.isHost",
+    "*elapsed*",
+    "*frameCount*",
+    "*timestamp*",
+    "*Timestamp*"
+  ]
+}

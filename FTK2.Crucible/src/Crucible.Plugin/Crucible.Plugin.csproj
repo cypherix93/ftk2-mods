@@ -1,0 +1,71 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <AssemblyName>FTK2.Crucible</AssemblyName>
+    <RootNamespace>Crucible.Plugin</RootNamespace>
+    <Version>0.1.0</Version>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <!-- Game install; override with -p:GameDir=... (docs/research/build-template-notes.md §1).
+         NOTE: the default here is C:, not the E: path older projects in this repo still carry —
+         the Steam library moved (verified via libraryfolders.vdf, app 1676840). -->
+    <GameDir Condition="'$(GameDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\For The King II</GameDir>
+    <ManagedDir Condition="'$(ManagedDir)' == ''">$(GameDir)\For The King II_Data\Managed</ManagedDir>
+    <BepInExDir Condition="'$(BepInExDir)' == ''">$(GameDir)\BepInEx\core</BepInExDir>
+
+    <!-- Both dirs may be overridden with a path RELATIVE TO THE REPO ROOT, which is how the
+         snapshot-reference build documented in docs/research/build-template-notes.md is invoked:
+           -p:ManagedDir=tools/bin/refs -p:BepInExDir=tools/bin/refs
+         A bare relative HintPath would otherwise resolve against this project's own directory.
+         Path.Combine returns the second argument unchanged when it is already absolute, so the
+         live-game defaults above and an absolute -p: override both keep working. -->
+    <RepoRoot>$(MSBuildThisFileDirectory)..\..\..\</RepoRoot>
+    <ManagedDirResolved>$([System.IO.Path]::Combine('$(RepoRoot)', '$(ManagedDir)'))</ManagedDirResolved>
+    <BepInExDirResolved>$([System.IO.Path]::Combine('$(RepoRoot)', '$(BepInExDir)'))</BepInExDirResolved>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Crucible.Core\Crucible.Core.csproj" />
+  </ItemGroup>
+
+  <!-- No PackageReference anywhere: the repo build rules bar NuGet (BCL + HintPath refs only).
+       net472 resolves against the machine-installed .NET Framework 4.7.2 reference assemblies. -->
+  <ItemGroup>
+    <Reference Include="BepInEx">
+      <HintPath>$(BepInExDirResolved)\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExDirResolved)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ManagedDirResolved)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ManagedDirResolved)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- ScreenCapture: screenshots. InputLegacy: hotkey polling via BepInEx KeyboardShortcut. -->
+    <Reference Include="UnityEngine.ScreenCaptureModule">
+      <HintPath>$(ManagedDirResolved)\UnityEngine.ScreenCaptureModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(ManagedDirResolved)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- FTK2.dll is referenced for parity with the other plugin projects, but this plugin
+         deliberately uses NO game types: every game-side member is resolved at runtime through
+         AccessTools/reflection (SPEC §3), so a game update degrades to a "Target NOT found" log
+         line and a disabled feature rather than a load failure. -->
+    <Reference Include="FTK2">
+      <HintPath>$(ManagedDirResolved)\FTK2.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>
