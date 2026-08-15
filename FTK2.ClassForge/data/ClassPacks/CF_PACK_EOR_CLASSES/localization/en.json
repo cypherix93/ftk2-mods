@@ -323,5 +323,16 @@
   "SKILL_CF_TRAIT_ARCFOCUS_FIZZLE": "Arcane Focus (fizzle)",
   "UI_ENCYCLOPEDIA_SKILL_CF_TRAIT_ARCFOCUS_FIZZLE": "A failed INT-based ability resets Arcane Focus to zero.",
   "SKILL_CF_TRAIT_ARCFOCUS_BREAK": "Arcane Focus (break)",
-  "UI_ENCYCLOPEDIA_SKILL_CF_TRAIT_ARCFOCUS_BREAK": "Taking damage resets Arcane Focus to zero."
+  "UI_ENCYCLOPEDIA_SKILL_CF_TRAIT_ARCFOCUS_BREAK": "Taking damage resets Arcane Focus to zero.",
+  "STAT_CF_TRAIT_LIGHT_FOOTED_EVD": "+20% Evasion",
+  "STAT_CF_TRAIT_TREASURE_SENSE_LCK": "+15% Luck",
+  "STAT_CF_TRAIT_TOUGHENED_HP": "+20% Max HP",
+  "STAT_CF_TRAIT_TOUGHENED_DEF": "+15% Armor",
+  "STAT_CF_TRAIT_STEADY_AIM_AWR": "+12% Awareness",
+  "STAT_CF_TRAIT_STREETWISE_TAL": "+15% Talent",
+  "STAT_CF_TRAIT_WARDBOUND_RES": "+20% Resistance",
+  "STAT_CF_TRAIT_SCHOLARS_HABIT_INT": "+12% Intelligence",
+  "STAT_CF_TRAIT_KNIFE_EDGE_HP": "-5% Max HP",
+  "STAT_CF_TRAIT_PACK_TACTICS_PHY": "+10% Physical Damage while a pet or mercenary is with the party",
+  "STAT_CF_TRAIT_ARCANE_FOCUS_MAG": "+5% Magic Damage per Arcane Focus stack (max 3)"
 }
