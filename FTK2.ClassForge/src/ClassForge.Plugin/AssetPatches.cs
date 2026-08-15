@@ -45,11 +45,17 @@ namespace ClassForge.Plugin
         private static readonly Dictionary<string, Texture2D> Cache = new Dictionary<string, Texture2D>(StringComparer.Ordinal);
         private static readonly HashSet<string> Missing = new HashSet<string>(StringComparer.Ordinal);
 
+        /// <summary>Diagnostic (2026-08-15, trait-icon report): pack-shaped ids that missed
+        /// <c>plan.Icons</c>, logged once each so the log shows exactly which ids fall through to the
+        /// vanilla atlas. Vanilla TRAIT_* ids landing here once is expected and informative, not a bug.</summary>
+        private static readonly HashSet<string> LoggedPlanMisses = new HashSet<string>(StringComparer.Ordinal);
+
         /// <summary>Dropped whenever the merge plan is replaced, so a hot-reload picks up edited PNGs.</summary>
         internal static void InvalidateCache()
         {
             Cache.Clear();
             Missing.Clear();
+            LoggedPlanMisses.Clear();
         }
 
         /// <summary>
@@ -71,7 +77,15 @@ namespace ClassForge.Plugin
                 if (string.IsNullOrEmpty(id)) return true;   // enum ids (eSkills etc.) are never pack content
 
                 string path;
-                if (!plan.Icons.TryGetValue(id, out path)) return true;
+                if (!plan.Icons.TryGetValue(id, out path))
+                {
+                    if ((id.StartsWith("TRAIT_", StringComparison.Ordinal) || id.StartsWith("CF_", StringComparison.Ordinal))
+                        && LoggedPlanMisses.Add(id))
+                        ClassForgePlugin.Log.LogWarning(
+                            "[ClassForge] Icon lookup for '" + id + "' (atlas " + pAtlas + ") not in pack icons — " +
+                            "vanilla path used. Logged once per id.");
+                    return true;
+                }
 
                 var texture = LoadTexture("icon:" + id, path);
                 if (texture == null) return true;

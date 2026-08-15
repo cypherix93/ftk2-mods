@@ -455,6 +455,9 @@ namespace ClassForge.Recipes.Parsing
             {
                 string p = path + "[" + i.ToString(CultureInfo.InvariantCulture) + "]";
                 var c = list[i];
+                if (c.Type == ConditionKind.PARTY_HAS_FOLLOWER)
+                    RecipeParser.Err(set, r, p + ".Type", "E_COND_CONTEXT",
+                        "PARTY_HAS_FOLLOWER is legal only in statmodifiers.json (the combat dispatcher has no evaluator for it)");
                 if (isV10 && Contains(Vocabulary.V11OnlyConditions, c.Type))
                     RecipeParser.Err(set, r, p + ".Type", "E_SCHEMA_GATE",
                         "condition " + c.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionCurrent);

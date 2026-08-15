@@ -64,7 +64,12 @@ namespace ClassForge.Recipes.Model
         CONFIG_NAME_CONTAINS,
         COMBAT_START_REAL,
         SELECTION_PRESENT,
-        IS_ENEMY           // GATE D: CharacterHelper.IsEnemy semantics (GroupIndex == 1)
+        IS_ENEMY,          // GATE D: CharacterHelper.IsEnemy semantics (GroupIndex == 1)
+        // --- added in v1.3, conditional-stat-modifier spec §4.2 ---
+        /// <summary>EOR62 <c>PartyHasPetOrMercenary()</c> (L24576): any player follower resolves to a
+        /// pet or mercenary entity. Legal ONLY in a CONDITIONAL_STAT_MODIFIER context — the combat
+        /// dispatcher has no evaluator for it, so <c>RecipeValidator</c> rejects it in skillrecipes.json.</summary>
+        PARTY_HAS_FOLLOWER
     }
 
     /// <summary>Effect tokens — SPEC-DELTA-v1.1 §4 (4 v1 + 4 v1.1 + 4 loot v1.2 + 2 encounter-modifiers v1.2 = 14 tokens).</summary>
