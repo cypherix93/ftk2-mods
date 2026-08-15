@@ -3,6 +3,12 @@
 **Date:** 2026-07-25 · **Charter deliverable D8** ·
 **Vocabulary of record:** `FTK2.ClassForge/SPEC-DELTA-v1.1.md` (recipe vocabulary **v1.1**).
 
+**Upstream version of record: EOR v0.7.0.60.** EOR published **v0.7.0.62** on 2026-08-04; its delta is
+dispositioned in `docs/research/eor-0762-delta-audit.md` and summarized in "Implementation updates
+(2026-08-08)" at the end of this document. **Rows below still describe 0.7.0.60 semantics** except where that
+section says otherwise — it records where upstream has since moved and what our shipped build now diverges
+from. Nothing in the 2026-08-08 section changes a shipped capability; those items are specced, not built.
+
 **Purpose:** disposition **every** Enhanced Overhaul Revamped v0.7.0.60 mechanic slated for re-hosting as
 **PORT** / **PORT-MODIFIED** / **PARK**, against the adopted v1.1 primitive set, with a citation into
 `docs/research/eor-behavior-matrix.md` (**BM**) for each. Supporting citations:
@@ -46,13 +52,13 @@ zero silent omissions in either direction.
 | Parked primitive | Blocks |
 |---|---|
 | ~~`GOLD_GRANT` / `ITEM_TAG_GRANT` (§7.1)~~ — **ADOPTED v1.2, 2026-08-06** | ~~SCAVENGER; loot halves of TREASURE_SENSE, SCHOLARS_HABIT, OF_SCAVENGING~~ — all shipped, see §2 rows 6/9/12. Affix drop-rolling now blocks on `REPLACE_ITEM` + the pre-mint registry instead — **M-LG4** (loot-grant-verb-spec.md §3.2/§10), see §3 row 22 |
-| `SUPPRESS_CONSUME` (§7.2) | ARCANE_MEMORY; code half of OF_SPELLKEEPING |
-| `DAMAGE_TAKEN_MULT` (§7.4) | code half of SHIELDBEARER |
+| `SUPPRESS_CONSUME` (§7.2) | ARCANE_MEMORY; code half of OF_SPELLKEEPING — **park reason narrowed 2026-08-08** (the "no legal RNG out of combat" leg is dissolved by `STATE_HASH_CHANCE`; two other blockers remain, see impl-update 2026-08-08 item 2) |
+| ~~`DAMAGE_TAKEN_MULT` (§7.4)~~ — **unblocked in principle 2026-08-08, not yet built** | code half of SHIELDBEARER. The stated blocker ("no `GameRandom` on `CalculateFinalDamage`") is retired by `STATE_HASH_CHANCE` — a chance gate that takes no draw. Spec: `docs/superpowers/plans/2026-08-08-state-hash-chance-spec.md` (M-SH3). Row §2 15 stays **PORT-MODIFIED** until that ships |
 | `STEAL_STATUS` (§7.5) | THIEF |
 | `CLEANSE_RANDOM_STATUS` (§7.6) | PALADIN |
 | `CROSS_ENTITY_COORDINATION` (§7.7) | BEASTMASTER's literal form (mechanic still ports, modified) |
 | `ON_DODGE` (§7.9) | DUELIST |
-| `CONDITIONAL_STAT_MODIFIER` (§7.10) | code halves of PACK_TACTICS, ARCANE_FOCUS |
+| `CONDITIONAL_STAT_MODIFIER` (§7.10) — **park's cost/benefit premise obsolete 2026-08-08; adoption decided, not yet built** | code halves of PACK_TACTICS, ARCANE_FOCUS — **and, since EOR 0.7.0.62, the stat halves of 8 more traits** (§7.10's "fails for two flat `+2`s" no longer describes what the primitive buys). The "8 overloads" objection also resolves: all 7 public overloads funnel into the terminal `CharacterHelper.GetStat` at game-decompile `CharacterHelper.cs` L422, so one postfix covers the surface. Spec: `docs/superpowers/plans/2026-08-08-conditional-stat-modifier-spec.md` |
 
 ---
 
@@ -122,7 +128,7 @@ Rows cite **BM Table 2** for coded traits and **TM §3a / AUD §2.4** for the st
 | 12 | `TRAIT_SCAVENGER` | 25% post-combat gold **or** herb | BM T2 SCAVENGER (L16357–16378) | **PORT** | **ADOPTED (2026-08-06, commits `fc17c53`/`f7b14b9`).** `SKILL_CF_TRAIT_SCAVENGER_LOOT` — `ON_COMBAT_LOOT`, `ProcChance 25`, `PickOneEffect: true` → `GOLD_GRANT{Min:8,Max:20}` **or** `ITEM_TAG_GRANT{Tag:HERB, Rarity:COMMON}`, mirroring EOR's nested 50/50 (L16357–16377) via the loot-grant verb's private grant-stream draw instead of the shared stream. Herb branch inherits the same Gate-B pool deviation as `TRAIT_SCHOLARS_HABIT` above. Ships dark behind `[Skills] EnableLootGrants=false` pending operator V-1 smoke |
 | 13 | `TRAIT_BATTLE_RHYTHM` | on damage dealt → self `EVADEUP` | BM T2 BATTLE_RHYTHM (L24541/L24556) | **PORT** | `ON_DAMAGE_DEALT`(T3) + `HOSTILE_ACTION` → `ADD_STATUS{SELF, STATUS_EVADEUP_00}`. Uses the vanilla status EOR itself substitutes; the retired `STATUS_EOR_BATTLE_RHYTHM` custom id is **not** re-created (TM §6 hazard 4) |
 | 14 | `TRAIT_ARCANE_MEMORY` | 30% chance not to consume a scroll | BM T2 ARCANE_MEMORY (L24454/L24462) | **PARK** | `SUPPRESS_CONSUME` parked (SPEC-DELTA §7.2). Both the original (prefix `return false` = per-client suppression) and the host-decided refund-after-consume redesign fail: scroll use is **normally out of combat**, where `CombatState.Random` is null, so invariant 5.2#2 forbids the roll — and the only escape is a fresh seeded `GameRandom`, which is exactly the non-lockstep path EOR shipped (BM Legend `RollSelectableTraitChance(random: null, …)`). **Unlock:** an out-of-combat shared deterministic RNG + a verified replicated inventory-grant verb |
-| 15 | `TRAIT_SHIELDBEARER` | 25% chance, incoming physical damage `−2` | BM T2 SHIELDBEARER (L24604/L24608) | **PORT-MODIFIED** | Becomes a flat **`DEF +1`** stat trait, zero primitives. `DAMAGE_TAKEN_MULT` is parked (SPEC-DELTA §7.4): `CalculateFinalDamage` (PSN §2 L1708) has **no `GameRandom` parameter**, so a chance gate there must take a static draw at a point only the host may execute — charter rule 2's named failure. Balance note: `DEF +1` reduces every blockable physical hit by 1 vs EOR's expected 0.5/hit — roughly 2× stronger, flag for the balance pass |
+| 15 | `TRAIT_SHIELDBEARER` | 25% chance, incoming physical damage `−2` | BM T2 SHIELDBEARER (L24604/L24608) | **PORT-MODIFIED** | Becomes a flat **`DEF +1`** stat trait, zero primitives. `DAMAGE_TAKEN_MULT` is parked (SPEC-DELTA §7.4): `CalculateFinalDamage` (PSN §2 L1708) has **no `GameRandom` parameter**, so a chance gate there must take a static draw at a point only the host may execute — charter rule 2's named failure. Balance note: `DEF +1` reduces every blockable physical hit by 1 vs EOR's expected 0.5/hit — roughly 2× stronger, flag for the balance pass. **Update 2026-08-08: the park reason is retired.** EOR 0.7.0.62's `ShouldShieldbearerMitigate` gates the same reduction on an FNV-1a hash of replicated state (`guid\|round\|hp\|damage\|salt`) mod 100 — **zero draws**, so "a chance gate there must take a static draw" no longer holds. Verdict stays PORT-MODIFIED until `STATE_HASH_CHANCE` M-SH3 ships, at which point this becomes **PORT** and the 2× balance debt is retired |
 | 16 | `TRAIT_FIELDMEDIC` | `+25%` healing given or received | BM T2 FIELDMEDIC (L24486/L24495) | **PORT** | `ON_HEAL_PENDING`(T8) → `HEAL_MODIFIER{Percent:25, MinDelta:1, Scope:RECEIVED\|GIVEN}`(E2) via `ref int pValue` on `CharacterHelper.AddHealth` (PSN §3 L1342/L1357). No RNG. EOR's single combined `if` (no double-count when both healer and target have it) is reproduced by one recipe with both scopes |
 | 17 | `TRAIT_ARCANE_FOCUS` | conditional `MAG +2` when Focus ≥ 2 | BM T2 ARCANE_FOCUS (L22616/L22622) | **PORT-MODIFIED** | Unconditional **`MAG +1`** stat trait — same `CONDITIONAL_STAT_MODIFIER` park as PACK_TACTICS. (Note: `FOCUS_CURRENT`(C8) exists and could gate a *recipe*, but not a continuous stat read, which is what this trait is) |
 | 18 | `TRAIT_MOMENTUM` | on kill → self `ATTACKUP` | BM T2 MOMENTUM (L24541/L24565) | **PORT** | `ON_KILL` (re-anchored to the `ApplyStatChange` prefix/postfix HP-before/after shape, which is exactly EOR's) → `ADD_STATUS{SELF, STATUS_ATTACKUP_00}`. Retired `STATUS_EOR_MOMENTUM` id not re-created |
@@ -323,3 +329,61 @@ inline at its row plus recapped here for scannability.
    unchanged). Risky Blessings and encounter modifiers are AUD §6 row-9 *systems*, not rows in this
    mechanic-by-mechanic matrix, so their adoption doesn't change the 74-row count — it is recorded in
    "Cross-cutting notes" note 8 instead.
+
+---
+
+## Implementation updates (2026-08-08) — upstream moved to EOR v0.7.0.62
+
+Findings from `docs/research/eor-0762-delta-audit.md` (**DA**), the audit of EOR **v0.7.0.62** (published
+2026-08-04) against the **v0.7.0.60** this matrix disposition. **No verdict in the tables above changes in
+this pass.** Everything here is either a *newly divergent* row (upstream moved, we did not) or a *retired
+park reason* (a blocker we stated is no longer true). Both are recorded so the matrix stops silently
+describing a version that no longer exists.
+
+**Nothing in this section is implemented.** Two specs were written; neither has code.
+
+1. **The stat halves of 9 traits are now divergent from upstream — decision taken to adopt, not yet built.**
+   EOR 0.7.0.62 moved every selectable-trait stat bonus out of `Equippable.Stats` data and into a
+   `CharacterHelper.GetStat` postfix as **percentage-of-computed-stat** (DA §1;
+   `ApplySelectableTraitConditionalStats` + `AddPercentageStatBonus`, with
+   `RemoveLegacyFlatSelectableTraitStats` stripping the old flat data). Affects **§2 rows 1, 2, 3, 5, 6, 7,
+   8, 9, 11, 17** — all of which this matrix disposition as flat data needing "zero primitives, zero
+   patches". They still ship correctly as *0.7.0.60* behavior; they are now **stale versus upstream**.
+   `TRAIT_ARCANE_FOCUS` (§2 row 17) is the one outright **mechanic replacement** — a stacking in-combat buff,
+   not a conditional stat. A new `THRN` (thorns) channel also appeared with no consumer in our corpus.
+   **Owner decision (2026-08-08): adopt upstream.** Spec:
+   `docs/superpowers/plans/2026-08-08-conditional-stat-modifier-spec.md`. Until M-CS3 ships, treat these ten
+   rows as **PORT (0.7.0.60 semantics), divergent from 0.7.0.62** — a recorded deviation, not an oversight.
+2. **EOR adopted hash-derived determinism, retiring one of our stated park reasons and narrowing another.**
+   (DA §2.) `CreateDeterministicClassSkillRandom` / `CreateEncounterModifierRandom` independently converge on
+   our loot-verb Gate-A design — corroboration, no action. The actionable one is `ShouldShieldbearerMitigate`
+   (DA §2.3): an FNV-1a hash of replicated state mod 100, **zero RNG draws**, at a hook point with no
+   `GameRandom`. Consequences, all recorded inline at their rows: **§2 row 15** (`TRAIT_SHIELDBEARER`) — park
+   reason retired, becomes PORT once `STATE_HASH_CHANCE` M-SH3 ships; **§2 row 14** (`TRAIT_ARCANE_MEMORY`)
+   and **§3 row 7** (`OF_SPELLKEEPING`) — park *narrowed* only, from "no legal RNG exists here" to "pending
+   an `InventoryHelper.Consume` replication check **[UNVERIFIED]** and a parity-policy decision"; **§2 row 8
+   / §3 row 13** (`WARDBOUND` / `OF_STABILITY`) — a true-prevention redesign is now available and is
+   **recommended declined**, since it would trade a documented cosmetic delta for a suppression hook. Spec:
+   `docs/superpowers/plans/2026-08-08-state-hash-chance-spec.md`.
+3. **Two new v1.3 trigger/condition candidates, with upstream proof-of-existence.** `ON_BLOCK` (from
+   `WasBlockedBy`, EOR62 L6983) and `DAMAGE_TYPE{MAGICAL}` (from `WasMagicalDamageAppliedTo`, L7006). Same
+   disposition path as the `ON_DODGE` finding in implementation-update 1 (2026-07-25): each needs its own
+   hook-point verification before adoption. `DAMAGE_TYPE{MAGICAL}` is a **dependency** of the
+   `TRAIT_ARCANE_FOCUS` rebuild (item 1).
+4. **`CF_PACK_EOR_CLASSES` starting loadouts refreshed to 0.7.0.62 — the one thing that did ship.** EOR
+   changed the starting `Things` map on 30 of 31 classes (all but `EOR_BARD`); **no `Stats`, `Abilities`,
+   `Passives` or `Equippable` field changed on any class** (DA §5). Applied as a surgical delta rather than a
+   converter re-run — `tools/eor_import.py` deliberately refuses to regenerate this pack, and
+   `--force-classes` would have destroyed the 52 hand-authored recipes. Verified all 31 classes matched
+   0.7.0.60 byte-for-byte first; all 42 referenced item ids resolve against `tools/out/vocab-index.json`;
+   PackCheck zero errors. Recorded in the pack's own `provenance.json` under `_delta_updates`.
+5. **No content-pack impact outside classes.** `CustomItems/`, all icon folders, `FTK2_EnhancedPets/*` and
+   `FTK2_EnhancedMercenaries/*` are byte-identical between 0.7.0.60 and 0.7.0.62, so `ARM_EOR_ITEMS`,
+   `ARM_EOR_STARTERS`, `SMN_PACK_EOR_MERCS` and `SMN_PACK_EOR_PETS` need nothing. The ~26 `EORR_*_KATANA`
+   ids that appear in 0.7.0.62's localization have **no backing content** in the package and no string
+   literal in the DLL — pre-staged for an unshipped release. Do not chase them.
+6. **EOR's multiplayer bugs are not fixed** (DA §2.4), so nothing in AUD §3 or the charter's rules relaxes.
+   Three of the eleven mechanisms were addressed; the four stubbed MP guards still `return false` verbatim,
+   and `InventoryHelper_Consume_Prefix` still suppresses an authoritative change per-client on the
+   `random: null` path. This matters for §5 note 1's framing: our PARKs remain deliberate MP-safety
+   deferrals against an upstream that still has no authority model.
