@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DeterminismHarness\DeterminismHarness.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>DeterminismHarness.Tests</AssemblyName>
+    <RootNamespace>FTK2Mods.DeterminismHarness.Tests</RootNamespace>
+    <!-- Referencing an Exe is intentional: the rules under test live beside the tool that runs them. -->
+  </PropertyGroup>
+
+</Project>

@@ -32,6 +32,11 @@ namespace DevKit.Plugin
 
         internal static ConfigEntry<bool> EnabledKnob;
         internal static ConfigEntry<bool> VerboseLogging;
+        internal static ConfigEntry<bool> DesyncWatchEnabled;
+        internal static ConfigEntry<bool> DesyncShowBanner;
+        internal static ConfigEntry<float> DesyncPollSeconds;
+        internal static ConfigEntry<float> DesyncRepeatBannerSeconds;
+        internal static ConfigEntry<bool> DesyncDebugForceTrip;
         internal static ConfigEntry<string> OnParityMismatch;
         internal static ConfigEntry<bool> RehandshakeOnHotReload;
         internal static ConfigEntry<int> ParityRequestTimeoutMs;
@@ -86,6 +91,27 @@ namespace DevKit.Plugin
                 + "original handler, vanilla WILL also run its town-services handler on every peer for each "
                 + "payload. Only switch if DebugThing proves not to replicate on your build.");
 
+            DesyncWatchEnabled = Config.Bind("Desync", "Enabled", true,
+                "Watch the GAME'S OWN desync detector (NetworkData.HasADesyncBeenDetected) and, when it "
+                + "trips, report which of its two channels fired and which mod is the likely cause. Purely "
+                + "observational: it reads state, never writes any, and never draws from an RNG stream, so "
+                + "it cannot itself become a desync source. Parity-irrelevant — peers may differ on this "
+                + "setting freely.");
+            DesyncShowBanner = Config.Bind("Desync", "ShowBanner", true,
+                "Also announce the desync on screen via the game's own event-title banner. Every peer runs "
+                + "its own watcher, so every peer announces itself rather than waiting to be told.");
+            DesyncPollSeconds = Config.Bind("Desync", "PollSeconds", 2f,
+                "How often to check the detector, in seconds. Clamped to a 0.25s floor. This is a handful of "
+                + "field reads, not a hash computation — the game does the expensive part.");
+            DesyncRepeatBannerSeconds = Config.Bind("Desync", "RepeatBannerSeconds", 60f,
+                "Once desynced, re-show the banner this often, because the condition persists for the rest of "
+                + "the session and a single banner during a busy fight is easy to miss. 0 disables the repeat "
+                + "(the first banner and the log block still happen).");
+            DesyncDebugForceTrip = Config.Bind("Desync", "DebugForceTrip", false,
+                "DIAGNOSTIC ONLY — fires one SIMULATED desync report shortly after launch so the banner, "
+                + "log block and report file can be verified without arranging a second peer. The output is "
+                + "explicitly labelled SIMULATED. Turn this off before a real session.");
+
             if (!EnabledKnob.Value)
             {
                 Log.LogInfo(Name + " " + Version + " disabled by [General] Enabled=false. No patches installed.");
@@ -101,6 +127,25 @@ namespace DevKit.Plugin
                 // Fail-safe: DevKit must never take the game down. Without the coordinator the
                 // parity handshake is simply absent (sibling mods' Register calls still no-op safely).
                 Log.LogError("ParityCoordinator.Initialize failed, parity handshake disabled: " + ex);
+            }
+
+            try
+            {
+                if (DesyncWatchEnabled.Value)
+                {
+                    DesyncWatchRunner.PollSeconds = DesyncPollSeconds.Value;
+                    DesyncWatchRunner.ShowBanner = DesyncShowBanner.Value;
+                    DesyncWatchRunner.RepeatBannerSeconds = DesyncRepeatBannerSeconds.Value;
+                    DesyncWatchRunner.DebugForceTrip = DesyncDebugForceTrip.Value;
+                    DesyncWatchRunner.Install();
+                    Log.LogInfo("Desync watch armed (poll=" + DesyncPollSeconds.Value + "s, banner="
+                        + DesyncShowBanner.Value + "). Game surface: " + DesyncWatchRunner.DescribeResolution());
+                }
+            }
+            catch (Exception ex)
+            {
+                // Same fail-safe posture: losing the watchdog costs diagnostics, never the session.
+                Log.LogError("DesyncWatchRunner.Install failed, desync watch disabled: " + ex);
             }
 
             ApplyPatches();
