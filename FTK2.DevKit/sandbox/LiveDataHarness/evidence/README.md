@@ -18,9 +18,22 @@ top-level key count from the vanilla 2095 to 2126.
 - Result: `live Configs are populated` PASS, `install is a pristine baseline` **FAIL**,
   naming all 31 offending ids (console output truncates the list at 15 plus a count).
 
-This is the negative control for the gate. The equivalent positive run — the same command
-exiting `0` against a restored install reading 2095 Characters — is reproducible at any
-time and so is not archived here.
+This is the negative control for the gate.
+
+Two corrections learned after this transcript was captured, both folded into the gate:
+
+- **`ARM_` is a vanilla prefix, not a third-party one.** The game ships
+  `Configs/JSON~/Things/ARM_CATALOG_{S13,S46,S79,UNIQ}.json` and `ARM_FORGE_CURATED.json`,
+  so hundreds of legitimate ids (`ARM_BRAMBLE_MACE` among them) start with `ARM_`. Gating on
+  it produced 518 false offenders and would have kept the baseline permanently red.
+- **Contamination is not confined to top-level id prefixes.** The same overhaul also ships
+  `Things/ARM_EOR_ITEMS.json` and `Things/ARM_EOR_STARTERS.json` — item ids filed under the
+  vanilla `ARM_` prefix, invisible to any rule anchored at position zero. The gate therefore
+  matches the `EOR_` marker anywhere in an id as well as matching prefixes at the start.
+
+The corresponding positive run — exit `0` with both checks passing — was produced against a
+baseline reconstructed from the install by removing those two catalogs, since restoring the
+real install was out of scope at the time.
 
 The two `No parser found for config ...` lines are emitted by the game's own loader for
 `EncyclopediaDatas` and `Materials`; they occur on a pristine install too and are unrelated

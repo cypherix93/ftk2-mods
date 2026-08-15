@@ -66,9 +66,14 @@ namespace LiveDataHarness
                 var foreign = new List<string>();
                 foreach (var dict in new[] { "Characters", "Things", "Abilities", "SkillConfigs", "StatusEffects", "Followers" })
                     foreach (var id in data.Ids(dict))
+                    {
                         foreach (var prefix in ForeignIdPrefixes)
                             if (id.StartsWith(prefix, StringComparison.Ordinal))
                                 foreign.Add(dict + "." + id + " (matches third-party prefix '" + prefix + "')");
+                        foreach (var marker in ForeignIdMarkers)
+                            if (id.IndexOf(marker, StringComparison.Ordinal) >= 0 && !StartsWithAnyPrefix(id))
+                                foreign.Add(dict + "." + id + " (contains third-party marker '" + marker + "')");
+                    }
 
                 Check.Empty(foreign,
                     "third-party content found on disk in StreamingAssets — restore with Steam's " +
@@ -79,16 +84,38 @@ namespace LiveDataHarness
         }
 
         /// <summary>
-        /// Id prefixes that must never appear in a pristine install's Configs. Verified absent from every
-        /// vanilla dictionary, so none of these can produce a false positive. This repo's own packs use the
-        /// CF_/SMN_/BLSS_/ARM_/WB_ prefixes and are merged at runtime from the repo's data folders — they
-        /// are listed here precisely because finding one written into the game folder means something
-        /// deployed content where it does not belong, which is also contamination.
+        /// Id prefixes that must never appear in a pristine install's Configs. This repo's own packs use
+        /// CF_/SMN_/BLSS_/WB_ and are merged at runtime from the repo's data folders, so finding one written
+        /// into the game folder means something deployed content where it does not belong.
+        ///
+        /// ARM_ is deliberately NOT listed: it is a vanilla prefix. The game ships ARM_CATALOG_*.json and
+        /// ARM_FORGE_CURATED.json under Configs/JSON~/Things, so hundreds of legitimate ids such as
+        /// ARM_BRAMBLE_MACE start with it. Gating on ARM_ makes the pristine baseline permanently red.
         /// </summary>
         internal static readonly string[] ForeignIdPrefixes =
         {
-            "EOR_", "CF_", "SMN_", "BLSS_", "ARM_", "WB_",
+            "CF_", "SMN_", "BLSS_", "WB_",
         };
+
+        /// <summary>
+        /// Substrings that betray third-party content wherever they appear in an id, not just at the start.
+        /// Needed because a mod may file its content under a vanilla prefix: the overhaul that motivated this
+        /// gate ships ARM_EOR_* item ids inside the game's own Things catalogs, which no prefix rule anchored
+        /// at position zero can distinguish from vanilla ARM_ items.
+        /// </summary>
+        internal static readonly string[] ForeignIdMarkers =
+        {
+            "EOR_",
+        };
+
+        /// <summary>Keeps an id that both starts with a foreign prefix and carries a marker from being
+        /// reported twice for what is one piece of misplaced content.</summary>
+        private static bool StartsWithAnyPrefix(string id)
+        {
+            for (int i = 0; i < ForeignIdPrefixes.Length; i++)
+                if (id.StartsWith(ForeignIdPrefixes[i], StringComparison.Ordinal)) return true;
+            return false;
+        }
 
         internal static string ArgValue(string[] args, string name)
         {
