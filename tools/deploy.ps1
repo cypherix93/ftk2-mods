@@ -435,7 +435,9 @@ if ($Uninstall) {
 if (-not $PayloadMode) {
     Stage-Payload
     if ($Package) {
-        $stamp = Get-Date -Format 'yyyyMMdd'
+        # Date+time so every packaged build gets a distinct file name — testers must never be left
+        # guessing whether a re-shared zip is actually a newer build than the one they have.
+        $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
         $commit = & git -C $RepoRoot rev-parse --short HEAD 2>$null
         $zip = Join-Path $RepoRoot "tools\out\deploy\ftk2mods-$stamp-$commit.zip"
         if (Test-Path $zip) { Remove-Item $zip }
