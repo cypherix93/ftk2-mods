@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>TypeProbe</RootNamespace>
+    <AssemblyName>TypeProbe</AssemblyName>
+    <LangVersion>7.3</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <!-- No PackageReference: repo build rules bar NuGet. No game reference: all access is
+         reflective, so this builds on a machine with no game installed. -->
+  </PropertyGroup>
+
+</Project>
