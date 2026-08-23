@@ -124,7 +124,14 @@ namespace Crucible.Plugin
             GameBridge.Initialize(_log);
             ReflectionCommands.Initialize(_log);
             MainThreadPump.Initialize(_harmony, _log);
-            MainThreadPump.OnTick = PollHotkeys;
+            // Registration is retried on the tick, not done here: the game's command registry does
+            // not exist until RouterMono has started, so registering in Awake throws from inside
+            // CommandLineHelper. See ReflectionCommands.TryRegister.
+            MainThreadPump.OnTick = delegate
+            {
+                ReflectionCommands.TryRegister();
+                PollHotkeys();
+            };
 
             if (CfgRpcEnabled.Value)
             {

@@ -31,6 +31,22 @@ namespace FTK2Mods.Crucible
                 return false;
             }
 
+            // System.Object parameters carry optional payloads in this game's API surface
+            // (RouterMono.Route's pCustomData is the motivating case). There is no sensible way to
+            // build an arbitrary object from a console string, so the only supported values are the
+            // null tokens; anything else is refused rather than silently passed as a string, which
+            // would look like it worked and then behave differently from the real call site.
+            if (targetType == typeof(object))
+            {
+                if (raw == null || raw == "-" || string.Equals(raw, "null", StringComparison.OrdinalIgnoreCase))
+                {
+                    value = null;
+                    return true;
+                }
+                error = "object parameters accept only 'null' or '-'; got: " + raw;
+                return false;
+            }
+
             if (targetType == typeof(string))
             {
                 value = raw;

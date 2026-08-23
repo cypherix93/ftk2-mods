@@ -122,6 +122,26 @@ namespace Crucible.Plugin
             }
         }
 
+        /// <summary>Renders a handler's signature so a rejected registration says which shape was refused.</summary>
+        private static string DescribeHandler(MethodInfo handler)
+        {
+            if (handler == null) return "(null)";
+            try
+            {
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                sb.Append(handler.ReturnType.Name).Append(' ').Append(handler.Name).Append('(');
+                ParameterInfo[] ps = handler.GetParameters();
+                for (int i = 0; i < ps.Length; i++)
+                {
+                    if (i > 0) sb.Append(", ");
+                    sb.Append(ps[i].ParameterType.Name).Append(' ').Append(ps[i].Name);
+                }
+                sb.Append(")  static=").Append(handler.IsStatic);
+                return sb.ToString();
+            }
+            catch (Exception) { return "(undescribable)"; }
+        }
+
         /// <summary>
         /// Registers a Crucible-owned console command via CommandLineHelper.RegisterCommand, so it
         /// works from the in-game console and over RPC through the same registry as every shipped
@@ -148,7 +168,18 @@ namespace Crucible.Plugin
             }
             catch (Exception ex)
             {
-                if (_log != null) _log.LogWarning("RegisterCommand('" + name + "') failed: " + ex.Message);
+                // Unwrap: reflective Invoke wraps every callee failure in a
+                // TargetInvocationException whose own Message is always the same generic
+                // sentence, which says nothing about what actually went wrong.
+                Exception root = ex;
+                while (root.InnerException != null) root = root.InnerException;
+                if (_log != null)
+                {
+                    _log.LogWarning("RegisterCommand('" + name + "') failed: "
+                                    + root.GetType().Name + ": " + root.Message);
+                    _log.LogWarning("  handler: " + DescribeHandler(handler));
+                    _log.LogWarning("  stack: " + root.StackTrace);
+                }
                 return false;
             }
         }

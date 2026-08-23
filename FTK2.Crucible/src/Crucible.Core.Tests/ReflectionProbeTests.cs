@@ -12,6 +12,26 @@ namespace FTK2Mods.Crucible.Tests
 
         internal static void RunAll()
         {
+
+            TestHarness.Run("object parameter accepts the null tokens", delegate
+            {
+                object v; string err;
+                TestHarness.True(ArgCoercion.TryCoerce("null", typeof(object), out v, out err), "'null' must coerce: " + err);
+                TestHarness.True(v == null, "'null' must yield a null value");
+                TestHarness.True(ArgCoercion.TryCoerce("-", typeof(object), out v, out err), "'-' must coerce: " + err);
+                TestHarness.True(v == null, "'-' must yield a null value");
+            });
+
+            // NEGATIVE CONTROL: a non-null string must be REFUSED for an object parameter. Passing it
+            // through as a string would appear to work and then diverge from the real call site.
+            TestHarness.Run("NEGATIVE: object parameter refuses a non-null value", delegate
+            {
+                object v; string err;
+                bool ok = ArgCoercion.TryCoerce("someValue", typeof(object), out v, out err);
+                TestHarness.True(!ok, "a non-null string must not coerce to an object parameter");
+                TestHarness.True(err != null && err.Length > 0, "refusal must explain itself");
+            });
+
             TestHarness.Section("PathParser.TryParse");
 
             TestHarness.Run("parses a single segment", delegate

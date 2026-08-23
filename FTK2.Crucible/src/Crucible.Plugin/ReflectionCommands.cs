@@ -37,22 +37,56 @@ namespace Crucible.Plugin
         /// </summary>
         internal static string LastResult;
 
+        private static bool _registered;
+
         internal static void Initialize(ManualLogSource log)
         {
             _log = log;
+        }
+
+        /// <summary>
+        /// Registers the probe commands, once, as soon as the game's command system is alive.
+        ///
+        /// Registration cannot happen in Awake. BepInEx runs plugin Awake during chainloader
+        /// startup, but CommandLineHelper.Initialize is not called until RouterMono starts, so the
+        /// registry the game keeps internally is still null. Calling RegisterCommand before that
+        /// throws NullReferenceException from inside the game (verified in-game 2026-08-23:
+        /// NRE at CommandLineHelper.RegisterCommand IL_0015, with a perfectly valid handler).
+        ///
+        /// So this is driven from the RouterMono.Update tick instead and retries until it takes.
+        /// Returns true once registration has succeeded, so the caller can stop asking.
+        /// </summary>
+        internal static bool TryRegister()
+        {
+            if (_registered) return true;
+
+            // GetCommands() returning a list is the observable proof that the game's registry exists.
+            string[] existing = GameBridge.ListCommands();
+            if (existing == null || existing.Length == 0) return false;
 
             MethodInfo getHandler = typeof(ReflectionCommands).GetMethod("CrucibleGet", BindingFlags.Public | BindingFlags.Static);
             MethodInfo invokeHandler = typeof(ReflectionCommands).GetMethod("CrucibleInvoke", BindingFlags.Public | BindingFlags.Static);
 
-            GameBridge.RegisterCommand("crucible_get", getHandler, new List<string> { "path" });
-            GameBridge.RegisterCommand("crucible_invoke", invokeHandler, new List<string> { "type", "method", "args..." });
+            bool a = GameBridge.RegisterCommand("crucible_get", getHandler, new List<string> { "path" });
+            bool b = GameBridge.RegisterCommand("crucible_invoke", invokeHandler, new List<string> { "type", "method", "args (space-separated, or - for none)" });
+
+            _registered = a && b;
+            return _registered;
         }
 
-        /// <summary>crucible_get &lt;path&gt; — reflectively reads and renders a dot path.</summary>
-        public static void CrucibleGet(string[] pArgs)
+        /// <summary>
+        /// crucible_get &lt;path&gt; — reflectively reads and renders a dot path.
+        ///
+        /// Takes a discrete string rather than string[]: CommandLineHelper marshals the raw arg
+        /// array into a handler's individual typed parameters, and its vocabulary is
+        /// int/float/double/bool/string/Vector2/Vector3. A string[] parameter is not in that set,
+        /// so RegisterCommand throws while inspecting the MethodInfo. Verified in-game 2026-08-23:
+        /// registering a string[] handler fails with TargetInvocationException.
+        /// </summary>
+        public static void CrucibleGet(string pPath)
         {
             LastResult = null;
-            string path = (pArgs != null && pArgs.Length > 0) ? pArgs[0] : null;
+            string path = pPath;
 
             object value; string error;
             if (!TryResolvePath(path, out value, out error))
@@ -65,20 +99,27 @@ namespace Crucible.Plugin
             LastResult = Render(value);
         }
 
-        /// <summary>crucible_invoke &lt;Type&gt; &lt;Method&gt; [arg1 arg2 ...]</summary>
-        public static void CrucibleInvoke(string[] pArgs)
+        /// <summary>
+        /// crucible_invoke &lt;Type&gt; &lt;Method&gt; &lt;args&gt; — invokes a method reflectively.
+        ///
+        /// Three discrete string parameters, for the marshalling reason documented on CrucibleGet.
+        /// Method arguments arrive as one space-separated string in pArgs and are split here;
+        /// pass "-" for a no-argument call, since the marshaller supplies every declared parameter.
+        /// </summary>
+        public static void CrucibleInvoke(string pType, string pMethod, string pArgs)
         {
             LastResult = null;
-            if (pArgs == null || pArgs.Length < 2)
+            if (string.IsNullOrEmpty(pType) || string.IsNullOrEmpty(pMethod))
             {
-                LastResult = "error: usage: crucible_invoke <Type> <Method> [args...]";
+                LastResult = "error: usage: crucible_invoke <Type> <Method> <args|->";
                 return;
             }
 
-            string typeName = pArgs[0];
-            string methodName = pArgs[1];
-            string[] rawArgs = new string[pArgs.Length - 2];
-            Array.Copy(pArgs, 2, rawArgs, 0, rawArgs.Length);
+            string typeName = pType;
+            string methodName = pMethod;
+            string[] rawArgs = (string.IsNullOrEmpty(pArgs) || pArgs == "-")
+                ? new string[0]
+                : pArgs.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             object result; string strategy; string error;
             if (!TryInvoke(typeName, methodName, rawArgs, out result, out strategy, out error))
