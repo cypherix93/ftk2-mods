@@ -219,6 +219,40 @@ namespace Crucible.Plugin
             }
         }
 
+        // ============================================================== shared tap helper (crucible_ui_press / crucible_dialogue_* reuse this)
+
+        /// <summary>
+        /// Ensures a gamepad device exists, then presses-and-releases <paramref name="canonicalButton"/>
+        /// (a <c>GamepadButtonName</c> canonical name, e.g. "South" for A) via the same
+        /// <see cref="EnsureGamepad"/>/<see cref="TapButton"/> path <see cref="CruciblePad"/> uses.
+        /// Used by <c>UiCommands</c>'s activation ladder as the virtual-gamepad fallback when a
+        /// UIToolkit <c>NavigationSubmitEvent</c> alone doesn't produce an observable change.
+        /// </summary>
+        internal static bool TryTap(string canonicalButton, out string detail)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            object device; bool created; string deviceError;
+            if (!EnsureGamepad(out device, out created, out deviceError))
+            {
+                detail = "device error: " + deviceError;
+                return false;
+            }
+
+            string pressError, releaseError;
+            bool sentPress, sentRelease;
+            TapButton(device, canonicalButton, out sentPress, out pressError, out sentRelease, out releaseError);
+
+            sb.Append("device=").Append(DescribeDevice(device, created));
+            sb.Append(" button=").Append(canonicalButton);
+            sb.Append(" pressed=").Append(sentPress);
+            if (pressError != null) sb.Append(" pressError=").Append(pressError);
+            sb.Append(" released=").Append(sentRelease);
+            if (releaseError != null) sb.Append(" releaseError=").Append(releaseError);
+            detail = sb.ToString();
+            return sentPress && sentRelease;
+        }
+
         // ============================================================== press/release
 
         private static void TapButton(object device, string canonicalButton, out bool sentPress, out string pressError, out bool sentRelease, out string releaseError)
