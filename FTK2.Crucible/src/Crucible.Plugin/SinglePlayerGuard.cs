@@ -57,7 +57,7 @@ namespace Crucible.Plugin
         /// <summary>Harmony prefix. Returning false skips the original and uses <c>__result</c> as-is.</summary>
         private static bool Prefix(ref bool __result)
         {
-            if (CruciblePlugin.Instance == null || !CruciblePlugin.Instance.CfgForceSinglePlayer.Value)
+            if (!CruciblePlugin.ForceSinglePlayerEnabled)
                 return true; // run the original.
 
             __result = false;

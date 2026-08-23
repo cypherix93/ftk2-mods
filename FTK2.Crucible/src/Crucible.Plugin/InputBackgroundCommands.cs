@@ -65,7 +65,7 @@ namespace Crucible.Plugin
         /// </summary>
         internal static void AutoApplyTick()
         {
-            if (CruciblePlugin.Instance == null || !CruciblePlugin.Instance.CfgForceSinglePlayer.Value)
+            if (!CruciblePlugin.ForceSinglePlayerEnabled)
             {
                 _autoApplied = false;
                 return;

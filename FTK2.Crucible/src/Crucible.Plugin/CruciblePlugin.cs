@@ -27,6 +27,21 @@ namespace Crucible.Plugin
         public static CruciblePlugin Instance;
         public static TraceWriter Trace;
 
+        /// <summary>
+        /// Plain-static mirror of [Safety] ForceSinglePlayer, captured in Awake.
+        ///
+        /// Per-tick code MUST read this rather than <c>Instance.CfgForceSinglePlayer.Value</c>.
+        /// <see cref="Instance"/> is a MonoBehaviour and this plugin's host GameObject is explicitly
+        /// destroyed at the end of chainloader startup (see OnDestroy). Unity overloads
+        /// <c>operator==</c> so a destroyed component compares EQUAL TO NULL while the managed
+        /// reference is still perfectly alive — so `Instance == null` silently became true a second
+        /// after boot, and every `AutoApplyTick` guarded by it returned early forever. Measured
+        /// 2026-08-23: the focus gate and the Input System background behaviour were BOTH never
+        /// auto-applied for this reason, which is what made unattended runs look frozen.
+        /// A plain static has no Unity lifetime semantics and cannot fake-null.
+        /// </summary>
+        internal static bool ForceSinglePlayerEnabled;
+
         public ConfigEntry<bool> CfgEnabled;
         public ConfigEntry<bool> CfgVerbose;
         public ConfigEntry<bool> CfgConsoleEnabled;
@@ -94,6 +109,8 @@ namespace Crucible.Plugin
                 + "automated test runs always start in a clean single-player state instead of landing in "
                 + "the multiplayer lobby. On by default: this is a test harness.");
 
+            ForceSinglePlayerEnabled = CfgForceSinglePlayer.Value;
+
             InstanceName = ReadEnv(EnvInstance);
             if (string.IsNullOrEmpty(InstanceName)) InstanceName = "p1";
 
@@ -149,6 +166,8 @@ namespace Crucible.Plugin
                 SinglePlayerGuard.Tick();
                 InputBackgroundCommands.AutoApplyTick();
                 InputFocusGateCommands.AutoApplyTick();
+                KeyboardCommands.Tick();
+                GamepadCommands.Tick();
                 PollHotkeys();
             };
 

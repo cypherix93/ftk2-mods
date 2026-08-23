@@ -73,6 +73,8 @@ namespace Crucible.Plugin
 
         private static bool _autoApplied;
         private static bool _loggedSuppression;
+        private static bool _loggedRegistration;
+        private static bool _loggedAutoApplySkip;
 
         internal static void Initialize(Harmony harmony, ManualLogSource log)
         {
@@ -127,6 +129,17 @@ namespace Crucible.Plugin
             {
                 harmony.Patch(_requestDisableMethod, new HarmonyMethod(AccessTools.Method(typeof(InputFocusGateCommands), "RequestDisablePrefix")));
                 _patchInstalled = true;
+
+                // Hold the gate from here, NOT from a later tick. This is a test harness whose whole
+                // purpose is driving the game unattended, and an unfocused window is the normal case
+                // rather than the exception. Relying on AutoApplyTick was measured to leave the gate
+                // down at startup (_patchInstalled=True, CfgForceSinglePlayer=True, yet
+                // _autoApplied stayed False), so an unattended run booted with input disabled and
+                // looked frozen. Setting it at the one point we KNOW is reached removes the
+                // dependency entirely; AutoApplyTick still re-asserts it every tick.
+                _gateEnabled = true;
+                _autoApplied = true;
+                log.LogInfo("crucible_input_focus_gate: held from Initialize (LOST_FOCUS will be suppressed).");
             }
             catch (Exception ex)
             {
@@ -140,8 +153,11 @@ namespace Crucible.Plugin
             if (!_gateRegistered) _gateRegistered = GameBridge.RegisterCommand("crucible_input_focus_gate", GateHandler, new List<string> { "on|off" });
             if (!_stateRegistered) _stateRegistered = GameBridge.RegisterCommand("crucible_input_state", StateHandler, new List<string>());
 
-            if (_gateRegistered && _stateRegistered && _log != null)
+            // Log ONCE. TryRegister is polled from the per-frame tick, so an unguarded log line here
+            // printed every frame -- tens of thousands of identical lines that bury real errors.
+            if (_gateRegistered && _stateRegistered && !_loggedRegistration && _log != null)
             {
+                _loggedRegistration = true;
                 _log.LogInfo("InputFocusGateCommands registered (crucible_input_focus_gate, crucible_input_state).");
             }
         }
@@ -202,8 +218,16 @@ namespace Crucible.Plugin
         /// </summary>
         internal static void AutoApplyTick()
         {
-            if (CruciblePlugin.Instance == null || !CruciblePlugin.Instance.CfgForceSinglePlayer.Value)
+            if (!CruciblePlugin.ForceSinglePlayerEnabled)
             {
+                if (!_loggedAutoApplySkip && _log != null)
+                {
+                    _loggedAutoApplySkip = true;
+                    _log.LogInfo("crucible_input_focus_gate auto-apply skipped: instance="
+                        + (CruciblePlugin.Instance == null ? "null" : "present")
+                        + " forceSinglePlayer="
+                        + (CruciblePlugin.Instance == null ? "?" : CruciblePlugin.Instance.CfgForceSinglePlayer.Value.ToString()));
+                }
                 _autoApplied = false;
                 return;
             }
