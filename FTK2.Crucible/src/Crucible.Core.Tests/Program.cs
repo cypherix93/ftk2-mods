@@ -22,6 +22,7 @@ namespace FTK2Mods.Crucible.Tests
             TraceTests.RunAll();
             DigestTests.RunAll();
             ReflectionProbeTests.RunAll();
+            MemberAccessTests.RunAll();
 
             return TestHarness.Report();
         }
