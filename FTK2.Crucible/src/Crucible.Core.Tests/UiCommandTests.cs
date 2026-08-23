@@ -20,6 +20,33 @@ namespace FTK2Mods.Crucible.Tests
             return new OnScreenTest.AncestorFrame(visible, displayNone, opacity);
         }
 
+        // ---------------------------------------------------------------- UiTreeWalker fixtures
+        //
+        // A hand-built tree standing in for the live UIToolkit VisualElement tree, so
+        // UiTreeWalker's pruning/budget/counting logic (Crucible.Core, pure) can be exercised
+        // without a live Unity UIToolkit tree or reflection -- see UiCommands.cs (Crucible.Plugin)
+        // for how the real walk binds these same delegates to reflective accessors.
+
+        private sealed class FakeNode
+        {
+            public OnScreenTest.AncestorFrame Frame;
+            public double? Width;
+            public double? Height;
+            public string Name;
+            public readonly List<FakeNode> Children = new List<FakeNode>();
+        }
+
+        private static OnScreenTest.AncestorFrame FakeGetFrame(FakeNode n) { return n.Frame; }
+        private static void FakeGetSize(FakeNode n, out double? width, out double? height) { width = n.Width; height = n.Height; }
+        private static IEnumerable<FakeNode> FakeGetChildren(FakeNode n) { return n.Children; }
+
+        private static int FakeCountSubtree(FakeNode n)
+        {
+            int count = 1;
+            foreach (FakeNode child in n.Children) count += FakeCountSubtree(child);
+            return count;
+        }
+
         internal static void RunAll()
         {
             TestHarness.Section("UiDirection.TryParse");
@@ -556,6 +583,95 @@ namespace FTK2Mods.Crucible.Tests
                 TestHarness.Equal(1, counts.Unresolved, "unresolved count");
             });
 
+            TestHarness.Run("Add(reason, count) folds a whole pruned subtree into one bucket at once", delegate
+            {
+                OnScreenTest.SkipReasonCounts counts = new OnScreenTest.SkipReasonCounts();
+                counts.Add(OnScreenTest.SkipReason.DisplayNone, 24360);
+                counts.Add(OnScreenTest.SkipReason.DisplayNone, 5);
+                TestHarness.Equal(24365, counts.DisplayNone, "displayNone count");
+                TestHarness.Equal(24365, counts.Total(), "total");
+            });
+
+            TestHarness.Run("Merge adds every bucket of another SkipReasonCounts", delegate
+            {
+                OnScreenTest.SkipReasonCounts a = new OnScreenTest.SkipReasonCounts();
+                a.Add(OnScreenTest.SkipReason.DisplayNone, 10);
+                a.Add(OnScreenTest.SkipReason.ZeroOpacity, 2);
+
+                OnScreenTest.SkipReasonCounts b = new OnScreenTest.SkipReasonCounts();
+                b.Add(OnScreenTest.SkipReason.DisplayNone, 5);
+                b.Add(OnScreenTest.SkipReason.HiddenAncestor, 1);
+
+                a.Merge(b);
+
+                TestHarness.Equal(15, a.DisplayNone, "displayNone after merge");
+                TestHarness.Equal(2, a.ZeroOpacity, "zeroOpacity after merge");
+                TestHarness.Equal(1, a.HiddenAncestor, "hiddenAncestor after merge");
+                TestHarness.Equal(18, a.Total(), "total after merge");
+            });
+
+            TestHarness.Section("OnScreenTest.TryGetSubtreePruneReason (S3 UI dump perf pruning)");
+
+            TestHarness.Run("a hidden (visible=false) element prunes with HiddenAncestor", delegate
+            {
+                OnScreenTest.SkipReason reason;
+                bool pruned = OnScreenTest.TryGetSubtreePruneReason(Frame(visible: false), out reason);
+                TestHarness.True(pruned, "should prune");
+                TestHarness.True(reason == OnScreenTest.SkipReason.HiddenAncestor, "reason should be HiddenAncestor, was " + reason);
+            });
+
+            TestHarness.Run("a display:none element prunes with DisplayNone", delegate
+            {
+                OnScreenTest.SkipReason reason;
+                bool pruned = OnScreenTest.TryGetSubtreePruneReason(Frame(displayNone: true), out reason);
+                TestHarness.True(pruned, "should prune");
+                TestHarness.True(reason == OnScreenTest.SkipReason.DisplayNone, "reason should be DisplayNone, was " + reason);
+            });
+
+            TestHarness.Run("a zero-opacity element prunes with ZeroOpacity", delegate
+            {
+                OnScreenTest.SkipReason reason;
+                bool pruned = OnScreenTest.TryGetSubtreePruneReason(Frame(opacity: 0.0), out reason);
+                TestHarness.True(pruned, "should prune");
+                TestHarness.True(reason == OnScreenTest.SkipReason.ZeroOpacity, "reason should be ZeroOpacity, was " + reason);
+            });
+
+            TestHarness.Run("an unresolved own visible fails closed with Unresolved (prunes rather than assumes on-screen)", delegate
+            {
+                OnScreenTest.SkipReason reason;
+                bool pruned = OnScreenTest.TryGetSubtreePruneReason(Frame(visible: null), out reason);
+                TestHarness.True(pruned, "should prune");
+                TestHarness.True(reason == OnScreenTest.SkipReason.Unresolved, "reason should be Unresolved, was " + reason);
+            });
+
+            TestHarness.Run("a fully clean own frame does not prune", delegate
+            {
+                OnScreenTest.SkipReason reason;
+                bool pruned = OnScreenTest.TryGetSubtreePruneReason(Frame(), out reason);
+                TestHarness.False(pruned, "should not prune");
+                TestHarness.True(reason == OnScreenTest.SkipReason.None, "reason should be None, was " + reason);
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: a display:none root's own-frame prune reason exactly matches the full ancestor-chain decision for a descendant that would otherwise pass", delegate
+            {
+                // rootFrame alone is display:none; descendantFrame is, on its own, fully clean --
+                // visible, not display:none, opaque -- i.e. it would be reported on-screen if
+                // pruning skipped it without ever checking the chain above it.
+                OnScreenTest.AncestorFrame rootFrame = Frame(displayNone: true);
+                OnScreenTest.AncestorFrame descendantFrame = Frame();
+
+                List<OnScreenTest.AncestorFrame> fullChain = new List<OnScreenTest.AncestorFrame> { rootFrame, descendantFrame };
+                OnScreenTest.SkipReason fullWalkReason;
+                bool fullWalkOnScreen = OnScreenTest.IsOnScreen(true, fullChain, 100.0, 40.0, out fullWalkReason);
+                TestHarness.False(fullWalkOnScreen, "a descendant under a display:none root must still be excluded by the full ancestor-chain walk");
+                TestHarness.True(fullWalkReason == OnScreenTest.SkipReason.DisplayNone, "full-walk reason should be DisplayNone, was " + fullWalkReason);
+
+                OnScreenTest.SkipReason pruneReason;
+                bool pruned = OnScreenTest.TryGetSubtreePruneReason(rootFrame, out pruneReason);
+                TestHarness.True(pruned, "the root's own frame alone must predict pruning, without ever looking at the descendant");
+                TestHarness.True(pruneReason == fullWalkReason, "the cheap prune reason must match the full-walk reason exactly, so the diagnostic tally stays accurate");
+            });
+
             TestHarness.Section("UiTreeRenderer.Render gates on OnScreen, not local Visible/Enabled");
 
             TestHarness.Run("an element that is locally visible but off-screen (hidden ancestor) is skipped and counted by reason", delegate
@@ -617,6 +733,94 @@ namespace FTK2Mods.Crucible.Tests
                 UiSelectorMatcher.Result r = UiSelectorMatcher.Find(candidates, "back", out e);
                 TestHarness.True(r.Found, "should find the on-screen one");
                 TestHarness.Equal("LobbyPanel", r.Match.DocumentName, "matches the on-screen LobbyPanel back-btn, not the off-screen CombatHud one");
+            });
+
+            TestHarness.Section("UiTreeWalker.Walk (S3 UI dump perf: pruning + budget)");
+
+            TestHarness.Run("walks and visits every element when nothing is hidden", delegate
+            {
+                FakeNode leaf1 = new FakeNode { Frame = Frame(), Width = 10, Height = 10, Name = "leaf1" };
+                FakeNode leaf2 = new FakeNode { Frame = Frame(), Width = 10, Height = 10, Name = "leaf2" };
+                FakeNode root = new FakeNode { Frame = Frame(), Width = 10, Height = 10, Name = "root" };
+                root.Children.Add(leaf1);
+                root.Children.Add(leaf2);
+
+                List<string> visited = new List<string>();
+                List<bool> onScreenFlags = new List<bool>();
+                UiTreeWalker.Stats stats = UiTreeWalker.Walk<FakeNode>(
+                    root, true, 100,
+                    FakeGetFrame, FakeGetSize, FakeGetChildren, FakeCountSubtree,
+                    delegate(FakeNode n, bool onScreen, OnScreenTest.SkipReason reason) { visited.Add(n.Name); onScreenFlags.Add(onScreen); });
+
+                TestHarness.Equal(3, stats.ElementsVisited, "elements visited");
+                TestHarness.Equal(0, stats.SubtreesPruned, "nothing should be pruned");
+                TestHarness.False(stats.BudgetTruncated, "should not be truncated");
+                TestHarness.Equal(3, visited.Count, "visit called for every node");
+                foreach (bool onScreen in onScreenFlags) TestHarness.True(onScreen, "every node should be on screen");
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: a display:none subtree is pruned -- its would-otherwise-pass descendant is never individually visited, and the whole subtree is attributed to DisplayNone", delegate
+            {
+                FakeNode wouldPass = new FakeNode { Frame = Frame(), Width = 10, Height = 10, Name = "wouldPass" };
+                FakeNode hiddenChild = new FakeNode { Frame = Frame(), Width = 10, Height = 10, Name = "hiddenChild" };
+                hiddenChild.Children.Add(wouldPass);
+                FakeNode hiddenRoot = new FakeNode { Frame = Frame(displayNone: true), Width = 10, Height = 10, Name = "hiddenRoot" };
+                hiddenRoot.Children.Add(hiddenChild);
+                FakeNode visibleSibling = new FakeNode { Frame = Frame(), Width = 10, Height = 10, Name = "visibleSibling" };
+                FakeNode root = new FakeNode { Frame = Frame(), Width = 10, Height = 10, Name = "root" };
+                root.Children.Add(hiddenRoot);
+                root.Children.Add(visibleSibling);
+
+                List<string> visited = new List<string>();
+                UiTreeWalker.Stats stats = UiTreeWalker.Walk<FakeNode>(
+                    root, true, 100,
+                    FakeGetFrame, FakeGetSize, FakeGetChildren, FakeCountSubtree,
+                    delegate(FakeNode n, bool onScreen, OnScreenTest.SkipReason reason) { visited.Add(n.Name); });
+
+                // root, hiddenRoot, visibleSibling are individually visited; hiddenChild/wouldPass
+                // are NOT -- proving the subtree's reflection was skipped, not just its result
+                // discarded after the fact.
+                TestHarness.Equal(3, stats.ElementsVisited, "elements individually visited (hiddenChild/wouldPass must not be)");
+                TestHarness.False(visited.Contains("hiddenChild"), "hiddenChild must not be individually visited");
+                TestHarness.False(visited.Contains("wouldPass"), "wouldPass must not be individually visited -- it would otherwise pass on its own, proving pruning isn't just getting lucky");
+                TestHarness.Equal(1, stats.SubtreesPruned, "exactly one subtree pruned (hiddenRoot)");
+                TestHarness.Equal(2, stats.PrunedCounts.DisplayNone, "hiddenChild + wouldPass folded into DisplayNone");
+                TestHarness.Equal(2, stats.PrunedCounts.Total(), "total pruned count");
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: a hard budget truncates rather than silently returning a short list", delegate
+            {
+                FakeNode root = new FakeNode { Frame = Frame(), Width = 10, Height = 10, Name = "root" };
+                FakeNode cursor = root;
+                for (int i = 0; i < 10; i++)
+                {
+                    FakeNode child = new FakeNode { Frame = Frame(), Width = 10, Height = 10, Name = "n" + i };
+                    cursor.Children.Add(child);
+                    cursor = child;
+                }
+                // 11 total elements (root + a 10-deep chain of children), budget of 5.
+
+                int visitCount = 0;
+                UiTreeWalker.Stats stats = UiTreeWalker.Walk<FakeNode>(
+                    root, true, 5,
+                    FakeGetFrame, FakeGetSize, FakeGetChildren, FakeCountSubtree,
+                    delegate(FakeNode n, bool onScreen, OnScreenTest.SkipReason reason) { visitCount++; });
+
+                TestHarness.Equal(5, stats.ElementsVisited, "stops exactly at budget");
+                TestHarness.Equal(5, visitCount, "visit callback called exactly budget times, not for the rest of the tree");
+                TestHarness.True(stats.BudgetTruncated, "must report truncation rather than silently returning a short list");
+            });
+
+            TestHarness.Run("budget is not reported truncated when the tree is smaller than the cap", delegate
+            {
+                FakeNode root = new FakeNode { Frame = Frame(), Width = 10, Height = 10, Name = "root" };
+                UiTreeWalker.Stats stats = UiTreeWalker.Walk<FakeNode>(
+                    root, true, 100,
+                    FakeGetFrame, FakeGetSize, FakeGetChildren, FakeCountSubtree,
+                    delegate(FakeNode n, bool onScreen, OnScreenTest.SkipReason reason) { });
+
+                TestHarness.False(stats.BudgetTruncated, "small tree should not be truncated");
+                TestHarness.Equal(1, stats.ElementsVisited, "elements visited");
             });
         }
     }

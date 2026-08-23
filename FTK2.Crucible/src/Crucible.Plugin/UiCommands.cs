@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using BepInEx.Logging;
@@ -99,10 +100,13 @@ namespace Crucible.Plugin
             LastResult = null;
             try
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+
                 List<UiElementInfo> elements;
                 int inactiveDocumentSkipCount;
+                UiTreeWalker.Stats walkStats;
                 string error;
-                if (!WalkAllElements(out elements, out inactiveDocumentSkipCount, out error))
+                if (!WalkAllElements(out elements, out inactiveDocumentSkipCount, out walkStats, out error))
                 {
                     LastResult = "error: " + error;
                     return;
@@ -113,17 +117,26 @@ namespace Crucible.Plugin
                 OnScreenTest.SkipReasonCounts skipReasons;
                 string rendered = UiTreeRenderer.Render(elements, filter, kinds, UiTreeRenderer.DefaultCap, out matched, out skipped, out truncated, out skipReasons);
 
+                stopwatch.Stop();
+
+                // Pruned subtrees never became individual UiElementInfo entries (SPEC S3 UI dump
+                // perf — see WalkAllDocuments), so their counts are folded in here alongside the
+                // pre-existing inactiveDocumentSkipCount rollup rather than coming from Render.
                 StringBuilder sb = new StringBuilder();
                 sb.Append(rendered);
                 sb.Append("\n(matchedVisible=").Append(matched)
-                    .Append(" skippedInvisible=").Append(skipped + inactiveDocumentSkipCount)
-                    .Append(" truncated=").Append(truncated).Append(")");
-                sb.Append("\nskipReasons: inactiveDocument=").Append(inactiveDocumentSkipCount + skipReasons.InactiveDocument)
-                    .Append(" hiddenAncestor=").Append(skipReasons.HiddenAncestor)
-                    .Append(" displayNone=").Append(skipReasons.DisplayNone)
-                    .Append(" zeroOpacity=").Append(skipReasons.ZeroOpacity)
-                    .Append(" zeroSize=").Append(skipReasons.ZeroSize)
-                    .Append(" unresolved=").Append(skipReasons.Unresolved);
+                    .Append(" skippedInvisible=").Append(skipped + inactiveDocumentSkipCount + walkStats.PrunedCounts.Total())
+                    .Append(" truncated=").Append(truncated)
+                    .Append(" budgetTruncated=").Append(walkStats.BudgetTruncated).Append(")");
+                sb.Append("\nskipReasons: inactiveDocument=").Append(inactiveDocumentSkipCount + skipReasons.InactiveDocument + walkStats.PrunedCounts.InactiveDocument)
+                    .Append(" hiddenAncestor=").Append(skipReasons.HiddenAncestor + walkStats.PrunedCounts.HiddenAncestor)
+                    .Append(" displayNone=").Append(skipReasons.DisplayNone + walkStats.PrunedCounts.DisplayNone)
+                    .Append(" zeroOpacity=").Append(skipReasons.ZeroOpacity + walkStats.PrunedCounts.ZeroOpacity)
+                    .Append(" zeroSize=").Append(skipReasons.ZeroSize + walkStats.PrunedCounts.ZeroSize)
+                    .Append(" unresolved=").Append(skipReasons.Unresolved + walkStats.PrunedCounts.Unresolved);
+                sb.Append("\nperf: visited=").Append(walkStats.ElementsVisited)
+                    .Append(" prunedSubtrees=").Append(walkStats.SubtreesPruned)
+                    .Append(" ms=").Append(stopwatch.ElapsedMilliseconds);
                 LastResult = sb.ToString();
             }
             catch (Exception ex)
@@ -471,10 +484,18 @@ namespace Crucible.Plugin
             public DocRoot(object root, bool? active, string name) { Root = root; Active = active; Name = name; }
         }
 
-        private static bool WalkAllElements(out List<UiElementInfo> elements, out int inactiveDocumentSkipCount, out string error)
+        /// <summary>
+        /// Hard cap on elements visited by one crucible_ui_dump (or any crucible_ui_* walk) —
+        /// SPEC S3 UI dump perf. A dump must never silently blow the 10s main-thread budget: past
+        /// this many elements the walk stops and reports <see cref="UiTreeWalker.Stats.BudgetTruncated"/>
+        /// rather than risk a timeout that returns no data at all.
+        /// </summary>
+        private const int MaxElementBudget = 50000;
+
+        private static bool WalkAllElements(out List<UiElementInfo> elements, out int inactiveDocumentSkipCount, out UiTreeWalker.Stats stats, out string error)
         {
             List<object> refsUnused;
-            return WalkAllDocuments(null, false, out elements, out refsUnused, out inactiveDocumentSkipCount, out error);
+            return WalkAllDocuments(null, false, out elements, out refsUnused, out inactiveDocumentSkipCount, out stats, out error);
         }
 
         private static bool WalkButtons(out List<UiElementInfo> infos, out List<object> refs, out string error)
@@ -489,14 +510,16 @@ namespace Crucible.Plugin
             }
 
             int inactiveDocumentSkipCount;
-            return WalkAllDocuments(buttonType, true, out infos, out refs, out inactiveDocumentSkipCount, out error);
+            UiTreeWalker.Stats statsUnused;
+            return WalkAllDocuments(buttonType, true, out infos, out refs, out inactiveDocumentSkipCount, out statsUnused, out error);
         }
 
         /// <summary>Like <see cref="WalkAllElements"/> but also keeps the live element reference alongside each <see cref="UiElementInfo"/> — needed by crucible_ui_focus, which (unlike crucible_ui_click) must be able to target any element kind, not just Button.</summary>
         private static bool WalkAllElementsWithRefs(out List<UiElementInfo> infos, out List<object> refs, out string error)
         {
             int inactiveDocumentSkipCount;
-            return WalkAllDocuments(null, true, out infos, out refs, out inactiveDocumentSkipCount, out error);
+            UiTreeWalker.Stats statsUnused;
+            return WalkAllDocuments(null, true, out infos, out refs, out inactiveDocumentSkipCount, out statsUnused, out error);
         }
 
         /// <summary>
@@ -505,14 +528,20 @@ namespace Crucible.Plugin
         /// wholesale (just a cheap Children()-only count, no per-node style/opacity reflection) —
         /// this is where the vast majority of a busy screen's off-screen elements come from
         /// (combat HUD, shop, quest log, inventory panels kept alive but inactive behind the current
-        /// screen). Active documents are walked fully, computing each element's on-screen decision
-        /// against its whole ancestor chain.
+        /// screen). Active documents are walked via <see cref="UiTreeWalker"/> (Crucible.Core, pure)
+        /// bound to the reflective accessors below: it prunes at the root of any display:none/
+        /// hidden/zero-opacity subtree (the OTHER big source of off-screen elements on a busy
+        /// screen — see OnScreenTest.TryGetSubtreePruneReason) instead of reflecting into every
+        /// descendant, and enforces <see cref="MaxElementBudget"/> across the whole dump.
         /// </summary>
-        private static bool WalkAllDocuments(Type matchType, bool collectRefs, out List<UiElementInfo> infos, out List<object> refs, out int inactiveDocumentSkipCount, out string error)
+        private static bool WalkAllDocuments(Type matchType, bool collectRefs, out List<UiElementInfo> infos, out List<object> refs, out int inactiveDocumentSkipCount, out UiTreeWalker.Stats stats, out string error)
         {
-            infos = new List<UiElementInfo>();
-            refs = collectRefs ? new List<object>() : null;
+            List<UiElementInfo> collectedInfos = new List<UiElementInfo>();
+            List<object> collectedRefs = collectRefs ? new List<object>() : null;
+            infos = collectedInfos;
+            refs = collectedRefs;
             inactiveDocumentSkipCount = 0;
+            stats = new UiTreeWalker.Stats();
             error = null;
 
             List<DocRoot> docs;
@@ -520,17 +549,50 @@ namespace Crucible.Plugin
 
             foreach (DocRoot doc in docs)
             {
+                if (stats.BudgetTruncated) break;
+
                 if (doc.Active == false)
                 {
                     inactiveDocumentSkipCount += CountSubtree(doc.Root);
                     continue;
                 }
 
+                int remainingBudget = MaxElementBudget - stats.ElementsVisited;
+                if (remainingBudget <= 0) { stats.BudgetTruncated = true; break; }
+
                 object docFocused = GetFocusedElementFor(doc.Root);
-                List<OnScreenTest.AncestorFrame> ancestorStack = new List<OnScreenTest.AncestorFrame>();
-                WalkElementFull(doc.Root, matchType, docFocused, doc.Active, doc.Name, ancestorStack, infos, refs);
+                DocRoot capturedDoc = doc;
+                Action<object, bool, OnScreenTest.SkipReason> visit = delegate(object ve, bool onScreen, OnScreenTest.SkipReason reason)
+                {
+                    if (matchType == null || matchType.IsInstanceOfType(ve))
+                    {
+                        collectedInfos.Add(DescribeAsInfo(ve, ve.GetType(), docFocused, capturedDoc.Name, onScreen, reason));
+                        if (collectedRefs != null) collectedRefs.Add(ve);
+                    }
+                };
+
+                UiTreeWalker.Stats docStats = UiTreeWalker.Walk<object>(
+                    doc.Root, doc.Active, remainingBudget,
+                    BuildAncestorFrame, ReadSize, GetChildrenGeneric, CountSubtree, visit);
+
+                stats.ElementsVisited += docStats.ElementsVisited;
+                stats.SubtreesPruned += docStats.SubtreesPruned;
+                if (docStats.BudgetTruncated) stats.BudgetTruncated = true;
+                stats.PrunedCounts.Merge(docStats.PrunedCounts);
             }
             return true;
+        }
+
+        private static void ReadSize(object ve, out double? width, out double? height)
+        {
+            TryGetWorldBoundSize(ve, out width, out height);
+        }
+
+        private static IEnumerable<object> GetChildrenGeneric(object ve)
+        {
+            IEnumerable children = GetChildren(ve, ve.GetType());
+            if (children == null) yield break;
+            foreach (object child in children) yield return child;
         }
 
         /// <summary>Every live UIDocument's rootVisualElement, active state, and name this frame.</summary>
@@ -610,42 +672,6 @@ namespace Crucible.Plugin
                 foreach (object child in children) count += CountSubtree(child);
             }
             return count;
-        }
-
-        /// <summary>
-        /// <paramref name="matchType"/> null means "match every element"; otherwise only instances
-        /// of that type are collected. <paramref name="ancestorStack"/> accumulates one
-        /// <see cref="OnScreenTest.AncestorFrame"/> per level as recursion descends (element itself
-        /// included) so every node's on-screen decision is checked against its FULL ancestor chain,
-        /// not just its own local visible/display/opacity.
-        /// </summary>
-        private static void WalkElementFull(object ve, Type matchType, object focusedElement, bool? docActive, string docName,
-            List<OnScreenTest.AncestorFrame> ancestorStack, List<UiElementInfo> infos, List<object> refs)
-        {
-            if (ve == null) return;
-
-            Type t = ve.GetType();
-            ancestorStack.Add(BuildAncestorFrame(ve));
-
-            double? width, height;
-            TryGetWorldBoundSize(ve, out width, out height);
-            OnScreenTest.SkipReason reason;
-            bool onScreen = OnScreenTest.IsOnScreen(docActive, ancestorStack, width, height, out reason);
-
-            if (matchType == null || matchType.IsInstanceOfType(ve))
-            {
-                infos.Add(DescribeAsInfo(ve, t, focusedElement, docName, onScreen, reason));
-                if (refs != null) refs.Add(ve);
-            }
-
-            IEnumerable children = GetChildren(ve, t);
-            if (children != null)
-            {
-                foreach (object child in children)
-                    WalkElementFull(child, matchType, focusedElement, docActive, docName, ancestorStack, infos, refs);
-            }
-
-            ancestorStack.RemoveAt(ancestorStack.Count - 1);
         }
 
         private static UiElementInfo DescribeAsInfo(object ve, Type t, object focusedElement, string docName, bool onScreen, OnScreenTest.SkipReason reason)
@@ -794,11 +820,19 @@ namespace Crucible.Plugin
             else if (h is double) height = (double)h;
         }
 
+        /// <summary>Children() MethodInfo cached per concrete VisualElement type, ONCE — a dump walks tens of thousands of elements, and re-resolving it per element (like <see cref="_ifacePropCache"/> next to it) costs more than the rest of the walk.</summary>
+        private static readonly Dictionary<Type, MethodInfo> _childrenMethodCache = new Dictionary<Type, MethodInfo>();
+
         private static IEnumerable GetChildren(object ve, Type t)
         {
             try
             {
-                MethodInfo childrenMethod = AccessTools.Method(t, "Children");
+                MethodInfo childrenMethod;
+                if (!_childrenMethodCache.TryGetValue(t, out childrenMethod))
+                {
+                    childrenMethod = AccessTools.Method(t, "Children");
+                    _childrenMethodCache[t] = childrenMethod;
+                }
                 if (childrenMethod == null) return null;
                 return childrenMethod.Invoke(ve, null) as IEnumerable;
             }
@@ -1215,12 +1249,29 @@ namespace Crucible.Plugin
                 + " text=" + (text == null ? "(null)" : "'" + text + "'");
         }
 
+        /// <summary>
+        /// PropertyInfo cache for <see cref="ReadProp"/>, keyed by concrete type + property name —
+        /// covers every property this file reads reflectively off a live element (visible,
+        /// resolvedStyle, worldBound, enabledInHierarchy, name, text, gameObject, ...). Same reason
+        /// as <see cref="_ifacePropCache"/>/<see cref="_childrenMethodCache"/>: resolved once, not
+        /// once per element across a 24k-element walk.
+        /// </summary>
+        private static readonly Dictionary<string, PropertyInfo> _typePropCache =
+            new Dictionary<string, PropertyInfo>(StringComparer.Ordinal);
+
         private static object ReadProp(object obj, string propName)
         {
             if (obj == null) return null;
             try
             {
-                PropertyInfo p = AccessTools.Property(obj.GetType(), propName);
+                Type t = obj.GetType();
+                string key = t.FullName + "." + propName;
+                PropertyInfo p;
+                if (!_typePropCache.TryGetValue(key, out p))
+                {
+                    p = AccessTools.Property(t, propName);
+                    _typePropCache[key] = p;
+                }
                 return p == null ? null : p.GetValue(obj, null);
             }
             catch (Exception)
