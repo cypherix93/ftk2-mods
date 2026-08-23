@@ -703,6 +703,47 @@ namespace Crucible.Plugin
             return noneValue != null;
         }
 
+        /// <summary>
+        /// Reads a property that VisualElement implements as an EXPLICIT interface member.
+        ///
+        /// resolvedStyle returns the element itself typed as IResolvedStyle, and display/opacity are
+        /// explicit implementations — so obj.GetType().GetProperty("display") finds nothing and every
+        /// element reports Unresolved. Verified against the game's own
+        /// UnityEngine.UIElementsModule.dll on 2026-08-23: VisualElement has no public "display" or
+        /// "opacity" property, and its interface map points at
+        /// UnityEngine.UIElements.IResolvedStyle.get_display. The value is therefore reachable only
+        /// through the interface type's property.
+        /// </summary>
+        private static readonly Dictionary<string, PropertyInfo> _ifacePropCache =
+            new Dictionary<string, PropertyInfo>(StringComparer.Ordinal);
+
+        private static object ReadInterfaceProp(object instance, string interfaceName, string propName)
+        {
+            if (instance == null) return null;
+            try
+            {
+                // Resolved once per (interface, property) and cached: a UI dump walks tens of
+                // thousands of elements, and doing TypeByName + GetProperty per element costs more
+                // than the whole rest of the walk — enough to blow the main-thread budget.
+                string key = interfaceName + "." + propName;
+                PropertyInfo prop;
+                if (!_ifacePropCache.TryGetValue(key, out prop))
+                {
+                    Type iface = AccessTools.TypeByName("UnityEngine.UIElements." + interfaceName);
+                    prop = iface == null
+                        ? null
+                        : iface.GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
+                    _ifacePropCache[key] = prop;
+                }
+                if (prop == null) return null;
+                return prop.GetValue(instance, null);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         private static OnScreenTest.AncestorFrame BuildAncestorFrame(object ve)
         {
             bool? visible = ReadBoolPropNullable(ve, "visible");
@@ -716,7 +757,7 @@ namespace Crucible.Plugin
             object resolvedStyle = ReadProp(ve, "resolvedStyle");
             if (resolvedStyle == null) return null;
 
-            object displayValue = ReadProp(resolvedStyle, "display");
+            object displayValue = ReadInterfaceProp(resolvedStyle, "IResolvedStyle", "display");
             if (displayValue == null) return null;
 
             object noneValue;
@@ -731,7 +772,7 @@ namespace Crucible.Plugin
             object resolvedStyle = ReadProp(ve, "resolvedStyle");
             if (resolvedStyle == null) return null;
 
-            object opacityValue = ReadProp(resolvedStyle, "opacity");
+            object opacityValue = ReadInterfaceProp(resolvedStyle, "IResolvedStyle", "opacity");
             if (opacityValue is float) return (double)(float)opacityValue;
             if (opacityValue is double) return (double)opacityValue;
             return null;
