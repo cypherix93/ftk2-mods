@@ -19,7 +19,7 @@
     "Trigger": "ON_CRIT",
     "Conditions": [],
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "CURSE" }
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_CURSE_00" }
     ],
     "ProcChance": 100,
     "AiProcChance": 100,
