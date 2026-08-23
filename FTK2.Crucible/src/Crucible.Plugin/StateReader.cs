@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
@@ -53,8 +54,8 @@ namespace Crucible.Plugin
                 net["online"] = GameBridge.IsOnlineSession();
                 if (networkData != null)
                 {
-                    net["isHost"] = SafeValue(GetMember(networkData, "IsHost", null));
-                    net["playerCount"] = SafeValue(GetMember(networkData, "PlayerCount", null));
+                    net["isHost"] = SafeValue(GetMember(networkData, "IsHost", warnings));
+                    net["playerCount"] = SafeValue(CountOf(GetMember(networkData, "PlayerList", warnings)));
                 }
                 else
                 {
@@ -71,6 +72,17 @@ namespace Crucible.Plugin
 
             root["warnings"] = warnings;
             return root;
+        }
+
+        /// <summary>
+        /// NetworkData exposes no player count. The roster is the <c>PlayerList</c> field, so the
+        /// count is derived from it. Verified against the retail assembly 2026-08-23: NetworkData
+        /// has IsHost, UserName, PlayerList and PlayingOnlineMultiplayer, but no PlayerCount.
+        /// </summary>
+        private static object CountOf(object collection)
+        {
+            ICollection list = collection as ICollection;
+            return list != null ? (object)list.Count : null;
         }
 
         private static object GetMember(object instance, string name, List<object> warnings)
