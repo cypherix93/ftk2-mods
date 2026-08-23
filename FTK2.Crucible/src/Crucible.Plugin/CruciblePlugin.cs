@@ -122,6 +122,7 @@ namespace Crucible.Plugin
 
             _harmony = new Harmony(PluginGuid);
             GameBridge.Initialize(_log);
+            ReflectionCommands.Initialize(_log);
             MainThreadPump.Initialize(_harmony, _log);
             MainThreadPump.OnTick = PollHotkeys;
 

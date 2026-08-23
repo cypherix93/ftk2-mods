@@ -21,6 +21,7 @@ namespace Crucible.Plugin
         private static MethodInfo _execute;      // CommandLineHelper.ExecuteCommand(string, string[], bool, bool)
         private static MethodInfo _getCommands;  // CommandLineHelper.GetCommands() -> List<string>
         private static MethodInfo _tryGet;       // CommandLineHelper.TryGetCommand(string, out tuple)
+        private static MethodInfo _registerCommand; // CommandLineHelper.RegisterCommand(string, MethodInfo, List<string>, object)
         private static MethodInfo _toggleShow;   // CommandLineViewHelper.ToggleShow() -> bool
         private static MethodInfo _isShowing;    // CommandLineViewHelper.IsShowing() -> bool
         private static ManualLogSource _log;
@@ -36,12 +37,15 @@ namespace Crucible.Plugin
                 new Type[] { typeof(string), typeof(string[]), typeof(bool), typeof(bool) });
             _getCommands = helper == null ? null : AccessTools.Method(helper, "GetCommands");
             _tryGet = helper == null ? null : AccessTools.Method(helper, "TryGetCommand");
+            _registerCommand = helper == null ? null : AccessTools.Method(helper, "RegisterCommand",
+                new Type[] { typeof(string), typeof(MethodInfo), typeof(List<string>), typeof(object) });
             _toggleShow = view == null ? null : AccessTools.Method(view, "ToggleShow");
             _isShowing = view == null ? null : AccessTools.Method(view, "IsShowing");
 
             Report("CommandLineHelper.ExecuteCommand", _execute);
             Report("CommandLineHelper.GetCommands", _getCommands);
             Report("CommandLineHelper.TryGetCommand", _tryGet);
+            Report("CommandLineHelper.RegisterCommand", _registerCommand);
             Report("CommandLineViewHelper.ToggleShow", _toggleShow);
             Report("CommandLineViewHelper.IsShowing", _isShowing);
         }
@@ -114,6 +118,37 @@ namespace Crucible.Plugin
             catch (Exception ex)
             {
                 error = "invoke_failed: " + ex.Message;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Registers a Crucible-owned console command via CommandLineHelper.RegisterCommand, so it
+        /// works from the in-game console and over RPC through the same registry as every shipped
+        /// command. Degrades to a logged warning, never an exception, if the target could not be
+        /// resolved at Initialize (a game update, or a wrong overload guess).
+        /// </summary>
+        internal static bool RegisterCommand(string name, MethodInfo handler, List<string> argHints)
+        {
+            if (_registerCommand == null)
+            {
+                if (_log != null) _log.LogWarning("RegisterCommand unavailable; '" + name + "' will not be reachable.");
+                return false;
+            }
+            if (handler == null)
+            {
+                if (_log != null) _log.LogWarning("RegisterCommand: handler for '" + name + "' is null; skipping.");
+                return false;
+            }
+            try
+            {
+                _registerCommand.Invoke(null, new object[] { name, handler, argHints, null });
+                if (_log != null) _log.LogInfo("Registered command: " + name);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (_log != null) _log.LogWarning("RegisterCommand('" + name + "') failed: " + ex.Message);
                 return false;
             }
         }

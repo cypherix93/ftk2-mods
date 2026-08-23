@@ -248,11 +248,16 @@ namespace Crucible.Plugin
 
             string[] argArray = args.ToArray();
             Stopwatch sw = Stopwatch.StartNew();
-            object result; string pumpError;
+            object result; string pumpError; string reflectiveResult = null;
             bool ok = MainThreadPump.Run(delegate
             {
                 string inner;
                 bool success = GameBridge.Exec(command, argArray, out inner);
+                // crucible_get/crucible_invoke stash their rendered output here rather than
+                // returning it through ExecuteCommand, which reports dispatch, not data. Reading it
+                // in the same work item is safe: MainThreadPump serializes all game-thread work, so
+                // nothing else can run between the handler returning and this line.
+                reflectiveResult = ReflectionCommands.LastResult;
                 return success ? (object)true : (object)inner;
             }, 10000, out result, out pumpError);
             sw.Stop();
@@ -267,12 +272,13 @@ namespace Crucible.Plugin
             response["command"] = command;
             response["durationMs"] = (int)sw.ElapsedMilliseconds;
             response["correlationId"] = correlationId;
+            if (ok && reflectiveResult != null) response["result"] = reflectiveResult;
 
-            WriteTrace(ok ? "exec" : "exec_failed", correlationId, command, args, execError, (int)sw.ElapsedMilliseconds);
+            WriteTrace(ok ? "exec" : "exec_failed", correlationId, command, args, execError, (int)sw.ElapsedMilliseconds, reflectiveResult);
             Respond(ctx, ok ? 200 : 400, response);
         }
 
-        private static void WriteTrace(string kind, string correlationId, string command, List<string> args, string error, int durationMs)
+        private static void WriteTrace(string kind, string correlationId, string command, List<string> args, string error, int durationMs, string result = null)
         {
             if (CruciblePlugin.Trace == null) return;
 
@@ -284,6 +290,7 @@ namespace Crucible.Plugin
             fields["durationMs"] = durationMs;
             fields["instance"] = CruciblePlugin.Instance.InstanceName;
             if (error != null) fields["error"] = error;
+            if (result != null) fields["result"] = result;
 
             CruciblePlugin.Trace.Write(kind, correlationId, fields);
         }
