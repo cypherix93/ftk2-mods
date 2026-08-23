@@ -59,3 +59,57 @@ Two candidate fixes, in preference order:
   reads "Dawn" — direct field writes do NOT propagate. Debug verbs must call game methods
   and verify an observable, not poke state.
 - The virtual gamepad registers as a SECOND PLAYER; party slots alternate P1/P2.
+
+
+---
+
+## Update — fixture round-trip PROVEN (2026-08-23, later)
+
+`saveUser` writes a save that RELOADS to the same position. Verified end to end:
+
+```
+loaded run id : 1ccaf8f9-4ee6-4db2-a7dc-bab1ed1b8873
+expected      : 1ccaf8f9-4ee6-4db2-a7dc-bab1ed1b8873
+route ADVENTURE, run.present true
+quests restored: 4, same ids
+round: 0
+```
+
+This settles the spike the whole fixture strategy depended on. Restarting the game is now
+cheap: reload the fixture instead of re-driving twenty steps.
+
+### CORRECTION to an earlier finding
+
+Earlier this doc said writing `AdventureState.CurrentTimeOfDayIndex` "does NOT propagate",
+because the HUD kept reading Dawn after the write. That was wrong. The value was set to 2,
+and after a save/load cycle it read back as **2** — the write took effect in game state and
+PERSISTED INTO THE SAVE. Only the UI failed to refresh.
+
+That matters strategically: **mutate-then-save works.** State can be set directly and
+captured into a fixture, which is what makes "generate any state without character creation"
+achievable. A debug verb should still call the game's own method where one exists, so the UI
+stays consistent — but a direct write is not lost.
+
+### NEW BLOCKER: the shipped command registry is ROUTE-SCOPED
+
+At `ADVENTURE` the registry holds 41 commands and does NOT include `GetSpecificThing`,
+`SetStat` or `SetPlayerHealth`. Those are documented as shipped and they are, but they are
+registered by a phase we have not reached — almost certainly `CombatPhase`.
+
+Consequence: **items cannot be granted from the overworld via the console.** Combat gates the
+item commands, movement gates combat. The way out is `crucible_invoke` against the underlying
+APIs rather than the console.
+
+`ToggleCheat` exists and runs, but registers no additional commands.
+
+### Current blocker chain
+
+```
+grant items  ->  needs combat-phase commands  ->  needs combat
+reach combat ->  needs movement               ->  needs hex teleport
+hex teleport ->  AdventureDirector._onSelectHexPositionTeleportScroll(...)
+             ->  needs ArgCoercion for Entity / Thing / ValueTuple`2
+```
+
+So the single highest-value piece of work is argument coercion for those three types.
+Everything downstream unblocks at once.
