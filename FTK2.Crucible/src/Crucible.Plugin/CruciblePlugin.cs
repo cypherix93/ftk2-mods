@@ -131,6 +131,7 @@ namespace Crucible.Plugin
             UiCommands.Initialize(_log);
             MainThreadPump.Initialize(_harmony, _log);
             SinglePlayerGuard.Initialize(_harmony, _log);
+            TurnHooks.Initialize(_harmony, _log);
 
             // Registration is retried on the tick, not done in Awake: the game's command registry
             // does not exist until RouterMono has started, so registering here throws from inside
