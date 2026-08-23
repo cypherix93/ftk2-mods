@@ -1,0 +1,70 @@
+{
+  "id": "new-run-four-classes",
+  "description": "Cold boot to a running single-player adventure with a four-character party of our own ClassForge classes. Every step below was executed against the live game on 2026-08-23 and reached the loading screen for The Resistance.",
+
+  "produces": "A live run (run.present = true) on Age of Rebellion / The Resistance, Apprentice difficulty, party of four CF_EOR_* classes.",
+
+  "known_issue": "The game appeared to FREEZE on the adventure loading screen at the end of this sequence. The inputs themselves were correct - every step reported success and the run was created (run.present became true). Whether the freeze is the harness, the mod stack, or the game's own loading of a fresh Resistance run is UNDIAGNOSED. Investigate before relying on this recipe unattended.",
+
+  "safety": [
+    "NEVER click 'continue-btn' or 'load-btn'. Those resume the owner's live co-op campaign.",
+    "The TEXT 'Continue' is ambiguous and appears on several unrelated buttons. Always select by the button's NAME.",
+    "The loadout confirmation's OK button is 'sys-dialog-ok-btn' in SystemDialogUIDocument - it is NOT 'continue-btn' and is safe."
+  ],
+
+  "notes": [
+    "BOOT IS A RACE. The game reaches MAIN_MENU and then routes ITSELF to MULTIPLAYER_LOBBY roughly two seconds later, trying to rejoin a stale online adventure. Let the boot settle, then check where you actually are - do not act on the first plausible screen.",
+    "FOCUS DOES NOT PERSIST between steps. A gamepad press acts only on a focused target; pressing A with nothing focused silently does nothing. Re-establish focus immediately before each pad press.",
+    "route is an INPUT, never a post-condition. It reported MAIN_MENU while a multiplayer browser and modal were on screen. Confirm position with crucible_ui_dump.",
+    "TextSelector controls (difficulty, class) NAVIGATE - they do not respond to clicks. Focus them, then crucible_ui_nav left/right.",
+    "Difficulty is STICKY across sessions. Read it before changing it.",
+    "Buttons are never wired via Clickable.clicked in this game. crucible_ui_click's strategy 2 (Focus + NavigationSubmitEvent) is what works; strategy 3 (pointer sequence) covers the rest."
+  ],
+
+  "steps": [
+    { "n": 1,  "do": "wait",                "args": ["~30s after launch, then re-check"], "why": "let the boot-time auto-join finish so you escape the final state, not an intermediate one", "status": "PROVEN" },
+    { "n": 2,  "do": "crucible_ui_click",   "args": ["online-quit-btn"],  "why": "dismiss the P0-16 online-error modal (skip if absent)", "status": "PROVEN" },
+    { "n": 3,  "do": "crucible_ui_click",   "args": ["back-btn"],         "why": "leave the multiplayer lobby", "status": "PROVEN" },
+    { "n": 4,  "do": "crucible_ui_click",   "args": ["campaign-btn"],     "why": "main menu -> campaign", "status": "PROVEN" },
+    { "n": 5,  "do": "crucible_ui_click",   "args": ["Age of Rebellion"], "why": "pick the adventure category", "status": "PROVEN" },
+    { "n": 6,  "do": "crucible_ui_nav",     "args": ["down"],             "why": "move focus from the category row down into the adventure carousel. Without this nothing is focused and the next submit hits a fallback.", "status": "PROVEN" },
+    { "n": 7,  "do": "crucible_ui_submit",  "args": ["-"],                "why": "select the focused adventure (The Resistance)", "status": "PROVEN" },
+    { "n": 8,  "do": "crucible_ui_focus",   "args": ["difficulty-inp"],   "why": "grab the difficulty TextSelector", "status": "PROVEN" },
+    { "n": 9,  "do": "crucible_ui_nav",     "args": ["left"],             "why": "step difficulty DOWN off Master. MASTER DISABLES MANUAL SAVES ('Manual Saves will not be available on Master Difficulty'), which would make fixture capture impossible. Repeat until APPRENTICE; skip entirely if already there.", "status": "PROVEN" },
+    { "n": 10, "do": "crucible_ui_click",   "args": ["Select Adventure"], "why": "confirm adventure + difficulty -> party screen", "status": "PROVEN" },
+
+    { "n": 11, "do": "crucible_ui_click",   "args": ["add-character-btn"], "why": "FOCUS a party slot (the click itself does not fill it)", "status": "PROVEN" },
+    { "n": 12, "do": "crucible_pad",        "args": ["a"],                 "why": "fill the focused slot. Synthetic UI events do NOT work here - the game reads its own input action. This also flips the game into controller prompts.", "status": "PROVEN" },
+    { "n": 13, "do": "crucible_ui_focus",   "args": ["class-text-selector"], "why": "grab the class selector. Its text is the CLASSFORGE ID (e.g. CF_EOR_THIEF), not the display name - so a class can be chosen exactly.", "status": "PROVEN" },
+    { "n": 14, "do": "crucible_ui_nav",     "args": ["right"],             "why": "cycle class; read the selector text after each press and stop at the wanted CF_EOR_* id. 'left' cycles back. Proven: CF_EOR_THIEF -> CF_EOR_TRICKSHOT.", "status": "PROVEN" },
+    { "n": 15, "do": "(repeat 11-14)",      "args": ["x4"],                "why": "one pass per slot", "expect": "party-container-next-btn enabled becomes True; the footer changes from 'Party Not Ready' to 'Loadout'", "status": "PROVEN - four slots filled (Trickshot, Shepherd, Corsair, Bladedancer)" },
+
+    { "n": 16, "do": "crucible_ui_click",   "args": ["party-container-next-btn"], "why": "party -> loadout screen", "status": "PROVEN" },
+    { "n": 17, "do": "crucible_ui_click",   "args": ["begin-adventure-btn"],      "why": "start the run. NOTE: the visible text is 'Begin Adventure' but the button has NO text property - it must be selected by name.", "status": "PROVEN" },
+    { "n": 18, "do": "crucible_ui_click",   "args": ["sys-dialog-ok-btn"],        "why": "confirm the 'unused loadout points' dialog. Appears only when loadout points are unspent.", "expect": "run.present becomes true; adventure loading screen", "status": "PROVEN" }
+  ],
+
+  "verified_state_after": {
+    "run.present": true,
+    "schema": "crucible.state.v2",
+    "expected_warnings": [
+      "member_missing: GameRunData.Seed",
+      "member_missing: GameRunData.Day",
+      "member_missing: GameRunData.Gold",
+      "member_missing: GameRunData.Chapter"
+    ],
+    "note": "Those four members do not exist on GameRunData. v1 read them silently as null since it was written. v2 names them, which is correct behaviour, not a fault."
+  },
+
+  "content_confirmed_live": [
+    "class-text-selector reports CF_EOR_THIEF / CF_EOR_TRICKSHOT - our 31-class ClassForge pack is live in character creation and selectable by id.",
+    "The loadout storage lists our traits: Arcane Focus, Arcane Hunger, Arcane Memory, Battle Rhythm, Blood Price, Boss Killer, Burning Soul, Cursed Insight, Deep Thinker, Drunken Courage, Fated Wound, Field Medic.",
+    "POSSIBLE BUG: 'Field Medic' appears TWICE in the loadout list. TRAIT_CF_FIELDMEDIC is the only one of 20 EOR traits carrying a CF_ infix (every sibling is bare TRAIT_<NAME>), which is the likely cause. Confirm and fix."
+  ],
+
+  "next": [
+    "Diagnose the loading freeze.",
+    "Once in the adventure: run saveUser to capture this position as a fixture, then prove it reloads. That replaces all 18 steps with one load and is the whole point of the exercise.",
+    "Then: reach combat and assert one of our 60 recipes with crucible.state.v2."
+  ]
+}
