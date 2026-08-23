@@ -49,6 +49,10 @@ namespace Crucible.Plugin
         private static readonly MethodInfo NavHandler = typeof(UiCommands).GetMethod("CrucibleUiNav", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo SubmitHandler = typeof(UiCommands).GetMethod("CrucibleUiSubmit", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo CancelHandler = typeof(UiCommands).GetMethod("CrucibleUiCancel", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo PressHandler = typeof(UiCommands).GetMethod("CrucibleUiPress", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo WhereHandler = typeof(UiCommands).GetMethod("CrucibleUiWhere", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo DialogueAdvanceHandler = typeof(UiCommands).GetMethod("CrucibleDialogueAdvance", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo DialogueChooseHandler = typeof(UiCommands).GetMethod("CrucibleDialogueChoose", BindingFlags.Public | BindingFlags.Static);
 
         private static bool _dumpRegistered;
         private static bool _clickRegistered;
@@ -56,6 +60,10 @@ namespace Crucible.Plugin
         private static bool _navRegistered;
         private static bool _submitRegistered;
         private static bool _cancelRegistered;
+        private static bool _pressRegistered;
+        private static bool _whereRegistered;
+        private static bool _dialogueAdvanceRegistered;
+        private static bool _dialogueChooseRegistered;
         private static bool _loggedWaiting;
 
         internal static void Initialize(ManualLogSource log)
@@ -66,7 +74,8 @@ namespace Crucible.Plugin
         /// <summary>Called every tick from MainThreadPump.OnTick until every command is registered.</summary>
         internal static void TryRegister()
         {
-            if (_dumpRegistered && _clickRegistered && _focusRegistered && _navRegistered && _submitRegistered && _cancelRegistered) return;
+            if (_dumpRegistered && _clickRegistered && _focusRegistered && _navRegistered && _submitRegistered && _cancelRegistered
+                && _pressRegistered && _whereRegistered && _dialogueAdvanceRegistered && _dialogueChooseRegistered) return;
 
             if (!_dumpRegistered) _dumpRegistered = GameBridge.RegisterCommand("crucible_ui_dump", DumpHandler, new List<string> { "filter", "kinds" });
             if (!_clickRegistered) _clickRegistered = GameBridge.RegisterCommand("crucible_ui_click", ClickHandler, new List<string> { "selector" });
@@ -74,10 +83,15 @@ namespace Crucible.Plugin
             if (!_navRegistered) _navRegistered = GameBridge.RegisterCommand("crucible_ui_nav", NavHandler, new List<string> { "direction" });
             if (!_submitRegistered) _submitRegistered = GameBridge.RegisterCommand("crucible_ui_submit", SubmitHandler, new List<string> { "_unused" });
             if (!_cancelRegistered) _cancelRegistered = GameBridge.RegisterCommand("crucible_ui_cancel", CancelHandler, new List<string> { "_unused" });
+            if (!_pressRegistered) _pressRegistered = GameBridge.RegisterCommand("crucible_ui_press", PressHandler, new List<string> { "selector" });
+            if (!_whereRegistered) _whereRegistered = GameBridge.RegisterCommand("crucible_ui_where", WhereHandler, new List<string> { "_unused" });
+            if (!_dialogueAdvanceRegistered) _dialogueAdvanceRegistered = GameBridge.RegisterCommand("crucible_dialogue_advance", DialogueAdvanceHandler, new List<string> { "maxPresses" });
+            if (!_dialogueChooseRegistered) _dialogueChooseRegistered = GameBridge.RegisterCommand("crucible_dialogue_choose", DialogueChooseHandler, new List<string> { "selector" });
 
-            if (_dumpRegistered && _clickRegistered && _focusRegistered && _navRegistered && _submitRegistered && _cancelRegistered)
+            if (_dumpRegistered && _clickRegistered && _focusRegistered && _navRegistered && _submitRegistered && _cancelRegistered
+                && _pressRegistered && _whereRegistered && _dialogueAdvanceRegistered && _dialogueChooseRegistered)
             {
-                if (_log != null) _log.LogInfo("UiCommands registered (crucible_ui_dump/click/focus/nav/submit/cancel).");
+                if (_log != null) _log.LogInfo("UiCommands registered (crucible_ui_dump/click/focus/nav/submit/cancel/press/where, crucible_dialogue_advance/choose).");
             }
             else if (!_loggedWaiting)
             {
@@ -347,6 +361,626 @@ namespace Crucible.Plugin
                 LastResult = "error: crucible_ui_focus threw: " + ex.Message;
                 if (_log != null) _log.LogWarning("crucible_ui_focus failed: " + ex.Message);
             }
+        }
+
+        // ============================================================== crucible_ui_press
+
+        /// <summary>
+        /// crucible_ui_press &lt;selector&gt; — the whole "press this thing" loop in one call:
+        /// match (exact-name-beats-substring via <see cref="UiPressMatcher"/>, all matches reported,
+        /// forbidden names refused outright), Focus() with a verified-landed check, an activation
+        /// ladder (NavigationSubmitEvent, then a virtual gamepad A press — see
+        /// <see cref="TryActivate"/>), and a screen-delta report so a silent no-op is never mistaken
+        /// for a working press. Supersedes hand-chaining crucible_ui_click + crucible_pad a +
+        /// crucible_ui_dump.
+        /// </summary>
+        public static void CrucibleUiPress(string selector)
+        {
+            LastResult = null;
+            try
+            {
+                if (string.IsNullOrEmpty(selector))
+                {
+                    LastResult = "error: usage: crucible_ui_press <selector>";
+                    return;
+                }
+
+                List<UiElementInfo> infos;
+                List<object> refs;
+                string error;
+                if (!WalkAllElementsWithRefs(out infos, out refs, out error))
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                UiPressMatcher.Result match = UiPressMatcher.Find(infos, selector, out error);
+                if (error != null)
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                StringBuilder result = new StringBuilder();
+
+                if (!match.Found)
+                {
+                    result.Append("no on-screen element matches '").Append(selector).Append("'. On-screen elements:");
+                    if (match.AllVisible.Count == 0)
+                    {
+                        result.Append(" (none)");
+                    }
+                    else
+                    {
+                        foreach (UiElementInfo e in match.AllVisible)
+                            result.Append("\n  - ").Append(UiTreeRenderer.FormatLine(e));
+                    }
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                result.Append("matched: ").Append(UiTreeRenderer.FormatLine(match.Match));
+                result.Append("\ncount=").Append(1 + match.OtherMatches.Count);
+                if (match.OtherMatches.Count > 0)
+                {
+                    result.Append(" others:");
+                    foreach (UiElementInfo o in match.OtherMatches)
+                        result.Append("\n  - ").Append(UiTreeRenderer.FormatLine(o));
+                }
+
+                if (match.Forbidden)
+                {
+                    result.Append("\nREFUSED: ").Append(match.ForbiddenReason);
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                int matchedIndex = infos.IndexOf(match.Match);
+                object target = (matchedIndex >= 0 && matchedIndex < refs.Count) ? refs[matchedIndex] : null;
+                if (target == null)
+                {
+                    result.Append("\nerror: internal: matched element had no live reference");
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                object focusBefore = GetFocusedElementFor(target);
+                result.Append("\nfocusBefore=").Append(DescribeElement(focusBefore));
+
+                bool focusMoved;
+                string focusDetail;
+                TryFocus(target, out focusMoved, out focusDetail);
+                result.Append("\n").Append(focusDetail);
+
+                object focusAfterFocusCall = GetFocusedElementFor(target);
+                result.Append("\nfocusMoved=").Append(focusMoved);
+
+                ScreenSnapshot before;
+                string snapError;
+                if (!CaptureScreenSnapshot(out before, out snapError))
+                {
+                    result.Append("\nerror capturing before-snapshot: ").Append(snapError);
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                string activationLog;
+                bool changed;
+                string succeededVia;
+                ScreenSnapshot after;
+                TryActivate(target, before, out activationLog, out changed, out succeededVia, out after);
+                result.Append("\nactivation: ").Append(activationLog);
+                result.Append("\nactivationSucceeded=").Append(changed);
+                if (succeededVia != null) result.Append(" via=").Append(succeededVia);
+
+                object focusAfter = GetFocusedElementFor(target);
+                result.Append("\nfocusAfter=").Append(DescribeElement(focusAfter));
+
+                bool deltaChanged;
+                string delta = DescribeScreenDelta(before, after, out deltaChanged);
+                if (!deltaChanged)
+                {
+                    result.Append("\nno observable change");
+                }
+                else
+                {
+                    result.Append("\n").Append(delta);
+                }
+
+                LastResult = result.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_ui_press threw: " + ex.Message;
+                if (_log != null) _log.LogWarning("crucible_ui_press failed: " + ex.Message);
+            }
+        }
+
+        // ============================================================== crucible_ui_where
+
+        /// <summary>
+        /// crucible_ui_where &lt;_unused&gt; — a zero-argument read: what is focused right now, which
+        /// documents are on screen, and the on-screen buttons. No filters, no dump cap — the constant
+        /// "where am I" check that shouldn't require a full crucible_ui_dump.
+        /// </summary>
+        public static void CrucibleUiWhere(string _unused)
+        {
+            LastResult = null;
+            try
+            {
+                List<DocRoot> docs;
+                string error;
+                if (!FindDocumentRootsWithMeta(out docs, out error))
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                StringBuilder sb = new StringBuilder();
+                sb.Append("documents:");
+                bool anyDoc = false;
+                object focused = null;
+                foreach (DocRoot d in docs)
+                {
+                    if (d.Active != true) continue;
+                    anyDoc = true;
+                    sb.Append("\n  - ").Append(d.Name == null ? "(unnamed)" : d.Name);
+                    if (focused == null) focused = GetFocusedElementFor(d.Root);
+                }
+                if (!anyDoc) sb.Append(" (none active)");
+
+                sb.Append("\nfocused=").Append(DescribeElement(focused));
+
+                List<UiElementInfo> buttonInfos;
+                List<object> buttonRefsUnused;
+                string buttonError;
+                if (WalkButtons(out buttonInfos, out buttonRefsUnused, out buttonError))
+                {
+                    sb.Append("\nbuttons:");
+                    bool anyBtn = false;
+                    foreach (UiElementInfo b in buttonInfos)
+                    {
+                        if (!b.OnScreen) continue;
+                        anyBtn = true;
+                        sb.Append("\n  - ").Append(UiTreeRenderer.FormatLine(b));
+                    }
+                    if (!anyBtn) sb.Append(" (none)");
+                }
+                else
+                {
+                    sb.Append("\nbuttons: error: ").Append(buttonError);
+                }
+
+                LastResult = sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_ui_where threw: " + ex.Message;
+                if (_log != null) _log.LogWarning("crucible_ui_where failed: " + ex.Message);
+            }
+        }
+
+        // ============================================================== crucible_dialogue_advance
+
+        /// <summary>
+        /// crucible_dialogue_advance &lt;maxPresses&gt; — clears a whole conversation in one call
+        /// instead of one press per round trip. Loop: detect a continue prompt
+        /// (<see cref="DialoguePromptDetector"/>), press it via the same activation ladder as
+        /// crucible_ui_press, stop when no prompt remains, the cap is hit, or a press produces no
+        /// observable change (a stuck prompt must surface as stuck, not burn the whole budget).
+        /// </summary>
+        public static void CrucibleDialogueAdvance(string maxPressesRaw)
+        {
+            LastResult = null;
+            try
+            {
+                int maxPresses;
+                bool clamped;
+                string parseError;
+                if (!DialogueAdvanceBudget.TryParse(maxPressesRaw, out maxPresses, out clamped, out parseError))
+                {
+                    LastResult = "error: " + parseError;
+                    return;
+                }
+
+                StringBuilder log = new StringBuilder();
+                List<string> linesEncountered = new List<string>();
+                int presses = 0;
+                string stopReason = null;
+
+                for (int i = 0; i < maxPresses; i++)
+                {
+                    List<UiElementInfo> infos;
+                    List<object> refs;
+                    string error;
+                    if (!WalkAllElementsWithRefs(out infos, out refs, out error))
+                    {
+                        stopReason = "error: " + error;
+                        break;
+                    }
+
+                    UiElementInfo prompt;
+                    if (!DialoguePromptDetector.TryFind(infos, out prompt))
+                    {
+                        stopReason = "no prompt remains";
+                        break;
+                    }
+
+                    if (!string.IsNullOrEmpty(prompt.Text)) linesEncountered.Add(prompt.Text);
+
+                    int idx = infos.IndexOf(prompt);
+                    object target = (idx >= 0 && idx < refs.Count) ? refs[idx] : null;
+                    if (target == null)
+                    {
+                        stopReason = "internal: matched prompt had no live reference";
+                        break;
+                    }
+
+                    // A live check against this ladder proved that the activation ladder's own
+                    // "sent"/"changed" verdict is NOT a reliable advance signal: repeated presses on
+                    // the wrong target reported submit=SUCCEEDED with the dialogue never moving, and
+                    // dialogue-container's own text can change while the same Button/document set
+                    // stays on screen (missed by a buttons-only or docs-only delta). So this loop
+                    // independently diffs the FULL on-screen element set (name+text+doc, every kind,
+                    // not just buttons) captured from the very walk that found the prompt, before vs.
+                    // after the press — that catches a dialogue-line text change even when no
+                    // document/button appeared or disappeared.
+                    HashSet<string> linesBefore = FormatOnScreenLines(infos);
+
+                    ScreenSnapshot before;
+                    string snapError;
+                    if (!CaptureScreenSnapshot(out before, out snapError))
+                    {
+                        stopReason = "error capturing snapshot: " + snapError;
+                        break;
+                    }
+
+                    string activationLog;
+                    bool ladderChanged;
+                    string succeededVia;
+                    ScreenSnapshot after;
+                    bool focusMovedUnused;
+                    string focusDetailUnused;
+                    TryFocus(target, out focusMovedUnused, out focusDetailUnused);
+                    TryActivate(target, before, out activationLog, out ladderChanged, out succeededVia, out after);
+                    presses++;
+
+                    List<UiElementInfo> infosAfter;
+                    List<object> refsAfterUnused;
+                    string afterWalkError;
+                    bool advanced = false;
+                    if (WalkAllElementsWithRefs(out infosAfter, out refsAfterUnused, out afterWalkError))
+                    {
+                        HashSet<string> linesAfter = FormatOnScreenLines(infosAfter);
+                        advanced = !linesBefore.SetEquals(linesAfter);
+                    }
+
+                    log.Append("\npress ").Append(presses).Append(": ").Append(UiTreeRenderer.FormatLine(prompt))
+                        .Append(" -> ").Append(activationLog)
+                        .Append(" | dialogueTextChanged=").Append(advanced);
+
+                    if (!advanced)
+                    {
+                        stopReason = "no observable change after press " + presses + " (dialogue text/elements identical before and after; stopping rather than burning the budget)";
+                        break;
+                    }
+
+                    System.Threading.Thread.Sleep(50);
+                }
+
+                if (stopReason == null) stopReason = "cap hit (" + maxPresses + ")";
+
+                StringBuilder result = new StringBuilder();
+                result.Append("presses=").Append(presses);
+                result.Append(" stopReason=").Append(stopReason);
+                if (clamped) result.Append(" (maxPresses clamped from '").Append(maxPressesRaw).Append("' to ").Append(DialogueAdvanceBudget.MaxPresses).Append(")");
+                result.Append("\nlines encountered:");
+                if (linesEncountered.Count == 0)
+                {
+                    result.Append(" (none)");
+                }
+                else
+                {
+                    foreach (string line in linesEncountered) result.Append("\n  - ").Append(line);
+                }
+                result.Append(log.ToString());
+
+                LastResult = result.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_dialogue_advance threw: " + ex.Message;
+                if (_log != null) _log.LogWarning("crucible_dialogue_advance failed: " + ex.Message);
+            }
+        }
+
+        /// <summary>Every on-screen element (any kind) rendered as a FormatLine, as a set — used by crucible_dialogue_advance to diff actual dialogue-text/element changes rather than trust the activation ladder's own success report.</summary>
+        private static HashSet<string> FormatOnScreenLines(List<UiElementInfo> infos)
+        {
+            HashSet<string> lines = new HashSet<string>(StringComparer.Ordinal);
+            if (infos == null) return lines;
+            foreach (UiElementInfo e in infos)
+            {
+                if (e != null && e.OnScreen) lines.Add(UiTreeRenderer.FormatLine(e));
+            }
+            return lines;
+        }
+
+        // ============================================================== crucible_dialogue_choose
+
+        /// <summary>
+        /// crucible_dialogue_choose &lt;selector|-&gt; — enumerates on-screen dialogue OPTIONS
+        /// (<see cref="DialogueOptions"/>) and activates the one matching selector via
+        /// <see cref="UiPressMatcher"/> (exact-name-beats-substring, forbidden refused). Passing "-"
+        /// lists the options and presses nothing — a failed choose is diagnosable in one call, and
+        /// enumeration doesn't require guessing a selector first.
+        /// </summary>
+        public static void CrucibleDialogueChoose(string selector)
+        {
+            LastResult = null;
+            try
+            {
+                if (string.IsNullOrEmpty(selector))
+                {
+                    LastResult = "error: usage: crucible_dialogue_choose <selector|->";
+                    return;
+                }
+
+                List<UiElementInfo> infos;
+                List<object> refs;
+                string error;
+                if (!WalkAllElementsWithRefs(out infos, out refs, out error))
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                List<UiElementInfo> options = DialogueOptions.ListOptions(infos);
+
+                StringBuilder result = new StringBuilder();
+                result.Append("options:");
+                if (options.Count == 0)
+                {
+                    result.Append(" (none)");
+                }
+                else
+                {
+                    foreach (UiElementInfo o in options) result.Append("\n  - ").Append(UiTreeRenderer.FormatLine(o));
+                }
+
+                if (selector == "-")
+                {
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                UiPressMatcher.Result match = UiPressMatcher.Find(options, selector, out error);
+                if (error != null)
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                if (!match.Found)
+                {
+                    result.Append("\nno option matches '").Append(selector).Append("'");
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                result.Append("\nmatched: ").Append(UiTreeRenderer.FormatLine(match.Match));
+                result.Append(" count=").Append(1 + match.OtherMatches.Count);
+                if (match.OtherMatches.Count > 0)
+                {
+                    result.Append(" others:");
+                    foreach (UiElementInfo o in match.OtherMatches) result.Append("\n  - ").Append(UiTreeRenderer.FormatLine(o));
+                }
+
+                if (match.Forbidden)
+                {
+                    result.Append("\nREFUSED: ").Append(match.ForbiddenReason);
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                int idx = infos.IndexOf(match.Match);
+                object target = (idx >= 0 && idx < refs.Count) ? refs[idx] : null;
+                if (target == null)
+                {
+                    result.Append("\nerror: internal: matched element had no live reference");
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                bool focusMoved;
+                string focusDetail;
+                TryFocus(target, out focusMoved, out focusDetail);
+                result.Append("\n").Append(focusDetail);
+                result.Append(" focusMoved=").Append(focusMoved);
+
+                ScreenSnapshot before;
+                string snapError;
+                if (!CaptureScreenSnapshot(out before, out snapError))
+                {
+                    result.Append("\nerror capturing before-snapshot: ").Append(snapError);
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                string activationLog;
+                bool changed;
+                string succeededVia;
+                ScreenSnapshot after;
+                TryActivate(target, before, out activationLog, out changed, out succeededVia, out after);
+                result.Append("\nactivation: ").Append(activationLog);
+                result.Append("\nactivationSucceeded=").Append(changed);
+                if (succeededVia != null) result.Append(" via=").Append(succeededVia);
+
+                LastResult = result.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_dialogue_choose threw: " + ex.Message;
+                if (_log != null) _log.LogWarning("crucible_dialogue_choose failed: " + ex.Message);
+            }
+        }
+
+        // ============================================================== shared: focus + activation ladder + screen delta
+
+        /// <summary>Focus()es <paramref name="target"/> and reports whether focus actually landed on it — shared by crucible_ui_press/crucible_dialogue_choose/crucible_dialogue_advance.</summary>
+        private static void TryFocus(object target, out bool focusMoved, out string detail)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            MethodInfo focusMethod = AccessTools.Method(target.GetType(), "Focus");
+            bool focusInvoked = false;
+            string focusError = null;
+            if (focusMethod == null)
+            {
+                focusError = "Focus() method not found on " + target.GetType().FullName;
+            }
+            else
+            {
+                try { focusMethod.Invoke(target, null); focusInvoked = true; }
+                catch (TargetInvocationException ex) { focusError = "Focus() threw: " + (ex.InnerException != null ? ex.InnerException.Message : ex.Message); }
+                catch (Exception ex) { focusError = "Focus() threw: " + ex.Message; }
+            }
+
+            object focusedAfter = GetFocusedElementFor(target);
+            focusMoved = focusedAfter != null && ReferenceEquals(focusedAfter, target);
+
+            sb.Append("focusInvoked=").Append(focusInvoked);
+            if (!focusInvoked) sb.Append(" error=").Append(focusError);
+            detail = sb.ToString();
+        }
+
+        /// <summary>Cheap snapshot of what's on screen for before/after delta comparison: the set of active documents, and the on-screen buttons rendered as lines.</summary>
+        private struct ScreenSnapshot
+        {
+            public HashSet<string> ActiveDocNames;
+            public List<string> ButtonLines;
+        }
+
+        private static bool CaptureScreenSnapshot(out ScreenSnapshot snapshot, out string error)
+        {
+            snapshot = new ScreenSnapshot
+            {
+                ActiveDocNames = new HashSet<string>(StringComparer.Ordinal),
+                ButtonLines = new List<string>()
+            };
+
+            List<DocRoot> docs;
+            if (!FindDocumentRootsWithMeta(out docs, out error)) return false;
+            foreach (DocRoot d in docs)
+            {
+                if (d.Active == true) snapshot.ActiveDocNames.Add(d.Name == null ? "(unnamed)" : d.Name);
+            }
+
+            List<UiElementInfo> buttonInfos;
+            List<object> refsUnused;
+            if (!WalkButtons(out buttonInfos, out refsUnused, out error)) return false;
+            foreach (UiElementInfo b in buttonInfos)
+            {
+                if (b.OnScreen) snapshot.ButtonLines.Add(UiTreeRenderer.FormatLine(b));
+            }
+
+            return true;
+        }
+
+        private static bool ScreenChanged(ScreenSnapshot before, ScreenSnapshot after)
+        {
+            if (!before.ActiveDocNames.SetEquals(after.ActiveDocNames)) return true;
+            if (before.ButtonLines.Count != after.ButtonLines.Count) return true;
+            HashSet<string> beforeSet = new HashSet<string>(before.ButtonLines, StringComparer.Ordinal);
+            HashSet<string> afterSet = new HashSet<string>(after.ButtonLines, StringComparer.Ordinal);
+            return !beforeSet.SetEquals(afterSet);
+        }
+
+        /// <summary>Documents that appeared/disappeared plus the on-screen buttons after, for the crucible_ui_press screen-delta report.</summary>
+        private static string DescribeScreenDelta(ScreenSnapshot before, ScreenSnapshot after, out bool changed)
+        {
+            List<string> appeared = new List<string>();
+            foreach (string d in after.ActiveDocNames) if (!before.ActiveDocNames.Contains(d)) appeared.Add(d);
+            List<string> disappeared = new List<string>();
+            foreach (string d in before.ActiveDocNames) if (!after.ActiveDocNames.Contains(d)) disappeared.Add(d);
+
+            changed = ScreenChanged(before, after);
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append("documentsAppeared=").Append(appeared.Count == 0 ? "(none)" : string.Join(", ", appeared.ToArray()));
+            sb.Append(" documentsDisappeared=").Append(disappeared.Count == 0 ? "(none)" : string.Join(", ", disappeared.ToArray()));
+            sb.Append("\non-screen buttons after:");
+            if (after.ButtonLines.Count == 0)
+            {
+                sb.Append(" (none)");
+            }
+            else
+            {
+                foreach (string b in after.ButtonLines) sb.Append("\n  - ").Append(b);
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Activation ladder: send a UIToolkit NavigationSubmitEvent to <paramref name="target"/>
+        /// (works for many buttons); if that produces no observable change vs. <paramref name="before"/>,
+        /// fall back to a virtual gamepad A ("South") tap (needed for party slots, dialogue prompts,
+        /// "Click to Continue" — <see cref="GamepadCommands.TryTap"/>). Reports which was tried and
+        /// which — if either — actually changed the screen. <paramref name="finalSnapshot"/> is the
+        /// last snapshot taken, reused by callers as the "after" state instead of walking again.
+        /// </summary>
+        private static void TryActivate(object target, ScreenSnapshot before, out string activationLog, out bool changed, out string succeededVia, out ScreenSnapshot finalSnapshot)
+        {
+            StringBuilder sb = new StringBuilder();
+            succeededVia = null;
+
+            object evt;
+            string buildError;
+            bool submitBuilt = BuildSimpleNavigationEvent("UnityEngine.UIElements.NavigationSubmitEvent", out evt, out buildError);
+            bool submitSent = false;
+            string submitSendError = null;
+            if (submitBuilt) submitSent = SendEvent(target, evt, out submitSendError);
+            else submitSendError = buildError;
+            sb.Append("submit[NavigationSubmitEvent]: ").Append(submitSent ? "sent" : ("failed: " + submitSendError));
+
+            ScreenSnapshot afterSubmit;
+            string snapError1;
+            bool haveAfterSubmit = CaptureScreenSnapshot(out afterSubmit, out snapError1);
+            finalSnapshot = haveAfterSubmit ? afterSubmit : before;
+
+            if (submitSent && haveAfterSubmit && ScreenChanged(before, afterSubmit))
+            {
+                changed = true;
+                succeededVia = "NavigationSubmitEvent";
+                sb.Append(" -> screen changed");
+                activationLog = sb.ToString();
+                return;
+            }
+
+            sb.Append(" -> no observable change yet, trying gamepad A");
+
+            string padDetail;
+            GamepadCommands.TryTap("South", out padDetail);
+            sb.Append(" | pad[A/South]: ").Append(padDetail);
+
+            ScreenSnapshot afterPad;
+            string snapError2;
+            bool haveAfterPad = CaptureScreenSnapshot(out afterPad, out snapError2);
+            if (haveAfterPad) finalSnapshot = afterPad;
+
+            if (haveAfterPad && ScreenChanged(before, afterPad))
+            {
+                changed = true;
+                succeededVia = "gamepad A (South)";
+                sb.Append(" -> screen changed");
+            }
+            else
+            {
+                changed = false;
+                sb.Append(" -> no observable change");
+            }
+
+            activationLog = sb.ToString();
         }
 
         // ============================================================== crucible_ui_nav / submit / cancel
