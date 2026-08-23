@@ -130,6 +130,8 @@ namespace Crucible.Plugin
             ReflectionCommands.Initialize(_log);
             UiCommands.Initialize(_log);
             GamepadCommands.Initialize(_log);
+            DebugVerbCommands.Initialize(_log);
+            ChaosCommands.Initialize(_harmony, _log);
             MainThreadPump.Initialize(_harmony, _log);
             SinglePlayerGuard.Initialize(_harmony, _log);
             TurnHooks.Initialize(_harmony, _log);
@@ -180,6 +182,8 @@ namespace Crucible.Plugin
             // so this retries each tick until UiCommands.TryRegister reports every command bound.
             UiCommands.TryRegister();
             GamepadCommands.TryRegister();
+            DebugVerbCommands.TryRegister();
+            ChaosCommands.TryRegister();
 
             if (CfgConsoleEnabled.Value)
             {

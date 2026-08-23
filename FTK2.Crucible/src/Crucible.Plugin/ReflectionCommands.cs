@@ -409,7 +409,10 @@ namespace Crucible.Plugin
         /// UnityEngine.Object.FindObjectOfType(type), (c) a private field on the live RouterMono
         /// instance whose type matches — Directors are held this way (_adventureDirector, etc.).
         /// </summary>
-        private static bool TryResolveInstance(Type type, out object instance, out string strategy, out string error)
+        /// <summary>internal, not private: reused by DebugVerbCommands (crucible_pin_seed) to reach
+        /// a live Director's private fields, e.g. AdventureDirector._gameRandom, without
+        /// re-implementing the (Instance/Current, FindObjectOfType, RouterMono field) strategy.</summary>
+        internal static bool TryResolveInstance(Type type, out object instance, out string strategy, out string error)
         {
             instance = null;
             strategy = null;

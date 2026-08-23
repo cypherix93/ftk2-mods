@@ -257,12 +257,16 @@ namespace Crucible.Plugin
                 // previous, unrelated command's stashed output back out through this request.
                 ReflectionCommands.LastResult = null;
                 UiCommands.LastResult = null;
+                DebugVerbCommands.LastResult = null;
+                ChaosCommands.LastResult = null;
                 bool success = GameBridge.Exec(command, argArray, out inner);
-                // crucible_get/crucible_invoke/crucible_ui_* stash their rendered output here rather
-                // than returning it through ExecuteCommand, which reports dispatch, not data. Reading
-                // it in the same work item is safe: MainThreadPump serializes all game-thread work, so
-                // nothing else can run between the handler returning and this line.
-                reflectiveResult = ReflectionCommands.LastResult ?? UiCommands.LastResult;
+                // crucible_get/crucible_invoke/crucible_ui_*/crucible debug-verb commands stash their
+                // rendered output here rather than returning it through ExecuteCommand, which reports
+                // dispatch, not data. Reading it in the same work item is safe: MainThreadPump
+                // serializes all game-thread work, so nothing else can run between the handler
+                // returning and this line.
+                reflectiveResult = ReflectionCommands.LastResult ?? UiCommands.LastResult
+                    ?? DebugVerbCommands.LastResult ?? ChaosCommands.LastResult;
                 return success ? (object)true : (object)inner;
             }, 10000, out result, out pumpError);
             sw.Stop();

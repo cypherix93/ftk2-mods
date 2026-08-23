@@ -29,6 +29,7 @@ namespace FTK2Mods.Crucible.Tests
             ResolverTests.RunAll();
             TurnTrackerTests.RunAll();
             SnapshotShapeTests.RunAll();
+            DebugVerbArgsTests.RunAll();
 
             return TestHarness.Report();
         }

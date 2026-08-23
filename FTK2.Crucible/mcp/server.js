@@ -158,7 +158,106 @@ const TOOLS = [
     inputSchema: { type: 'object', required: ['expect'], properties: {
       expect: { type: 'string', description: 'Substring that must appear in a crucible_ui_dump for the wait to succeed' },
       timeoutMs: { type: 'number', description: 'Max time to poll, in ms (default 10000)' },
-      ...INSTANCE_ARG } } }
+      ...INSTANCE_ARG } } },
+
+  // ---- Debug / cheat verbs (crucible_*). Every one drives a real game API (never a bare state
+  // write left to the game to notice on its own -- a direct AdventureState.CurrentTimeOfDayIndex
+  // write was measured live not to update the HUD) and reports an observable read before AND after
+  // plus an explicit changed=true/false, so a dispatch receipt is never mistaken for a verified
+  // effect. Some requested verbs (crucible_teleport, crucible_win_combat, crucible_force_roll) were
+  // deliberately NOT built -- see the task report for why each is infeasible from confirmed APIs.
+  { name: 'ftk2_kill_all',
+    description: 'DEBUG/CHEAT: kills every combatant on BOTH sides of the current fight via ' +
+      'CharacterHelper.TryKillCharacter/.KillCharacter. Not a "make me win" verb -- everyone dies. ' +
+      'Verifies its own post-condition via CharacterHelper.IsDead(Entity) read before and after every ' +
+      'combatant; reports deadBefore/deadAfter/changed.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_heal_party',
+    description: 'DEBUG/CHEAT: heals every party member to full via CharacterHelper.SetToMaxHealth(Entity). ' +
+      'Verifies via CharacterComponent.CurrentHealth read before and after each party member; reports ' +
+      'per-character hpBefore/hpAfter/changed.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_debug_end_phase',
+    description: 'DEBUG/CHEAT: force-ends the named phase via the live phase owner\'s own ' +
+      '_debugEndPhase() (RestPhase\'s only overload takes an Int32 option; every other phase is ' +
+      'zero-arg -- handled automatically). phase must be one of: combat, encounter, fortune, treasure, ' +
+      'trap, wheel, rest -- anything else is refused, never defaulted. Verifies via ' +
+      'RouterHelper.GetCurrentRoute() read before and after (those phase names are themselves live ' +
+      'eRoutes values, so ending one should move the route).',
+    inputSchema: { type: 'object', required: ['phase'], properties: {
+      phase: { type: 'string', description: 'combat | encounter | fortune | treasure | trap | wheel | rest' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_set_level',
+    description: 'DEBUG/CHEAT: progresses a party member to a target level via ' +
+      'CharacterHelper.TryProgressCharacterEntityToLevel(Entity, Int32), resolved by matching the live ' +
+      'overload\'s parameter types (never a guessed signature). slot indexes into the current run\'s ' +
+      'PlayerComponent-bearing entities in enumeration order -- NOT a guaranteed persistent slot id ' +
+      'outside PARTY_MANAGEMENT, so the result names the resolved character so you can confirm identity. ' +
+      'Verifies via CharacterComponent.ExtraLevel read before and after (the closest documented ' +
+      'level-shaped field; reported explicitly as a proxy since no direct GetLevel accessor was found).',
+    inputSchema: { type: 'object', required: ['slot', 'level'], properties: {
+      slot: { type: 'number', description: 'Party slot index, 0-5' },
+      level: { type: 'number', description: 'Target level (non-negative integer)' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_give',
+    description: 'DEBUG/CHEAT: grants an item via the shipped GetSpecificThing console command (already ' +
+      'confirmed working). Verifies via the SUM of CharacterComponent.Things.Count across the whole party ' +
+      'read before and after -- the shipped command\'s own targeting decides which character receives it, ' +
+      'so a whole-party sum is the honest observable rather than guessing a recipient slot.',
+    inputSchema: { type: 'object', required: ['configId', 'qty'], properties: {
+      configId: { type: 'string', description: 'Item config id' },
+      qty: { type: 'number', description: 'Quantity, positive integer' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_time_advance',
+    description: 'DEBUG/CHEAT: advances the overworld by calling the real turn-advance method, ' +
+      'AdventureDirector._doEndTurn(), `steps` times (max 20 per call) -- NOT a direct write to ' +
+      'AdventureState.CurrentTimeOfDayIndex, which was measured live not to update the HUD. Verifies via ' +
+      'AdventureState.CurrentTimeOfDayIndex and GameRunData.RoundCount read before and after. Caveat: ' +
+      '_doEndTurn returns Task and is not awaited by the bridge, so an immediate read can race the game\'s ' +
+      'own async continuation -- if changed=false, re-check a moment later via ftk2_exec crucible_get ' +
+      'before concluding it failed.',
+    inputSchema: { type: 'object', required: ['steps'], properties: {
+      steps: { type: 'number', description: 'How many end-turns to dispatch, 1-20' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_pin_seed',
+    description: 'DEBUG/CHEAT: writes GameRandom.Seed on every live GameRandom instance the bridge can ' +
+      'reach (CombatState.Random, AdventureDirector._gameRandom, CombatPhase._gameRandom). Unlike the ' +
+      'time-of-day field, GameRandom.Seed IS the value the RNG itself reads on every draw -- there is no ' +
+      'separate cached UI state to fall out of sync with -- so a direct field write is correct here, not ' +
+      'a shortcut. Verifies by reading .Seed back on each instance found; reports scopesFound/scopesChanged.',
+    inputSchema: { type: 'object', required: ['seed'], properties: {
+      seed: { type: 'number', description: 'RNG seed (integer)' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_quest_state',
+    description: 'Read-only: active/completed/failed quest counts, plus each active quest\'s id and its ' +
+      'CompletedObjectives bitmap (from QuestState.CompletedObjectives).',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_quest_complete',
+    description: 'DEBUG/CHEAT: marks one objective of one active quest complete. Sets ' +
+      'QuestState.CompletedObjectives[objectiveIndex] = true (the one public mutator field found), THEN ' +
+      'drives the game\'s own resolution pass, AdventureDirector._tryCompleteQuests(), so the flag is ' +
+      'actually picked up rather than sitting inert. Verifies the flag flipped AND, more strongly, whether ' +
+      'the quest actually left ActiveQuests (questStillActive/activeCountAfter/completedCountAfter).',
+    inputSchema: { type: 'object', required: ['questIndex', 'objectiveIndex'], properties: {
+      questIndex: { type: 'number', description: 'Index into GameRunData.ActiveQuests' },
+      objectiveIndex: { type: 'number', description: 'Index into that quest\'s CompletedObjectives array' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_chaos_freeze',
+    description: 'DEBUG/CHEAT: no-chaos mode for long automated soaks (every turn otherwise raises Chaos, ' +
+      'escalating enemy difficulty and eventually ending the run, which poisons comparisons between soak ' +
+      'runs). Toggles a Harmony Prefix on AdventureHelper.ModifyChaosLevel -- the confirmed leaf mutator, ' +
+      'not just its caller -- that skips the original call while frozen. Reports frozenBefore/frozenAfter/ ' +
+      'changed and the current chaosHistoryCount for reference. See ftk2_chaos_state for the verification ' +
+      'protocol: read it, freeze, drive turns, read it again -- chaosHistoryCount must not move.',
+    inputSchema: { type: 'object', required: ['onOff'], properties: {
+      onOff: { type: 'string', description: '"on" or "off" (also accepts true/false, 1/0)' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_chaos_state',
+    description: 'Read-only: whether chaos is currently frozen, whether the freeze patch is active, and ' +
+      'the chaos observables -- chaosHistoryCount (no scalar "current chaos level" field exists on ' +
+      'ChaosState, so this is the best available proxy), maxChaos, lastChaosRoundAdded, startedAtRound, ' +
+      'and the current round count for correlation.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } }
 ];
 
 // Elements this server will never allow a click to reach, directly or as an incidental substring
@@ -489,6 +588,28 @@ async function callTool(name, args) {
     case 'ftk2_pick':          return textResult(await pickTool(inst, args.selector));
     case 'ftk2_wait_screen':   return textResult(await waitScreenTool(inst, args.expect, args.timeoutMs));
     case 'ftk2_read_trace':    return textResult(await rpc(inst, 'GET', '/trace?n=' + (args.n || 50)));
+    case 'ftk2_kill_all':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_kill_all', args: [] }));
+    case 'ftk2_heal_party':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_heal_party', args: [] }));
+    case 'ftk2_debug_end_phase':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_end_phase', args: [String(args.phase)] }));
+    case 'ftk2_set_level':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_set_level', args: [String(args.slot), String(args.level)] }));
+    case 'ftk2_give':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_give', args: [String(args.configId), String(args.qty)] }));
+    case 'ftk2_time_advance':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_time_advance', args: [String(args.steps)] }));
+    case 'ftk2_pin_seed':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_pin_seed', args: [String(args.seed)] }));
+    case 'ftk2_quest_state':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_quest_state', args: [] }));
+    case 'ftk2_quest_complete':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_quest_complete', args: [String(args.questIndex), String(args.objectiveIndex)] }));
+    case 'ftk2_chaos_freeze':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_chaos_freeze', args: [String(args.onOff)] }));
+    case 'ftk2_chaos_state':
+      return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_chaos_state', args: [] }));
     case 'ftk2_screenshot': {
       const res = await rpc(inst, 'POST', '/screenshot', { label: args.label || null });
       if (!res.ok) return textResult(res);
