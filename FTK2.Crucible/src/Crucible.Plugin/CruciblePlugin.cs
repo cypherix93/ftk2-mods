@@ -123,6 +123,7 @@ namespace Crucible.Plugin
             _harmony = new Harmony(PluginGuid);
             GameBridge.Initialize(_log);
             ReflectionCommands.Initialize(_log);
+            UiCommands.Initialize(_log);
             MainThreadPump.Initialize(_harmony, _log);
             MainThreadPump.OnTick = PollHotkeys;
 
@@ -158,6 +159,10 @@ namespace Crucible.Plugin
 
         private void PollHotkeys()
         {
+            // Deferred registration: the game's command registry doesn't exist yet during Awake,
+            // so this retries each tick until UiCommands.TryRegister reports every command bound.
+            UiCommands.TryRegister();
+
             if (CfgConsoleEnabled.Value)
             {
                 bool down = CfgConsoleKey.Value.IsDown();
