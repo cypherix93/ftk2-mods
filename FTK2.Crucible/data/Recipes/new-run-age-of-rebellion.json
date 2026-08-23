@@ -11,7 +11,10 @@
     "Difficulty MUST be lowered off Master: the footer warns 'Manual Saves will not be available on Master Difficulty', which would silently disable saveUser and make fixture capture impossible.",
     "route is NOT a reliable signal here - it reported MAIN_MENU while the multiplayer browser was still on screen. Verify position with crucible_ui_dump instead.",
     "Difficulty is STICKY between sessions. It was still APPRENTICE on the second run, so a script must READ difficulty-inp and only step it if needed, never assume it starts at Master.",
-    "Selector ambiguity: 'next-btn' substring-matches 'party-container-next-btn'. Prefer gamepad presses (rb/lb) or fully unambiguous names over selectors on this screen."
+    "Selector ambiguity: 'next-btn' substring-matches 'party-container-next-btn'. Prefer gamepad presses (rb/lb) or fully unambiguous names over selectors on this screen.",
+    "CONFIRMED: the party screen selects OUR ClassForge classes. class-text-selector reads CF_EOR_THIEF / CF_EOR_TRICKSHOT - the pack is live in character creation, and a class can be chosen by its exact id rather than by display name.",
+    "Focus is lost between steps. A gamepad press only acts on a focused target, so re-establish focus (ui_click or ui_focus) before each pad press rather than assuming it persisted.",
+    "The boot auto-join is a RACE: the game reached MAIN_MENU and then routed itself to MULTIPLAYER_LOBBY about two seconds later. Let the boot settle before navigating, and re-check where you are."
   ],
   "steps": [
     {
@@ -106,31 +109,51 @@
     },
     {
       "n": 10,
-      "do": "crucible_pad",
+      "do": "crucible_ui_click",
       "args": [
-        "a"
+        "add-character-btn"
       ],
-      "why": "open/fill the focused party slot. NavigationSubmitEvent does NOT work here - the game reads its own input action, so a virtual gamepad press is required. Injecting a pad also flips the game into controller prompts (A/B/X/LB/RB), which is the consistent input model from here on.",
-      "expect": "add-character-btn count drops by one; character-menu-edit-btn and a class cycler appear",
+      "why": "focus a slot. The gamepad press in step 11 needs a focus target - pressing A with nothing focused does nothing.",
+      "expect": "focusAfter is an add-character-btn",
       "status": "PROVEN"
     },
     {
       "n": 11,
       "do": "crucible_pad",
       "args": [
-        "rb"
+        "a"
       ],
-      "why": "cycle the slot's class forward. LB (lb) cycles back. Read Label 'text-value' to see the current class - it went Thief -> Trickshot.",
-      "expect": "text-value changes to the next class",
+      "why": "fill the focused slot. Synthetic UI events do NOT work here; the game reads its own input action. This also switches the game to controller prompts.",
+      "expect": "add-character-btn count drops by one; a class selector appears",
       "status": "PROVEN"
     },
     {
       "n": 12,
+      "do": "crucible_ui_focus",
+      "args": [
+        "class-text-selector"
+      ],
+      "why": "the class control is a TextSelector like difficulty - it navigates, it does not click. Its text is the CLASSFORGE ID, e.g. CF_EOR_THIEF, not the display name.",
+      "expect": "focus on TextSelector class-text-selector",
+      "status": "PROVEN"
+    },
+    {
+      "n": 13,
+      "do": "crucible_ui_nav",
+      "args": [
+        "right"
+      ],
+      "why": "cycle the class. Read the selector's text after each step and stop when it equals the wanted id. Proven: CF_EOR_THIEF -> CF_EOR_TRICKSHOT. 'left' cycles back.",
+      "expect": "class-text-selector text becomes the next CF_EOR_* id",
+      "status": "PROVEN"
+    },
+    {
+      "n": 14,
       "do": "(loop)",
       "args": [],
-      "why": "repeat 10-11 for each of the four slots, cycling until text-value equals the wanted class",
-      "expect": "party-container-next-btn flips enabled=False -> True once four characters are chosen",
-      "status": "PARTIALLY PROVEN - one slot filled and cycled; four-slot loop not yet run end to end"
+      "why": "repeat 10-13 for each of the four slots",
+      "expect": "party-container-next-btn enabled becomes True",
+      "status": "UNPROVEN - four-slot loop not yet run end to end"
     }
   ],
   "completion_signal": {
@@ -140,7 +163,8 @@
   },
   "open": [
     "The four-slot loop has not been run end to end.",
-    "The full class list and its cycle order are unmapped - cycle and record text-value to build it.",
-    "saveUser has not been proven to round-trip a position. Until it is, fixture capture is unverified."
+    "The full ordered class list is unmapped - cycle and record class-text-selector text to build it.",
+    "saveUser has not been proven to round-trip a position.",
+    "crucible_ui_dump intermittently exceeds the 10s main-thread budget on heavy screens; it walks ~24k elements."
   ]
 }
