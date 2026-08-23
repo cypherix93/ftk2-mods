@@ -170,3 +170,56 @@ inputDisabled=False reasons=[] gateHeld=True
   behind the debug-commands gate. It was ranked the most likely route into combat.
 - The focus gate does NOT auto-apply reliably at startup — it needed an explicit
   `crucible_input_focus_gate on`. Fix before any unattended run.
+
+## 2026-08-23 — Device input is blocked while unfocused; the pairing theory is DISPROVEN
+
+The handoff's top item was "get the virtual gamepad honoured; the hypothesis is that it was never
+paired to an InputUser." That hypothesis was implemented, tested live, and is **wrong**.
+
+What was measured, in order, all against the live game with the window UNFOCUSED:
+
+1. `crucible_input_devices` (new) reports the real devices and their FTK2 player assignment:
+   `Keyboard id=1` and `Mouse id=2`, both `activated=True`, both on `InputPlayer(AssignmentIndex=-1)`.
+   **The primary player's AssignmentIndex is -1, not 0** — that was an open question.
+   Unity's `InputUser.all` holds exactly one user with `pairedDeviceCount=2`.
+2. `crucible_pad_pair -` (new) folded the virtual pad into that same `InputPlayer`:
+   `activated[nav]=True activated[nonNav]=True`, and **no phantom P2 was created**
+   (`clearedNonPrimaryPlayers=True`). Pairing itself works exactly as designed.
+3. A `DpadDown` press with the pad paired **did not move menu focus** off `campaign-btn`.
+   So pairing was never the blocker.
+4. `crucible_key` (new) drives the REAL, already-paired `Keyboard.current` — the same class of
+   device as the mouse, so it sidesteps pairing entirely by construction. `DownArrow` **also did
+   not move focus**, and `Enter` did not activate the focused button.
+5. `crucible_input_state` showed why the first attempts were doomed regardless:
+   `inputDisabled=True reasons=[LOST_FOCUS] gateHeld=False` — **the focus gate does not auto-apply
+   at startup**, confirming the handoff's warning. After `crucible_input_focus_gate on`:
+   `inputDisabled=False reasons=[] gateHeld=True`.
+6. With the gate held and `runInBackground` on, `crucible_key down` and `crucible_key enter`
+   **still did nothing**.
+7. In the same conditions, `crucible_ui_click campaign-btn` **worked**, advancing
+   MainMenuUIDocument → AdventureSelectionUIDocument.
+
+**Conclusion.** The dividing line is not gamepad-vs-keyboard and not paired-vs-unpaired. It is
+**synthetic UI events vs. low-level device injection**. UI events (`crucible_ui_click/focus/nav/
+submit`) work with the window unfocused. `InputSystem.QueueStateEvent` injection does not, on any
+device — even a real, paired, activated one — and clearing FTK2's own `LOST_FOCUS` gate does not
+change that. Something above `InputController` (the Input System's own background/focus handling,
+or `InputSystemUIInputModule`) is discarding the injected events.
+
+This also reframes "mouse injection works unfocused": that is worth re-testing against this
+distinction rather than assumed, since it is the one device claim that predates this measurement.
+
+**Consequence for the plan.** Ben's "drive the entire game through controller mode" is not
+available while unfocused. The options are, in order of cost:
+- Drive menus through the UI-event path, which already works unfocused and is proven through the
+  whole cold-boot recipe. Only the two known UI-event-immune spots (party-slot fill, the
+  "Click to Continue" gate) needed a real device press.
+- Find the layer that drops injected events while unfocused and suppress it, the same way the
+  FTK2 `LOST_FOCUS` gate was suppressed. This is the real fix and keeps controller mode.
+- Accept a focused window for device input. Cheapest, but gives up unattended running.
+
+**Shipped this session:** `crucible_input_devices`, `crucible_pad_pair`, `crucible_key`,
+plus `KeyboardKeyName` in Core. 326 tests green. Also fixed: `GamepadCommands.LastResult` was
+never in `RpcServer`'s result chain, so every `crucible_pad*` result was invisible over RPC —
+`KeyboardCommands` was wired in at the same time. **`InputBackgroundCommands.LastResult` is still
+missing from that chain**, which is why `crucible_input_background on` returns a blank result.
