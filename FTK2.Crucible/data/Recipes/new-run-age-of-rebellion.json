@@ -1,0 +1,146 @@
+{
+  "id": "new-run-age-of-rebellion",
+  "description": "From a cold boot to the party-selection screen of a NEW single-player run. Every step below was executed successfully against the live game on 2026-08-23; anything unproven is marked.",
+  "produces": "A new Age of Rebellion run, Apprentice difficulty, sitting at party selection with four empty slots.",
+  "safety": [
+    "NEVER click 'continue-btn' or 'load-btn'. Those resume the owner's live co-op campaign.",
+    "The selector 'Continue' is ambiguous: it substring-matches BOTH the safe 'next-btn' and the dangerous 'continue-btn'. Always select by the full button name or by a text that is unique on screen."
+  ],
+  "notes": [
+    "The game boots into MULTIPLAYER_LOBBY and fails to rejoin a stale online adventure, leaving a modal. Steps 1-2 escape it. This is the game's own behaviour, not the harness's.",
+    "Difficulty MUST be lowered off Master: the footer warns 'Manual Saves will not be available on Master Difficulty', which would silently disable saveUser and make fixture capture impossible.",
+    "route is NOT a reliable signal here - it reported MAIN_MENU while the multiplayer browser was still on screen. Verify position with crucible_ui_dump instead.",
+    "Difficulty is STICKY between sessions. It was still APPRENTICE on the second run, so a script must READ difficulty-inp and only step it if needed, never assume it starts at Master.",
+    "Selector ambiguity: 'next-btn' substring-matches 'party-container-next-btn'. Prefer gamepad presses (rb/lb) or fully unambiguous names over selectors on this screen."
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "do": "crucible_ui_click",
+      "args": [
+        "online-quit-btn"
+      ],
+      "why": "dismiss the P0-16 online-error modal",
+      "expect": "footer-warning or online-prompt-label gone",
+      "status": "PROVEN"
+    },
+    {
+      "n": 2,
+      "do": "crucible_ui_click",
+      "args": [
+        "back-btn"
+      ],
+      "why": "leave the multiplayer lobby",
+      "expect": "MainMenuUIDocument on screen",
+      "status": "PROVEN"
+    },
+    {
+      "n": 3,
+      "do": "crucible_ui_click",
+      "args": [
+        "campaign-btn"
+      ],
+      "why": "main menu -> campaign",
+      "expect": "AdventureSelectionUIDocument on screen",
+      "status": "PROVEN"
+    },
+    {
+      "n": 4,
+      "do": "crucible_ui_click",
+      "args": [
+        "Age of Rebellion"
+      ],
+      "why": "choose the adventure category",
+      "expect": "nine adventure-art-holder buttons on screen",
+      "status": "PROVEN"
+    },
+    {
+      "n": 5,
+      "do": "crucible_ui_submit",
+      "args": [
+        "-"
+      ],
+      "why": "select the focused adventure (The Resistance). Submit rather than a selector: all nine art holders share one name.",
+      "expect": "adventure-name-text and a difficulty selector on screen",
+      "status": "PROVEN"
+    },
+    {
+      "n": 6,
+      "do": "crucible_ui_focus",
+      "args": [
+        "difficulty-inp"
+      ],
+      "why": "the difficulty control is a TextSelector, not a button; it responds to navigation, not clicks",
+      "expect": "focus on TextSelector difficulty-inp",
+      "status": "PROVEN"
+    },
+    {
+      "n": 7,
+      "do": "crucible_ui_nav",
+      "args": [
+        "left"
+      ],
+      "why": "step difficulty down (MASTER -> JOURNEYMAN)",
+      "expect": "difficulty-inp text changes",
+      "status": "PROVEN"
+    },
+    {
+      "n": 8,
+      "do": "crucible_ui_nav",
+      "args": [
+        "left"
+      ],
+      "why": "step down again (JOURNEYMAN -> APPRENTICE), which restores manual saves",
+      "expect": "footer-warning-label absent from the dump",
+      "status": "PROVEN"
+    },
+    {
+      "n": 9,
+      "do": "crucible_ui_click",
+      "args": [
+        "Select Adventure"
+      ],
+      "why": "confirm adventure + difficulty",
+      "expect": "PartyManagementUIDocument with four add-character-btn slots",
+      "status": "PROVEN"
+    },
+    {
+      "n": 10,
+      "do": "crucible_pad",
+      "args": [
+        "a"
+      ],
+      "why": "open/fill the focused party slot. NavigationSubmitEvent does NOT work here - the game reads its own input action, so a virtual gamepad press is required. Injecting a pad also flips the game into controller prompts (A/B/X/LB/RB), which is the consistent input model from here on.",
+      "expect": "add-character-btn count drops by one; character-menu-edit-btn and a class cycler appear",
+      "status": "PROVEN"
+    },
+    {
+      "n": 11,
+      "do": "crucible_pad",
+      "args": [
+        "rb"
+      ],
+      "why": "cycle the slot's class forward. LB (lb) cycles back. Read Label 'text-value' to see the current class - it went Thief -> Trickshot.",
+      "expect": "text-value changes to the next class",
+      "status": "PROVEN"
+    },
+    {
+      "n": 12,
+      "do": "(loop)",
+      "args": [],
+      "why": "repeat 10-11 for each of the four slots, cycling until text-value equals the wanted class",
+      "expect": "party-container-next-btn flips enabled=False -> True once four characters are chosen",
+      "status": "PARTIALLY PROVEN - one slot filled and cycled; four-slot loop not yet run end to end"
+    }
+  ],
+  "completion_signal": {
+    "element": "party-container-next-btn",
+    "rule": "enabled becomes True once four characters are chosen",
+    "why": "the screen shows 'Party Not Ready' until then, and the button's enabled flag is readable in a dump - a clean machine-checkable gate"
+  },
+  "open": [
+    "The four-slot loop has not been run end to end.",
+    "The full class list and its cycle order are unmapped - cycle and record text-value to build it.",
+    "saveUser has not been proven to round-trip a position. Until it is, fixture capture is unverified."
+  ]
+}
