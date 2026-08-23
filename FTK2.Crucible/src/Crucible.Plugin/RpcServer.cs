@@ -259,6 +259,8 @@ namespace Crucible.Plugin
                 UiCommands.LastResult = null;
                 DebugVerbCommands.LastResult = null;
                 ChaosCommands.LastResult = null;
+                InputFocusGateCommands.LastResult = null;
+                MouseCommands.LastResult = null;
                 bool success = GameBridge.Exec(command, argArray, out inner);
                 // crucible_get/crucible_invoke/crucible_ui_*/crucible debug-verb commands stash their
                 // rendered output here rather than returning it through ExecuteCommand, which reports
@@ -266,7 +268,8 @@ namespace Crucible.Plugin
                 // serializes all game-thread work, so nothing else can run between the handler
                 // returning and this line.
                 reflectiveResult = ReflectionCommands.LastResult ?? UiCommands.LastResult
-                    ?? DebugVerbCommands.LastResult ?? ChaosCommands.LastResult;
+                    ?? DebugVerbCommands.LastResult ?? ChaosCommands.LastResult
+                    ?? InputFocusGateCommands.LastResult ?? MouseCommands.LastResult;
                 return success ? (object)true : (object)inner;
             }, 10000, out result, out pumpError);
             sw.Stop();
