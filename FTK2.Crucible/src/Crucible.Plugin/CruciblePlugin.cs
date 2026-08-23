@@ -132,6 +132,7 @@ namespace Crucible.Plugin
             GamepadCommands.Initialize(_log);
             InputBackgroundCommands.Initialize(_log);
             MouseCommands.Initialize(_log);
+            KeyboardCommands.Initialize(_log);
             DebugVerbCommands.Initialize(_log);
             ChaosCommands.Initialize(_harmony, _log);
             MainThreadPump.Initialize(_harmony, _log);
@@ -189,6 +190,7 @@ namespace Crucible.Plugin
             GamepadCommands.TryRegister();
             InputBackgroundCommands.TryRegister();
             MouseCommands.TryRegister();
+            KeyboardCommands.TryRegister();
             DebugVerbCommands.TryRegister();
             ChaosCommands.TryRegister();
             InputFocusGateCommands.TryRegister();

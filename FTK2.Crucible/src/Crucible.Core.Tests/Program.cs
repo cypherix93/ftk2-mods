@@ -26,6 +26,7 @@ namespace FTK2Mods.Crucible.Tests
             UiCommandTests.RunAll();
             UiPressTests.RunAll();
             PadCommandTests.RunAll();
+            KeyboardKeyNameTests.RunAll();
             WarningTests.RunAll();
             ResolverTests.RunAll();
             TypePrefixResolverTests.RunAll();
