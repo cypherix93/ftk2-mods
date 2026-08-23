@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\FTK2.ClassForge\src\ClassForge.Core\ClassForge.Core.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>DeterminismHarness</AssemblyName>
+    <RootNamespace>FTK2Mods.DeterminismHarness</RootNamespace>
+    <!-- No NuGet, no game reference, no Unity, no BepInEx: this runs on any machine with the SDK,
+         with or without For The King II installed. -->
+  </PropertyGroup>
+
+</Project>
