@@ -102,8 +102,15 @@ const TOOLS = [
     description: 'Advance the game one phase (next turn / skip turn).',
     inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
   { name: 'ftk2_state',
-    description: 'Read a snapshot of the current run state plus a deterministic digest.',
-    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+    description: 'Read a snapshot of the current run state plus a deterministic digest. schema="v2" ' +
+      '(the default) adds the combat assertion surface: combatants with hp/maxHp/classId/alive, their ' +
+      'status effects with durations, and base stats. Pass schema="v1" only for the legacy shape. ' +
+      'Assertion traps: statuses null means UNREADABLE (paired with a warnings entry), [] means none; ' +
+      'stats are BASE stats so a buff will not move them; combat.round is not monotonic (starts at -1 ' +
+      'and resets per wave) so assert on turn; turn null means the hooks failed, not turn 0.',
+    inputSchema: { type: 'object', properties: {
+      schema: { type: 'string', enum: ['v1', 'v2'], description: 'Snapshot schema (default v2)' },
+      ...INSTANCE_ARG } } },
   { name: 'ftk2_screenshot',
     description: 'Capture what the game is showing right now and return it as an image.',
     inputSchema: { type: 'object', properties: {
@@ -115,7 +122,8 @@ const TOOLS = [
       n: { type: 'number', description: 'How many entries (default 50)' },
       ...INSTANCE_ARG } } },
   { name: 'ftk2_compare_state',
-    description: 'Desync oracle: snapshot every instance, compare digests, and report the first diverging field.',
+    description: 'Desync oracle: snapshot every instance, compare digests, and report the first diverging field. ' +
+      'Uses the v2 schema, so hp, status effects and stats are inside the compared digest.',
     inputSchema: { type: 'object', properties: {} } },
   { name: 'ftk2_screen',
     description: 'The semantic "where am I" tool. Returns route (from /state), the set of active on-screen ' +
@@ -515,11 +523,21 @@ function diffPaths(a, b, prefix, out) {
   return out;
 }
 
+/**
+ * Builds the /state path for a schema. v2 is the default because it is the only schema carrying the
+ * combat assertion surface (combatants, hp, statuses, stats); v1 omits all of it, so a test that
+ * silently got v1 would assert against a snapshot that cannot express the thing under test.
+ * An unrecognized value falls back to v2 rather than passing junk through to the query string.
+ */
+function statePath(schema) {
+  return schema === 'v1' ? '/state' : '/state?schema=v2';
+}
+
 async function compareState() {
   const results = [];
   for (const inst of INSTANCES) {
     try {
-      const res = await rpc(inst, 'GET', '/state');
+      const res = await rpc(inst, 'GET', statePath('v2'));
       results.push({ instance: inst.name, port: inst.port, ok: !!res.ok, digest: res.digest, snapshot: res.snapshot });
     } catch (e) {
       results.push({ instance: inst.name, port: inst.port, ok: false, error: e.message });
@@ -581,7 +599,7 @@ async function callTool(name, args) {
       return textResult(await rpc(inst, 'POST', '/exec', { command: args.command, args: args.args || [] }));
     case 'ftk2_end_phase':
       return textResult(await rpc(inst, 'POST', '/exec', { command: 'EndPhase', args: [] }));
-    case 'ftk2_state':         return textResult(await rpc(inst, 'GET', '/state'));
+    case 'ftk2_state':         return textResult(await rpc(inst, 'GET', statePath(args.schema)));
     case 'ftk2_screen':        return textResult(await screenTool(inst));
     case 'ftk2_saves':         return textResult(await savesTool(inst));
     case 'ftk2_new_game':      return textResult(await newGameTool(inst, args.category, args.adventure));

@@ -207,6 +207,21 @@ namespace Crucible.Plugin
                     return;
                 }
 
+                // Refuse forbidden elements BEFORE any activation strategy runs. crucible_ui_press
+                // gets this via UiPressMatcher, but crucible_ui_click goes through
+                // UiSelectorMatcher, which has no such check — so a selector like "Continue"
+                // substring-matched 'continue-btn' and resumed the owner's live co-op campaign.
+                // The Node layer's guard (mcp/server.js ftk2_pick) does not cover this path,
+                // because ftk2_exec reaches the command directly.
+                string forbiddenReason;
+                if (UiForbiddenElements.IsForbidden(match.Match.Name, match.Match.DocumentName, out forbiddenReason))
+                {
+                    LastResult = "refused: " + forbiddenReason
+                        + "\nmatched: " + UiTreeRenderer.FormatLine(match.Match)
+                        + "\nNothing was activated.";
+                    return;
+                }
+
                 int matchedIndex = buttonInfos.IndexOf(match.Match);
                 object targetButton = (matchedIndex >= 0 && matchedIndex < buttonRefs.Count) ? buttonRefs[matchedIndex] : null;
                 if (targetButton == null)
