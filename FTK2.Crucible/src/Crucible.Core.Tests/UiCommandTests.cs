@@ -191,6 +191,80 @@ namespace FTK2Mods.Crucible.Tests
                 TestHarness.True(rendered != null, "non-null result");
             });
 
+            TestHarness.Section("UiKindsFilter.Matches");
+
+            TestHarness.Run("'-' matches every kind", delegate
+            {
+                TestHarness.True(UiKindsFilter.Matches(El("Button", "A", null), "-"), "Button matches '-'");
+                TestHarness.True(UiKindsFilter.Matches(El("Label", "B", null), "-"), "Label matches '-'");
+            });
+
+            TestHarness.Run("empty/null kinds is treated as '-' (match everything) — explicit choice, not rejection", delegate
+            {
+                TestHarness.True(UiKindsFilter.Matches(El("Button", "A", null), ""), "empty string matches everything");
+                TestHarness.True(UiKindsFilter.Matches(El("Button", "A", null), null), "null matches everything");
+            });
+
+            TestHarness.Run("single kind matches only that type, case-insensitive", delegate
+            {
+                TestHarness.True(UiKindsFilter.Matches(El("Button", "A", null), "button"), "lowercase 'button' matches Button (case-insensitive)");
+                TestHarness.True(UiKindsFilter.Matches(El("Button", "A", null), "BUTTON"), "uppercase 'BUTTON' matches Button (case-insensitive)");
+            });
+
+            TestHarness.Run("comma-separated kinds matches any listed type", delegate
+            {
+                TestHarness.True(UiKindsFilter.Matches(El("Button", "A", null), "Button,Label"), "Button in list");
+                TestHarness.True(UiKindsFilter.Matches(El("Label", "B", null), "Button,Label"), "Label in list");
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: a kind not in the list does not match, even alongside other kinds", delegate
+            {
+                TestHarness.False(UiKindsFilter.Matches(El("TemplateContainer", "C", null), "Button,Label"), "TemplateContainer not in list");
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: an unknown/misspelled kind does not silently match everything", delegate
+            {
+                TestHarness.False(UiKindsFilter.Matches(El("Button", "A", null), "Frobnicator"), "unrecognized kind name must not match Button");
+                TestHarness.False(UiKindsFilter.Matches(El("Label", "B", null), "Frobnicator"), "unrecognized kind name must not match Label either");
+            });
+
+            TestHarness.Run("whitespace around comma-separated kinds is trimmed", delegate
+            {
+                TestHarness.True(UiKindsFilter.Matches(El("Button", "A", null), " Button , Label "), "trims whitespace around each kind");
+            });
+
+            TestHarness.Run("null element never matches, does not throw", delegate
+            {
+                TestHarness.False(UiKindsFilter.Matches(null, "-"), "null element should not match");
+            });
+
+            TestHarness.Section("UiTreeRenderer.Render with kinds filter");
+
+            TestHarness.Run("kinds filter narrows output on top of the name/text filter", delegate
+            {
+                List<UiElementInfo> elements = new List<UiElementInfo>
+                {
+                    El("Button", "CloseButton", "Close"),
+                    El("Label", "CloseLabel", "Close"),
+                };
+                int matched, skipped; bool truncated;
+                string rendered = UiTreeRenderer.Render(elements, "close", "Button", 200, out matched, out skipped, out truncated);
+                TestHarness.Equal(1, matched, "only the Button matched, Label filtered out by kinds");
+                TestHarness.True(rendered.IndexOf("CloseLabel") < 0, "CloseLabel must not appear");
+            });
+
+            TestHarness.Run("6-arg Render overload (no kinds) still matches everything visible, unaffected by the new overload", delegate
+            {
+                List<UiElementInfo> elements = new List<UiElementInfo>
+                {
+                    El("Button", "A", null),
+                    El("Label", "B", "text"),
+                };
+                int matched, skipped; bool truncated;
+                UiTreeRenderer.Render(elements, "-", 200, out matched, out skipped, out truncated);
+                TestHarness.Equal(2, matched, "old overload still matches all visible kinds");
+            });
+
             TestHarness.Section("UiSelectorMatcher.Find");
 
             TestHarness.Run("finds a single visible match by name", delegate

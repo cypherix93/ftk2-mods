@@ -44,12 +44,14 @@ namespace Crucible.Plugin
 
         private static readonly MethodInfo DumpHandler = typeof(UiCommands).GetMethod("CrucibleUiDump", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo ClickHandler = typeof(UiCommands).GetMethod("CrucibleUiClick", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo FocusHandler = typeof(UiCommands).GetMethod("CrucibleUiFocus", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo NavHandler = typeof(UiCommands).GetMethod("CrucibleUiNav", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo SubmitHandler = typeof(UiCommands).GetMethod("CrucibleUiSubmit", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo CancelHandler = typeof(UiCommands).GetMethod("CrucibleUiCancel", BindingFlags.Public | BindingFlags.Static);
 
         private static bool _dumpRegistered;
         private static bool _clickRegistered;
+        private static bool _focusRegistered;
         private static bool _navRegistered;
         private static bool _submitRegistered;
         private static bool _cancelRegistered;
@@ -63,17 +65,18 @@ namespace Crucible.Plugin
         /// <summary>Called every tick from MainThreadPump.OnTick until every command is registered.</summary>
         internal static void TryRegister()
         {
-            if (_dumpRegistered && _clickRegistered && _navRegistered && _submitRegistered && _cancelRegistered) return;
+            if (_dumpRegistered && _clickRegistered && _focusRegistered && _navRegistered && _submitRegistered && _cancelRegistered) return;
 
-            if (!_dumpRegistered) _dumpRegistered = GameBridge.RegisterCommand("crucible_ui_dump", DumpHandler, new List<string> { "filter" });
+            if (!_dumpRegistered) _dumpRegistered = GameBridge.RegisterCommand("crucible_ui_dump", DumpHandler, new List<string> { "filter", "kinds" });
             if (!_clickRegistered) _clickRegistered = GameBridge.RegisterCommand("crucible_ui_click", ClickHandler, new List<string> { "selector" });
+            if (!_focusRegistered) _focusRegistered = GameBridge.RegisterCommand("crucible_ui_focus", FocusHandler, new List<string> { "selector" });
             if (!_navRegistered) _navRegistered = GameBridge.RegisterCommand("crucible_ui_nav", NavHandler, new List<string> { "direction" });
             if (!_submitRegistered) _submitRegistered = GameBridge.RegisterCommand("crucible_ui_submit", SubmitHandler, new List<string> { "_unused" });
             if (!_cancelRegistered) _cancelRegistered = GameBridge.RegisterCommand("crucible_ui_cancel", CancelHandler, new List<string> { "_unused" });
 
-            if (_dumpRegistered && _clickRegistered && _navRegistered && _submitRegistered && _cancelRegistered)
+            if (_dumpRegistered && _clickRegistered && _focusRegistered && _navRegistered && _submitRegistered && _cancelRegistered)
             {
-                if (_log != null) _log.LogInfo("UiCommands registered (crucible_ui_dump/click/nav/submit/cancel).");
+                if (_log != null) _log.LogInfo("UiCommands registered (crucible_ui_dump/click/focus/nav/submit/cancel).");
             }
             else if (!_loggedWaiting)
             {
@@ -84,8 +87,14 @@ namespace Crucible.Plugin
 
         // ============================================================== crucible_ui_dump
 
-        /// <summary>crucible_ui_dump &lt;filter&gt; — snapshot the visible UI. "-" for everything.</summary>
-        public static void CrucibleUiDump(string filter)
+        /// <summary>
+        /// crucible_ui_dump &lt;filter&gt; &lt;kinds&gt; — snapshot the visible UI. "filter" is the
+        /// existing name/text substring filter ("-" for everything); "kinds" is a comma-separated
+        /// type filter (e.g. "Button,Label", "-" for every type) applied on top of it, so a busy
+        /// screen full of noise (e.g. repeated TemplateContainers) can be narrowed to just the kinds
+        /// worth reading.
+        /// </summary>
+        public static void CrucibleUiDump(string filter, string kinds)
         {
             LastResult = null;
             try
@@ -100,7 +109,7 @@ namespace Crucible.Plugin
 
                 int matched, skipped;
                 bool truncated;
-                string rendered = UiTreeRenderer.Render(elements, filter, UiTreeRenderer.DefaultCap, out matched, out skipped, out truncated);
+                string rendered = UiTreeRenderer.Render(elements, filter, kinds, UiTreeRenderer.DefaultCap, out matched, out skipped, out truncated);
 
                 StringBuilder sb = new StringBuilder();
                 sb.Append(rendered);
@@ -171,8 +180,129 @@ namespace Crucible.Plugin
                     return;
                 }
 
-                string invokeError;
-                bool invoked = InvokeButtonClick(targetButton, out invokeError);
+                StringBuilder result = new StringBuilder();
+                result.Append("matched: ").Append(UiTreeRenderer.FormatLine(match.Match));
+                result.Append("\ncount=").Append(1 + match.OtherMatches.Count);
+                if (match.OtherMatches.Count > 0)
+                {
+                    result.Append(" others:");
+                    foreach (UiElementInfo o in match.OtherMatches)
+                        result.Append("\n  - ").Append(UiTreeRenderer.FormatLine(o));
+                }
+
+                // Strategy ladder: try each in order, stop at the first success, but report every
+                // attempt made (up to and including the one that succeeded) so a failed click is
+                // fully diagnosable from this one call.
+                bool succeeded = false;
+                string succeededVia = null;
+
+                string s1Error;
+                bool s1 = InvokeButtonClick(targetButton, out s1Error);
+                result.Append("\nstrategy1[clickable.clicked]: ").Append(s1 ? "SUCCEEDED" : ("failed: " + s1Error));
+                if (s1) { succeeded = true; succeededVia = "clickable.clicked/clickedWithEventInfo"; }
+
+                if (!succeeded)
+                {
+                    string s2Detail;
+                    bool s2 = TryFocusThenSubmit(targetButton, out s2Detail);
+                    result.Append("\nstrategy2[focus+submit]: ").Append(s2Detail);
+                    if (s2) { succeeded = true; succeededVia = "Focus()+NavigationSubmitEvent"; }
+                }
+
+                if (!succeeded)
+                {
+                    string s3Detail;
+                    bool s3 = TryPointerSequence(targetButton, out s3Detail);
+                    result.Append("\nstrategy3[pointer]: ").Append(s3Detail);
+                    if (s3) { succeeded = true; succeededVia = "PointerDownEvent+PointerUpEvent+ClickEvent"; }
+                }
+
+                result.Append("\ninvoked=").Append(succeeded);
+                if (succeeded) result.Append(" via=").Append(succeededVia);
+                else result.Append(" (all strategies failed; see detail above)");
+
+                LastResult = result.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_ui_click threw: " + ex.Message;
+                if (_log != null) _log.LogWarning("crucible_ui_click failed: " + ex.Message);
+            }
+        }
+
+        // ============================================================== crucible_ui_focus
+
+        /// <summary>crucible_ui_focus &lt;selector&gt; — finds the first visible element whose name/text contains selector and calls Focusable.Focus() on it, reporting focus before/after.</summary>
+        public static void CrucibleUiFocus(string selector)
+        {
+            LastResult = null;
+            try
+            {
+                if (string.IsNullOrEmpty(selector))
+                {
+                    LastResult = "error: usage: crucible_ui_focus <selector>";
+                    return;
+                }
+
+                List<UiElementInfo> infos;
+                List<object> refs;
+                string error;
+                if (!WalkAllElementsWithRefs(out infos, out refs, out error))
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                UiSelectorMatcher.Result match = UiSelectorMatcher.Find(infos, selector, out error);
+                if (error != null)
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                if (!match.Found)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append("no visible element matches '").Append(selector).Append("'. Visible elements:");
+                    if (match.AllVisible.Count == 0)
+                    {
+                        sb.Append(" (none)");
+                    }
+                    else
+                    {
+                        foreach (UiElementInfo e in match.AllVisible)
+                            sb.Append("\n  - ").Append(UiTreeRenderer.FormatLine(e));
+                    }
+                    LastResult = sb.ToString();
+                    return;
+                }
+
+                int matchedIndex = infos.IndexOf(match.Match);
+                object target = (matchedIndex >= 0 && matchedIndex < refs.Count) ? refs[matchedIndex] : null;
+                if (target == null)
+                {
+                    LastResult = "error: internal: matched element had no live reference";
+                    return;
+                }
+
+                object focusedBefore = GetFocusedElementFor(target);
+
+                MethodInfo focusMethod = AccessTools.Method(target.GetType(), "Focus");
+                bool focusInvoked = false;
+                string focusError = null;
+                if (focusMethod == null)
+                {
+                    focusError = "Focus() method not found on " + target.GetType().FullName;
+                }
+                else
+                {
+                    try { focusMethod.Invoke(target, null); focusInvoked = true; }
+                    catch (TargetInvocationException ex) { focusError = "Focus() threw: " + (ex.InnerException != null ? ex.InnerException.Message : ex.Message); }
+                    catch (Exception ex) { focusError = "Focus() threw: " + ex.Message; }
+                }
+
+                object focusedAfter = GetFocusedElementFor(target);
+                bool focusMoved = focusedAfter != null && ReferenceEquals(focusedAfter, target);
 
                 StringBuilder result = new StringBuilder();
                 result.Append("matched: ").Append(UiTreeRenderer.FormatLine(match.Match));
@@ -183,15 +313,18 @@ namespace Crucible.Plugin
                     foreach (UiElementInfo o in match.OtherMatches)
                         result.Append("\n  - ").Append(UiTreeRenderer.FormatLine(o));
                 }
-                result.Append("\ninvoked=").Append(invoked);
-                if (!invoked) result.Append(" error=").Append(invokeError);
+                result.Append("\nfocusBefore=").Append(DescribeElement(focusedBefore));
+                result.Append("\nfocusInvoked=").Append(focusInvoked);
+                if (!focusInvoked) result.Append(" error=").Append(focusError);
+                result.Append("\nfocusAfter=").Append(DescribeElement(focusedAfter));
+                result.Append("\nfocusMoved=").Append(focusMoved);
 
                 LastResult = result.ToString();
             }
             catch (Exception ex)
             {
-                LastResult = "error: crucible_ui_click threw: " + ex.Message;
-                if (_log != null) _log.LogWarning("crucible_ui_click failed: " + ex.Message);
+                LastResult = "error: crucible_ui_focus threw: " + ex.Message;
+                if (_log != null) _log.LogWarning("crucible_ui_focus failed: " + ex.Message);
             }
         }
 
@@ -351,6 +484,24 @@ namespace Crucible.Plugin
             return true;
         }
 
+        /// <summary>Like <see cref="WalkAllElements"/> but also keeps the live element reference alongside each <see cref="UiElementInfo"/> — needed by crucible_ui_focus, which (unlike crucible_ui_click) must be able to target any element kind, not just Button.</summary>
+        private static bool WalkAllElementsWithRefs(out List<UiElementInfo> infos, out List<object> refs, out string error)
+        {
+            infos = new List<UiElementInfo>();
+            refs = new List<object>();
+            error = null;
+
+            List<object> docRoots;
+            if (!FindDocumentRoots(out docRoots, out error)) return false;
+
+            foreach (object root in docRoots)
+            {
+                object docFocused = GetFocusedElementFor(root);
+                WalkForType(root, null, docFocused, infos, refs);
+            }
+            return true;
+        }
+
         /// <summary>Every live UIDocument's rootVisualElement this frame.</summary>
         private static bool FindDocumentRoots(out List<object> roots, out string error)
         {
@@ -402,12 +553,13 @@ namespace Crucible.Plugin
             foreach (object child in children) WalkElement(child, focusedElement, outList);
         }
 
+        /// <summary><paramref name="matchType"/> null means "match every element" (used by WalkAllElementsWithRefs); otherwise only instances of that type are collected (used by WalkButtons).</summary>
         private static void WalkForType(object ve, Type matchType, object focusedElement, List<UiElementInfo> infos, List<object> refs)
         {
             if (ve == null) return;
 
             Type t = ve.GetType();
-            if (matchType.IsInstanceOfType(ve))
+            if (matchType == null || matchType.IsInstanceOfType(ve))
             {
                 infos.Add(DescribeAsInfo(ve, t, focusedElement));
                 refs.Add(ve);
@@ -509,6 +661,218 @@ namespace Crucible.Plugin
             catch (Exception ex)
             {
                 error = "invoke failed: " + ex.Message;
+                return false;
+            }
+        }
+
+        // ============================================================== click strategy 2: focus + submit
+
+        /// <summary>
+        /// Strategy 2 of crucible_ui_click's ladder: Focus() the target, verify focus actually moved
+        /// by re-reading focusController.focusedElement, then SendEvent a NavigationSubmitEvent to it
+        /// — the same event a controller's "A"/keyboard Enter would produce on a focused button. Only
+        /// attempts the submit if focus is confirmed to have moved onto the target (a submit sent to
+        /// something else would be meaningless and misleading to report as "succeeded").
+        /// </summary>
+        private static bool TryFocusThenSubmit(object target, out string detail)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            object focusedBefore = GetFocusedElementFor(target);
+            sb.Append("focusBefore=").Append(DescribeElement(focusedBefore));
+
+            MethodInfo focusMethod = AccessTools.Method(target.GetType(), "Focus");
+            if (focusMethod == null)
+            {
+                sb.Append(" focus=FAILED(Focus() method not found on ").Append(target.GetType().FullName).Append(")");
+                detail = sb.ToString();
+                return false;
+            }
+
+            try
+            {
+                focusMethod.Invoke(target, null);
+            }
+            catch (TargetInvocationException ex)
+            {
+                sb.Append(" focus=FAILED(Focus() threw: ").Append(ex.InnerException != null ? ex.InnerException.Message : ex.Message).Append(")");
+                detail = sb.ToString();
+                return false;
+            }
+            catch (Exception ex)
+            {
+                sb.Append(" focus=FAILED(Focus() threw: ").Append(ex.Message).Append(")");
+                detail = sb.ToString();
+                return false;
+            }
+
+            object focusedAfter = GetFocusedElementFor(target);
+            sb.Append(" focusAfter=").Append(DescribeElement(focusedAfter));
+            bool focusMoved = focusedAfter != null && ReferenceEquals(focusedAfter, target);
+            sb.Append(" focusMoved=").Append(focusMoved);
+
+            if (!focusMoved)
+            {
+                sb.Append(" -> submit not attempted (focus did not move onto the target)");
+                detail = sb.ToString();
+                return false;
+            }
+
+            object evt;
+            string buildError;
+            if (!BuildSimpleNavigationEvent("UnityEngine.UIElements.NavigationSubmitEvent", out evt, out buildError))
+            {
+                sb.Append(" submit=FAILED(build: ").Append(buildError).Append(")");
+                detail = sb.ToString();
+                return false;
+            }
+
+            string sendError;
+            bool sent = SendEvent(target, evt, out sendError);
+            sb.Append(" submit=").Append(sent ? "SUCCEEDED" : ("FAILED(" + sendError + ")"));
+            detail = sb.ToString();
+            return sent;
+        }
+
+        // ============================================================== click strategy 3: synthetic pointer sequence
+
+        /// <summary>
+        /// Strategy 3 of crucible_ui_click's ladder: build and send a PointerDownEvent, then a
+        /// PointerUpEvent, then a ClickEvent built from that PointerUpEvent — the same sequence a
+        /// real mouse click produces, since UIToolkit's own Clickable manipulator (which Button uses
+        /// internally) listens for pointer-down/up, and ClickEvent is what a &lt;ClickEvent&gt;
+        /// callback registered via RegisterCallback would receive.
+        ///
+        /// PointerDownEvent/PointerUpEvent don't declare their own parameterless GetPooled directly
+        /// (per docs/research/crucible-ui-driving.md §4, this was ASSUMED-not-confirmed at doc time);
+        /// resolved here reflectively via FlattenHierarchy against EventBase&lt;T&gt;'s base
+        /// GetPooled() — the same pattern UiCommands already uses for NavigationSubmitEvent/
+        /// NavigationCancelEvent. If that lookup fails, this strategy is reported as skipped with the
+        /// exact reason rather than silently doing nothing.
+        /// </summary>
+        private static bool TryPointerSequence(object target, out string detail)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            Type downType = AccessTools.TypeByName("UnityEngine.UIElements.PointerDownEvent");
+            Type upType = AccessTools.TypeByName("UnityEngine.UIElements.PointerUpEvent");
+            if (downType == null || upType == null)
+            {
+                detail = "PointerDownEvent/PointerUpEvent types not found";
+                return false;
+            }
+
+            object downEvt;
+            string downBuildError;
+            bool downBuilt = BuildParameterlessEvent(downType, out downEvt, out downBuildError);
+            sb.Append("PointerDownEvent: ").Append(downBuilt ? "built" : ("build FAILED(" + downBuildError + ")"));
+            bool downSent = false;
+            if (downBuilt)
+            {
+                string sendError;
+                downSent = SendEvent(target, downEvt, out sendError);
+                sb.Append(downSent ? ", sent" : (", send FAILED(" + sendError + ")"));
+            }
+
+            object upEvt;
+            string upBuildError;
+            bool upBuilt = BuildParameterlessEvent(upType, out upEvt, out upBuildError);
+            sb.Append(" | PointerUpEvent: ").Append(upBuilt ? "built" : ("build FAILED(" + upBuildError + ")"));
+            bool upSent = false;
+            if (upBuilt)
+            {
+                string sendError;
+                upSent = SendEvent(target, upEvt, out sendError);
+                sb.Append(upSent ? ", sent" : (", send FAILED(" + sendError + ")"));
+            }
+
+            bool clickSent = false;
+            if (upBuilt)
+            {
+                object clickEvt;
+                string clickBuildError;
+                bool clickBuilt = BuildClickEvent(upEvt, out clickEvt, out clickBuildError);
+                sb.Append(" | ClickEvent: ").Append(clickBuilt ? "built" : ("build FAILED(" + clickBuildError + ")"));
+                if (clickBuilt)
+                {
+                    string sendError;
+                    clickSent = SendEvent(target, clickEvt, out sendError);
+                    sb.Append(clickSent ? ", sent" : (", send FAILED(" + sendError + ")"));
+                }
+            }
+            else
+            {
+                sb.Append(" | ClickEvent: skipped (needs a built PointerUpEvent)");
+            }
+
+            detail = sb.ToString();
+            return downSent && upSent && clickSent;
+        }
+
+        /// <summary>
+        /// Resolves and invokes a zero-argument GetPooled() on <paramref name="eventType"/> —
+        /// declared on the shared EventBase&lt;T&gt; base every UIToolkit event ultimately derives
+        /// from, found via FlattenHierarchy the same way BuildSimpleNavigationEvent resolves
+        /// NavigationSubmitEvent/NavigationCancelEvent's inherited GetPooled(EventModifiers).
+        /// </summary>
+        private static bool BuildParameterlessEvent(Type eventType, out object evt, out string error)
+        {
+            evt = null;
+            error = null;
+            try
+            {
+                MethodInfo getPooled = eventType.GetMethod(
+                    "GetPooled",
+                    BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy,
+                    null,
+                    Type.EmptyTypes,
+                    null);
+                if (getPooled == null) { error = eventType.Name + ".GetPooled() (parameterless) not found (checked inherited members)"; return false; }
+
+                evt = getPooled.Invoke(null, null);
+                if (evt == null) { error = "GetPooled() returned null"; return false; }
+                return true;
+            }
+            catch (TargetInvocationException ex)
+            {
+                error = "build threw: " + (ex.InnerException != null ? ex.InnerException.Message : ex.Message);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                error = "build threw: " + ex.Message;
+                return false;
+            }
+        }
+
+        /// <summary>ClickEvent's only confirmed factory: GetPooled(PointerUpEvent, Int32 clickCount) (docs/research/crucible-ui-driving.md §4 Option A).</summary>
+        private static bool BuildClickEvent(object pointerUpEvent, out object evt, out string error)
+        {
+            evt = null;
+            error = null;
+            try
+            {
+                Type clickEventType = AccessTools.TypeByName("UnityEngine.UIElements.ClickEvent");
+                if (clickEventType == null) { error = "UnityEngine.UIElements.ClickEvent type not found"; return false; }
+
+                Type pointerUpType = AccessTools.TypeByName("UnityEngine.UIElements.PointerUpEvent");
+                if (pointerUpType == null) { error = "UnityEngine.UIElements.PointerUpEvent type not found"; return false; }
+
+                MethodInfo getPooled = AccessTools.Method(clickEventType, "GetPooled", new[] { pointerUpType, typeof(int) });
+                if (getPooled == null) { error = "ClickEvent.GetPooled(PointerUpEvent, Int32) not found"; return false; }
+
+                evt = getPooled.Invoke(null, new object[] { pointerUpEvent, 1 });
+                if (evt == null) { error = "GetPooled returned null"; return false; }
+                return true;
+            }
+            catch (TargetInvocationException ex)
+            {
+                error = "build threw: " + (ex.InnerException != null ? ex.InnerException.Message : ex.Message);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                error = "build threw: " + ex.Message;
                 return false;
             }
         }
