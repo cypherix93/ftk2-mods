@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -32,6 +33,21 @@ namespace Crucible.Plugin
     /// of a handler. <b>Registration is deferred to <see cref="TryRegister"/></b>, polled from
     /// <see cref="MainThreadPump.OnTick"/> (wired in CruciblePlugin.PollHotkeys) for the same reason
     /// as UiCommands/ReflectionCommands: the game's command registry does not exist during Awake.
+    ///
+    /// <c>crucible_pad_pair</c> and <c>crucible_input_devices</c> (SPEC S3 pairing) were added after
+    /// discovering, via a static probe of FTK2.dll's own <c>InputController</c>, that FTK2 does NOT
+    /// use Unity's <c>UnityEngine.InputSystem.Users.InputUser</c> pairing system at all: it drives
+    /// exactly one Unity <c>PlayerInput</c> (field <c>InputController._playerInput</c>) and layers
+    /// its OWN local-co-op bookkeeping on top — <c>InputController._joinedPlayers</c>, a
+    /// <c>List&lt;InputPlayer&gt;</c> where each <c>InputPlayer</c> owns a
+    /// <c>List&lt;InputDevice&gt; PlayerDevices</c> and an <c>int AssignmentIndex</c>. A newly added
+    /// device that isn't in any <c>InputPlayer.PlayerDevices</c> list either gets silently ignored or
+    /// auto-joins as a NEW <c>InputPlayer</c> (observed as the party screen's spurious P2) — never
+    /// routed to the existing P1. Pairing therefore means: find the target <c>InputPlayer</c> by
+    /// <c>AssignmentIndex</c>, remove the virtual device from every other player's device list, add it
+    /// to the target's, then best-effort call the private <c>InputController._activateDevice</c> and
+    /// the public <c>ClearNonPrimaryInputPlayers()</c> (only when pairing to the default/primary
+    /// player) to clean up any spurious extra player a prior injection already created.
     /// </summary>
     internal static class GamepadCommands
     {
@@ -43,10 +59,14 @@ namespace Crucible.Plugin
         private static readonly MethodInfo PadHandler = typeof(GamepadCommands).GetMethod("CruciblePad", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo PadHoldHandler = typeof(GamepadCommands).GetMethod("CruciblePadHold", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo PadStickHandler = typeof(GamepadCommands).GetMethod("CruciblePadStick", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo PadPairHandler = typeof(GamepadCommands).GetMethod("CruciblePadPair", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo InputDevicesHandler = typeof(GamepadCommands).GetMethod("CrucibleInputDevices", BindingFlags.Public | BindingFlags.Static);
 
         private static bool _padRegistered;
         private static bool _padHoldRegistered;
         private static bool _padStickRegistered;
+        private static bool _padPairRegistered;
+        private static bool _inputDevicesRegistered;
         private static bool _loggedWaiting;
 
         internal static void Initialize(ManualLogSource log)
@@ -57,15 +77,17 @@ namespace Crucible.Plugin
         /// <summary>Called every tick from MainThreadPump.OnTick until every command is registered.</summary>
         internal static void TryRegister()
         {
-            if (_padRegistered && _padHoldRegistered && _padStickRegistered) return;
+            if (_padRegistered && _padHoldRegistered && _padStickRegistered && _padPairRegistered && _inputDevicesRegistered) return;
 
             if (!_padRegistered) _padRegistered = GameBridge.RegisterCommand("crucible_pad", PadHandler, new List<string> { "button" });
             if (!_padHoldRegistered) _padHoldRegistered = GameBridge.RegisterCommand("crucible_pad_hold", PadHoldHandler, new List<string> { "button", "milliseconds" });
             if (!_padStickRegistered) _padStickRegistered = GameBridge.RegisterCommand("crucible_pad_stick", PadStickHandler, new List<string> { "stick", "direction" });
+            if (!_padPairRegistered) _padPairRegistered = GameBridge.RegisterCommand("crucible_pad_pair", PadPairHandler, new List<string> { "playerIndex" });
+            if (!_inputDevicesRegistered) _inputDevicesRegistered = GameBridge.RegisterCommand("crucible_input_devices", InputDevicesHandler, new List<string>());
 
-            if (_padRegistered && _padHoldRegistered && _padStickRegistered)
+            if (_padRegistered && _padHoldRegistered && _padStickRegistered && _padPairRegistered && _inputDevicesRegistered)
             {
-                if (_log != null) _log.LogInfo("GamepadCommands registered (crucible_pad/crucible_pad_hold/crucible_pad_stick).");
+                if (_log != null) _log.LogInfo("GamepadCommands registered (crucible_pad/crucible_pad_hold/crucible_pad_stick/crucible_pad_pair/crucible_input_devices).");
             }
             else if (!_loggedWaiting)
             {
@@ -216,6 +238,380 @@ namespace Crucible.Plugin
             {
                 LastResult = "error: crucible_pad_stick threw: " + ex.Message;
                 if (_log != null) _log.LogWarning("crucible_pad_stick failed: " + ex.Message);
+            }
+        }
+
+        // ============================================================== crucible_pad_pair
+
+        /// <summary>
+        /// crucible_pad_pair &lt;playerIndex|-&gt; — pairs the virtual gamepad with a specific
+        /// <c>InputController.InputPlayer</c> (FTK2's own player-bookkeeping, not Unity's
+        /// InputUser — see the class doc comment) so injected <c>crucible_pad*</c> presses are
+        /// routed to that player instead of being ignored or silently spawning a new player.
+        /// "-" targets the default/primary player (AssignmentIndex 0); a non-negative integer
+        /// targets an explicit AssignmentIndex.
+        /// </summary>
+        public static void CruciblePadPair(string playerIndex)
+        {
+            LastResult = null;
+            try
+            {
+                int targetAssignmentIndex; bool isDefault; string parseError;
+                if (!PadPairTarget.TryParse(playerIndex, out targetAssignmentIndex, out isDefault, out parseError))
+                {
+                    LastResult = "error: " + parseError;
+                    return;
+                }
+
+                object device; bool created; string deviceError;
+                if (!EnsureGamepad(out device, out created, out deviceError))
+                {
+                    LastResult = "error: " + deviceError;
+                    return;
+                }
+
+                Type inputControllerType = AccessTools.TypeByName("InputController");
+                if (inputControllerType == null) { LastResult = "error: InputController type not found"; return; }
+
+                PropertyInfo instanceProp = AccessTools.Property(inputControllerType, "Instance");
+                object instance = instanceProp == null ? null : instanceProp.GetValue(null, null);
+                if (instance == null) { LastResult = "error: InputController.Instance is null (not reachable yet)"; return; }
+
+                FieldInfo joinedPlayersField = AccessTools.Field(inputControllerType, "_joinedPlayers");
+                if (joinedPlayersField == null) { LastResult = "error: InputController._joinedPlayers field not found -- API shape changed"; return; }
+
+                IList joinedPlayers = joinedPlayersField.GetValue(instance) as IList;
+                if (joinedPlayers == null || joinedPlayers.Count == 0)
+                {
+                    LastResult = "error: InputController._joinedPlayers is empty -- no InputPlayer joined yet";
+                    return;
+                }
+
+                Type inputPlayerType = null;
+                foreach (object p in joinedPlayers) { if (p != null) { inputPlayerType = p.GetType(); break; } }
+                if (inputPlayerType == null) { LastResult = "error: could not determine InputPlayer type from _joinedPlayers"; return; }
+
+                FieldInfo assignmentIndexField = AccessTools.Field(inputPlayerType, "AssignmentIndex");
+                FieldInfo playerDevicesField = AccessTools.Field(inputPlayerType, "PlayerDevices");
+                if (assignmentIndexField == null || playerDevicesField == null)
+                {
+                    LastResult = "error: InputPlayer.AssignmentIndex/PlayerDevices field not found -- API shape changed";
+                    return;
+                }
+
+                object targetPlayer = null;
+                List<int> availableIndexes = new List<int>();
+                foreach (object p in joinedPlayers)
+                {
+                    if (p == null) continue;
+                    int idx = (int)assignmentIndexField.GetValue(p);
+                    availableIndexes.Add(idx);
+                    if (idx == targetAssignmentIndex) targetPlayer = p;
+                }
+                if (targetPlayer == null && isDefault && joinedPlayers.Count > 0)
+                {
+                    // No InputPlayer carries AssignmentIndex 0 (e.g. it's 1-based) -- fall back to
+                    // the first joined player, which by construction is the primary one.
+                    targetPlayer = joinedPlayers[0];
+                }
+                if (targetPlayer == null)
+                {
+                    LastResult = "error: no InputPlayer with AssignmentIndex=" + targetAssignmentIndex
+                        + "; available AssignmentIndex values: [" + string.Join(", ", availableIndexes.ConvertAll(i => i.ToString()).ToArray()) + "]";
+                    return;
+                }
+
+                MethodInfo getPlayerByDeviceMethod = ResolveGetPlayerByDeviceMethod(inputControllerType, device);
+                object beforePlayer = InvokeGetPlayerByDevice(getPlayerByDeviceMethod, instance, device);
+                string beforeDescription = DescribeInputPlayer(beforePlayer, assignmentIndexField);
+
+                int removedFromOthers = 0;
+                foreach (object p in joinedPlayers)
+                {
+                    if (p == null || ReferenceEquals(p, targetPlayer)) continue;
+                    IList otherDevices = playerDevicesField.GetValue(p) as IList;
+                    if (otherDevices == null) continue;
+                    for (int i = otherDevices.Count - 1; i >= 0; i--)
+                    {
+                        if (ReferenceEquals(otherDevices[i], device)) { otherDevices.RemoveAt(i); removedFromOthers++; }
+                    }
+                }
+
+                IList targetDevices = playerDevicesField.GetValue(targetPlayer) as IList;
+                if (targetDevices == null) { LastResult = "error: target InputPlayer.PlayerDevices is not a list"; return; }
+                bool alreadyPresent = false;
+                foreach (object d in targetDevices) { if (ReferenceEquals(d, device)) { alreadyPresent = true; break; } }
+                if (!alreadyPresent) targetDevices.Add(device);
+
+                bool activateAttempted = false, activateSucceeded = false; string activateError = null;
+                MethodInfo activateDeviceMethod = AccessTools.Method(inputControllerType, "_activateDevice", new[] { device.GetType() });
+                if (activateDeviceMethod == null)
+                {
+                    // fall back to the InputDevice base type -- AccessTools.Method needs an exact
+                    // parameter-type match and the device's concrete runtime type may differ from
+                    // the declared parameter type (e.g. a Gamepad subclass).
+                    Type deviceBaseType = AccessTools.TypeByName("UnityEngine.InputSystem.InputDevice");
+                    if (deviceBaseType != null) activateDeviceMethod = AccessTools.Method(inputControllerType, "_activateDevice", new[] { deviceBaseType });
+                }
+                if (activateDeviceMethod != null)
+                {
+                    activateAttempted = true;
+                    try { activateDeviceMethod.Invoke(instance, new object[] { device }); activateSucceeded = true; }
+                    catch (TargetInvocationException ex) { activateError = ex.InnerException != null ? ex.InnerException.Message : ex.Message; }
+                    catch (Exception ex) { activateError = ex.Message; }
+                }
+
+                bool clearedNonPrimary = false; string clearError = null;
+                if (isDefault)
+                {
+                    MethodInfo clearNonPrimaryMethod = AccessTools.Method(inputControllerType, "ClearNonPrimaryInputPlayers");
+                    if (clearNonPrimaryMethod != null)
+                    {
+                        try { clearNonPrimaryMethod.Invoke(instance, null); clearedNonPrimary = true; }
+                        catch (TargetInvocationException ex) { clearError = ex.InnerException != null ? ex.InnerException.Message : ex.Message; }
+                        catch (Exception ex) { clearError = ex.Message; }
+                    }
+                }
+
+                object afterPlayer = InvokeGetPlayerByDevice(getPlayerByDeviceMethod, instance, device);
+                string afterDescription = DescribeInputPlayer(afterPlayer, assignmentIndexField);
+
+                StringBuilder sb = new StringBuilder();
+                sb.Append("device=").Append(DescribeDevice(device, created));
+                sb.Append(" targetAssignmentIndex=").Append(targetAssignmentIndex).Append(isDefault ? " (default)" : "");
+                sb.Append(" removedFromOtherPlayers=").Append(removedFromOthers);
+                sb.Append(" alreadyPaired=").Append(alreadyPresent);
+                sb.Append(" activateDeviceAttempted=").Append(activateAttempted).Append(" succeeded=").Append(activateSucceeded);
+                if (activateError != null) sb.Append(" activateError=").Append(activateError);
+                sb.Append(" clearedNonPrimaryPlayers=").Append(clearedNonPrimary);
+                if (clearError != null) sb.Append(" clearError=").Append(clearError);
+                sb.Append(" playerByDevice_before=").Append(beforeDescription);
+                sb.Append(" playerByDevice_after=").Append(afterDescription);
+                LastResult = sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_pad_pair threw: " + ex.Message;
+                if (_log != null) _log.LogWarning("crucible_pad_pair failed: " + ex.Message);
+            }
+        }
+
+        private static MethodInfo ResolveGetPlayerByDeviceMethod(Type inputControllerType, object device)
+        {
+            if (inputControllerType == null || device == null) return null;
+            MethodInfo m = AccessTools.Method(inputControllerType, "GetPlayerByDevice", new[] { device.GetType() });
+            if (m != null) return m;
+            Type deviceBaseType = AccessTools.TypeByName("UnityEngine.InputSystem.InputDevice");
+            return deviceBaseType == null ? null : AccessTools.Method(inputControllerType, "GetPlayerByDevice", new[] { deviceBaseType });
+        }
+
+        private static object InvokeGetPlayerByDevice(MethodInfo method, object instance, object device)
+        {
+            if (method == null || instance == null) return null;
+            try { return method.Invoke(instance, new object[] { device }); }
+            catch (Exception) { return null; }
+        }
+
+        private static string DescribeInputPlayer(object inputPlayer, FieldInfo assignmentIndexField)
+        {
+            if (inputPlayer == null) return "(none)";
+            try
+            {
+                object idx = assignmentIndexField == null ? null : assignmentIndexField.GetValue(inputPlayer);
+                return "InputPlayer(AssignmentIndex=" + (idx == null ? "?" : idx.ToString()) + ")";
+            }
+            catch (Exception ex)
+            {
+                return "InputPlayer(unreadable: " + ex.Message + ")";
+            }
+        }
+
+        // ============================================================== crucible_input_devices
+
+        /// <summary>
+        /// crucible_input_devices — lists every <c>InputSystem.devices</c> entry (id, layout,
+        /// enabled, added, whether it's the type's ".current" device) alongside FTK2's own
+        /// per-device player assignment (<c>InputController.GetPlayerByDevice</c> /
+        /// <c>IsDeviceActivated</c>), plus a count of Unity's <c>InputUser.all</c> pairings so a
+        /// caller can tell "press rejected" apart from "device not paired" apart from "device
+        /// disabled" -- exactly the diagnostic gap that made the pad-vs-mouse difference opaque.
+        /// </summary>
+        public static void CrucibleInputDevices()
+        {
+            LastResult = null;
+            try
+            {
+                Type inputSystemType = AccessTools.TypeByName("UnityEngine.InputSystem.InputSystem");
+                if (inputSystemType == null) { LastResult = "error: UnityEngine.InputSystem.InputSystem type not found"; return; }
+
+                PropertyInfo devicesProp = AccessTools.Property(inputSystemType, "devices");
+                if (devicesProp == null) { LastResult = "error: InputSystem.devices property not found"; return; }
+
+                object readOnlyArray = devicesProp.GetValue(null, null);
+                object[] devices = ToObjectArray(readOnlyArray);
+                if (devices == null) { LastResult = "error: could not enumerate InputSystem.devices (ReadOnlyArray<T>.ToArray() not found)"; return; }
+
+                Type inputControllerType = AccessTools.TypeByName("InputController");
+                object controllerInstance = null;
+                MethodInfo isDeviceActivatedMethod = null;
+                MethodInfo getPlayerByDeviceMethod = null;
+                FieldInfo assignmentIndexField = null;
+                if (inputControllerType != null)
+                {
+                    PropertyInfo instanceProp = AccessTools.Property(inputControllerType, "Instance");
+                    controllerInstance = instanceProp == null ? null : instanceProp.GetValue(null, null);
+                    Type deviceBaseType = AccessTools.TypeByName("UnityEngine.InputSystem.InputDevice");
+                    if (deviceBaseType != null)
+                    {
+                        isDeviceActivatedMethod = AccessTools.Method(inputControllerType, "IsDeviceActivated", new[] { deviceBaseType, typeof(bool) });
+                        getPlayerByDeviceMethod = AccessTools.Method(inputControllerType, "GetPlayerByDevice", new[] { deviceBaseType });
+                    }
+
+                    if (controllerInstance != null)
+                    {
+                        object joinedPlayersObj = null;
+                        FieldInfo joinedPlayersField = AccessTools.Field(inputControllerType, "_joinedPlayers");
+                        if (joinedPlayersField != null) joinedPlayersObj = joinedPlayersField.GetValue(controllerInstance);
+                        IList joinedPlayers = joinedPlayersObj as IList;
+                        if (joinedPlayers != null)
+                        {
+                            foreach (object p in joinedPlayers) { if (p != null) { assignmentIndexField = AccessTools.Field(p.GetType(), "AssignmentIndex"); break; } }
+                        }
+                    }
+                }
+
+                StringBuilder sb = new StringBuilder();
+                sb.Append("count=").Append(devices.Length);
+                for (int i = 0; i < devices.Length; i++)
+                {
+                    object d = devices[i];
+                    sb.Append(" | ").Append(DescribeDeviceForList(d, controllerInstance, isDeviceActivatedMethod, getPlayerByDeviceMethod, assignmentIndexField));
+                }
+
+                sb.Append(" || inputUsers=").Append(DescribeInputUsers());
+                LastResult = sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_input_devices threw: " + ex.Message;
+                if (_log != null) _log.LogWarning("crucible_input_devices failed: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Reflectively calls ReadOnlyArray&lt;T&gt;.ToArray() and boxes the result into an
+        /// object[] via <see cref="Array.GetValue(int)"/> rather than a direct cast: TValue can be
+        /// a reference type (InputDevice -- array covariance would work) or a value type (InputUser
+        /// is a struct -- a direct `(object[])` cast on a value-type array throws InvalidCastException),
+        /// and this handles both uniformly.
+        /// </summary>
+        private static object[] ToObjectArray(object readOnlyArray)
+        {
+            if (readOnlyArray == null) return new object[0];
+            MethodInfo toArray = AccessTools.Method(readOnlyArray.GetType(), "ToArray");
+            if (toArray == null) return null;
+            try
+            {
+                object arrObj = toArray.Invoke(readOnlyArray, null);
+                Array arr = arrObj as Array;
+                if (arr == null) return null;
+                object[] result = new object[arr.Length];
+                for (int i = 0; i < arr.Length; i++) result[i] = arr.GetValue(i);
+                return result;
+            }
+            catch (Exception) { return null; }
+        }
+
+        private static string DescribeDeviceForList(object device, object controllerInstance, MethodInfo isDeviceActivatedMethod, MethodInfo getPlayerByDeviceMethod, FieldInfo assignmentIndexField)
+        {
+            if (device == null) return "(null)";
+
+            string name = ReadStringProp(device, "name");
+            string layout = ReadStringProp(device, "layout");
+            object deviceId = ReadProp(device, "deviceId");
+            object enabled = ReadProp(device, "enabled");
+            object added = ReadProp(device, "added");
+            bool isCurrent = IsCurrentDevice(device);
+
+            string playerDescription = "(InputController unavailable)";
+            if (controllerInstance != null && getPlayerByDeviceMethod != null)
+            {
+                object player = InvokeGetPlayerByDevice(getPlayerByDeviceMethod, controllerInstance, device);
+                playerDescription = DescribeInputPlayer(player, assignmentIndexField);
+            }
+
+            string activatedNav = "(unavailable)", activatedNonNav = "(unavailable)";
+            if (controllerInstance != null && isDeviceActivatedMethod != null)
+            {
+                try { activatedNav = isDeviceActivatedMethod.Invoke(controllerInstance, new object[] { device, true }).ToString(); }
+                catch (Exception ex) { activatedNav = "(error: " + ex.Message + ")"; }
+                try { activatedNonNav = isDeviceActivatedMethod.Invoke(controllerInstance, new object[] { device, false }).ToString(); }
+                catch (Exception ex) { activatedNonNav = "(error: " + ex.Message + ")"; }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append(device.GetType().Name)
+                .Append(" id=").Append(deviceId == null ? "?" : deviceId.ToString())
+                .Append(" name='").Append(name ?? "(null)").Append("'")
+                .Append(" layout='").Append(layout ?? "(null)").Append("'")
+                .Append(" enabled=").Append(enabled == null ? "?" : enabled.ToString())
+                .Append(" added=").Append(added == null ? "?" : added.ToString())
+                .Append(" current=").Append(isCurrent)
+                .Append(" activated[nav]=").Append(activatedNav)
+                .Append(" activated[nonNav]=").Append(activatedNonNav)
+                .Append(" player=").Append(playerDescription);
+            return sb.ToString();
+        }
+
+        /// <summary>True if <c>device</c>'s own runtime type has a public static "current" property
+        /// (e.g. Gamepad.current, Mouse.current, Keyboard.current) whose value is this device.</summary>
+        private static bool IsCurrentDevice(object device)
+        {
+            if (device == null) return false;
+            try
+            {
+                PropertyInfo currentProp = AccessTools.Property(device.GetType(), "current");
+                if (currentProp == null) return false;
+                object current = currentProp.GetValue(null, null);
+                return ReferenceEquals(current, device);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>Renders Unity's InputUser.all -- expected to settle whether FTK2 uses InputUser
+        /// pairing at all (the doc comment's hypothesis is that it does not).</summary>
+        private static string DescribeInputUsers()
+        {
+            try
+            {
+                Type inputUserType = AccessTools.TypeByName("UnityEngine.InputSystem.Users.InputUser");
+                if (inputUserType == null) return "(InputUser type not found)";
+
+                PropertyInfo allProp = AccessTools.Property(inputUserType, "all");
+                if (allProp == null) return "(InputUser.all property not found)";
+
+                object allValue = allProp.GetValue(null, null);
+                object[] users = ToObjectArray(allValue);
+                if (users == null) return "(InputUser.all not enumerable)";
+
+                StringBuilder sb = new StringBuilder();
+                sb.Append("count=").Append(users.Length);
+                for (int i = 0; i < users.Length; i++)
+                {
+                    object user = users[i];
+                    PropertyInfo pairedDevicesProp = AccessTools.Property(inputUserType, "pairedDevices");
+                    object pairedDevicesValue = pairedDevicesProp == null ? null : pairedDevicesProp.GetValue(user, null);
+                    object[] pairedDevices = pairedDevicesValue == null ? new object[0] : ToObjectArray(pairedDevicesValue);
+                    sb.Append(" [user").Append(i).Append(" pairedDeviceCount=").Append(pairedDevices == null ? 0 : pairedDevices.Length).Append("]");
+                }
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "(error: " + ex.Message + ")";
             }
         }
 

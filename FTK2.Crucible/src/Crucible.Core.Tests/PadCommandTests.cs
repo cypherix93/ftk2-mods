@@ -183,6 +183,53 @@ namespace FTK2Mods.Crucible.Tests
                 TestHarness.False(PadHoldDuration.TryParse("", out ms, out clamped, out e), "empty");
                 TestHarness.False(PadHoldDuration.TryParse(null, out ms, out clamped, out e), "null");
             });
+
+            TestHarness.Section("PadPairTarget.TryParse");
+
+            TestHarness.Run("'-' means the default/primary player, assignment index 0", delegate
+            {
+                int idx; bool isDefault; string e;
+                TestHarness.True(PadPairTarget.TryParse("-", out idx, out isDefault, out e), "-: " + e);
+                TestHarness.Equal(0, idx, "assignment index 0");
+                TestHarness.True(isDefault, "isDefault flag set");
+            });
+
+            TestHarness.Run("parses a non-negative integer as an explicit assignment index", delegate
+            {
+                int idx; bool isDefault; string e;
+                TestHarness.True(PadPairTarget.TryParse("0", out idx, out isDefault, out e), "0: " + e);
+                TestHarness.Equal(0, idx, "index 0");
+                TestHarness.False(isDefault, "explicit 0 is not the default token");
+
+                TestHarness.True(PadPairTarget.TryParse("1", out idx, out isDefault, out e), "1: " + e);
+                TestHarness.Equal(1, idx, "index 1");
+                TestHarness.False(isDefault, "isDefault false for explicit index");
+
+                TestHarness.True(PadPairTarget.TryParse(" 3 ", out idx, out isDefault, out e), "' 3 ': " + e);
+                TestHarness.Equal(3, idx, "trims whitespace");
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: rejects a negative index rather than defaulting", delegate
+            {
+                int idx; bool isDefault; string e;
+                TestHarness.False(PadPairTarget.TryParse("-1", out idx, out isDefault, out e), "should reject");
+                TestHarness.True(e != null && e.Length > 0, "error message present");
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: rejects a non-numeric, non-'-' index", delegate
+            {
+                int idx; bool isDefault; string e;
+                TestHarness.False(PadPairTarget.TryParse("abc", out idx, out isDefault, out e), "should reject");
+                TestHarness.True(e != null && e.Length > 0, "error message present");
+            });
+
+            TestHarness.Run("rejects empty/null/whitespace-only index", delegate
+            {
+                int idx; bool isDefault; string e;
+                TestHarness.False(PadPairTarget.TryParse("", out idx, out isDefault, out e), "empty");
+                TestHarness.False(PadPairTarget.TryParse(null, out idx, out isDefault, out e), "null");
+                TestHarness.False(PadPairTarget.TryParse("   ", out idx, out isDefault, out e), "whitespace");
+            });
         }
     }
 }
