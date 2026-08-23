@@ -46,9 +46,10 @@ namespace FTK2Mods.Crucible
                 foreach (UiElementInfo candidate in candidates)
                 {
                     if (candidate == null) continue;
-                    // Invisible elements are never selectable, even on a substring match — they are
-                    // not on screen, so "clicking" one would be a silent no-op that looks like success.
-                    if (!candidate.Visible) continue;
+                    // Off-screen elements are never selectable, even on a substring match — a click
+                    // on one would be a silent no-op that looks like success. Gates on the full
+                    // OnScreenTest decision (SPEC S3), not just the element's own local .visible.
+                    if (!candidate.OnScreen) continue;
 
                     result.AllVisible.Add(candidate);
                     if (UiTreeRenderer.Matches(candidate, selector)) matches.Add(candidate);

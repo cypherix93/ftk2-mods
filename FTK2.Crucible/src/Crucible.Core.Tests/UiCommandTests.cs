@@ -9,6 +9,17 @@ namespace FTK2Mods.Crucible.Tests
             return new UiElementInfo(type, name, text, visible, enabled, focused);
         }
 
+        private static UiElementInfo ElOnScreen(string type, string name, string text, bool onScreen, OnScreenTest.SkipReason reason, string docName = null)
+        {
+            return new UiElementInfo(type, name, text, true, true, false, onScreen, reason, docName);
+        }
+
+        /// <summary>A fully on-screen ancestor chain frame: visible, not display:none, opaque.</summary>
+        private static OnScreenTest.AncestorFrame Frame(bool? visible = true, bool? displayNone = false, double? opacity = 1.0)
+        {
+            return new OnScreenTest.AncestorFrame(visible, displayNone, opacity);
+        }
+
         internal static void RunAll()
         {
             TestHarness.Section("UiDirection.TryParse");
@@ -381,6 +392,231 @@ namespace FTK2Mods.Crucible.Tests
                 string e;
                 UiSelectorMatcher.Result r = UiSelectorMatcher.Find(null, "close", out e);
                 TestHarness.False(r.Found, "should not find");
+            });
+
+            TestHarness.Section("OnScreenTest.IsOnScreen");
+
+            TestHarness.Run("POSITIVE CONTROL: fully visible element with a fully visible chain IS on screen", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame> { Frame(), Frame(), Frame() };
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(true, chain, 100.0, 40.0, out reason);
+                TestHarness.True(onScreen, "should be on screen: " + reason);
+                TestHarness.True(reason == OnScreenTest.SkipReason.None, "reason is None when on screen");
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: a hidden ancestor makes a visible child NOT on screen", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame>
+                {
+                    Frame(visible: true),              // the element itself
+                    Frame(visible: false),              // a hidden ancestor
+                    Frame(visible: true),
+                };
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(true, chain, 100.0, 40.0, out reason);
+                TestHarness.False(onScreen, "should not be on screen");
+                TestHarness.True(reason == OnScreenTest.SkipReason.HiddenAncestor, "reason should be HiddenAncestor, was " + reason);
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: display:none on an ancestor makes a visible child NOT on screen", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame>
+                {
+                    Frame(),
+                    Frame(displayNone: true),
+                    Frame(),
+                };
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(true, chain, 100.0, 40.0, out reason);
+                TestHarness.False(onScreen, "should not be on screen");
+                TestHarness.True(reason == OnScreenTest.SkipReason.DisplayNone, "reason should be DisplayNone, was " + reason);
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: zero opacity on an ancestor makes a visible child NOT on screen", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame>
+                {
+                    Frame(),
+                    Frame(opacity: 0.0),
+                    Frame(),
+                };
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(true, chain, 100.0, 40.0, out reason);
+                TestHarness.False(onScreen, "should not be on screen");
+                TestHarness.True(reason == OnScreenTest.SkipReason.ZeroOpacity, "reason should be ZeroOpacity, was " + reason);
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: a zero-size rect makes an otherwise-visible element NOT on screen", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame> { Frame(), Frame() };
+                OnScreenTest.SkipReason reason;
+                bool onScreenZeroWidth = OnScreenTest.IsOnScreen(true, chain, 0.0, 40.0, out reason);
+                TestHarness.False(onScreenZeroWidth, "zero width should not be on screen");
+                TestHarness.True(reason == OnScreenTest.SkipReason.ZeroSize, "reason should be ZeroSize (width), was " + reason);
+
+                bool onScreenZeroHeight = OnScreenTest.IsOnScreen(true, chain, 100.0, 0.0, out reason);
+                TestHarness.False(onScreenZeroHeight, "zero height should not be on screen");
+                TestHarness.True(reason == OnScreenTest.SkipReason.ZeroSize, "reason should be ZeroSize (height), was " + reason);
+            });
+
+            TestHarness.Run("NEGATIVE CONTROL: an inactive document excludes everything under it", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame> { Frame(), Frame() };
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(false, chain, 100.0, 40.0, out reason);
+                TestHarness.False(onScreen, "should not be on screen");
+                TestHarness.True(reason == OnScreenTest.SkipReason.InactiveDocument, "reason should be InactiveDocument, was " + reason);
+            });
+
+            TestHarness.Run("fail-closed: an unresolved document active state is NOT on screen (not defaulted to true)", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame> { Frame() };
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(null, chain, 100.0, 40.0, out reason);
+                TestHarness.False(onScreen, "unresolved document active state must fail closed");
+                TestHarness.True(reason == OnScreenTest.SkipReason.Unresolved, "reason should be Unresolved, was " + reason);
+            });
+
+            TestHarness.Run("fail-closed: an unresolved visible flag anywhere in the chain is NOT on screen", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame>
+                {
+                    Frame(),
+                    new OnScreenTest.AncestorFrame(null, false, 1.0),
+                };
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(true, chain, 100.0, 40.0, out reason);
+                TestHarness.False(onScreen, "unresolved visible must fail closed");
+                TestHarness.True(reason == OnScreenTest.SkipReason.Unresolved, "reason should be Unresolved, was " + reason);
+            });
+
+            TestHarness.Run("fail-closed: an unresolved display:none flag anywhere in the chain is NOT on screen", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame>
+                {
+                    Frame(),
+                    new OnScreenTest.AncestorFrame(true, null, 1.0),
+                };
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(true, chain, 100.0, 40.0, out reason);
+                TestHarness.False(onScreen, "unresolved display:none must fail closed");
+                TestHarness.True(reason == OnScreenTest.SkipReason.Unresolved, "reason should be Unresolved, was " + reason);
+            });
+
+            TestHarness.Run("fail-closed: an unresolved opacity anywhere in the chain is NOT on screen", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame>
+                {
+                    Frame(),
+                    new OnScreenTest.AncestorFrame(true, false, null),
+                };
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(true, chain, 100.0, 40.0, out reason);
+                TestHarness.False(onScreen, "unresolved opacity must fail closed");
+                TestHarness.True(reason == OnScreenTest.SkipReason.Unresolved, "reason should be Unresolved, was " + reason);
+            });
+
+            TestHarness.Run("fail-closed: an unresolved worldBound size is NOT on screen", delegate
+            {
+                List<OnScreenTest.AncestorFrame> chain = new List<OnScreenTest.AncestorFrame> { Frame() };
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(true, chain, null, 40.0, out reason);
+                TestHarness.False(onScreen, "unresolved width must fail closed");
+                TestHarness.True(reason == OnScreenTest.SkipReason.Unresolved, "reason should be Unresolved, was " + reason);
+            });
+
+            TestHarness.Run("fail-closed: an empty ancestor chain is NOT on screen (not silently accepted)", delegate
+            {
+                OnScreenTest.SkipReason reason;
+                bool onScreen = OnScreenTest.IsOnScreen(true, new List<OnScreenTest.AncestorFrame>(), 100.0, 40.0, out reason);
+                TestHarness.False(onScreen, "empty chain must fail closed");
+                TestHarness.True(reason == OnScreenTest.SkipReason.Unresolved, "reason should be Unresolved, was " + reason);
+            });
+
+            TestHarness.Section("OnScreenTest.SkipReasonCounts");
+
+            TestHarness.Run("tallies each reason into its own bucket", delegate
+            {
+                OnScreenTest.SkipReasonCounts counts = new OnScreenTest.SkipReasonCounts();
+                counts.Add(OnScreenTest.SkipReason.InactiveDocument);
+                counts.Add(OnScreenTest.SkipReason.InactiveDocument);
+                counts.Add(OnScreenTest.SkipReason.HiddenAncestor);
+                counts.Add(OnScreenTest.SkipReason.DisplayNone);
+                counts.Add(OnScreenTest.SkipReason.ZeroOpacity);
+                counts.Add(OnScreenTest.SkipReason.ZeroSize);
+                counts.Add(OnScreenTest.SkipReason.Unresolved);
+                counts.Add(OnScreenTest.SkipReason.None); // must not be tallied anywhere
+
+                TestHarness.Equal(2, counts.InactiveDocument, "inactiveDocument count");
+                TestHarness.Equal(1, counts.HiddenAncestor, "hiddenAncestor count");
+                TestHarness.Equal(1, counts.DisplayNone, "displayNone count");
+                TestHarness.Equal(1, counts.ZeroOpacity, "zeroOpacity count");
+                TestHarness.Equal(1, counts.ZeroSize, "zeroSize count");
+                TestHarness.Equal(1, counts.Unresolved, "unresolved count");
+            });
+
+            TestHarness.Section("UiTreeRenderer.Render gates on OnScreen, not local Visible/Enabled");
+
+            TestHarness.Run("an element that is locally visible but off-screen (hidden ancestor) is skipped and counted by reason", delegate
+            {
+                List<UiElementInfo> elements = new List<UiElementInfo>
+                {
+                    ElOnScreen("Button", "OnScreenBtn", null, true, OnScreenTest.SkipReason.None),
+                    ElOnScreen("Button", "HiddenAncestorBtn", null, false, OnScreenTest.SkipReason.HiddenAncestor),
+                    ElOnScreen("Button", "DisplayNoneBtn", null, false, OnScreenTest.SkipReason.DisplayNone),
+                    ElOnScreen("Button", "ZeroOpacityBtn", null, false, OnScreenTest.SkipReason.ZeroOpacity),
+                    ElOnScreen("Button", "ZeroSizeBtn", null, false, OnScreenTest.SkipReason.ZeroSize),
+                };
+                int matched, skipped; bool truncated; OnScreenTest.SkipReasonCounts counts;
+                string rendered = UiTreeRenderer.Render(elements, "-", "-", 200, out matched, out skipped, out truncated, out counts);
+
+                TestHarness.Equal(1, matched, "only the on-screen button matched");
+                TestHarness.Equal(4, skipped, "four off-screen buttons skipped");
+                TestHarness.True(rendered.IndexOf("HiddenAncestorBtn") < 0, "off-screen HiddenAncestorBtn must not appear");
+                TestHarness.True(rendered.IndexOf("DisplayNoneBtn") < 0, "off-screen DisplayNoneBtn must not appear");
+                TestHarness.True(rendered.IndexOf("ZeroOpacityBtn") < 0, "off-screen ZeroOpacityBtn must not appear");
+                TestHarness.True(rendered.IndexOf("ZeroSizeBtn") < 0, "off-screen ZeroSizeBtn must not appear");
+                TestHarness.True(rendered.IndexOf("OnScreenBtn") >= 0, "on-screen button must appear");
+
+                TestHarness.Equal(1, counts.HiddenAncestor, "hiddenAncestor breakdown");
+                TestHarness.Equal(1, counts.DisplayNone, "displayNone breakdown");
+                TestHarness.Equal(1, counts.ZeroOpacity, "zeroOpacity breakdown");
+                TestHarness.Equal(1, counts.ZeroSize, "zeroSize breakdown");
+            });
+
+            TestHarness.Run("FormatLine includes the owning document's name", delegate
+            {
+                UiElementInfo e = ElOnScreen("Button", "back-btn", "Back", true, OnScreenTest.SkipReason.None, "LobbyPanel");
+                string line = UiTreeRenderer.FormatLine(e);
+                TestHarness.True(line.IndexOf("LobbyPanel") >= 0, "rendered line should mention the owning document name: " + line);
+            });
+
+            TestHarness.Section("UiSelectorMatcher.Find gates on OnScreen, not local Visible");
+
+            TestHarness.Run("NEGATIVE CONTROL: a locally-visible element behind a display:none ancestor is never selected", delegate
+            {
+                List<UiElementInfo> candidates = new List<UiElementInfo>
+                {
+                    ElOnScreen("Button", "back-btn", "Back", false, OnScreenTest.SkipReason.DisplayNone, "HiddenPanel"),
+                };
+                string e;
+                UiSelectorMatcher.Result r = UiSelectorMatcher.Find(candidates, "back", out e);
+                TestHarness.False(r.Found, "off-screen match must not count as found");
+                TestHarness.Equal(0, r.AllVisible.Count, "off-screen element is not even listed as a candidate");
+            });
+
+            TestHarness.Run("an off-screen element is skipped in favor of a later truly on-screen match", delegate
+            {
+                List<UiElementInfo> candidates = new List<UiElementInfo>
+                {
+                    ElOnScreen("Button", "back-btn", "Back", false, OnScreenTest.SkipReason.InactiveDocument, "CombatHud"),
+                    ElOnScreen("Button", "back-btn", "Back", true, OnScreenTest.SkipReason.None, "LobbyPanel"),
+                };
+                string e;
+                UiSelectorMatcher.Result r = UiSelectorMatcher.Find(candidates, "back", out e);
+                TestHarness.True(r.Found, "should find the on-screen one");
+                TestHarness.Equal("LobbyPanel", r.Match.DocumentName, "matches the on-screen LobbyPanel back-btn, not the off-screen CombatHud one");
             });
         }
     }

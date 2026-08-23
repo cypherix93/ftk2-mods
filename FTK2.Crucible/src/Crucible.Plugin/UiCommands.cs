@@ -100,8 +100,9 @@ namespace Crucible.Plugin
             try
             {
                 List<UiElementInfo> elements;
+                int inactiveDocumentSkipCount;
                 string error;
-                if (!WalkAllElements(out elements, out error))
+                if (!WalkAllElements(out elements, out inactiveDocumentSkipCount, out error))
                 {
                     LastResult = "error: " + error;
                     return;
@@ -109,13 +110,20 @@ namespace Crucible.Plugin
 
                 int matched, skipped;
                 bool truncated;
-                string rendered = UiTreeRenderer.Render(elements, filter, kinds, UiTreeRenderer.DefaultCap, out matched, out skipped, out truncated);
+                OnScreenTest.SkipReasonCounts skipReasons;
+                string rendered = UiTreeRenderer.Render(elements, filter, kinds, UiTreeRenderer.DefaultCap, out matched, out skipped, out truncated, out skipReasons);
 
                 StringBuilder sb = new StringBuilder();
                 sb.Append(rendered);
                 sb.Append("\n(matchedVisible=").Append(matched)
-                    .Append(" skippedInvisible=").Append(skipped)
+                    .Append(" skippedInvisible=").Append(skipped + inactiveDocumentSkipCount)
                     .Append(" truncated=").Append(truncated).Append(")");
+                sb.Append("\nskipReasons: inactiveDocument=").Append(inactiveDocumentSkipCount + skipReasons.InactiveDocument)
+                    .Append(" hiddenAncestor=").Append(skipReasons.HiddenAncestor)
+                    .Append(" displayNone=").Append(skipReasons.DisplayNone)
+                    .Append(" zeroOpacity=").Append(skipReasons.ZeroOpacity)
+                    .Append(" zeroSize=").Append(skipReasons.ZeroSize)
+                    .Append(" unresolved=").Append(skipReasons.Unresolved);
                 LastResult = sb.ToString();
             }
             catch (Exception ex)
@@ -447,65 +455,88 @@ namespace Crucible.Plugin
         }
 
         // ============================================================== reflective tree walk
+        //
+        // SPEC S3 UI true-visibility: an element only counts as on screen if its owning UIDocument
+        // is active+enabled AND the element and every ancestor up to the root are visible, not
+        // display:none, and non-zero opacity AND the element's own worldBound has nonzero size.
+        // VisualElement.visible/enabledInHierarchy are LOCAL properties that miss all of that — see
+        // OnScreenTest.IsOnScreen (Crucible.Core) for the pure decision this feeds.
 
-        private static bool WalkAllElements(out List<UiElementInfo> elements, out string error)
+        /// <summary>One live UIDocument this frame: its root element, resolved active state (null = could not resolve, fails closed), and GameObject name.</summary>
+        private struct DocRoot
         {
-            elements = new List<UiElementInfo>();
-            error = null;
+            public readonly object Root;
+            public readonly bool? Active;
+            public readonly string Name;
+            public DocRoot(object root, bool? active, string name) { Root = root; Active = active; Name = name; }
+        }
 
-            List<object> docRoots;
-            if (!FindDocumentRoots(out docRoots, out error)) return false;
-
-            foreach (object root in docRoots)
-            {
-                object docFocused = GetFocusedElementFor(root);
-                WalkElement(root, docFocused, elements);
-            }
-            return true;
+        private static bool WalkAllElements(out List<UiElementInfo> elements, out int inactiveDocumentSkipCount, out string error)
+        {
+            List<object> refsUnused;
+            return WalkAllDocuments(null, false, out elements, out refsUnused, out inactiveDocumentSkipCount, out error);
         }
 
         private static bool WalkButtons(out List<UiElementInfo> infos, out List<object> refs, out string error)
         {
-            infos = new List<UiElementInfo>();
-            refs = new List<object>();
-            error = null;
-
             Type buttonType = AccessTools.TypeByName("UnityEngine.UIElements.Button");
-            if (buttonType == null) { error = "UnityEngine.UIElements.Button type not found"; return false; }
-
-            List<object> docRoots;
-            if (!FindDocumentRoots(out docRoots, out error)) return false;
-
-            foreach (object root in docRoots)
+            if (buttonType == null)
             {
-                object docFocused = GetFocusedElementFor(root);
-                WalkForType(root, buttonType, docFocused, infos, refs);
+                infos = new List<UiElementInfo>();
+                refs = new List<object>();
+                error = "UnityEngine.UIElements.Button type not found";
+                return false;
             }
-            return true;
+
+            int inactiveDocumentSkipCount;
+            return WalkAllDocuments(buttonType, true, out infos, out refs, out inactiveDocumentSkipCount, out error);
         }
 
         /// <summary>Like <see cref="WalkAllElements"/> but also keeps the live element reference alongside each <see cref="UiElementInfo"/> — needed by crucible_ui_focus, which (unlike crucible_ui_click) must be able to target any element kind, not just Button.</summary>
         private static bool WalkAllElementsWithRefs(out List<UiElementInfo> infos, out List<object> refs, out string error)
         {
+            int inactiveDocumentSkipCount;
+            return WalkAllDocuments(null, true, out infos, out refs, out inactiveDocumentSkipCount, out error);
+        }
+
+        /// <summary>
+        /// Shared walk driving every crucible_ui_* command: resolves every live UIDocument, checks
+        /// each document's active+enabled state ONCE, and skips a whole inactive document's subtree
+        /// wholesale (just a cheap Children()-only count, no per-node style/opacity reflection) —
+        /// this is where the vast majority of a busy screen's off-screen elements come from
+        /// (combat HUD, shop, quest log, inventory panels kept alive but inactive behind the current
+        /// screen). Active documents are walked fully, computing each element's on-screen decision
+        /// against its whole ancestor chain.
+        /// </summary>
+        private static bool WalkAllDocuments(Type matchType, bool collectRefs, out List<UiElementInfo> infos, out List<object> refs, out int inactiveDocumentSkipCount, out string error)
+        {
             infos = new List<UiElementInfo>();
-            refs = new List<object>();
+            refs = collectRefs ? new List<object>() : null;
+            inactiveDocumentSkipCount = 0;
             error = null;
 
-            List<object> docRoots;
-            if (!FindDocumentRoots(out docRoots, out error)) return false;
+            List<DocRoot> docs;
+            if (!FindDocumentRootsWithMeta(out docs, out error)) return false;
 
-            foreach (object root in docRoots)
+            foreach (DocRoot doc in docs)
             {
-                object docFocused = GetFocusedElementFor(root);
-                WalkForType(root, null, docFocused, infos, refs);
+                if (doc.Active == false)
+                {
+                    inactiveDocumentSkipCount += CountSubtree(doc.Root);
+                    continue;
+                }
+
+                object docFocused = GetFocusedElementFor(doc.Root);
+                List<OnScreenTest.AncestorFrame> ancestorStack = new List<OnScreenTest.AncestorFrame>();
+                WalkElementFull(doc.Root, matchType, docFocused, doc.Active, doc.Name, ancestorStack, infos, refs);
             }
             return true;
         }
 
-        /// <summary>Every live UIDocument's rootVisualElement this frame.</summary>
-        private static bool FindDocumentRoots(out List<object> roots, out string error)
+        /// <summary>Every live UIDocument's rootVisualElement, active state, and name this frame.</summary>
+        private static bool FindDocumentRootsWithMeta(out List<DocRoot> docs, out string error)
         {
-            roots = new List<object>();
+            docs = new List<DocRoot>();
             error = null;
 
             Type unityObjectType = AccessTools.TypeByName("UnityEngine.Object");
@@ -523,61 +554,203 @@ namespace Crucible.Plugin
             try { docsObj = findObjectsOfType.Invoke(null, new object[] { uiDocumentType }); }
             catch (Exception ex) { error = "FindObjectsOfType threw: " + ex.Message; return false; }
 
-            IEnumerable docs = docsObj as IEnumerable;
-            if (docs == null) { error = "FindObjectsOfType returned no enumerable result"; return false; }
+            IEnumerable rawDocs = docsObj as IEnumerable;
+            if (rawDocs == null) { error = "FindObjectsOfType returned no enumerable result"; return false; }
 
             PropertyInfo rootProp = AccessTools.Property(uiDocumentType, "rootVisualElement");
             if (rootProp == null) { error = "UIDocument.rootVisualElement not found"; return false; }
 
-            foreach (object doc in docs)
+            foreach (object doc in rawDocs)
             {
                 if (doc == null) continue;
                 object root;
                 try { root = rootProp.GetValue(doc, null); }
                 catch (Exception) { continue; }
-                if (root != null) roots.Add(root);
+                if (root == null) continue;
+
+                bool? active = ReadDocumentActive(doc);
+                string name = ReadDocumentName(doc);
+                docs.Add(new DocRoot(root, active, name));
             }
 
             return true;
         }
 
-        private static void WalkElement(object ve, object focusedElement, List<UiElementInfo> outList)
+        /// <summary>UIDocument.enabled (Behaviour) AND its GameObject's activeInHierarchy. Null (unresolved) fails closed via OnScreenTest, never defaults to true.</summary>
+        private static bool? ReadDocumentActive(object doc)
         {
-            if (ve == null) return;
+            bool? behaviourEnabled = ReadBoolPropNullable(doc, "enabled");
+            if (behaviourEnabled == null) return null;
+            if (behaviourEnabled == false) return false;
 
-            Type t = ve.GetType();
-            outList.Add(DescribeAsInfo(ve, t, focusedElement));
+            object gameObject = ReadProp(doc, "gameObject");
+            if (gameObject == null) return null;
 
-            IEnumerable children = GetChildren(ve, t);
-            if (children == null) return;
-            foreach (object child in children) WalkElement(child, focusedElement, outList);
+            bool? activeInHierarchy = ReadBoolPropNullable(gameObject, "activeInHierarchy");
+            if (activeInHierarchy == null) return null;
+
+            return activeInHierarchy == true;
         }
 
-        /// <summary><paramref name="matchType"/> null means "match every element" (used by WalkAllElementsWithRefs); otherwise only instances of that type are collected (used by WalkButtons).</summary>
-        private static void WalkForType(object ve, Type matchType, object focusedElement, List<UiElementInfo> infos, List<object> refs)
+        private static string ReadDocumentName(object doc)
+        {
+            object gameObject = ReadProp(doc, "gameObject");
+            return gameObject == null ? null : ReadStringProp(gameObject, "name");
+        }
+
+        /// <summary>Cheap count of a subtree via Children() only — used to tally an inactive document's skipped elements without doing full per-node style/opacity reflection.</summary>
+        private static int CountSubtree(object ve)
+        {
+            if (ve == null) return 0;
+            int count = 1;
+            Type t = ve.GetType();
+            IEnumerable children = GetChildren(ve, t);
+            if (children != null)
+            {
+                foreach (object child in children) count += CountSubtree(child);
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// <paramref name="matchType"/> null means "match every element"; otherwise only instances
+        /// of that type are collected. <paramref name="ancestorStack"/> accumulates one
+        /// <see cref="OnScreenTest.AncestorFrame"/> per level as recursion descends (element itself
+        /// included) so every node's on-screen decision is checked against its FULL ancestor chain,
+        /// not just its own local visible/display/opacity.
+        /// </summary>
+        private static void WalkElementFull(object ve, Type matchType, object focusedElement, bool? docActive, string docName,
+            List<OnScreenTest.AncestorFrame> ancestorStack, List<UiElementInfo> infos, List<object> refs)
         {
             if (ve == null) return;
 
             Type t = ve.GetType();
+            ancestorStack.Add(BuildAncestorFrame(ve));
+
+            double? width, height;
+            TryGetWorldBoundSize(ve, out width, out height);
+            OnScreenTest.SkipReason reason;
+            bool onScreen = OnScreenTest.IsOnScreen(docActive, ancestorStack, width, height, out reason);
+
             if (matchType == null || matchType.IsInstanceOfType(ve))
             {
-                infos.Add(DescribeAsInfo(ve, t, focusedElement));
-                refs.Add(ve);
+                infos.Add(DescribeAsInfo(ve, t, focusedElement, docName, onScreen, reason));
+                if (refs != null) refs.Add(ve);
             }
 
             IEnumerable children = GetChildren(ve, t);
-            if (children == null) return;
-            foreach (object child in children) WalkForType(child, matchType, focusedElement, infos, refs);
+            if (children != null)
+            {
+                foreach (object child in children)
+                    WalkElementFull(child, matchType, focusedElement, docActive, docName, ancestorStack, infos, refs);
+            }
+
+            ancestorStack.RemoveAt(ancestorStack.Count - 1);
         }
 
-        private static UiElementInfo DescribeAsInfo(object ve, Type t, object focusedElement)
+        private static UiElementInfo DescribeAsInfo(object ve, Type t, object focusedElement, string docName, bool onScreen, OnScreenTest.SkipReason reason)
         {
             string name = ReadStringProp(ve, "name");
             string text = ReadStringProp(ve, "text");
             bool visible = ReadBoolProp(ve, "visible", true);
             bool enabled = ReadBoolProp(ve, "enabledInHierarchy", true);
             bool focused = focusedElement != null && ReferenceEquals(ve, focusedElement);
-            return new UiElementInfo(t.Name, name, text, visible, enabled, focused);
+            return new UiElementInfo(t.Name, name, text, visible, enabled, focused, onScreen, reason, docName);
+        }
+
+        // ============================================================== on-screen decision inputs
+
+        private static Type _displayStyleType;
+        private static object _displayStyleNoneValue;
+        private static bool _displayStyleResolveAttempted;
+        private static string _displayStyleResolveError;
+
+        /// <summary>
+        /// Resolves UnityEngine.UIElements.DisplayStyle and its "None" member reflectively, ONCE
+        /// (cached). If either can't be resolved (game update moved/renamed the enum), every
+        /// element's display:none check fails closed via OnScreenTest.SkipReason.Unresolved — this
+        /// logs that explicitly rather than silently skipping the check.
+        /// </summary>
+        private static bool TryGetDisplayStyleNone(out object noneValue, out string error)
+        {
+            if (!_displayStyleResolveAttempted)
+            {
+                _displayStyleResolveAttempted = true;
+                _displayStyleType = AccessTools.TypeByName("UnityEngine.UIElements.DisplayStyle");
+                if (_displayStyleType == null)
+                {
+                    _displayStyleResolveError = "UnityEngine.UIElements.DisplayStyle type not found";
+                }
+                else
+                {
+                    try { _displayStyleNoneValue = Enum.Parse(_displayStyleType, "None"); }
+                    catch (Exception ex)
+                    {
+                        _displayStyleResolveError = "DisplayStyle.None could not be resolved reflectively: " + ex.Message;
+                        _displayStyleNoneValue = null;
+                    }
+                }
+
+                if (_displayStyleResolveError != null && _log != null)
+                {
+                    _log.LogWarning("crucible_ui: " + _displayStyleResolveError
+                        + " — display:none can never be confirmed, so every element fails the on-screen check closed (Unresolved) until this is fixed.");
+                }
+            }
+
+            noneValue = _displayStyleNoneValue;
+            error = _displayStyleResolveError;
+            return noneValue != null;
+        }
+
+        private static OnScreenTest.AncestorFrame BuildAncestorFrame(object ve)
+        {
+            bool? visible = ReadBoolPropNullable(ve, "visible");
+            bool? displayNone = ReadDisplayNone(ve);
+            double? opacity = ReadOpacity(ve);
+            return new OnScreenTest.AncestorFrame(visible, displayNone, opacity);
+        }
+
+        private static bool? ReadDisplayNone(object ve)
+        {
+            object resolvedStyle = ReadProp(ve, "resolvedStyle");
+            if (resolvedStyle == null) return null;
+
+            object displayValue = ReadProp(resolvedStyle, "display");
+            if (displayValue == null) return null;
+
+            object noneValue;
+            string error;
+            if (!TryGetDisplayStyleNone(out noneValue, out error)) return null;
+
+            return displayValue.Equals(noneValue);
+        }
+
+        private static double? ReadOpacity(object ve)
+        {
+            object resolvedStyle = ReadProp(ve, "resolvedStyle");
+            if (resolvedStyle == null) return null;
+
+            object opacityValue = ReadProp(resolvedStyle, "opacity");
+            if (opacityValue is float) return (double)(float)opacityValue;
+            if (opacityValue is double) return (double)opacityValue;
+            return null;
+        }
+
+        private static void TryGetWorldBoundSize(object ve, out double? width, out double? height)
+        {
+            width = null;
+            height = null;
+
+            object rect = ReadProp(ve, "worldBound");
+            if (rect == null) return;
+
+            object w = ReadProp(rect, "width");
+            object h = ReadProp(rect, "height");
+            if (w is float) width = (double)(float)w;
+            else if (w is double) width = (double)w;
+            if (h is float) height = (double)(float)h;
+            else if (h is double) height = (double)h;
         }
 
         private static IEnumerable GetChildren(object ve, Type t)
@@ -601,11 +774,11 @@ namespace Crucible.Plugin
             root = null;
             focusedElement = null;
 
-            List<object> roots;
-            if (!FindDocumentRoots(out roots, out error)) return false;
-            if (roots.Count == 0) { error = "no live UIDocument with a root element"; return false; }
+            List<DocRoot> docs;
+            if (!FindDocumentRootsWithMeta(out docs, out error)) return false;
+            if (docs.Count == 0) { error = "no live UIDocument with a root element"; return false; }
 
-            root = roots[0];
+            root = docs[0].Root;
             focusedElement = GetFocusedElementFor(root);
             return true;
         }
@@ -1025,6 +1198,13 @@ namespace Crucible.Plugin
         {
             object v = ReadProp(obj, propName);
             return v is bool ? (bool)v : defaultValue;
+        }
+
+        /// <summary>Unlike <see cref="ReadBoolProp"/>, returns null (unresolved) instead of a default when the property is missing or not a bool — callers that feed OnScreenTest must be able to fail closed rather than silently assume true.</summary>
+        private static bool? ReadBoolPropNullable(object obj, string propName)
+        {
+            object v = ReadProp(obj, propName);
+            return v is bool ? (bool?)v : null;
         }
     }
 }
