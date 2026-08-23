@@ -113,3 +113,60 @@ hex teleport ->  AdventureDirector._onSelectHexPositionTeleportScroll(...)
 
 So the single highest-value piece of work is argument coercion for those three types.
 Everything downstream unblocks at once.
+
+---
+
+## BREAKTHROUGH — unfocused input solved (2026-08-23, late)
+
+### Root cause: THREE layers of focus gating, not one
+
+| Layer | Fix | Status |
+|---|---|---|
+| `Application.runInBackground` | set true | applied |
+| Unity `InputSystem.settings.backgroundBehavior` | `ResetAndDisableNonBackgroundDevices` -> `IgnoreFocus` | applied |
+| **FTK2's own `InputController`** | Harmony prefix skipping only the LOST_FOCUS reason | **this was the real one** |
+
+The game gates ALL input itself, independently of Unity:
+`InputController.RequestDisable(eDisableRequest pRequester, string pLogMessage)`, with
+`_disableRequesters` a `HashSet<eDisableRequest>` — input is off while it is non-empty.
+The enum has 29 members. Only LOST_FOCUS is suppressed; ROUTE_CHANGE and
+SYSTEM_DIALOG_TRANSITION still work, because suppressing those would fire input during
+transitions.
+
+Verified live with the window unfocused:
+```
+gate: on | disableReasons before: [LOST_FOCUS] | after: []
+inputDisabled=False reasons=[] gateHeld=True
+```
+
+### Now working with the window UNFOCUSED
+
+- **UI clicks** — menu navigation, escaping the boot lobby
+- **Mouse injection** — `crucible_mouse_click <x> <y>` cleared the post-load "Click to
+  Continue" gate that NOTHING else could clear, and produces hex path previews on the
+  overworld. Coordinates are Unity convention: **bottom-left origin**, so screen-top y
+  must be flipped (`clientHeight - y`). Client rect matched the screenshot exactly (1158x900).
+- **Loading a save by API** — `AdventureSelectionDirector._loadGameRun(String pFileName,
+  String pDisableLogMessage)`. Both params are strings, so it is directly callable. Loaded
+  in ~10s, correct run id, no UI and no focus.
+
+### Corrections to earlier claims in this document
+
+- `AdventureDirector._loadSave(runId, filename, ct)` fails two ways: with a `.ftk2`
+  extension it throws `File format  not supported`, and without one it stalls forever in
+  `WaitingForActivation` because that director is not initialised on ADVENTURE_SELECTION.
+  Use the AdventureSelectionDirector overload instead.
+- **`saveUser` does NOT save the run.** It is `SaveGameHelper.SaveUserAsync(UserData)` —
+  the user profile. The save file that appeared was the game's own autosave at run start.
+  Persisting a fixture needs `SaveGameHelper.WriteSaveData(runId, GameRunData, UserData)`.
+
+### Still open
+
+- **Confirming a move.** Clicking a hex shows a numbered path preview (2 -> 1 -> 0), but a
+  second click on either the clicked hex or the path destination does not execute the move.
+  The confirm gesture is unknown — candidates: double-click, click-and-hold, a keyboard/pad
+  confirm while the path is shown, or clicking the exact hex centre.
+- `SpawnSpecificEnemy` is NOT in the registry even in-run and after `ToggleCheat`; it is
+  behind the debug-commands gate. It was ranked the most likely route into combat.
+- The focus gate does NOT auto-apply reliably at startup — it needed an explicit
+  `crucible_input_focus_gate on`. Fix before any unattended run.
