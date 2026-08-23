@@ -66,11 +66,13 @@ namespace Crucible.Plugin
 
             MethodInfo getHandler = typeof(ReflectionCommands).GetMethod("CrucibleGet", BindingFlags.Public | BindingFlags.Static);
             MethodInfo invokeHandler = typeof(ReflectionCommands).GetMethod("CrucibleInvoke", BindingFlags.Public | BindingFlags.Static);
+            MethodInfo setHandler = typeof(ReflectionCommands).GetMethod("CrucibleSet", BindingFlags.Public | BindingFlags.Static);
 
             bool a = GameBridge.RegisterCommand("crucible_get", getHandler, new List<string> { "path" });
             bool b = GameBridge.RegisterCommand("crucible_invoke", invokeHandler, new List<string> { "type", "method", "args (space-separated, or - for none)" });
+            bool c = GameBridge.RegisterCommand("crucible_set", setHandler, new List<string> { "path", "value" });
 
-            _registered = a && b;
+            _registered = a && b && c;
             return _registered;
         }
 
@@ -132,6 +134,99 @@ namespace Crucible.Plugin
             LastResult = "[instance: " + strategy + "] " + Render(result);
         }
 
+        // ----------------------------------------------------------------- crucible_set
+
+        /// <summary>
+        /// crucible_set &lt;path&gt; &lt;value&gt; — reflectively writes a dot path. The path must
+        /// resolve at least a type and a member (e.g. <c>Type.Member</c>); everything but the last
+        /// segment is walked the same way <see cref="TryResolvePath"/> walks <c>crucible_get</c>,
+        /// then the final segment is resolved as a settable field or property via
+        /// <see cref="MemberAccess"/>, the string value coerced to that member's type via
+        /// <see cref="ArgCoercion"/>, and assigned. Two discrete string parameters — the
+        /// CommandLineHelper arg marshaller does not accept a <c>string[]</c> handler.
+        /// </summary>
+        public static void CrucibleSet(string pPath, string pValue)
+        {
+            LastResult = null;
+
+            string[] segments; string error;
+            if (!PathParser.TryParse(pPath, out segments, out error))
+            {
+                LastResult = "error: " + error;
+                if (_log != null) _log.LogWarning("crucible_set failed: " + error);
+                return;
+            }
+
+            if (segments.Length < 2)
+            {
+                LastResult = "error: path must name a type and a member, e.g. 'Type.Member' (got '" + pPath + "')";
+                if (_log != null) _log.LogWarning("crucible_set failed: " + LastResult);
+                return;
+            }
+
+            Type type;
+            try { type = AccessTools.TypeByName(segments[0]); }
+            catch (Exception ex) { LastResult = "error: segment[0] '" + segments[0] + "': type lookup threw: " + ex.Message; return; }
+            if (type == null)
+            {
+                LastResult = "error: segment[0] '" + segments[0] + "': type not found";
+                if (_log != null) _log.LogWarning("crucible_set failed: " + LastResult);
+                return;
+            }
+
+            object parent; Type parentType; string walkError;
+            if (!WalkSegments(type, null, segments, 1, segments.Length - 1, out parent, out parentType, out walkError))
+            {
+                LastResult = "error: " + walkError;
+                if (_log != null) _log.LogWarning("crucible_set failed: " + walkError);
+                return;
+            }
+
+            int finalIndex = segments.Length - 1;
+            string finalSegment = segments[finalIndex];
+
+            MemberInfo member; Type memberType; bool isStatic; bool isReadOnly; string memberError;
+            if (!MemberAccess.TryResolveMember(parentType, finalSegment, out member, out memberType, out isStatic, out isReadOnly, out memberError))
+            {
+                LastResult = "error: segment[" + finalIndex + "] '" + finalSegment + "': " + memberError;
+                if (_log != null) _log.LogWarning("crucible_set failed: " + LastResult);
+                return;
+            }
+
+            if (!isStatic && parent == null)
+            {
+                LastResult = "error: segment[" + finalIndex + "] '" + finalSegment + "': null reference (parent value is null)";
+                if (_log != null) _log.LogWarning("crucible_set failed: " + LastResult);
+                return;
+            }
+
+            object oldValue; string getError;
+            if (!MemberAccess.TryGetValue(member, parent, isStatic, out oldValue, out getError))
+            {
+                LastResult = "error: failed reading current value of '" + finalSegment + "': " + getError;
+                if (_log != null) _log.LogWarning("crucible_set failed: " + LastResult);
+                return;
+            }
+
+            object coerced; string coerceError;
+            if (!ArgCoercion.TryCoerce(pValue, memberType, out coerced, out coerceError))
+            {
+                LastResult = "error: cannot coerce '" + pValue + "' to " + memberType.Name + ": " + coerceError;
+                if (_log != null) _log.LogWarning("crucible_set failed: " + LastResult);
+                return;
+            }
+
+            string setError;
+            if (!MemberAccess.TrySetValue(member, parent, isStatic, isReadOnly, coerced, out setError))
+            {
+                LastResult = "error: " + setError;
+                if (_log != null) _log.LogWarning("crucible_set failed: " + setError);
+                return;
+            }
+
+            LastResult = "old=" + Render(oldValue) + " new=" + Render(coerced);
+        }
+
         // ----------------------------------------------------------------- crucible_get
 
         /// <summary>
@@ -152,10 +247,28 @@ namespace Crucible.Plugin
             catch (Exception ex) { error = "segment[0] '" + segments[0] + "': type lookup threw: " + ex.Message; return false; }
             if (type == null) { error = "segment[0] '" + segments[0] + "': type not found"; return false; }
 
-            object current = null;
-            Type currentType = type;
+            Type resultType;
+            return WalkSegments(type, null, segments, 1, segments.Length, out result, out resultType, out error);
+        }
 
-            for (int i = 1; i < segments.Length; i++)
+        /// <summary>
+        /// Walks <paramref name="segments"/>[<paramref name="fromIndex"/>..<paramref name="toIndexExclusive"/>)
+        /// as field/property member reads, starting from <paramref name="startType"/> /
+        /// <paramref name="startInstance"/>. Shared by <see cref="TryResolvePath"/> (walks the whole
+        /// path, for crucible_get) and <see cref="CrucibleSet"/> (walks up to but not including the
+        /// final segment, which is resolved separately as an assignment target). Never throws.
+        /// </summary>
+        private static bool WalkSegments(Type startType, object startInstance, string[] segments, int fromIndex, int toIndexExclusive,
+            out object result, out Type resultType, out string error)
+        {
+            result = null;
+            resultType = startType;
+            error = null;
+
+            object current = startInstance;
+            Type currentType = startType;
+
+            for (int i = fromIndex; i < toIndexExclusive; i++)
             {
                 string seg = segments[i];
                 try
@@ -198,6 +311,7 @@ namespace Crucible.Plugin
             }
 
             result = current;
+            resultType = currentType;
             return true;
         }
 

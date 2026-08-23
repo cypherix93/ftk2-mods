@@ -42,6 +42,7 @@ namespace Crucible.Plugin
         public ConfigEntry<bool> CfgTraceEnabled;
         public ConfigEntry<bool> CfgAllowMutationsInMP;
         public ConfigEntry<string> CfgAllowedCommands;
+        public ConfigEntry<bool> CfgForceSinglePlayer;
 
         private ManualLogSource _log;
         private Harmony _harmony;
@@ -88,6 +89,10 @@ namespace Crucible.Plugin
                 "DANGER: allows state-mutating commands during an online session. Can desync peers.");
             CfgAllowedCommands = Config.Bind("Safety", "AllowedCommands", "",
                 "Comma-separated command allowlist. Empty means all commands are permitted.");
+            CfgForceSinglePlayer = Config.Bind("Safety", "ForceSinglePlayer", true,
+                "Suppresses the game's own boot-time auto-rejoin (MainMenuDirector.TryAutoJoinRoom) so "
+                + "automated test runs always start in a clean single-player state instead of landing in "
+                + "the multiplayer lobby. On by default: this is a test harness.");
 
             InstanceName = ReadEnv(EnvInstance);
             if (string.IsNullOrEmpty(InstanceName)) InstanceName = "p1";
@@ -124,12 +129,15 @@ namespace Crucible.Plugin
             GameBridge.Initialize(_log);
             ReflectionCommands.Initialize(_log);
             MainThreadPump.Initialize(_harmony, _log);
-            // Registration is retried on the tick, not done here: the game's command registry does
-            // not exist until RouterMono has started, so registering in Awake throws from inside
+            SinglePlayerGuard.Initialize(_harmony, _log);
+
+            // Registration is retried on the tick, not done in Awake: the game's command registry
+            // does not exist until RouterMono has started, so registering here throws from inside
             // CommandLineHelper. See ReflectionCommands.TryRegister.
             MainThreadPump.OnTick = delegate
             {
                 ReflectionCommands.TryRegister();
+                SinglePlayerGuard.Tick();
                 PollHotkeys();
             };
 
