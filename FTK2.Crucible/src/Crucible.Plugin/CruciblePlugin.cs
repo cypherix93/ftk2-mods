@@ -129,6 +129,7 @@ namespace Crucible.Plugin
             GameBridge.Initialize(_log);
             ReflectionCommands.Initialize(_log);
             UiCommands.Initialize(_log);
+            GamepadCommands.Initialize(_log);
             MainThreadPump.Initialize(_harmony, _log);
             SinglePlayerGuard.Initialize(_harmony, _log);
 
@@ -177,6 +178,7 @@ namespace Crucible.Plugin
             // Deferred registration: the game's command registry doesn't exist yet during Awake,
             // so this retries each tick until UiCommands.TryRegister reports every command bound.
             UiCommands.TryRegister();
+            GamepadCommands.TryRegister();
 
             if (CfgConsoleEnabled.Value)
             {
