@@ -27,6 +27,19 @@ namespace FTK2Mods.Crucible
             out int skippedInvisibleCount,
             out bool truncated)
         {
+            return Render(elements, filter, "-", cap, out matchedVisibleCount, out skippedInvisibleCount, out truncated);
+        }
+
+        /// <summary>Overload with the "kinds" type filter (see <see cref="UiKindsFilter"/>) layered on top of the name/text filter.</summary>
+        public static string Render(
+            IEnumerable<UiElementInfo> elements,
+            string filter,
+            string kinds,
+            int cap,
+            out int matchedVisibleCount,
+            out int skippedInvisibleCount,
+            out bool truncated)
+        {
             matchedVisibleCount = 0;
             skippedInvisibleCount = 0;
             truncated = false;
@@ -46,6 +59,8 @@ namespace FTK2Mods.Crucible
                         skippedInvisibleCount++;
                         continue;
                     }
+
+                    if (!UiKindsFilter.Matches(e, kinds)) continue;
 
                     if (!matchAll && !Matches(e, filter)) continue;
 
