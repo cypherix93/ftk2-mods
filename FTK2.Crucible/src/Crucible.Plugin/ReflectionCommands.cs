@@ -159,25 +159,24 @@ namespace Crucible.Plugin
                 return;
             }
 
-            if (segments.Length < 2)
+            int typeSegmentCount; Type type;
+            if (!TryResolveTypePrefix(segments, out typeSegmentCount, out type, out error))
             {
-                LastResult = "error: path must name a type and a member, e.g. 'Type.Member' (got '" + pPath + "')";
-                if (_log != null) _log.LogWarning("crucible_set failed: " + LastResult);
+                LastResult = "error: " + error;
+                if (_log != null) _log.LogWarning("crucible_set failed: " + error);
                 return;
             }
 
-            Type type;
-            try { type = AccessTools.TypeByName(segments[0]); }
-            catch (Exception ex) { LastResult = "error: segment[0] '" + segments[0] + "': type lookup threw: " + ex.Message; return; }
-            if (type == null)
+            if (typeSegmentCount >= segments.Length)
             {
-                LastResult = "error: segment[0] '" + segments[0] + "': type not found";
+                LastResult = "error: path resolves entirely to a type ('" + string.Join(".", segments, 0, typeSegmentCount)
+                    + "'); expected at least one member segment after it, e.g. 'Type.Member' (got '" + pPath + "')";
                 if (_log != null) _log.LogWarning("crucible_set failed: " + LastResult);
                 return;
             }
 
             object parent; Type parentType; string walkError;
-            if (!WalkSegments(type, null, segments, 1, segments.Length - 1, out parent, out parentType, out walkError))
+            if (!WalkSegments(type, null, segments, typeSegmentCount, segments.Length - 1, out parent, out parentType, out walkError))
             {
                 LastResult = "error: " + walkError;
                 if (_log != null) _log.LogWarning("crucible_set failed: " + walkError);
@@ -442,13 +441,118 @@ namespace Crucible.Plugin
             string[] segments;
             if (!PathParser.TryParse(path, out segments, out error)) return false;
 
-            Type type;
-            try { type = AccessTools.TypeByName(segments[0]); }
-            catch (Exception ex) { error = "segment[0] '" + segments[0] + "': type lookup threw: " + ex.Message; return false; }
-            if (type == null) { error = "segment[0] '" + segments[0] + "': type not found"; return false; }
+            int typeSegmentCount; Type type;
+            if (!TryResolveTypePrefix(segments, out typeSegmentCount, out type, out error)) return false;
 
             Type resultType;
-            return WalkSegments(type, null, segments, 1, segments.Length, out result, out resultType, out error);
+            return WalkSegments(type, null, segments, typeSegmentCount, segments.Length, out result, out resultType, out error);
+        }
+
+        /// <summary>
+        /// Resolves the leading type name of a dotted path by trying progressively longer dotted
+        /// prefixes of <paramref name="segments"/> — longest-match-wins — via
+        /// <see cref="TypePrefixResolver.TryResolve"/> in Crucible.Core, backed by
+        /// <see cref="LookupType"/> here as the concrete "does this candidate name a live type"
+        /// check. This is what lets a fully-qualified path like
+        /// <c>UnityEngine.InputSystem.InputSystem.settings.backgroundBehavior</c> resolve the
+        /// 3-segment type <c>UnityEngine.InputSystem.InputSystem</c> instead of failing on
+        /// <c>segments[0]</c> ("UnityEngine") the way the old segments[0]-only lookup did.
+        /// </summary>
+        private static bool TryResolveTypePrefix(string[] segments, out int typeSegmentCount, out Type resolvedType, out string error)
+        {
+            typeSegmentCount = 0;
+            resolvedType = null;
+
+            Dictionary<string, Type> cache = new Dictionary<string, Type>(StringComparer.Ordinal);
+            string resolvedName;
+            bool ok = TypePrefixResolver.TryResolve(segments, delegate (string candidate)
+            {
+                return LookupType(candidate, cache);
+            }, out typeSegmentCount, out resolvedName, out error);
+
+            if (!ok) return false;
+
+            // LookupType caches the resolved Type under the exact candidate string it reported
+            // Found for, and that's exactly the joined prefix TypePrefixResolver just accepted.
+            string winningCandidate = string.Join(".", segments, 0, typeSegmentCount);
+            Type type;
+            if (!cache.TryGetValue(winningCandidate, out type) || type == null)
+            {
+                error = "internal: resolved '" + resolvedName + "' but lost its Type reference";
+                return false;
+            }
+
+            resolvedType = type;
+            return true;
+        }
+
+        /// <summary>
+        /// Concrete type lookup for <see cref="TryResolveTypePrefix"/>: scans every loaded
+        /// assembly's types for a match against <paramref name="candidateName"/> — full name
+        /// (dots, "+" for nested normalized to ".") for a dotted candidate, or bare
+        /// <see cref="Type.Name"/> for a single-segment candidate — and reports Ambiguous rather
+        /// than silently picking one when more than one type matches. This is what catches the
+        /// live <c>System.Net.Mime.MediaTypeNames+Application</c> vs <c>UnityEngine.Application</c>
+        /// collision that <c>AccessTools.TypeByName("Application")</c> resolves silently (and, in
+        /// that case, wrongly). Falls back to <c>AccessTools.TypeByName</c> only when the plain
+        /// scan finds nothing, in case Harmony's own resolution covers a case (e.g. an
+        /// assembly-qualified name) this scan doesn't. Never throws.
+        /// </summary>
+        private static TypeLookupResult LookupType(string candidateName, Dictionary<string, Type> cache)
+        {
+            bool hasDot = candidateName.IndexOf('.') >= 0;
+            List<Type> matches = new List<Type>();
+
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int a = 0; a < assemblies.Length; a++)
+            {
+                Type[] types;
+                try { types = assemblies[a].GetTypes(); }
+                catch (ReflectionTypeLoadException ex) { types = ex.Types; }
+                catch (Exception) { continue; }
+                if (types == null) continue;
+
+                for (int i = 0; i < types.Length; i++)
+                {
+                    Type t = types[i];
+                    if (t == null) continue;
+
+                    bool isMatch;
+                    if (hasDot)
+                    {
+                        string normalized = t.FullName == null ? null : t.FullName.Replace('+', '.');
+                        isMatch = string.Equals(normalized, candidateName, StringComparison.Ordinal);
+                    }
+                    else
+                    {
+                        isMatch = string.Equals(t.Name, candidateName, StringComparison.Ordinal);
+                    }
+
+                    if (isMatch && !matches.Contains(t)) matches.Add(t);
+                }
+            }
+
+            if (matches.Count == 0)
+            {
+                // Plain scan found nothing — fall back to AccessTools' own resolution before
+                // giving up, in case its search covers something this scan doesn't.
+                Type direct;
+                try { direct = AccessTools.TypeByName(candidateName); }
+                catch (Exception) { direct = null; }
+                if (direct == null) return TypeLookupResult.NotFoundResult();
+                cache[candidateName] = direct;
+                return TypeLookupResult.FoundResult(direct.FullName);
+            }
+
+            if (matches.Count == 1)
+            {
+                cache[candidateName] = matches[0];
+                return TypeLookupResult.FoundResult(matches[0].FullName);
+            }
+
+            string[] names = new string[matches.Count];
+            for (int i = 0; i < matches.Count; i++) names[i] = matches[i].FullName;
+            return TypeLookupResult.AmbiguousResult(names);
         }
 
         /// <summary>
