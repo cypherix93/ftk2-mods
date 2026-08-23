@@ -7,7 +7,7 @@
     "ProcChance": 10,
     "AiProcChance": 10,
     "Effects": [
-      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "CURSE" }
+      { "Type": "ADD_STATUS", "Target": "TRIGGER_TARGET", "Status": "STATUS_CURSE_00" }
     ],
     "Budget": { "Scope": "NONE" },
     "VerboseLogTag": "Cursed encounter",
