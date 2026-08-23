@@ -411,3 +411,182 @@ mostly character-creation/UI helpers with no bearing on the snapshot)
 - **Stacks are likely encoded as separate status ids**, not a count field — e.g. the codebase elsewhere
   references tiered ids like `STATUS_ATTACKUP_00`. Confirming this needs looking at `Configs.StatusEffects`
   JSON data for a stacking status, which is out of scope for this type-level probe.
+
+---
+
+## S1 addendum (probed 2026-08-23)
+
+Added because S1 needs five members the tables above do not carry. Same rule as the rest of this
+document: every table is verbatim TypeProbe stdout.
+
+### GameRunData
+
+| Kind | Type | Name |
+|---|---|---|
+| field | `List\`1` | `Achievements` |
+| field | `List\`1` | `ActiveQuests` |
+| field | `List\`1` | `ActiveScourges` |
+| field | `AdventureState` | `AdventureState` |
+| field | `List\`1` | `AnonymousEvents` |
+| field | `ChaosState` | `ChaosState` |
+| field | `Dictionary\`2` | `CharacterNomenclatorMap` |
+| field | `CombatState` | `CombatState` |
+| field | `List\`1` | `CompletedQuests` |
+| field | `String` | `ConfigName` |
+| field | `Int32` | `CurrentLifePool` |
+| field | `List\`1` | `DebugRoadData` |
+| field | `DungeonState` | `DungeonState` |
+| field | `List\`1` | `Expansions` |
+| field | `List\`1` | `FailedQuests` |
+| field | `List\`1` | `FutureQuests` |
+| field | `eGameDifficulties` | `GameDifficulty` |
+| field | `Int32` | `GameStageIndex` |
+| field | `Int32` | `GameStageRoundStart` |
+| field | `Dictionary\`2` | `HouseRules` |
+| field | `Dictionary\`2` | `ItemPools` |
+| field | `Int32` | `MapGenSeed` |
+| field | `String` | `MultiplayerFirstLootPlayerGuid` |
+| field | `String` | `NPCHostID` |
+| field | `String` | `OriginalVersion` |
+| field | `Nullable\`1` | `Phase` |
+| field | `Nullable\`1` | `PhaseData` |
+| field | `Int32` | `PlayerAmount` |
+| field | `Dictionary\`2` | `PlayerFollowers` |
+| field | `Dictionary\`2` | `QuestViewDataCache` |
+| field | `Int32` | `RoundCount` |
+| field | `String` | `SelectedName` |
+| field | `Dictionary\`2` | `SkillCoolDown` |
+| field | `ShuffleBag\`1` | `SmartLootShuffle` |
+| field | `Dictionary\`2` | `Stats` |
+| field | `VenueState` | `VenueState` |
+| field | `String` | `Version` |
+| field | `Dictionary\`2` | `WorldModifiers` |
+| field | `List\`1` | `_entities` |
+| prop | `List\`1` | `Entities` |
+
+**No `Seed`, `Day`, `Gold`, or `Chapter` member exists on `GameRunData`** — field and property listing,
+verbatim above. `StateReader` v1 has been reading these four names since inception
+(`GetMember(gameRun, "Seed", null)` etc., with the warning sink passed as `null`), so every one of
+those reads has been silently returning `null` for the life of the mod — this is the exact
+`NetworkData.PlayerCount` failure mode, just never noticed because nobody looked. The nearest
+same-shape analogs that DO exist are `MapGenSeed` (Int32), `RoundCount` (Int32), and
+`GameStageIndex` (Int32) — but nothing here is confidently "day" or "gold" or "chapter", and this
+probe is not the place to guess. Per plan Task 1 Step 3 outcome 2/3: v2 does **not** invent a
+replacement name for any of the four. It reads the same four names v1 reads, but with the warning
+sink wired in (unlike v1), so `member_missing: GameRunData.Seed` / `.Day` / `.Gold` / `.Chapter`
+now appears in `warnings` on every snapshot instead of being swallowed. That is the correct
+behaviour for a name that is genuinely wrong and has no grounded replacement — loud is the
+deliverable, not a guessed rename.
+
+### NetworkData
+
+| Kind | Type | Name |
+|---|---|---|
+| field | `Stack\`1` | `ActionHistory` |
+| field | `List\`1` | `CachedOwnedExpansions` |
+| field | `IConnectionAdapter` | `Connection` |
+| field | `Byte` | `CurrentReloadId` |
+| field | `Dictionary\`2` | `DebugDesyncGameRandomData` |
+| field | `Dictionary\`2` | `DebugDesyncHashData` |
+| field | `Queue\`1` | `DesyncDetectionStateCache` |
+| field | `TaskCompletionSource\`1` | `DesyncDetectionTask` |
+| field | `Boolean` | `DoMonitorForDesyncs` |
+| field | `Boolean` | `DoMonitorForExceptions` |
+| field | `Int32` | `GameActionIndexInitialOffset` |
+| field | `Int32` | `GameActionIndexOnLastSave` |
+| field | `Boolean` | `HasADesyncBeenDetected` |
+| field | `Boolean` | `HasAnExceptionBeenDetected` |
+| field | `Boolean` | `IsHost` |
+| field | `Boolean` | `IsLastSaveOnEndTurn` |
+| field | `Boolean` | `IsLastSaveOnInit` |
+| field | `Boolean` | `IsLoadingIntoSave` |
+| field | `ValueTuple\`2` | `JoinInProgressData` |
+| field | `Int32` | `JoinInProgressGameActionIndexOffset` |
+| field | `Int32` | `JoinInProgressStatusUpdateLastSent` |
+| field | `Int32` | `LatestDesyncHashIndex` |
+| field | `Int32` | `LatestGameRandomDesyncIndex` |
+| field | `Int32` | `MapGenSeed` |
+| field | `Dictionary\`2` | `MultiplayerStatsOnLastSave` |
+| field | `Dictionary\`2` | `MultiplayerSyncedStats` |
+| field | `List\`1` | `PendingActions` |
+| field | `List\`1` | `PendingServerActions` |
+| field | `List\`1` | `PendingTransientActions` |
+| field | `List\`1` | `PlayerList` |
+| field | `Dictionary\`2` | `PlayerSyncData` |
+| field | `Boolean` | `PlayingOnlineMultiplayer` |
+| field | `List\`1` | `QueuedJoinInProgressSaveEvents` |
+| field | `Int32` | `RandomSeedOnLastSave` |
+| field | `Dictionary\`2` | `RemotePlayerHashDataCache` |
+| field | `Boolean` | `ShowLiveDebugInfo` |
+| field | `List\`1` | `StartingClasses` |
+| field | `CustomMapGenData` | `SyncedCustomMapGenData` |
+| field | `String` | `UserName` |
+| field | `List\`1` | `WaitForPlayersConnectionIds` |
+
+Confirms v1's existing reads (`IsHost`, `PlayerList`) and adds nothing new S1 needs beyond those —
+listed here per the addendum template for completeness.
+
+### RouterHelper (methods)
+
+| Kind | Type | Name | Signature |
+|---|---|---|---|
+| method | `eRoutes` | `GetCurrentRoute` | `()` |
+
+(Full method table also includes `GetChatController`, `GetCombatTrackingUIDocument`,
+`GetEndOfAdventureRoute(GameRunData)`, `GetFirstUIDocument`, `GetInputController`,
+`GetMultiplayerController`, `GetNextRoute(GameRunData)`, `GetVenueUIDocument`, `Initialize`,
+`IsInVenue`, `Quit`, `QuitSafely`, `ReCheckMultiplayerPermissions`, `SetRouter`,
+`SetUIDocumentsEnabled(Boolean)`, plus inherited `Object` members — omitted, not combat-relevant.)
+`GetCurrentRoute` takes no parameters and returns `eRoutes`. v1 already calls it via
+`AccessTools.Method` + `Invoke(null, null)` (i.e. as a static, zero-arg call) and gets live route
+values back (spec §0) — confirmed by this probe to be the right shape.
+
+### CombatPhase (methods, trimmed to the two hook targets — full method table has ~200 entries,
+mostly UI/rendering/network-sync plumbing with no bearing on the snapshot)
+
+| Kind | Type | Name | Signature |
+|---|---|---|---|
+| method | `Void` | `_engageActiveEntity` | `()` |
+| method | `Task` | `_nextTurn` | `(Boolean pIsFirstTurn)` |
+
+Both confirmed to exist under the exact names the plan's design (and the field-map prose it was
+built from) assumed. `_engageActiveEntity` is synchronous (`Void`, no parameters) — a plain Harmony
+postfix fires exactly once per engagement, no async caveat. `_nextTurn` returns `Task` and takes one
+`Boolean` parameter (`pIsFirstTurn`) — confirming the plan's async concern: a postfix on this method
+fires when the `Task`'s state machine is *created*, not when the turn completes. As the plan notes,
+that is still exactly one fire per advance in call order, which is all the ordinal needs; Task 9
+Step 4 is the empirical check.
+
+### CharacterHelper (methods, trimmed to the three S1 needs — full type has 150+ methods)
+
+| Kind | Type | Name | Signature |
+|---|---|---|---|
+| method | `Dictionary\`2` | `GetBaseStats` | `(Entity pCharacterEntity)` |
+| method | `Int32` | `GetMaxHealth` | `(Entity pEntity, Boolean pCappedStat)` |
+| method | `Boolean` | `IsDead` | `(Entity pEntity)` |
+
+`GetBaseStats` and `IsDead` are both **unary**, taking an `Entity` — exactly what
+`MemberResolver.FindUnaryStatic` / `CharacterHelperBridge.Invoke` (Task 6) are built to dispatch by
+runtime-assignability. **`GetMaxHealth` is NOT unary** — it takes `(Entity pEntity, Boolean
+pCappedStat)`, two parameters. The plan's Task 6 draft assumed a unary signature (the pre-Task-1
+field map recorded the name and return type only, not the signature, exactly as flagged in this
+task's "why this task exists" table). This is a genuine signature correction, reconciled below.
+
+Also confirmed while probing: `CharacterHelper.GetStat` has 8 overloads total, none unary — the
+field map's original "8 overloads" count is accurate, and one of the overload families is keyed by
+a real `eCharacterStats` enum (distinct from the still-nonexistent `eStats`). None of this changes
+S1's `stats{}` decision (`GetBaseStats`, unary, string-keyed via `SerializedSortedDictionary`-style
+iteration) — recorded here only because it was visible in the same probe run.
+
+### S1 resolutions
+
+| S1 need | Resolved member | Status |
+|---|---|---|
+| path to `CombatState` (fallback) | `GameRunData.CombatState` | RESOLVED — field, type `CombatState`, exact name assumed by the plan |
+| `run.seed` / `.day` / `.gold` / `.chapter` | `GameRunData.Seed` / `.Day` / `.Gold` / `.Chapter` | NOT FOUND (all four). v1 has silently read these as null since inception. v2 reads the same four names but with the warning sink wired in, so the miss is now loud (`member_missing: GameRunData.Seed` etc.) instead of silent. No replacement name is guessed. |
+| `route` | `RouterHelper.GetCurrentRoute` | RESOLVED — `()`, returns `eRoutes`, called as v1 already does |
+| turn-advance hook | `CombatPhase._nextTurn` — return type `Task`, 1 parameter (`Boolean pIsFirstTurn`) | RESOLVED — confirms the async caveat; postfix fires at Task-creation time, one fire per advance |
+| turn-begin hook | `CombatPhase._engageActiveEntity` — return type `Void`, 0 parameters | RESOLVED — synchronous, no async caveat |
+| `maxHp` | `CharacterHelper.GetMaxHealth` — 1 overload, **binary** `(Entity, Boolean pCappedStat)` | CORRECTED — not unary as the plan's Task 6 draft assumed. Task 6 code below adds a dedicated (non-unary) dispatch path in `CharacterHelperBridge` for this one method, passing `pCappedStat: true` (matches what the game itself shows on a health bar — a capped/effective max, not an uncapped theoretical one). |
+| `alive` | `CharacterHelper.IsDead` — 1 overload, unary `(Entity)` | RESOLVED — matches the plan's assumed shape exactly |
+| `stats{}` | `CharacterHelper.GetBaseStats` — 1 overload, unary `(Entity)`, returns `Dictionary\`2` | RESOLVED — matches the plan's assumed shape exactly |

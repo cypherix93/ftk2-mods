@@ -25,6 +25,10 @@ namespace FTK2Mods.Crucible.Tests
             MemberAccessTests.RunAll();
             UiCommandTests.RunAll();
             PadCommandTests.RunAll();
+            WarningTests.RunAll();
+            ResolverTests.RunAll();
+            TurnTrackerTests.RunAll();
+            SnapshotShapeTests.RunAll();
 
             return TestHarness.Report();
         }

@@ -302,8 +302,24 @@ namespace Crucible.Plugin
 
         private void HandleState(HttpListenerContext ctx)
         {
-            object result; string error;
-            if (!MainThreadPump.Run(delegate { return StateReader.Snapshot(); }, 5000, out result, out error))
+            // Routing happens on AbsolutePath, which excludes the query string, so v1 keeps its
+            // exact behaviour and v2 is purely additive.
+            string schema = ctx.Request.QueryString["schema"];
+            bool v2 = string.Equals(schema, "v2", StringComparison.OrdinalIgnoreCase);
+
+            object result;
+            string error;
+            bool pumped;
+            if (v2)
+            {
+                pumped = MainThreadPump.Run(delegate { return StateReaderV2.Snapshot(); }, 5000, out result, out error);
+            }
+            else
+            {
+                pumped = MainThreadPump.Run(delegate { return StateReader.Snapshot(); }, 5000, out result, out error);
+            }
+
+            if (!pumped)
             {
                 Respond(ctx, 503, Error(error));
                 return;
@@ -313,8 +329,9 @@ namespace Crucible.Plugin
 
             // The instance name is part of the snapshot for readability, but it MUST NOT feed the
             // digest — otherwise two healthy peers would never agree and every comparison would
-            // report a desync.
-            string[] redactions = new string[] { "instance" };
+            // report a desync. v2 redacts more: entity guids and the episode key are per-process
+            // runtime values, and one peer noticing a reflection miss is not a desync.
+            string[] redactions = v2 ? Redactions.CopyV2() : new string[] { "instance" };
 
             Dictionary<string, object> d = new Dictionary<string, object>();
             d["ok"] = true;

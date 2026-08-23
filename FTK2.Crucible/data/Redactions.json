@@ -3,7 +3,9 @@
     "Field-path globs excluded from the state digest (SPEC §4).",
     "These are values that legitimately differ between healthy peers or tick on their own;",
     "leaving them in would make every cross-peer comparison report a false desync.",
-    "Paths are dotted (e.g. 'network.playerCount'); glob syntax matches DevKit's GlobMatcher."
+    "Paths are dotted (e.g. 'network.playerCount'); glob syntax matches DevKit's GlobMatcher.",
+    "NOT loaded at runtime: the authority is Crucible.Core/Redactions.cs (v2) and the inline",
+    "array in RpcServer.HandleState (v1). This file documents both; keep them in step."
   ],
   "Globs": [
     "instance",
@@ -14,5 +16,15 @@
     "*frameCount*",
     "*timestamp*",
     "*Timestamp*"
+  ],
+  "GlobsV2": [
+    "instance",
+    "warnings",
+    "console",
+    "network.isHost",
+    "combat.episode",
+    "combat.activeId",
+    "combat.combatants.id",
+    "combat.combatants.statuses.originEntityId"
   ]
 }
