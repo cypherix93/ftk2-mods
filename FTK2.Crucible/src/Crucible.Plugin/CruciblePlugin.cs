@@ -131,11 +131,13 @@ namespace Crucible.Plugin
             UiCommands.Initialize(_log);
             GamepadCommands.Initialize(_log);
             InputBackgroundCommands.Initialize(_log);
+            MouseCommands.Initialize(_log);
             DebugVerbCommands.Initialize(_log);
             ChaosCommands.Initialize(_harmony, _log);
             MainThreadPump.Initialize(_harmony, _log);
             SinglePlayerGuard.Initialize(_harmony, _log);
             TurnHooks.Initialize(_harmony, _log);
+            InputFocusGateCommands.Initialize(_harmony, _log);
 
             // Registration is retried on the tick, not done in Awake: the game's command registry
             // does not exist until RouterMono has started, so registering here throws from inside
@@ -145,6 +147,7 @@ namespace Crucible.Plugin
                 ReflectionCommands.TryRegister();
                 SinglePlayerGuard.Tick();
                 InputBackgroundCommands.AutoApplyTick();
+                InputFocusGateCommands.AutoApplyTick();
                 PollHotkeys();
             };
 
@@ -185,8 +188,10 @@ namespace Crucible.Plugin
             UiCommands.TryRegister();
             GamepadCommands.TryRegister();
             InputBackgroundCommands.TryRegister();
+            MouseCommands.TryRegister();
             DebugVerbCommands.TryRegister();
             ChaosCommands.TryRegister();
+            InputFocusGateCommands.TryRegister();
 
             if (CfgConsoleEnabled.Value)
             {

@@ -30,6 +30,8 @@ namespace FTK2Mods.Crucible.Tests
             ResolverTests.RunAll();
             TypePrefixResolverTests.RunAll();
             InputBackgroundBehaviorPickerTests.RunAll();
+            InputDisableReasonPickerTests.RunAll();
+            ScreenPointParserTests.RunAll();
             TurnTrackerTests.RunAll();
             SnapshotShapeTests.RunAll();
             DebugVerbArgsTests.RunAll();
