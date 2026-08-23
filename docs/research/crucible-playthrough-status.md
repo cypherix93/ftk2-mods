@@ -223,3 +223,56 @@ plus `KeyboardKeyName` in Core. 326 tests green. Also fixed: `GamepadCommands.La
 never in `RpcServer`'s result chain, so every `crucible_pad*` result was invisible over RPC —
 `KeyboardCommands` was wired in at the same time. **`InputBackgroundCommands.LastResult` is still
 missing from that chain**, which is why `crucible_input_background on` returns a blank result.
+
+## 2026-08-23 (later) — Device input SOLVED for keyboard: two independent bugs, neither was focus
+
+The earlier section concluded that device injection is "blocked while unfocused" and that the
+dividing line is UI events vs. device injection. **Both halves of that were wrong.** Measured:
+
+**Bug 1 — the fake-null tick guard (root cause of several "mysteries").**
+`CruciblePlugin.Instance` is a MonoBehaviour, and this plugin's host GameObject is explicitly
+destroyed at the end of chainloader startup. Unity overloads `operator==` so a destroyed component
+compares EQUAL TO NULL while the managed reference is alive. Every per-tick guard written as
+`if (CruciblePlugin.Instance == null || !Instance.CfgForceSinglePlayer.Value) return;` therefore
+returned early forever, a second after boot. Three separate features were dead the whole time:
+- `InputFocusGateCommands.AutoApplyTick` — the focus gate never auto-applied (the known symptom).
+- `InputBackgroundCommands.AutoApplyTick` — **the Input System stayed on
+  `backgroundBehavior = ResetAndDisableNonBackgroundDevices`**, which disables devices on focus loss.
+- `SinglePlayerGuard.Tick` — so the boot auto-rejoin was never suppressed, which is the
+  `MULTIPLAYER_LOBBY` race the recipes describe as "the game's own behaviour".
+
+Diagnosis: reflection reads `_patchInstalled=True`, `CfgForceSinglePlayer=True`, `Instance` non-null,
+yet `_autoApplied=False` — because reflection bypasses Unity's `==` override while the tick does not.
+Fix: a plain `static bool CruciblePlugin.ForceSinglePlayerEnabled` captured in `Awake`. A plain
+static has no Unity lifetime semantics and cannot fake-null.
+
+**Bug 2 — the press and the release collapsed into one frame.**
+Command handlers run ON the game thread, inside the `RouterMono.Update` postfix that drives
+`MainThreadPump`. `crucible_key`/`crucible_pad` did press → `Thread.Sleep(40)` → release *inside that
+one call*, so no frame ever rendered with the key held and the game's Input Actions never saw a
+press→release transition. Sleeping on the main thread cannot produce a frame — it prevents one.
+Fix: queue the press, then schedule the release on a later tick (`ReleaseDelayFrames = 2`).
+
+**Result, measured live with the window FOCUSED and again after the fixes:**
+
+| Input | Before | After |
+|---|---|---|
+| `crucible_key down` | focus unchanged | focus `campaign-btn` → `multiplayer-btn` |
+| `crucible_key enter` | nothing | activated the button, advanced to `AdventureSelectionUIDocument` |
+| `crucible_pad down` | focus unchanged | **still unchanged** |
+| `crucible_ui_nav down` | worked | worked |
+
+**Keyboard driving now works.** The critical discriminator was that the earlier test never checked
+whether device input worked *with* focus — it did not, which means focus was never the variable.
+
+**The gamepad has a third, separate problem and is being set aside.** It is the only device that must
+be CREATED (`InputSystem.AddDevice<Gamepad>()`) because no physical pad is attached, and it is never
+paired at Unity's `InputUser` level — `crucible_input_devices` shows `inputUsers pairedDeviceCount=2`
+(keyboard + mouse) even after `crucible_pad_pair` folds it into FTK2's own `InputPlayer`. The
+remaining untried lever is `InputUser.PerformPairingWithDevice`. Not worth it: the keyboard is a real,
+already-paired device and FTK2 is fully keyboard-navigable, so **keyboard is the driving path**.
+
+**Still unverified:** whether keyboard input works while the window is genuinely unfocused. The game
+runs fullscreen and reclaims foreground, so an unfocused test could not be forced from here. With
+`backgroundBehavior=IgnoreFocus` now applied at boot (Bug 1's fix) and the `LOST_FOCUS` gate held from
+`Initialize`, the mechanism is in place; it needs one observation while the user is on another window.

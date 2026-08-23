@@ -27,10 +27,25 @@ namespace TypeProbe
 
             sb.AppendLine("## " + result.FullName);
             sb.AppendLine();
-            sb.AppendLine("| Kind | Type | Name |");
-            sb.AppendLine("|---|---|---|");
+            bool anySignature = false;
             foreach (MemberEntry m in result.Members)
-                sb.AppendLine("| " + m.Kind + " | `" + m.TypeName + "` | `" + m.Name + "` |");
+                if (!string.IsNullOrEmpty(m.Signature)) { anySignature = true; break; }
+
+            if (anySignature)
+            {
+                sb.AppendLine("| Kind | Type | Name | Signature |");
+                sb.AppendLine("|---|---|---|---|");
+                foreach (MemberEntry m in result.Members)
+                    sb.AppendLine("| " + m.Kind + " | `" + m.TypeName + "` | `" + m.Name + "` | "
+                        + (string.IsNullOrEmpty(m.Signature) ? "" : "`" + m.Signature + "`") + " |");
+            }
+            else
+            {
+                sb.AppendLine("| Kind | Type | Name |");
+                sb.AppendLine("|---|---|---|");
+                foreach (MemberEntry m in result.Members)
+                    sb.AppendLine("| " + m.Kind + " | `" + m.TypeName + "` | `" + m.Name + "` |");
+            }
 
             return sb.ToString();
         }

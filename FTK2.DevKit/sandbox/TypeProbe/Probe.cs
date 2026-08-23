@@ -10,6 +10,10 @@ namespace TypeProbe
         public string Kind;      // "field" | "prop" | "method"
         public string TypeName;  // field/property type, or method return type
         public string Name;
+        /// <summary>Parameter list for methods, e.g. "(String runId, GameRunData run)". Empty for
+        /// fields and properties. Without this a caller must GUESS an overload, which is the
+        /// single most common way reflection against this game silently binds the wrong member.</summary>
+        public string Signature;
     }
 
     /// <summary>The result of describing one type. Never null; check <see cref="Found"/>.</summary>
@@ -33,6 +37,11 @@ namespace TypeProbe
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
         public static ProbeResult Describe(IEnumerable<Type> types, string simpleName, bool includeMethods)
+        {
+            return Describe(types, simpleName, includeMethods, false);
+        }
+
+        public static ProbeResult Describe(IEnumerable<Type> types, string simpleName, bool includeMethods, bool includeSignatures)
         {
             ProbeResult result = new ProbeResult();
             result.RequestedName = simpleName;
@@ -62,7 +71,9 @@ namespace TypeProbe
                 foreach (MethodInfo m in target.GetMethods(Flags))
                 {
                     if (m.IsSpecialName) continue; // property accessors are already reported as props
-                    result.Members.Add(Entry("method", SafeTypeName(m.ReturnType), m.Name));
+                    MemberEntry me = Entry("method", SafeTypeName(m.ReturnType), m.Name);
+                    if (includeSignatures) me.Signature = DescribeParameters(m);
+                    result.Members.Add(me);
                 }
             }
 
@@ -78,12 +89,36 @@ namespace TypeProbe
             return result;
         }
 
+        /// <summary>
+        /// Renders a method's parameter list. Overloads share a name, so the name alone cannot
+        /// identify which member to bind — this is what distinguishes them.
+        /// </summary>
+        private static string DescribeParameters(MethodInfo m)
+        {
+            try
+            {
+                ParameterInfo[] ps = m.GetParameters();
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                sb.Append('(');
+                for (int i = 0; i < ps.Length; i++)
+                {
+                    if (i > 0) sb.Append(", ");
+                    sb.Append(SafeTypeName(ps[i].ParameterType)).Append(' ').Append(ps[i].Name);
+                }
+                sb.Append(')');
+                if (m.IsStatic) sb.Append(" static");
+                return sb.ToString();
+            }
+            catch (Exception) { return "(unreadable)"; }
+        }
+
         private static MemberEntry Entry(string kind, string typeName, string name)
         {
             MemberEntry e = new MemberEntry();
             e.Kind = kind;
             e.TypeName = typeName;
             e.Name = name;
+            e.Signature = "";
             return e;
         }
 

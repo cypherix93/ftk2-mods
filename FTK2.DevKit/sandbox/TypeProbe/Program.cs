@@ -21,18 +21,22 @@ namespace TypeProbe
         {
             string gameDir = DefaultGameDir;
             bool includeMethods = false;
+            bool includeSignatures = false;
             List<string> typeNames = new List<string>();
 
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == "--game" && i + 1 < args.Length) { gameDir = args[++i]; continue; }
                 if (args[i] == "--methods") { includeMethods = true; continue; }
+                // --signatures implies --methods: a signature is a property of a method, and
+                // asking for one without the other is always a mistake rather than a request.
+                if (args[i] == "--signatures") { includeMethods = true; includeSignatures = true; continue; }
                 typeNames.Add(args[i]);
             }
 
             if (typeNames.Count == 0)
             {
-                Console.Error.WriteLine("usage: TypeProbe [--game <dir>] [--methods] <TypeName> [TypeName...]");
+                Console.Error.WriteLine("usage: TypeProbe [--game <dir>] [--methods] [--signatures] <TypeName> [TypeName...]");
                 return 2;
             }
 
@@ -52,7 +56,7 @@ namespace TypeProbe
             bool allFound = true;
             foreach (string name in typeNames)
             {
-                ProbeResult result = Probe.Describe(types, name, includeMethods);
+                ProbeResult result = Probe.Describe(types, name, includeMethods, includeSignatures);
                 if (!result.Found) allFound = false;
                 Console.WriteLine(Report.ToMarkdown(result));
             }
