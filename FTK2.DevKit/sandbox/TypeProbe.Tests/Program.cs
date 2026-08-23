@@ -14,7 +14,7 @@ namespace TypeProbe.Tests
             Console.WriteLine("=================");
 
             ProbeTests.RunAll();
-            // ReportTests.RunAll(); // restored in Task 3
+            ReportTests.RunAll();
 
             return TestHarness.Report();
         }
