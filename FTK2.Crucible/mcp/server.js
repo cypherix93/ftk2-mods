@@ -116,8 +116,284 @@ const TOOLS = [
       ...INSTANCE_ARG } } },
   { name: 'ftk2_compare_state',
     description: 'Desync oracle: snapshot every instance, compare digests, and report the first diverging field.',
-    inputSchema: { type: 'object', properties: {} } }
+    inputSchema: { type: 'object', properties: {} } },
+  { name: 'ftk2_screen',
+    description: 'The semantic "where am I" tool. Returns route (from /state), the set of active on-screen ' +
+      'UI document names, on-screen Buttons/Labels, and which element is FOCUSED. Route alone is not ' +
+      'trustworthy (it has reported MAIN_MENU while a multiplayer browser and modal were actually on ' +
+      'screen) so this cross-checks route against the actual document dump and flags disagreement. Call ' +
+      'this before deciding anything. Read-only; never clicks anything, including continue-btn/load-btn.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_saves',
+    description: 'Reports whether a save exists and what it is: reads RouterHelper.Env.GameRuns (the run-id ' +
+      'list) and, if the LoadGameUIDocument save panel is currently on screen, parses its labels (adventure ' +
+      'name, difficulty, party classes, round, date, version). If the save panel is NOT on screen this is ' +
+      'reported explicitly and is NOT the same as "no saves exist" -- check gameRunsCount instead. Read-only; ' +
+      'never clicks anything, including continue-btn/load-btn.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_new_game',
+    description: 'Starts new-game setup: clicks one of the three adventure-category buttons (\'Age of ' +
+      'Rebellion\', \'Age of Omus\', \'Challenge Modes\') and dumps what appeared so the caller can choose ' +
+      'the next step. If `adventure` is given it is only used to search the resulting dump for a matching ' +
+      'element -- it is NOT clicked. SAFETY: this tool never clicks continue-btn or load-btn and never ' +
+      'resumes/loads the existing save; it only opens category selection.',
+    inputSchema: { type: 'object', required: ['category'], properties: {
+      category: { type: 'string', description: 'One of: "Age of Rebellion", "Age of Omus", "Challenge Modes"' },
+      adventure: { type: 'string', description: 'Optional adventure name to search for in the resulting dump (not clicked)' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_pick',
+    description: 'Thin, honest wrapper over crucible_ui_click: dumps before and after clicking `selector`, and ' +
+      'reports which UI documents appeared/disappeared. SAFETY: refuses to click if `selector` is, or would ' +
+      'match, the continue-btn or load-btn elements -- those resume/load the owner\'s existing save and this ' +
+      'tool will never trigger that path, even indirectly. A refusal returns the on-screen elements instead ' +
+      'of clicking.',
+    inputSchema: { type: 'object', required: ['selector'], properties: {
+      selector: { type: 'string', description: 'Substring matched against element name/text (same rules as crucible_ui_click)' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_wait_screen',
+    description: 'Polls crucible_ui_dump (on the Node side, not in the game plugin, so it cannot block ' +
+      'MainThreadPump and freeze the game) until a dump containing `expect` as a substring is seen, or ' +
+      'timeoutMs elapses. Use this instead of trusting route, which is unreliable. Read-only; never clicks ' +
+      'anything.',
+    inputSchema: { type: 'object', required: ['expect'], properties: {
+      expect: { type: 'string', description: 'Substring that must appear in a crucible_ui_dump for the wait to succeed' },
+      timeoutMs: { type: 'number', description: 'Max time to poll, in ms (default 10000)' },
+      ...INSTANCE_ARG } } }
 ];
+
+// Elements this server will never allow a click to reach, directly or as an incidental substring
+// match: they resume/load the owner's existing save.
+const FORBIDDEN_CLICK_NAMES = ['continue-btn', 'load-btn'];
+
+/** Parses one crucible_ui_dump line into a plain object. Returns null for non-element lines
+ *  (the "(no matching visible elements)" placeholder or the "... truncated" trailer). */
+function parseUiDumpLine(line) {
+  const m = /^(\S+) name=(?:'([^']*)'|\(null\)) text=(?:'([^']*)'|\(null\)) visible=(True|False) enabled=(True|False) doc=(?:'([^']*)'|\(null\))( \[FOCUSED\])?$/.exec(line);
+  if (!m) return null;
+  return {
+    type: m[1],
+    name: m[2] ?? null,
+    text: m[3] ?? null,
+    visible: m[4] === 'True',
+    enabled: m[5] === 'True',
+    doc: m[6] ?? null,
+    focused: !!m[7]
+  };
+}
+
+function parseUiDump(text) {
+  return (text || '').split('\n').map(parseUiDumpLine).filter(Boolean);
+}
+
+/** Runs crucible_ui_dump and returns { ok, elements, raw } or { ok: false, error }. */
+async function dumpElements(inst, filter, kinds) {
+  const res = await rpc(inst, 'POST', '/exec', { command: 'crucible_ui_dump', args: [filter || '-', kinds || '-'] });
+  if (!res.ok) return { ok: false, error: res.error || 'exec failed' };
+  const raw = res.result || '';
+  if (raw.indexOf('error:') === 0) return { ok: false, error: raw };
+  return { ok: true, elements: parseUiDump(raw), raw };
+}
+
+function matchesSelector(e, selector) {
+  const sel = selector.toLowerCase();
+  return (e.name && e.name.toLowerCase().indexOf(sel) >= 0) || (e.text && e.text.toLowerCase().indexOf(sel) >= 0);
+}
+
+/** True if `selector` is itself a forbidden name, or would match any forbidden element currently
+ *  on screen (the plugin's crucible_ui_click matches by the same name/text substring rule, and we
+ *  cannot rely on traversal order to dodge a match, so any match at all is treated as unsafe). */
+function selectorReachesForbiddenClick(elements, selector) {
+  const sel = (selector || '').trim().toLowerCase();
+  if (FORBIDDEN_CLICK_NAMES.includes(sel)) return true;
+  return elements.some((e) => e.name && FORBIDDEN_CLICK_NAMES.includes(e.name) && matchesSelector(e, selector));
+}
+
+function uniqueDocs(elements) {
+  return [...new Set(elements.map((e) => e.doc).filter(Boolean))];
+}
+
+function diffDocs(beforeDocs, afterDocs) {
+  const b = new Set(beforeDocs), a = new Set(afterDocs);
+  return { appeared: [...a].filter((x) => !b.has(x)), disappeared: [...b].filter((x) => !a.has(x)) };
+}
+
+const NEW_GAME_CATEGORIES = ['Age of Rebellion', 'Age of Omus', 'Challenge Modes'];
+
+function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+
+async function screenTool(inst) {
+  const stateRes = await rpc(inst, 'GET', '/state');
+  const route = stateRes.ok ? (stateRes.snapshot ? stateRes.snapshot.route : null) : null;
+  const dump = await dumpElements(inst, '-', '-');
+  if (!dump.ok) {
+    return { route, stateOk: !!stateRes.ok, uiDumpError: dump.error, note: 'ui dump failed; cannot report on-screen documents' };
+  }
+
+  const activeDocuments = uniqueDocs(dump.elements);
+  const buttons = dump.elements.filter((e) => e.type === 'Button');
+  const labels = dump.elements.filter((e) => e.type === 'Label');
+  const focused = dump.elements.find((e) => e.focused) || null;
+
+  const routeWords = route ? String(route).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean) : [];
+  const docsConcat = activeDocuments.join(' ').toLowerCase();
+  const routeMatchesUi = routeWords.length > 0 && routeWords.every((w) => docsConcat.indexOf(w) >= 0);
+
+  return {
+    route,
+    activeDocuments,
+    routeMatchesUi,
+    warning: (routeWords.length > 0 && !routeMatchesUi)
+      ? 'route (' + JSON.stringify(route) + ') does not obviously match any on-screen document -- do not trust route alone here'
+      : null,
+    focused,
+    buttons,
+    labels
+  };
+}
+
+async function savesTool(inst) {
+  const gr = await rpc(inst, 'POST', '/exec', { command: 'crucible_get', args: ['RouterHelper.Env.GameRuns'] });
+  let gameRunsCount = null, gameRunsSample = [];
+  const grText = gr.ok ? (gr.result || '') : null;
+  if (grText) {
+    const m = /^Count=(\d+)\s*\[(.*)\]/.exec(grText);
+    if (m) {
+      gameRunsCount = parseInt(m[1], 10);
+      gameRunsSample = m[2].split(',').map((s) => s.trim()).filter((s) => s && s !== '...');
+    }
+  }
+
+  const dump = await dumpElements(inst, '-', '-');
+  const savePanelOnScreen = dump.ok && dump.elements.some((e) => e.doc === 'LoadGameUIDocument');
+
+  let currentSave = null;
+  if (savePanelOnScreen) {
+    const panel = dump.elements.filter((e) => e.doc === 'LoadGameUIDocument');
+    const byName = (n) => { const e = panel.find((x) => x.name === n); return e ? e.text : null; };
+    currentSave = {
+      adventureName: byName('adventure-name-label'),
+      difficulty: byName('difficulty-label'),
+      partyClasses: panel.filter((e) => e.name === 'name-label').map((e) => e.text),
+      round: byName('round-label'),
+      date: byName('date-label'),
+      version: byName('version-label'),
+      description: byName('adventure-description-text')
+    };
+  }
+
+  return {
+    gameRunsCount,
+    gameRunsSample,
+    gameRunsRaw: grText,
+    savePanelOnScreen,
+    currentSave,
+    note: savePanelOnScreen
+      ? null
+      : 'LoadGameUIDocument is not currently on screen -- this does NOT mean no saves exist. ' +
+        'Check gameRunsCount, or use ftk2_screen/ftk2_pick to navigate to where "Load Game" can be opened ' +
+        '(but do not click load-btn/continue-btn).'
+  };
+}
+
+async function newGameTool(inst, category, adventure) {
+  if (!NEW_GAME_CATEGORIES.includes(category)) {
+    return { ok: false, error: 'category must be one of: ' + NEW_GAME_CATEGORIES.join(', ') + ' (got ' + JSON.stringify(category) + ')' };
+  }
+
+  const before = await dumpElements(inst, '-', '-');
+  if (!before.ok) return { ok: false, error: before.error, phase: 'before-dump' };
+
+  if (selectorReachesForbiddenClick(before.elements, category)) {
+    return { ok: false, blocked: true, reason: 'refusing: this would reach continue-btn/load-btn', onScreenElements: before.elements };
+  }
+
+  const clickRes = await rpc(inst, 'POST', '/exec', { command: 'crucible_ui_click', args: [category] });
+  const after = await dumpElements(inst, '-', '-');
+
+  const documentsBefore = uniqueDocs(before.elements);
+  const documentsAfter = after.ok ? uniqueDocs(after.elements) : [];
+  const diff = diffDocs(documentsBefore, documentsAfter);
+
+  const adventureMatches = (adventure && after.ok)
+    ? after.elements.filter((e) => matchesSelector(e, adventure))
+    : [];
+
+  return {
+    ok: !!clickRes.ok,
+    category,
+    clickResult: clickRes.ok ? clickRes.result : clickRes.error,
+    documentsBefore,
+    documentsAfter,
+    appeared: diff.appeared,
+    disappeared: diff.disappeared,
+    onScreenAfter: after.ok ? after.elements : null,
+    adventureMatches,
+    guidance: 'Choose the next selector from onScreenAfter/adventureMatches and call ftk2_pick. ' +
+      'Never click continue-btn or load-btn.'
+  };
+}
+
+async function pickTool(inst, selector) {
+  if (!selector) throw new Error('missing selector');
+
+  const before = await dumpElements(inst, '-', '-');
+  if (!before.ok) return { ok: false, error: before.error, phase: 'before-dump' };
+
+  if (selectorReachesForbiddenClick(before.elements, selector)) {
+    return {
+      ok: false,
+      blocked: true,
+      reason: 'refusing to click "' + selector + '": it is, or would match, continue-btn/load-btn, ' +
+        'which would resume/load the existing save. This tool will never do that.',
+      onScreenElements: before.elements
+    };
+  }
+
+  const clickRes = await rpc(inst, 'POST', '/exec', { command: 'crucible_ui_click', args: [selector] });
+  const after = await dumpElements(inst, '-', '-');
+
+  const documentsBefore = uniqueDocs(before.elements);
+  const documentsAfter = after.ok ? uniqueDocs(after.elements) : [];
+  const diff = diffDocs(documentsBefore, documentsAfter);
+
+  return {
+    ok: !!clickRes.ok,
+    selector,
+    clickResult: clickRes.ok ? clickRes.result : clickRes.error,
+    documentsBefore,
+    documentsAfter,
+    appeared: diff.appeared,
+    disappeared: diff.disappeared,
+    onScreenAfter: after.ok ? after.elements : null
+  };
+}
+
+async function waitScreenTool(inst, expect, timeoutMs) {
+  if (!expect) throw new Error('missing expect');
+  timeoutMs = timeoutMs || 10000;
+  const start = Date.now();
+  const pollIntervalMs = 500;
+  let lastDump = null, lastError = null, polls = 0;
+
+  for (;;) {
+    polls++;
+    const dump = await dumpElements(inst, '-', '-');
+    if (dump.ok) {
+      lastDump = dump.raw;
+      if (dump.raw.toLowerCase().indexOf(expect.toLowerCase()) >= 0) {
+        return { matched: true, elapsedMs: Date.now() - start, polls, expect };
+      }
+    } else {
+      lastError = dump.error;
+    }
+
+    const elapsed = Date.now() - start;
+    if (elapsed >= timeoutMs) {
+      return { matched: false, elapsedMs: elapsed, polls, expect, lastDump, lastError };
+    }
+    await sleep(Math.min(pollIntervalMs, timeoutMs - elapsed));
+  }
+}
 
 function textResult(obj) {
   return { content: [{ type: 'text', text: typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2) }] };
@@ -207,6 +483,11 @@ async function callTool(name, args) {
     case 'ftk2_end_phase':
       return textResult(await rpc(inst, 'POST', '/exec', { command: 'EndPhase', args: [] }));
     case 'ftk2_state':         return textResult(await rpc(inst, 'GET', '/state'));
+    case 'ftk2_screen':        return textResult(await screenTool(inst));
+    case 'ftk2_saves':         return textResult(await savesTool(inst));
+    case 'ftk2_new_game':      return textResult(await newGameTool(inst, args.category, args.adventure));
+    case 'ftk2_pick':          return textResult(await pickTool(inst, args.selector));
+    case 'ftk2_wait_screen':   return textResult(await waitScreenTool(inst, args.expect, args.timeoutMs));
     case 'ftk2_read_trace':    return textResult(await rpc(inst, 'GET', '/trace?n=' + (args.n || 50)));
     case 'ftk2_screenshot': {
       const res = await rpc(inst, 'POST', '/screenshot', { label: args.label || null });
