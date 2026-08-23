@@ -15,9 +15,10 @@ namespace FTK2Mods.Crucible
         public const int DefaultCap = 200;
 
         /// <summary>
-        /// Invisible elements are always skipped from the rendered output (but counted). Of the
-        /// remaining visible+matching elements, only the first <paramref name="cap"/> are rendered;
-        /// <paramref name="truncated"/> reports whether more existed than fit.
+        /// Elements that are not <see cref="UiElementInfo.OnScreen"/> are always skipped from the
+        /// rendered output (but counted). Of the remaining on-screen+matching elements, only the
+        /// first <paramref name="cap"/> are rendered; <paramref name="truncated"/> reports whether
+        /// more existed than fit.
         /// </summary>
         public static string Render(
             IEnumerable<UiElementInfo> elements,
@@ -40,9 +41,29 @@ namespace FTK2Mods.Crucible
             out int skippedInvisibleCount,
             out bool truncated)
         {
+            OnScreenTest.SkipReasonCounts ignoredCounts;
+            return Render(elements, filter, kinds, cap, out matchedVisibleCount, out skippedInvisibleCount, out truncated, out ignoredCounts);
+        }
+
+        /// <summary>
+        /// Overload that also breaks down WHY each off-screen element was excluded (SPEC S3 UI
+        /// true-visibility diagnostics) — turns "why is my button missing" into one call instead of
+        /// a follow-up round trip.
+        /// </summary>
+        public static string Render(
+            IEnumerable<UiElementInfo> elements,
+            string filter,
+            string kinds,
+            int cap,
+            out int matchedVisibleCount,
+            out int skippedInvisibleCount,
+            out bool truncated,
+            out OnScreenTest.SkipReasonCounts skipReasons)
+        {
             matchedVisibleCount = 0;
             skippedInvisibleCount = 0;
             truncated = false;
+            skipReasons = new OnScreenTest.SkipReasonCounts();
             if (cap < 1) cap = 1;
 
             bool matchAll = string.IsNullOrEmpty(filter) || filter == "-";
@@ -54,9 +75,10 @@ namespace FTK2Mods.Crucible
                 {
                     if (e == null) continue;
 
-                    if (!e.Visible)
+                    if (!e.OnScreen)
                     {
                         skippedInvisibleCount++;
+                        skipReasons.Add(e.SkipReason);
                         continue;
                     }
 
@@ -107,7 +129,9 @@ namespace FTK2Mods.Crucible
         {
             if (e == null) return "(null)";
             return e.Type + " name=" + Quote(e.Name) + " text=" + Quote(e.Text)
-                + " visible=" + e.Visible + " enabled=" + e.Enabled + (e.Focused ? " [FOCUSED]" : "");
+                + " visible=" + e.Visible + " enabled=" + e.Enabled
+                + " doc=" + Quote(e.DocumentName)
+                + (e.Focused ? " [FOCUSED]" : "");
         }
 
         private static string Quote(string s)
