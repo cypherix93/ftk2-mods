@@ -184,6 +184,26 @@ namespace FTK2Mods.Crucible.Tests
                 object value; string e;
                 TestHarness.False(ArgCoercion.TryCoerce("x", typeof(DateTime), out value, out e), "should fail");
             });
+
+            TestHarness.Run("CancellationToken parameter accepts '-' and yields CancellationToken.None", delegate
+            {
+                object value; string e;
+                TestHarness.True(ArgCoercion.TryCoerce("-", typeof(System.Threading.CancellationToken), out value, out e), "coerced: " + e);
+                TestHarness.True(value is System.Threading.CancellationToken, "value is a CancellationToken");
+                TestHarness.True(((System.Threading.CancellationToken)value) == System.Threading.CancellationToken.None, "value is CancellationToken.None");
+            });
+
+            // NEGATIVE CONTROL: a CancellationToken parameter must REFUSE any value other than the
+            // placeholder. There is no string that could legitimately change what gets passed, so a
+            // caller typing something that looks meaningful must be told it does nothing, not have it
+            // silently accepted and ignored.
+            TestHarness.Run("NEGATIVE: CancellationToken parameter refuses a non-placeholder value", delegate
+            {
+                object value; string e;
+                bool ok = ArgCoercion.TryCoerce("someToken", typeof(System.Threading.CancellationToken), out value, out e);
+                TestHarness.True(!ok, "a non-'-' string must not coerce to a CancellationToken parameter");
+                TestHarness.True(e != null && e.Length > 0, "refusal must explain itself");
+            });
         }
     }
 }

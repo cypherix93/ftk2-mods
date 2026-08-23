@@ -53,6 +53,23 @@ namespace FTK2Mods.Crucible
                 return true;
             }
 
+            // CancellationToken parameters (e.g. AdventureDirector._loadSave's third argument) have
+            // no meaningful string representation -- there is nothing a caller could type that would
+            // change what gets passed. Rather than accept and ignore arbitrary text (which would look
+            // like it mattered and quietly not), only the existing "-" no-value placeholder is
+            // accepted; anything else is refused so a caller who typed a real-looking value finds out
+            // it was never going to do anything. CancellationToken.None is always what gets invoked.
+            if (targetType == typeof(System.Threading.CancellationToken))
+            {
+                if (raw == "-")
+                {
+                    value = System.Threading.CancellationToken.None;
+                    return true;
+                }
+                error = "CancellationToken parameters accept only '-' (there is no string form; the invoker always passes CancellationToken.None); got: " + raw;
+                return false;
+            }
+
             if (targetType == typeof(int))
             {
                 int i;

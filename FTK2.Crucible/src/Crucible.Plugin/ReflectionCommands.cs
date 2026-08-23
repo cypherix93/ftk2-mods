@@ -67,12 +67,14 @@ namespace Crucible.Plugin
             MethodInfo getHandler = typeof(ReflectionCommands).GetMethod("CrucibleGet", BindingFlags.Public | BindingFlags.Static);
             MethodInfo invokeHandler = typeof(ReflectionCommands).GetMethod("CrucibleInvoke", BindingFlags.Public | BindingFlags.Static);
             MethodInfo setHandler = typeof(ReflectionCommands).GetMethod("CrucibleSet", BindingFlags.Public | BindingFlags.Static);
+            MethodInfo loadRunHandler = typeof(ReflectionCommands).GetMethod("CrucibleLoadRun", BindingFlags.Public | BindingFlags.Static);
 
             bool a = GameBridge.RegisterCommand("crucible_get", getHandler, new List<string> { "path" });
             bool b = GameBridge.RegisterCommand("crucible_invoke", invokeHandler, new List<string> { "type", "method", "args (space-separated, or - for none)" });
             bool c = GameBridge.RegisterCommand("crucible_set", setHandler, new List<string> { "path", "value" });
+            bool d = GameBridge.RegisterCommand("crucible_load_run", loadRunHandler, new List<string> { "runId" });
 
-            _registered = a && b && c;
+            _registered = a && b && c && d;
             return _registered;
         }
 
@@ -225,6 +227,204 @@ namespace Crucible.Plugin
             }
 
             LastResult = "old=" + Render(oldValue) + " new=" + Render(coerced);
+        }
+
+        // ----------------------------------------------------------------- crucible_load_run
+
+        /// <summary>
+        /// crucible_load_run &lt;runId&gt; — loads a save BY ID, bypassing the Load Game UI (which
+        /// has no observable response to focus + submit/gamepad-A over RPC, and which sits one
+        /// wrong keypress away from the owner's live co-op save in the same date-ordered list).
+        ///
+        /// SAFETY, non-negotiable: <paramref name="pRunId"/> must be explicit and non-empty
+        /// (<see cref="LoadRunGuard.TryValidateRunId"/>) and must already appear in
+        /// <c>RouterHelper.Env.GameRuns</c> (<see cref="LoadRunGuard.IsKnownRunId"/>). This command
+        /// NEVER falls back to <c>UserData.LastGameRunIdPlayed</c> or "the first"/"the newest" run —
+        /// an implicit choice in a folder that also holds the owner's real saves is exactly the
+        /// mistake this command exists to make impossible.
+        ///
+        /// Call path: <c>AdventureDirector._loadSave(String pGameRunId, String pFilename,
+        /// CancellationToken pCancellationToken)</c>, reached through the same reflective
+        /// <see cref="TryInvoke"/> machinery <c>crucible_invoke</c> uses (now that
+        /// <see cref="ArgCoercion"/> understands <c>CancellationToken</c>). <paramref name="pRunId"/>
+        /// itself is passed for <c>pGameRunId</c>; <c>pFilename</c> is assumed to be
+        /// <c>&lt;runId&gt;.ftk2</c> (on-disk saves observed as GUID-named .ftk2 files, per
+        /// docs/research/crucible-save-load-feasibility.md §6/§4 — ASSUMED, not confirmed against a
+        /// live <c>GameSaveData.GetFileName()</c> call).
+        ///
+        /// Before invoking, this best-effort routes to <c>eRoutes.ADVENTURE_SELECTION</c> via
+        /// <c>RouterMono.Route</c> so the Director that owns <c>_loadSave</c> has a chance to be
+        /// initialized (docs/research/crucible-load-path.md marks this whole sequence
+        /// NEEDS-LIVE-SPIKE); a failure to route is logged but not fatal, since
+        /// <see cref="TryResolveInstance"/> may still find an already-live Director via its
+        /// RouterMono-field fallback strategy.
+        ///
+        /// <b>Verification is necessarily partial in one call.</b> <c>_loadSave</c> returns a
+        /// <c>Task</c> that <see cref="TryInvoke"/> deliberately does not await (see IsTask), and
+        /// every command handler here runs synchronously inside a Harmony postfix on
+        /// <c>RouterMono.Update</c> (see MainThreadPump) — blocking that call with a long sleep
+        /// would freeze the one loop the async load needs to progress on. So this does a short,
+        /// bounded check immediately (and once more after a brief settle), reports exactly what it
+        /// observed via <see cref="LoadRunVerification.Confirm"/>, and says so plainly when the load
+        /// is still in flight: never a bare "success" for a call that only kicked the load off.
+        /// </summary>
+        public static void CrucibleLoadRun(string pRunId)
+        {
+            LastResult = null;
+
+            string guardError;
+            if (!LoadRunGuard.TryValidateRunId(pRunId, out guardError))
+            {
+                LastResult = "error: " + guardError;
+                if (_log != null) _log.LogWarning("crucible_load_run refused: " + guardError);
+                return;
+            }
+
+            object env = GameBridge.GetEnv();
+            if (env == null)
+            {
+                LastResult = "error: RouterHelper.Env unavailable (game may still be loading)";
+                return;
+            }
+
+            string[] knownRunIds;
+            string listError;
+            if (!TryReadGameRuns(env, out knownRunIds, out listError))
+            {
+                LastResult = "error: could not read RouterHelper.Env.GameRuns: " + listError;
+                return;
+            }
+
+            if (!LoadRunGuard.IsKnownRunId(pRunId, knownRunIds))
+            {
+                LastResult = "error: refused: '" + pRunId + "' is not in RouterHelper.Env.GameRuns ("
+                    + knownRunIds.Length + " known run id(s)) -- refusing to load an id the game does not recognize.";
+                return;
+            }
+
+            string routeNote = TryRouteToAdventureSelection();
+            System.Threading.Thread.Sleep(200); // brief settle, not a completion wait -- see method doc.
+
+            string pFilename = pRunId + ".ftk2"; // ASSUMED filename convention -- see method doc.
+            object invokeResult; string invokeStrategy; string invokeError;
+            bool invokeOk = TryInvoke("AdventureDirector", "_loadSave", new[] { pRunId, pFilename, "-" },
+                out invokeResult, out invokeStrategy, out invokeError);
+
+            if (!invokeOk)
+            {
+                LastResult = "error: _loadSave invoke failed: " + invokeError + " | route: " + routeNote;
+                if (_log != null) _log.LogWarning("crucible_load_run failed: " + invokeError);
+                return;
+            }
+
+            // One immediate read, then one more after letting a couple of frames pass -- NOT a
+            // long poll (see method doc on why blocking here would stall the load itself).
+            bool loaded; string evidence;
+            CheckLoaded(pRunId, out loaded, out evidence);
+            if (!loaded)
+            {
+                System.Threading.Thread.Sleep(500);
+                CheckLoaded(pRunId, out loaded, out evidence);
+            }
+
+            LastResult = "loaded=" + loaded + " " + evidence
+                + " | invoke=[" + invokeStrategy + "] " + Render(invokeResult)
+                + " | route=" + routeNote
+                + (loaded ? "" : " | NOTE: not confirmed within this call -- _loadSave is async and this "
+                    + "handler cannot block the frame loop waiting for it; re-check with "
+                    + "'crucible_get RouterHelper.Env.SelectedGameRunId' or crucible_state after a few seconds.");
+
+            if (_log != null) _log.LogInfo("crucible_load_run(" + pRunId + "): " + LastResult);
+        }
+
+        /// <summary>Reads RouterHelper.Env.GameRuns (a List&lt;string&gt; of run-id GUIDs) as a string[].</summary>
+        private static bool TryReadGameRuns(object env, out string[] runIds, out string error)
+        {
+            runIds = null;
+            error = null;
+            try
+            {
+                FieldInfo field = AccessTools.Field(env.GetType(), "GameRuns");
+                object value = field != null ? field.GetValue(env) : null;
+                IEnumerable enumerable = value as IEnumerable;
+                if (enumerable == null)
+                {
+                    error = "GameRuns field not found or not enumerable";
+                    return false;
+                }
+                List<string> list = new List<string>();
+                foreach (object item in enumerable) list.Add(item == null ? null : item.ToString());
+                runIds = list.ToArray();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Best-effort route to eRoutes.ADVENTURE_SELECTION via the public RouterMono.Route. Returns
+        /// a human-readable note of what happened; never throws, and a failure here is not treated
+        /// as fatal by the caller (docs/research/crucible-load-path.md marks this hop ASSUMED, not
+        /// CONFIRMED, and TryResolveInstance's RouterMono-field fallback may find a live Director
+        /// regardless of the current route).
+        /// </summary>
+        private static string TryRouteToAdventureSelection()
+        {
+            try
+            {
+                Type routerMonoType = AccessTools.TypeByName("RouterMono");
+                Type eRoutesType = AccessTools.TypeByName("eRoutes");
+                Type unityObject = AccessTools.TypeByName("UnityEngine.Object");
+                if (routerMonoType == null || eRoutesType == null || unityObject == null)
+                    return "skipped (RouterMono/eRoutes/UnityEngine.Object type not found)";
+
+                MethodInfo findObjectOfType = AccessTools.Method(unityObject, "FindObjectOfType", new[] { typeof(Type) });
+                object router = findObjectOfType == null ? null : findObjectOfType.Invoke(null, new object[] { routerMonoType });
+                if (router == null) return "skipped (no live RouterMono instance)";
+
+                MethodInfo route = AccessTools.Method(routerMonoType, "Route",
+                    new[] { eRoutesType, typeof(int), typeof(object), typeof(bool), typeof(bool) });
+                if (route == null) return "skipped (RouterMono.Route signature not found)";
+
+                object targetRoute;
+                try { targetRoute = Enum.Parse(eRoutesType, "ADVENTURE_SELECTION", true); }
+                catch (Exception) { return "skipped (eRoutes.ADVENTURE_SELECTION not found)"; }
+
+                route.Invoke(router, new object[] { targetRoute, 0, null, false, false });
+                return "routed to ADVENTURE_SELECTION";
+            }
+            catch (Exception ex)
+            {
+                return "failed (" + ex.Message + ")";
+            }
+        }
+
+        /// <summary>One reflective read of run.present + RouterHelper.Env.SelectedGameRunId, reduced through LoadRunVerification.</summary>
+        private static void CheckLoaded(string requestedRunId, out bool loaded, out string evidence)
+        {
+            loaded = false;
+            evidence = "evidence unavailable";
+            try
+            {
+                object env = GameBridge.GetEnv();
+                if (env == null) { evidence = "requestedRunId=" + requestedRunId + " RouterHelper.Env=unavailable"; return; }
+
+                FieldInfo gameRunField = AccessTools.Field(env.GetType(), "GameRun");
+                object gameRun = gameRunField != null ? gameRunField.GetValue(env) : null;
+                bool present = gameRun != null;
+
+                FieldInfo selectedField = AccessTools.Field(env.GetType(), "SelectedGameRunId");
+                object selected = selectedField != null ? selectedField.GetValue(env) : null;
+
+                loaded = LoadRunVerification.Confirm(requestedRunId, present, selected as string, out evidence);
+            }
+            catch (Exception ex)
+            {
+                evidence = "evidence read threw: " + ex.Message;
+            }
         }
 
         // ----------------------------------------------------------------- crucible_get
