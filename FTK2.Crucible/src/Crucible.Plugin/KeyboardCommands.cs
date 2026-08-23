@@ -9,19 +9,21 @@ using HarmonyLib;
 namespace Crucible.Plugin
 {
     /// <summary>
-    /// Keyboard-driving <c>crucible_key</c> console command.
+    /// Keyboard-driving <c>crucible_key</c> console command. This is the harness's primary input
+    /// path: FTK2 is fully keyboard-navigable, and the keyboard is a REAL device that the game has
+    /// already paired to its single <c>InputPlayer</c>.
     ///
-    /// This exists because the virtual gamepad is a dead end. FTK2 only honours input from devices
-    /// paired to its single <c>InputPlayer</c>, and no physical pad is attached — so
-    /// <see cref="GamepadCommands"/> must CREATE one, and a created device is never paired. Live
-    /// proof 2026-08-23: after <c>crucible_pad_pair</c> reported the pad folded into
-    /// InputPlayer(AssignmentIndex=-1) with activated=True, a DpadDown press still did not move
-    /// menu focus off <c>campaign-btn</c>.
+    /// It never calls AddDevice. A created keyboard would not be paired and its input would be
+    /// silently ignored, which is precisely the gamepad's unsolved problem: no physical pad is
+    /// attached, so <see cref="GamepadCommands"/> must create one, and even after
+    /// <c>crucible_pad_pair</c> folds it into FTK2's own <c>InputPlayer</c> the game still ignores
+    /// it (`InputUser.pairedDeviceCount` stays at 2 — keyboard and mouse only). Measured live
+    /// 2026-08-23: with the window focused and taps spanning frames, <c>crucible_key</c> moved menu
+    /// focus and activated buttons while <c>crucible_pad</c> did neither.
     ///
-    /// A real Keyboard already exists and is already paired, exactly like the Mouse that
-    /// <see cref="MouseCommands"/> has always driven successfully. So this never calls AddDevice: if
-    /// <c>Keyboard.current</c> is absent we fail loudly rather than creating an unpaired device that
-    /// would silently do nothing — the precise failure this class was written to escape.
+    /// Taps span real frames — see <see cref="Tick"/> and <see cref="HoldFrames"/>. Pressing and
+    /// releasing inside one handler call does nothing at all, because handlers run on the game
+    /// thread and no frame renders with the key held.
     ///
     /// Reflection-only, like every sibling: no compile-time reference to Unity.InputSystem.dll.
     /// </summary>
@@ -34,9 +36,37 @@ namespace Crucible.Plugin
         private static readonly MethodInfo KeyHandler =
             typeof(KeyboardCommands).GetMethod("CrucibleKey", BindingFlags.Public | BindingFlags.Static);
 
+        /// <summary>Frames the key stays held before the scheduled release. See <see cref="HoldFrames"/>.</summary>
+        private const int ReleaseDelayFrames = HoldFrames.Minimum;
+
+        private static object _pendingRelease;
+        private static object _pendingReleaseDevice;
+        private static int _pendingReleaseFrames;
+
         internal static void Initialize(ManualLogSource log)
         {
             _log = log;
+        }
+
+        /// <summary>
+        /// Called every tick. Flushes a scheduled key release once enough frames have passed, so a
+        /// tap spans real frames instead of collapsing inside one handler call. Never throws.
+        /// </summary>
+        internal static void Tick()
+        {
+            if (_pendingRelease == null) return;
+            if (_pendingReleaseFrames > 0) { _pendingReleaseFrames--; return; }
+
+            object state = _pendingRelease;
+            object device = _pendingReleaseDevice;
+            _pendingRelease = null;
+            _pendingReleaseDevice = null;
+
+            string error;
+            if (!QueueAndUpdate(device, state, out error) && _log != null)
+            {
+                _log.LogWarning("crucible_key: scheduled release failed: " + error);
+            }
         }
 
         /// <summary>Deferred registration: the game's command registry does not exist during Awake.</summary>
@@ -77,20 +107,26 @@ namespace Crucible.Plugin
                     return;
                 }
 
-                string pressError, releaseError;
+                string pressError;
                 bool sentPress = QueueAndUpdate(device, pressedState, out pressError);
 
-                // The release is always attempted: leaving a key latched down would corrupt every
-                // later command, so a failed press must not skip it.
-                Thread.Sleep(40);
-                bool sentRelease = QueueAndUpdate(device, releasedState, out releaseError);
+                // The release is scheduled on a LATER FRAME, never in this call.
+                //
+                // Command handlers run on the game thread, inside the RouterMono.Update postfix that
+                // drives MainThreadPump. A press/Thread.Sleep/release sequence therefore completes
+                // entirely within ONE frame: the game never gets an Update where the key reads as
+                // held, so its Input Actions never see a press->release transition and nothing
+                // happens. Measured 2026-08-23: a same-call tap moved no menu focus even with the
+                // window focused, while a synthetic NavigationMoveEvent on the same screen did.
+                _pendingRelease = releasedState;
+                _pendingReleaseDevice = device;
+                _pendingReleaseFrames = ReleaseDelayFrames;
 
                 LastResult = DescribeDevice(device)
                     + " key=" + canonical
                     + " pressed=" + sentPress
-                    + " released=" + sentRelease
-                    + (pressError == null ? "" : " pressError=" + pressError)
-                    + (releaseError == null ? "" : " releaseError=" + releaseError);
+                    + " releaseScheduledInFrames=" + ReleaseDelayFrames
+                    + (pressError == null ? "" : " pressError=" + pressError);
             }
             catch (Exception ex)
             {

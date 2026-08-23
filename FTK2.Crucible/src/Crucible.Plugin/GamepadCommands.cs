@@ -657,9 +657,17 @@ namespace Crucible.Plugin
         }
 
         /// <summary>
-        /// Press-then-release: queue a GamepadState with the button bit set, InputSystem.Update(),
-        /// wait, then queue the cleared state and Update() again. The release is always attempted,
-        /// even if the press failed — a press with no release would jam the virtual controller.
+        /// Queues the button-down state and SCHEDULES the release for a later frame.
+        ///
+        /// It does NOT sleep and release in-line. Command handlers run on the game thread inside the
+        /// RouterMono.Update postfix, so a press/Thread.Sleep/release sequence completes within a
+        /// single frame and the game never gets an Update where the button reads as held — its Input
+        /// Actions therefore never observe a press->release transition and nothing happens. Measured
+        /// 2026-08-23: an in-line tap moved no menu focus even with the window focused, while the
+        /// same press scheduled across frames moved focus correctly.
+        ///
+        /// <paramref name="waitMs"/> is retained for callers that express hold time in milliseconds
+        /// and is converted to whole frames (never fewer than <see cref="HoldFrames.Minimum"/>).
         /// </summary>
         private static void TapButton(object device, string canonicalButton, int waitMs, out bool sentPress, out string pressError, out bool sentRelease, out string releaseError)
         {
@@ -670,11 +678,43 @@ namespace Crucible.Plugin
             bool builtPressed = BuildButtonState(canonicalButton, true, out pressedState, out pressError);
             sentPress = builtPressed && QueueAndUpdate(device, pressedState, out pressError);
 
-            Thread.Sleep(waitMs);
-
             object releasedState;
             bool builtReleased = BuildButtonState(canonicalButton, false, out releasedState, out releaseError);
-            sentRelease = builtReleased && QueueAndUpdate(device, releasedState, out releaseError);
+            if (builtReleased)
+            {
+                _pendingRelease = releasedState;
+                _pendingReleaseDevice = device;
+                _pendingReleaseFrames = HoldFrames.ForMilliseconds(waitMs);
+            }
+
+            // "Scheduled", not "sent". Reporting a release that has not happened yet would be a lie
+            // of exactly the kind this harness exists to avoid.
+            sentRelease = false;
+        }
+
+        private static object _pendingRelease;
+        private static object _pendingReleaseDevice;
+        private static int _pendingReleaseFrames;
+
+        /// <summary>
+        /// Called every tick. Flushes a scheduled button release once enough frames have passed, so a
+        /// tap spans real frames instead of collapsing inside one handler call. Never throws.
+        /// </summary>
+        internal static void Tick()
+        {
+            if (_pendingRelease == null) return;
+            if (_pendingReleaseFrames > 0) { _pendingReleaseFrames--; return; }
+
+            object state = _pendingRelease;
+            object device = _pendingReleaseDevice;
+            _pendingRelease = null;
+            _pendingReleaseDevice = null;
+
+            string error;
+            if (!QueueAndUpdate(device, state, out error) && _log != null)
+            {
+                _log.LogWarning("crucible_pad: scheduled release failed: " + error);
+            }
         }
 
         // ============================================================== device resolution
