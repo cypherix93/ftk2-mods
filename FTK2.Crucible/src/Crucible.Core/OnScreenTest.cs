@@ -108,6 +108,30 @@ namespace FTK2Mods.Crucible
             return true;
         }
 
+        /// <summary>
+        /// True if <paramref name="ownFrame"/> ALONE guarantees <see cref="IsOnScreen"/> will be
+        /// false for this element and for EVERY descendant, regardless of what's above it in the
+        /// ancestor chain or below it in the subtree. This is what makes the perf pruning in
+        /// UiCommands.cs's tree walk (SPEC S3 UI dump perf) provably equivalent to the full walk:
+        /// each of the three checks above (Visible/DisplayNone/Opacity) fails the WHOLE chain the
+        /// moment ANY single frame in it fails, and <paramref name="ownFrame"/> is part of every
+        /// descendant's chain too — so once it fails here, a caller may skip reflecting into the
+        /// subtree entirely, cheaply count it instead, and attribute the whole count to
+        /// <paramref name="reason"/> (an approximation for the diagnostic tally only; the on-screen
+        /// decision itself is exact).
+        /// </summary>
+        public static bool TryGetSubtreePruneReason(AncestorFrame ownFrame, out SkipReason reason)
+        {
+            if (ownFrame.Visible == null) { reason = SkipReason.Unresolved; return true; }
+            if (ownFrame.Visible == false) { reason = SkipReason.HiddenAncestor; return true; }
+            if (ownFrame.DisplayNone == null) { reason = SkipReason.Unresolved; return true; }
+            if (ownFrame.DisplayNone == true) { reason = SkipReason.DisplayNone; return true; }
+            if (ownFrame.Opacity == null) { reason = SkipReason.Unresolved; return true; }
+            if (!(ownFrame.Opacity.Value > 0)) { reason = SkipReason.ZeroOpacity; return true; }
+            reason = SkipReason.None;
+            return false;
+        }
+
         /// <summary>Tally of why elements were excluded, for <c>crucible_ui_dump</c>'s diagnostic summary.</summary>
         public sealed class SkipReasonCounts
         {
@@ -120,15 +144,38 @@ namespace FTK2Mods.Crucible
 
             public void Add(SkipReason reason)
             {
+                Add(reason, 1);
+            }
+
+            /// <summary>Used to fold a pruned subtree's whole descendant count into one bucket at once, instead of one Add() call per descendant.</summary>
+            public void Add(SkipReason reason, int count)
+            {
                 switch (reason)
                 {
-                    case SkipReason.InactiveDocument: InactiveDocument++; break;
-                    case SkipReason.HiddenAncestor: HiddenAncestor++; break;
-                    case SkipReason.DisplayNone: DisplayNone++; break;
-                    case SkipReason.ZeroOpacity: ZeroOpacity++; break;
-                    case SkipReason.ZeroSize: ZeroSize++; break;
-                    case SkipReason.Unresolved: Unresolved++; break;
+                    case SkipReason.InactiveDocument: InactiveDocument += count; break;
+                    case SkipReason.HiddenAncestor: HiddenAncestor += count; break;
+                    case SkipReason.DisplayNone: DisplayNone += count; break;
+                    case SkipReason.ZeroOpacity: ZeroOpacity += count; break;
+                    case SkipReason.ZeroSize: ZeroSize += count; break;
+                    case SkipReason.Unresolved: Unresolved += count; break;
                 }
+            }
+
+            /// <summary>Adds every bucket of <paramref name="other"/> into this instance — used to merge one UIDocument's walk stats into the dump-wide total.</summary>
+            public void Merge(SkipReasonCounts other)
+            {
+                if (other == null) return;
+                InactiveDocument += other.InactiveDocument;
+                HiddenAncestor += other.HiddenAncestor;
+                DisplayNone += other.DisplayNone;
+                ZeroOpacity += other.ZeroOpacity;
+                ZeroSize += other.ZeroSize;
+                Unresolved += other.Unresolved;
+            }
+
+            public int Total()
+            {
+                return InactiveDocument + HiddenAncestor + DisplayNone + ZeroOpacity + ZeroSize + Unresolved;
             }
 
             public string Format()
