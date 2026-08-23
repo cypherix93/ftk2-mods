@@ -28,6 +28,8 @@ namespace FTK2Mods.Crucible.Tests
             PadCommandTests.RunAll();
             WarningTests.RunAll();
             ResolverTests.RunAll();
+            TypePrefixResolverTests.RunAll();
+            InputBackgroundBehaviorPickerTests.RunAll();
             TurnTrackerTests.RunAll();
             SnapshotShapeTests.RunAll();
             DebugVerbArgsTests.RunAll();
