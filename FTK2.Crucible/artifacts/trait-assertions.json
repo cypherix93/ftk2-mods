@@ -1,0 +1,57 @@
+[
+ {
+  "check": "vampiric got a turn",
+  "passed": true,
+  "detail": "active entity"
+ },
+ {
+  "check": "Blood Price procced",
+  "passed": true,
+  "detail": "proc SKILL_CF_VAMPIRIC_BLOOD_PRICE (BloodPrice) owner=bb212c3e-05cb-4476-bf81-31b013d04737 actions=1"
+ },
+ {
+  "check": "Blood Price did not throw",
+  "passed": true,
+  "detail": "no exception"
+ },
+ {
+  "check": "net HP moved as designed",
+  "passed": true,
+  "detail": "hp delta -3 (cost 3, drain returns 25% of damage dealt)"
+ },
+ {
+  "check": "Crimson Drain procced",
+  "passed": false,
+  "detail": "no proc line"
+ },
+ {
+  "check": "Crimson Drain did not throw",
+  "passed": true,
+  "detail": "no exception"
+ },
+ {
+  "check": "Pacifist kit is non-damaging",
+  "passed": true,
+  "detail": "no basic attack in the active kit"
+ },
+ {
+  "check": "Pacifist kit has ONLY_* abilities",
+  "passed": true,
+  "detail": "ONLY_ARMORUP_OTHER_ATTACK, ONLY_ATTACKDOWN_ATTACK, ONLY_ATTACKUP_OTHER_ATTACK, ONLY_STUN_ATTACK"
+ },
+ {
+  "check": "First Partner procced",
+  "passed": false,
+  "detail": "no proc line"
+ },
+ {
+  "check": "First Partner did not throw",
+  "passed": true,
+  "detail": "no exception"
+ },
+ {
+  "check": "a partner beast is on the field",
+  "passed": true,
+  "detail": "1 wolf combatant(s)"
+ }
+]
