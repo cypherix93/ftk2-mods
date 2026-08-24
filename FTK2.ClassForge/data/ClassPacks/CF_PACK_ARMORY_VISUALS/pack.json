@@ -1,0 +1,8 @@
+{
+  "id": "CF_PACK_ARMORY_VISUALS",
+  "name": "Armory visual fallbacks",
+  "version": "1.0.0",
+  "loadOrder": 10,
+  "dependencies": [],
+  "enabled": true
+}

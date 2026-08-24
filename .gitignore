@@ -23,3 +23,5 @@ __pycache__/
 
 # Claude Code local state (settings, worktrees)
 .claude/
+.playwright-mcp/
+.temp/

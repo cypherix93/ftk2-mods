@@ -45,11 +45,17 @@ namespace ClassForge.Plugin
         private static readonly Dictionary<string, Texture2D> Cache = new Dictionary<string, Texture2D>(StringComparer.Ordinal);
         private static readonly HashSet<string> Missing = new HashSet<string>(StringComparer.Ordinal);
 
+        /// <summary>Diagnostic (2026-08-15, trait-icon report): pack-shaped ids that missed
+        /// <c>plan.Icons</c>, logged once each so the log shows exactly which ids fall through to the
+        /// vanilla atlas. Vanilla TRAIT_* ids landing here once is expected and informative, not a bug.</summary>
+        private static readonly HashSet<string> LoggedPlanMisses = new HashSet<string>(StringComparer.Ordinal);
+
         /// <summary>Dropped whenever the merge plan is replaced, so a hot-reload picks up edited PNGs.</summary>
         internal static void InvalidateCache()
         {
             Cache.Clear();
             Missing.Clear();
+            LoggedPlanMisses.Clear();
         }
 
         /// <summary>
@@ -71,7 +77,15 @@ namespace ClassForge.Plugin
                 if (string.IsNullOrEmpty(id)) return true;   // enum ids (eSkills etc.) are never pack content
 
                 string path;
-                if (!plan.Icons.TryGetValue(id, out path)) return true;
+                if (!plan.Icons.TryGetValue(id, out path))
+                {
+                    if ((id.StartsWith("TRAIT_", StringComparison.Ordinal) || id.StartsWith("CF_", StringComparison.Ordinal))
+                        && LoggedPlanMisses.Add(id))
+                        ClassForgePlugin.Log.LogWarning(
+                            "[ClassForge] Icon lookup for '" + id + "' (atlas " + pAtlas + ") not in pack icons — " +
+                            "vanilla path used. Logged once per id.");
+                    return true;
+                }
 
                 var texture = LoadTexture("icon:" + id, path);
                 if (texture == null) return true;
@@ -89,7 +103,14 @@ namespace ClassForge.Plugin
 
         /// <summary>
         /// Prefix for <c>GetRender(string pKey, bool pAllowPrerender, bool pIsDialogue)</c>.
-        /// Serves <c>MergePlan.Portraits</c> entries by content id.
+        /// Serves <c>MergePlan.Portraits</c> entries by content id, then falls back to
+        /// <c>MergePlan.Icons</c> so pack content without a dedicated render still gets art.
+        /// <para><b>Why the Icons fallback:</b> the Loadout item card fills its preview pane via
+        /// <c>AssetLoader.GetRender(InventoryHelper.GetItemRenderName(thing))</c>, which for anything
+        /// without MATERIAL custom data is just the config name (InventoryHelper.cs L175). Pack traits
+        /// and items have no <c>dRender</c>/prerender record, so the pane rendered blank; the pack's
+        /// icon PNG is the right art to show there. Classes keep their dedicated portraits (checked
+        /// first), and ids we don't own still fall through to the vanilla lookup untouched.</para>
         /// <para>Returning <c>false</c> deliberately skips the vanilla
         /// <c>MemoryManagementHelper.IncrementRefCount</c> bookkeeping — correct, because the returned
         /// <c>Texture2D</c> is owned by ClassForge's cache, not by the game's prerender pool.</para>
@@ -103,16 +124,32 @@ namespace ClassForge.Plugin
                 if (string.IsNullOrEmpty(pKey)) return true;
 
                 var plan = ClassForgePlugin.CurrentMergePlan;
-                if (plan == null || plan.Portraits.Count == 0) return true;
+                if (plan == null) return true;
 
                 string path;
-                if (!plan.Portraits.TryGetValue(pKey, out path)) return true;
+                if (plan.Portraits.Count > 0 && plan.Portraits.TryGetValue(pKey, out path))
+                {
+                    var portrait = LoadTexture("portrait:" + pKey, path);
+                    if (portrait != null)
+                    {
+                        __result = portrait;
+                        return false;
+                    }
+                }
 
-                var texture = LoadTexture("portrait:" + pKey, path);
-                if (texture == null) return true;
+                // Item-card fallback: no portrait, but the id has pack icon art (traits, pack items).
+                // A distinct cache key keeps this Texture2D independent of the icon-atlas usage above.
+                if (plan.Icons.Count > 0 && plan.Icons.TryGetValue(pKey, out path))
+                {
+                    var icon = LoadTexture("cardicon:" + pKey, path);
+                    if (icon != null)
+                    {
+                        __result = icon;
+                        return false;
+                    }
+                }
 
-                __result = texture;
-                return false;
+                return true;
             }
             catch (Exception ex)
             {

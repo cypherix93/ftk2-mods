@@ -37,7 +37,8 @@ namespace ClassForge.Core
             string guid,
             string version,
             bool enableRecipeEngine,
-            bool enableTraitLoadoutInjection)
+            bool enableTraitLoadoutInjection,
+            bool enableStatModifiers = true)
         {
             var features = new List<string>();
             features.AddRange(result.EnabledOrderedPacks.Select(p => p.Id).Distinct(StringComparer.Ordinal));
@@ -45,6 +46,7 @@ namespace ClassForge.Core
             // B4: gameplay-relevant feature knobs, canonical "feature:Name=true|false" form.
             features.Add(FeaturePrefix + "EnableRecipeEngine=" + BoolText(enableRecipeEngine));
             features.Add(FeaturePrefix + "EnableTraitLoadoutInjection=" + BoolText(enableTraitLoadoutInjection));
+            features.Add(FeaturePrefix + "EnableStatModifiers=" + BoolText(enableStatModifiers));
 
             return new ParityRegistration
             {

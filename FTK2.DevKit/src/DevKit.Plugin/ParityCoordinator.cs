@@ -28,6 +28,18 @@ namespace DevKit.Plugin
         private static bool _initialized;
         private static string _localDataHash = string.Empty;
 
+        /// <summary>Task #12: the kickoff can race <c>PlayingOnlineMultiplayer</c> (host log
+        /// 2026-08-15: the flag was still false at <c>PartyManagementDirector.Initialize</c>, so the
+        /// handshake silently skipped and no verdict ever arrived). The latch keeps the handshake
+        /// OWED until a kickoff actually broadcast while the flag was up; the receive prefix retries
+        /// it on the first lobby traffic (<see cref="OnNetworkTrafficObserved"/>).</summary>
+        private static readonly HandshakeRetryLatch _handshakeLatch = new HandshakeRetryLatch();
+
+        /// <summary>Re-entrancy guard for the retry path: it runs inside the network receive prefix,
+        /// and the kickoff it triggers can itself pump actions synchronously. Main-thread only, so a
+        /// plain bool is sufficient.</summary>
+        private static bool _retryEntered;
+
         /// <summary>DevKit's own <c>dataHash</c> over its <c>data/</c> folder.</summary>
         internal static string LocalDataHash
         {
@@ -75,15 +87,48 @@ namespace DevKit.Plugin
         /// possible late joiner) ask the host for a fresh one rather than trusting stale state
         /// (SPEC §3 late-join re-query).
         /// </summary>
-        internal static void OnSessionStarted(object directorInstance)
+        internal static void OnSessionStarted(object directorInstance, string phase = "adventure")
         {
             if (!_initialized) return;
 
             // M4b: a transport failure blinds this peer for one session at most. Clearing here is
             // what makes the retry "re-probe on next session start" rather than process-permanent.
+            // A traffic-triggered RETRY (task #12) deliberately does NOT come through here — these
+            // resets would wipe verdict state mid-handshake.
             ParityTransport.ResetForNewSession();
             ParityService.ResetSession();
+            _handshakeLatch.OnSessionStart();
 
+            TryRunHandshake(directorInstance, phase, true);
+        }
+
+        /// <summary>
+        /// Task #12 retry entry: called from the network receive prefix on EVERY observed action.
+        /// If the session-start kickoff was withheld because <c>PlayingOnlineMultiplayer</c> had not
+        /// flipped yet, the first received lobby traffic proves the session is live and runs the
+        /// handshake now — the host hears it on the joiner's first stat sync, the joiner on its first
+        /// received action. At most one successful handshake per session (the latch); a failed send
+        /// stays owed, bounded by the transport's own per-session failure cap. Hot path: the latch
+        /// check is one bool read once the handshake completed.
+        /// </summary>
+        internal static void OnNetworkTrafficObserved(object directorInstance)
+        {
+            if (!_initialized) return;
+            if (_handshakeLatch.Completed) return;
+            if (_retryEntered) return;
+            _retryEntered = true;
+            try
+            {
+                TryRunHandshake(directorInstance, "party phase, first lobby traffic", false);
+            }
+            finally
+            {
+                _retryEntered = false;
+            }
+        }
+
+        private static void TryRunHandshake(object directorInstance, string phase, bool initialKickoff)
+        {
             // The Initialize postfix always supplies __instance; fall back to the cached director so a
             // future non-instance trigger still reaches the session flags.
             if (directorInstance == null) directorInstance = ParityTransport.CurrentDirector;
@@ -91,20 +136,36 @@ namespace DevKit.Plugin
             // M3: gate the entire handshake on the game's own MP flag. In single-player the game's
             // sender returns false before touching the network anyway (AdventureDirector.cs:15137),
             // but taking no code path at all is the stronger guarantee.
-            if (!GameSurface.IsOnlineMultiplayer(directorInstance))
+            bool online = GameSurface.IsOnlineMultiplayer(directorInstance);
+            if (!_handshakeLatch.ShouldAttempt(online))
             {
-                DevKitPlugin.Verbose("ParityService: not an online multiplayer session "
-                    + "(NetworkData.PlayingOnlineMultiplayer=false); parity handshake skipped.");
+                if (initialKickoff && !online)
+                {
+                    // Task #12: promoted from Verbose — this silent branch is exactly the race that
+                    // left MP traits fail-closed with nothing in the log.
+                    DevKitPlugin.Log.LogInfo("ParityService: not an online multiplayer session at "
+                        + phase + " init (NetworkData.PlayingOnlineMultiplayer=false) - if this "
+                        + "becomes an online session, the handshake retries on the first received "
+                        + "lobby traffic.");
+                }
+                else if (!initialKickoff)
+                {
+                    DevKitPlugin.Verbose("ParityService: handshake retry skipped (online="
+                        + (online ? "true" : "false") + ", completed="
+                        + (_handshakeLatch.Completed ? "true" : "false") + ").");
+                }
                 return;
             }
 
             bool isHost = GameSurface.IsHost(directorInstance);
             ParityService.SetIsHost(isHost);
-            DevKitPlugin.Log.LogInfo("ParityService: online multiplayer session detected, isHost="
-                + (isHost ? "true" : "false") + "; running the FTK2MODS_PARITY_V1 handshake.");
+            DevKitPlugin.Log.LogInfo("ParityService: online multiplayer session detected (" + phase
+                + " phase), isHost=" + (isHost ? "true" : "false")
+                + "; running the FTK2MODS_PARITY_V1 handshake.");
 
             string snapshot = ParityService.BuildCappedSnapshotPayload();
             bool sent = ParityTransport.Send(snapshot);
+            _handshakeLatch.OnAttemptResult(sent);   // task #12: only a successful broadcast retires the retry
             if (!sent)
             {
                 DevKitPlugin.Log.LogWarning("ParityService: could not broadcast FTK2MODS_PARITY_V1 - "

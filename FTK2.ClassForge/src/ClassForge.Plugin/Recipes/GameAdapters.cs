@@ -500,6 +500,44 @@ namespace ClassForge.Plugin
             catch { return false; }
         }
 
+        /// <summary>STATE_HASH_CHANCE spec §2.1 <c>COMBAT_SEED</c>: <c>CombatState.Random.Seed</c> —
+        /// <c>public readonly int</c> (PSN §10), identical on every peer. Deliberately NOT
+        /// <see cref="CombatIdentity"/>: its ReferenceEquals half is process-local and must never feed a
+        /// cross-peer hash.</summary>
+        public int CombatSeed
+        {
+            get { try { return Random != null ? Random.Seed : 0; } catch { return 0; } }
+        }
+
+        /// <summary>STATE_HASH_CHANCE spec §2.1 <c>RUN_SEED</c>: <c>GameRunData.MapGenSeed</c>.</summary>
+        public int RunSeed
+        {
+            get
+            {
+                try
+                {
+                    var run = Env != null ? Env.GameRun : null;
+                    return run != null ? run.MapGenSeed : 0;
+                }
+                catch { return 0; }
+            }
+        }
+
+        /// <summary>STATE_HASH_CHANCE spec §2.1 <c>ENCOUNTER_GUID</c>: <c>GameRun.AdventureState.EncounterGUID</c>.</summary>
+        public string EncounterGuid
+        {
+            get
+            {
+                try
+                {
+                    var run = Env != null ? Env.GameRun : null;
+                    var adv = run != null ? run.AdventureState : null;
+                    return adv != null && adv.EncounterGUID != null ? adv.EncounterGUID : "";
+                }
+                catch { return ""; }
+            }
+        }
+
         /// <summary>Action sink. The plan is collected here and executed by <see cref="RecipeActionExecutor"/>
         /// after the dispatcher returns, so nothing mutates game state mid-evaluation.</summary>
         public void EmitAction(EngineAction action)

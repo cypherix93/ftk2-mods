@@ -58,7 +58,19 @@ namespace DevKit.Plugin
         {
             try
             {
-                if (__instance != null) ParityTransport.RememberDirector(__instance);
+                // RememberDirector is type-guarded (adventure only); every director is a valid
+                // network source for the party-phase fallback (task #11).
+                if (__instance != null)
+                {
+                    ParityTransport.RememberDirector(__instance);
+                    ParityTransport.RememberNetworkSource(__instance);
+                }
+
+                // Task #12: received traffic proves the session is live even when the Initialize
+                // postfix raced PlayingOnlineMultiplayer and withheld the kickoff. One bool read
+                // once the handshake has completed; fires the kickoff at most once per session.
+                ParityCoordinator.OnNetworkTrafficObserved(__instance);
+
                 if (__args == null || __args.Length == 0) return;
 
                 string payload = ExtractPayload(__args[0]);
@@ -163,12 +175,37 @@ namespace DevKit.Plugin
         {
             try
             {
-                if (__instance != null) ParityTransport.RememberDirector(__instance);
-                ParityCoordinator.OnSessionStarted(__instance);
+                if (__instance != null)
+                {
+                    ParityTransport.RememberDirector(__instance);
+                    ParityTransport.RememberNetworkSource(__instance);
+                }
+                ParityCoordinator.OnSessionStarted(__instance, "adventure");
             }
             catch (Exception ex)
             {
                 SafeLog("DevKit parity session-start hook error (ignored): " + ex);
+            }
+        }
+
+        /// <summary>
+        /// Task #11: the handshake must complete BEFORE the loadout screen builds its trait pool, so
+        /// party management is a session-start anchor too. Party phase and the adventure it leads to
+        /// are one logical session that simply handshakes twice — the second run at adventure start
+        /// re-verifies (hot-reload window, late knob flips) and every payload is idempotent on the
+        /// receive side (ParityService m13 dedupes verdict transitions), so the double kickoff is
+        /// additive, never conflicting.
+        /// </summary>
+        internal static void PartyManagementInitializePostfix(object __instance)
+        {
+            try
+            {
+                if (__instance != null) ParityTransport.RememberNetworkSource(__instance);
+                ParityCoordinator.OnSessionStarted(__instance, "party management");
+            }
+            catch (Exception ex)
+            {
+                SafeLog("DevKit parity party-phase hook error (ignored): " + ex);
             }
         }
 

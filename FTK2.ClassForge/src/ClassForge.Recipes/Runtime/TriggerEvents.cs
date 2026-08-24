@@ -207,4 +207,21 @@ namespace ClassForge.Recipes.Runtime
     {
         public ICombatEntity Entity;
     }
+
+    /// <summary>
+    /// <c>ON_DAMAGE_PENDING</c> (v1.3, state-hash-chance spec M-SH3) —
+    /// <c>InteractableHelper.CalculateFinalDamage</c> <b>Postfix</b> (PSN §2 L1708). Owner =
+    /// <c>pCharacterEntity</c>, the damage recipient. <see cref="Amount"/> is the computed final damage
+    /// (<c>__result</c> before recipe mutation) — the value EOR hashes (L26733). The hook carries no
+    /// attacker, ability or item, so those trigger-scoped reads are validator-rejected here.
+    /// <b>No RNG on this path</b> — the hook has no <c>GameRandom</c> parameter, which is the §7.4 park
+    /// this trigger retires; chance gates must be <c>STATE_HASH_CHANCE</c>.
+    /// </summary>
+    public struct DamagePendingEvent
+    {
+        /// <summary><c>pCharacterEntity</c> — the recipient and recipe owner.</summary>
+        public ICombatEntity Victim;
+        /// <summary>The computed final damage before recipe mutation.</summary>
+        public int Amount;
+    }
 }

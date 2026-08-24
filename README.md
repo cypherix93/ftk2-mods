@@ -30,6 +30,7 @@ JSON data files and BepInEx config knobs so behavior can be changed without reco
 - [docs/research/vocab-summary.md](docs/research/vocab-summary.md) — live-data vocabulary (real enums, stat curves; corrects data-schemas.md)
 - [docs/research/eor-loader-notes.md](docs/research/eor-loader-notes.md) — EOR CustomItems/ItemIcons/VisualFallbacks loader mechanics
 - [docs/research/eor-0760-content-audit.md](docs/research/eor-0760-content-audit.md) — EOR v0.7.0.60 content audit: what's portable, and why EOR is buggy in MP
+- [docs/research/eor-0762-delta-audit.md](docs/research/eor-0762-delta-audit.md) — EOR v0.7.0.60 → v0.7.0.62 upstream delta: trait rebalance, EOR's own determinism overhaul, and what it unparks
 - [docs/research/eor-rehost-coverage-matrix.md](docs/research/eor-rehost-coverage-matrix.md) — every EOR mechanic dispositioned PORT/PORT-MODIFIED/PARK against the recipe vocabulary
 - [docs/research/eor-rehost-mp-review.md](docs/research/eor-rehost-mp-review.md) — adversarial MP-correctness review of the ClassForge/Summoner/DevKit parity engine code
 - [docs/research/eor-rehost-verification.md](docs/research/eor-rehost-verification.md) — full build/test/pack-validation/determinism verification sweep for the EOR-rehost work

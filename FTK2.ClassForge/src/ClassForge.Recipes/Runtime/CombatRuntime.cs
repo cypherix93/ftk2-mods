@@ -105,6 +105,16 @@ namespace ClassForge.Recipes.Runtime
 
         // ----- counters ----------------------------------------------------------------
 
+        /// <summary>STATE_HASH_CHANCE spec §3.3 once-per-(salt, token) warn latch. Per-battle state like
+        /// everything else here — resets with the runtime, keeping the engine free of static mutable
+        /// state (§6). Returns true exactly once per pair.</summary>
+        public bool MarkHashInputWarnedOnce(string salt, string token)
+        {
+            return _warnedHashInputs.Add((salt ?? "") + "|" + (token ?? ""));
+        }
+
+        private readonly HashSet<string> _warnedHashInputs = new HashSet<string>(StringComparer.Ordinal);
+
         public int GetCounter(string ownerGuid, string name)
         {
             int v;

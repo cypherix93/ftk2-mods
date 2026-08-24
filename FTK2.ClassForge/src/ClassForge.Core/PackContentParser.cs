@@ -44,6 +44,8 @@ namespace ClassForge.Core
             result.Icons = ParseAssetDir(fs, pack, "icons", findings);
             result.Portraits = ParseAssetDir(fs, pack, "portraits", findings);
 
+            result.VisualFallbacks = ParseVisualFallbacks(fs, pack, findings);
+
             var recipeIdsInPack = ReadSkillRecipeIdsInPack(fs, pack);
             result.Statuses = ParseStatusesFile(fs, pack, findings, recipeIdsInPack);
             result.ModifierTable = ParseModifiersFile(fs, pack, findings, result.Statuses);
@@ -89,6 +91,47 @@ namespace ClassForge.Core
             catch (Exception ex)
             {
                 findings.Add(Finding.Error("CF_FILE_PARSE", $"Failed to parse {fileName} in pack '{pack.Manifest.Id}': {ex.Message}", pack.Manifest.Id));
+            }
+
+            return dict;
+        }
+
+        /// <summary>
+        /// visualfallbacks.json — flat <c>{ packItemId: donorThingId }</c> map (same shape as the reference
+        /// implementation's CustomItems/VisualFallbacks.json). A pack item without a <c>dEquipmentPrefab</c>
+        /// record borrows the donor's 3D equipment visual via the Plugin's
+        /// <c>EquipmentVisualHelper.GetITMEquipmentPrefab</c> prefix — without a fallback, equipping such an
+        /// item NREs <c>CharacterVisualHelper.VisualReEquip</c> and input-locks the party screen (task #8).
+        /// Non-string values are an Error and the entry is dropped; the rest of the file loads.
+        /// </summary>
+        private static Dictionary<string, string> ParseVisualFallbacks(IFileSource fs, DiscoveredPack pack, List<Finding> findings)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.Ordinal);
+            var path = fs.CombinePath(pack.RootDir, "visualfallbacks.json");
+            if (!fs.FileExists(path))
+                return dict;
+
+            try
+            {
+                var text = fs.ReadAllText(path);
+                var json = JsonParser.Parse(text);
+                if (json.Kind != JsonKind.Object)
+                    throw new FormatException("visualfallbacks.json root must be a JSON object.");
+                foreach (var kv in json.AsObjectMembers)
+                {
+                    if (kv.Value.Kind != JsonKind.String || string.IsNullOrEmpty(kv.Value.AsString))
+                    {
+                        findings.Add(Finding.Error("CF_VISUALFALLBACK_SHAPE",
+                            $"visualfallbacks.json entry '{kv.Key}' in pack '{pack.Manifest.Id}' must be a non-empty donor Thing id string — entry dropped.",
+                            pack.Manifest.Id));
+                        continue;
+                    }
+                    dict[kv.Key] = kv.Value.AsString;
+                }
+            }
+            catch (Exception ex)
+            {
+                findings.Add(Finding.Error("CF_FILE_PARSE", $"Failed to parse visualfallbacks.json in pack '{pack.Manifest.Id}': {ex.Message}", pack.Manifest.Id));
             }
 
             return dict;

@@ -358,7 +358,7 @@ Test("ParityRegistrationBuilder: payload includes pack ids + gameplay feature kn
 {
     var result = baldursResult!;
     var payload = ParityRegistrationBuilder.Build(result, "ftk2mods.classforge", "0.1.0",
-        enableRecipeEngine: true, enableTraitLoadoutInjection: false);
+        enableRecipeEngine: true, enableTraitLoadoutInjection: false, enableStatModifiers: true);
 
     AssertEqual("ftk2mods.classforge", payload.Guid, "guid");
     AssertEqual("0.1.0", payload.Version, "version");
@@ -367,8 +367,9 @@ Test("ParityRegistrationBuilder: payload includes pack ids + gameplay feature kn
     {
         "CF_PACK_BALDURS",
         "feature:EnableRecipeEngine=true",
+        "feature:EnableStatModifiers=true",
         "feature:EnableTraitLoadoutInjection=false"
-    }), $"enabledFeatures should include the pack id and both gameplay feature knobs, got [{string.Join(",", payload.EnabledFeatures)}]");
+    }), $"enabledFeatures should include the pack id and all three gameplay feature knobs, got [{string.Join(",", payload.EnabledFeatures)}]");
     Assert(payload.EnabledFeatures.SequenceEqual(payload.EnabledFeatures.OrderBy(x => x, StringComparer.Ordinal)), "enabledFeatures must be sorted ordinally");
 });
 
@@ -735,6 +736,177 @@ Test("CF_PACK_ENCOUNTER_MODIFIERS: loads cleanly with zero Error findings", () =
     Assert(!result.Findings.Any(f => f.Code == "CF_STATUS_ID_PREFIX"), "All shipped status ids should be STATUS_CF_-prefixed");
     Assert(!result.Findings.Any(f => f.Code == "CF_MODIFIER_STATUS_DANGLING"), "Every shipped Status ref should resolve within the pack");
     Assert(!result.Findings.Any(f => f.Code == "CF_STATUS_PASSIVE_UNRESOLVED"), "CURSED/REGENERATING Passives must resolve against the pack's own skillrecipes.json");
+});
+
+// ---------------------------------------------------------------------
+// 10. SkillDisplay.SelectCustomSkillRows — which class Passives get a custom UI row in the
+//     character-customization panel (the game itself only renders eSkills-parseable passives).
+// ---------------------------------------------------------------------
+Test("SkillDisplay: selects non-vanilla passives with display names, preserving Passives order", () =>
+{
+    var passives = new[] { "SKILL_BLACKHOLE", "SKILL_CF_WARRIOR_RAGE_BUILD", "SKILL_REFOCUS", "SKILL_CF_WARRIOR_RAGE_CONSUME" };
+    var vanilla = new HashSet<string>(new[] { "SKILL_BLACKHOLE", "SKILL_REFOCUS" }, StringComparer.Ordinal);
+
+    var rows = SkillDisplay.SelectCustomSkillRows(passives, vanilla.Contains, _ => true);
+
+    Assert(rows.SequenceEqual(new[] { "SKILL_CF_WARRIOR_RAGE_BUILD", "SKILL_CF_WARRIOR_RAGE_CONSUME" }),
+        "Expected the two custom passives in authored order, got: " + string.Join(",", rows));
+});
+
+Test("SkillDisplay: excludes vanilla passives even when they have display names", () =>
+{
+    var rows = SkillDisplay.SelectCustomSkillRows(
+        new[] { "SKILL_BLACKHOLE" }, _ => true, _ => true);
+    AssertEqual(0, rows.Count, "A vanilla-renderable passive must never get a duplicate custom row");
+});
+
+Test("SkillDisplay: excludes custom passives that have no display name (nothing legible to render)", () =>
+{
+    var rows = SkillDisplay.SelectCustomSkillRows(
+        new[] { "SKILL_CF_NO_LOC" }, _ => false, _ => false);
+    AssertEqual(0, rows.Count, "A custom passive without a name key would render as a raw id — must be skipped");
+});
+
+Test("SkillDisplay: null or empty passives yield an empty list", () =>
+{
+    AssertEqual(0, SkillDisplay.SelectCustomSkillRows(null, _ => false, _ => true).Count, "null passives");
+    AssertEqual(0, SkillDisplay.SelectCustomSkillRows(Array.Empty<string>(), _ => false, _ => true).Count, "empty passives");
+});
+
+Test("SkillDisplay: duplicate passive ids produce a single row", () =>
+{
+    var rows = SkillDisplay.SelectCustomSkillRows(
+        new[] { "SKILL_CF_X", "SKILL_CF_X" }, _ => false, _ => true);
+    AssertEqual(1, rows.Count, "Duplicate passive entries must not produce duplicate UI rows");
+});
+
+Test("SkillDisplay: real CF_PACK_EOR_CLASSES data — every class's custom passives are selectable", () =>
+{
+    var fs = new FileSystemFileSource();
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { classPacksDir }, id => string.Equals(id, "CF_PACK_EOR_CLASSES", StringComparison.Ordinal));
+
+    var loc = result.MergePlan.Localization;
+    int classesWithRows = 0;
+    foreach (var op in result.MergePlan.Characters)
+    {
+        var passives = op.Value.Get("Passives").AsArray.Select(n => n.AsString).ToList();
+        var rows = SkillDisplay.SelectCustomSkillRows(passives, p => !p.StartsWith("SKILL_CF_", StringComparison.Ordinal), loc.ContainsKey);
+        if (rows.Count > 0) classesWithRows++;
+        foreach (var row in rows)
+            Assert(loc.ContainsKey("UI_ENCYCLOPEDIA_" + row), $"{op.Id}: row {row} has no UI_ENCYCLOPEDIA_ description key");
+    }
+    AssertEqual(28, classesWithRows, "28 of 31 EOR classes ship a custom signature skill (DUELIST/PALADIN/THIEF are parked)");
+});
+
+// ---------------------------------------------------------------------
+// 11. visualfallbacks.json — pack item id -> donor Thing id, the equipment-visual remap surface
+//     (task #8: pack items without dEquipmentPrefab records NRE CharacterVisualHelper.VisualReEquip).
+// ---------------------------------------------------------------------
+Test("VisualFallbacks: parse + merge round-trip; non-string values are an Error and dropped", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_VF/pack.json", MakePackJson("CF_PACK_VF"));
+    fs.AddFile("root/CF_PACK_VF/items.json", "{\"CF_ITEM_A\":{\"Class\":\"WHIP\"}}");
+    fs.AddFile("root/CF_PACK_VF/visualfallbacks.json",
+        "{\"CF_ITEM_A\":\"WHIP_MILITIA_BASIC_00\",\"CF_ITEM_BAD\":42}");
+
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { "root" }, id => true);
+
+    AssertEqual("WHIP_MILITIA_BASIC_00", result.MergePlan.VisualFallbacks["CF_ITEM_A"], "fallback merged");
+    Assert(!result.MergePlan.VisualFallbacks.ContainsKey("CF_ITEM_BAD"), "non-string value dropped");
+    Assert(result.Findings.Any(f => f.Code == "CF_VISUALFALLBACK_SHAPE" && f.Severity == FindingSeverity.Error),
+        "non-string value produced an Error finding");
+});
+
+Test("VisualFallbacks: last pack wins across packs", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_VF1/pack.json", MakePackJson("CF_PACK_VF1", loadOrder: 0));
+    fs.AddFile("root/CF_PACK_VF1/visualfallbacks.json", "{\"CF_ITEM_A\":\"DONOR_ONE\"}");
+    fs.AddFile("root/CF_PACK_VF2/pack.json", MakePackJson("CF_PACK_VF2", loadOrder: 1));
+    fs.AddFile("root/CF_PACK_VF2/visualfallbacks.json", "{\"CF_ITEM_A\":\"DONOR_TWO\"}");
+
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { "root" }, id => true);
+    AssertEqual("DONOR_TWO", result.MergePlan.VisualFallbacks["CF_ITEM_A"], "later pack wins");
+});
+
+Test("VisualFallbacks: donor resolvable via live ids or merged pack Things — else Warning", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_VF/pack.json", MakePackJson("CF_PACK_VF"));
+    fs.AddFile("root/CF_PACK_VF/items.json", "{\"CF_ITEM_A\":{\"Class\":\"WHIP\"},\"CF_ITEM_B\":{\"Class\":\"AXE\"},\"CF_ITEM_C\":{\"Class\":\"BOW\"}}");
+    fs.AddFile("root/CF_PACK_VF/visualfallbacks.json",
+        "{\"CF_ITEM_A\":\"LIVE_DONOR\",\"CF_ITEM_B\":\"CF_ITEM_A\",\"CF_ITEM_C\":\"NO_SUCH_DONOR\"}");
+
+    var live = new LiveIdSets(null, new HashSet<string>(StringComparer.Ordinal) { "LIVE_DONOR" }, null, null);
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { "root" }, id => true, live);
+
+    var dangling = result.Findings.Where(f => f.Code == "CF_VISUALFALLBACK_DANGLING").ToList();
+    AssertEqual(1, dangling.Count, "exactly the unresolvable donor warns");
+    Assert(dangling[0].Message.Contains("NO_SUCH_DONOR"), "warning names the missing donor");
+    Assert(dangling.All(f => f.Severity == FindingSeverity.Warning), "dangling donor is a Warning, not an Error");
+});
+
+Test("CF_PACK_EOR_CLASSES: visualfallbacks cover exactly the 31 starter items", () =>
+{
+    var fs = new FileSystemFileSource();
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { classPacksDir }, id => string.Equals(id, "CF_PACK_EOR_CLASSES", StringComparison.Ordinal));
+
+    var itemsPath = Path.Combine(classPacksDir, "CF_PACK_EOR_CLASSES", "items.json");
+    var itemIds = JsonParser.Parse(File.ReadAllText(itemsPath)).AsObjectMembers.Select(m => m.Key)
+        .OrderBy(x => x, StringComparer.Ordinal).ToList();
+
+    var fallbackKeys = result.MergePlan.VisualFallbacks.Keys.OrderBy(x => x, StringComparer.Ordinal).ToList();
+    AssertEqual(31, fallbackKeys.Count, "31 starter fallbacks");
+    Assert(fallbackKeys.SequenceEqual(itemIds), "fallback keys must be exactly the pack's items.json ids");
+    Assert(result.MergePlan.VisualFallbacks.Values.All(v => !string.IsNullOrEmpty(v)), "every donor non-empty");
+    Assert(!result.Findings.Any(f => f.Code == "CF_VISUALFALLBACK_DANGLING"),
+        "in-pack run: donors are live-game ids, but with no live set supplied they must not warn either");
+});
+
+Test("VisualFallbacks: a key may be a pack Thing OR a live Things id — anything else is a Warning", () =>
+{
+    var fs = new InMemoryFileSource();
+    fs.AddFile("root/CF_PACK_VF/pack.json", MakePackJson("CF_PACK_VF"));
+    fs.AddFile("root/CF_PACK_VF/items.json", "{\"CF_ITEM_A\":{\"Class\":\"WHIP\"}}");
+    fs.AddFile("root/CF_PACK_VF/visualfallbacks.json",
+        "{\"CF_ITEM_A\":\"LIVE_DONOR\",\"ARM_LIVE_ITEM\":\"LIVE_DONOR\",\"NO_SUCH_KEY\":\"LIVE_DONOR\"}");
+
+    var live = new LiveIdSets(null,
+        new HashSet<string>(StringComparer.Ordinal) { "LIVE_DONOR", "ARM_LIVE_ITEM" }, null, null);
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { "root" }, id => true, live);
+
+    var foreignKeys = result.Findings.Where(f => f.Code == "CF_VISUALFALLBACK_KEY_DANGLING").ToList();
+    AssertEqual(1, foreignKeys.Count, "only the key that is neither pack Thing nor live id warns");
+    Assert(foreignKeys[0].Message.Contains("NO_SUCH_KEY"), "warning names the dangling key");
+    Assert(foreignKeys.All(f => f.Severity == FindingSeverity.Warning), "dangling key is a Warning");
+
+    // Offline gate: with no live set the check must stay silent (PackCheck/tests have no game).
+    var offline = loader.Load(fs, new[] { "root" }, id => true);
+    Assert(!offline.Findings.Any(f => f.Code == "CF_VISUALFALLBACK_KEY_DANGLING"),
+        "no live set supplied: key check is skipped, not spammed");
+});
+
+Test("CF_PACK_ARMORY_VISUALS: fallback-only pack covers the shipped Armory catalog", () =>
+{
+    var fs = new FileSystemFileSource();
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { classPacksDir }, id => string.Equals(id, "CF_PACK_ARMORY_VISUALS", StringComparison.Ordinal));
+
+    AssertEqual(1, result.EnabledOrderedPacks.Count, "pack discovered and enabled");
+    AssertEqual(0, result.MergePlan.Things.Count, "ships no Things of its own");
+    AssertEqual(502, result.MergePlan.VisualFallbacks.Count, "one fallback per shipped Armory item");
+    Assert(result.MergePlan.VisualFallbacks.Keys.All(k => k.StartsWith("ARM_", StringComparison.Ordinal)),
+        "every key is an ARM_ id");
+    Assert(!result.MergePlan.VisualFallbacks.Keys.Any(k => k.Contains("EOR_STARTER")),
+        "starter fallbacks live in CF_PACK_EOR_CLASSES, not here");
+    Assert(result.MergePlan.VisualFallbacks.Values.All(v => !string.IsNullOrEmpty(v)), "every donor non-empty");
 });
 
 // ---------------------------------------------------------------------

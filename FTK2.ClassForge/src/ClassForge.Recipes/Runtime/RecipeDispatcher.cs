@@ -209,6 +209,19 @@ namespace ClassForge.Recipes.Runtime
             });
         }
 
+        /// <summary>v1.3 <c>ON_DAMAGE_PENDING</c> — <c>InteractableHelper.CalculateFinalDamage</c> Postfix
+        /// (state-hash-chance spec M-SH3). Owner = the damage recipient; <c>Amount</c> = the computed final
+        /// damage. <b>No RNG on this path</b> (the validator rejects a chance-gated recipe here — the hook
+        /// has no <c>GameRandom</c> and no peer may advance the shared stream at it, SPEC-DELTA §7.4).</summary>
+        public IReadOnlyList<EngineAction> OnDamagePending(ICombatContext ctx, DamagePendingEvent e)
+        {
+            return Fire(ctx, TriggerKind.ON_DAMAGE_PENDING, e.Victim, t =>
+            {
+                t.TriggerTarget = e.Victim;
+                t.Amount = e.Amount;
+            });
+        }
+
         /// <summary>T5 <c>ON_STATUS_APPLIED</c> — <c>InteractableHelper.ApplyStatus</c> single-target Postfix.
         /// The status IS authoritatively applied; the recipe observes and may remove it (§7.3).</summary>
         public IReadOnlyList<EngineAction> OnStatusApplied(ICombatContext ctx, StatusAppliedEvent e)
@@ -330,6 +343,11 @@ namespace ClassForge.Recipes.Runtime
             var plan = new List<EngineAction>();
             if (ctx == null) return plan;
             if (owners.Count == 0 && combatTemplate == null) return plan;
+
+            // Single fill point for the diagnostic sink (STATE_HASH_CHANCE §3.3 warn path) — every
+            // context flows through Run, so the four construction sites stay log-agnostic.
+            for (int i = 0; i < owners.Count; i++) owners[i].Log = _log;
+            if (combatTemplate != null) combatTemplate.Log = _log;
 
             var runtime = _state.Sync(ctx);
 
@@ -703,6 +721,20 @@ namespace ClassForge.Recipes.Runtime
                             RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
                             TargetGuid = targets[i].Guid, Scope = e.Scope,
                             FlatDelta = flat, PercentDelta = pct, MinDelta = e.MinDelta
+                        });
+                    break;
+                }
+                case EffectKind.DAMAGE_TAKEN_MULT:
+                {
+                    // v1.3, state-hash-chance spec M-SH3. The Plugin applies EOR's arithmetic to
+                    // CalculateFinalDamage's ref result; the engine only plans (zero draws on this path).
+                    for (int i = 0; i < targets.Count; i++)
+                        plan.Add(new DamageTakenMultAction
+                        {
+                            RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
+                            TargetGuid = targets[i].Guid,
+                            Percent = e.Percent.HasValue ? e.Percent.Value : 0,
+                            MinDelta = e.MinDelta
                         });
                     break;
                 }

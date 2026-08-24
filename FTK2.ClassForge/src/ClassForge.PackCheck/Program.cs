@@ -35,9 +35,11 @@ namespace ClassForge.PackCheck
                 var eor = FindDefaultPack("CF_PACK_EOR_CLASSES");
                 var baldurs = FindDefaultPack("CF_PACK_BALDURS");
                 var encounterModifiers = FindDefaultPack("CF_PACK_ENCOUNTER_MODIFIERS");
+                var armoryVisuals = FindDefaultPack("CF_PACK_ARMORY_VISUALS");
                 if (eor != null) packDirs.Add(eor);
                 if (baldurs != null) packDirs.Add(baldurs);
                 if (encounterModifiers != null) packDirs.Add(encounterModifiers);
+                if (armoryVisuals != null) packDirs.Add(armoryVisuals);
             }
 
             if (packDirs.Count == 0)
@@ -123,6 +125,33 @@ namespace ClassForge.PackCheck
             Console.WriteLine("Portraits:          " + result.MergePlan.Portraits.Count);
             var modifierRowCount = result.MergePlan.ModifierTables.Sum(t => t.Modifiers.Count);
             Console.WriteLine("Modifier entries:   " + modifierRowCount + " (across " + result.MergePlan.ModifierTables.Count + " modifiers.json table(s))");
+            Console.WriteLine("Visual fallbacks:   " + result.MergePlan.VisualFallbacks.Count);
+
+            // visualfallbacks.json keys may target this pack's own Things OR live game/Armory ids
+            // (task #9 relaxation: CF_PACK_ARMORY_VISUALS is a fallback-only pack keyed on ids the
+            // Armory ships through the game's config folder). PackCheck has no live game to resolve
+            // against, so non-same-pack keys are a single summary WARNING here — merge-time validation
+            // (CF_VISUALFALLBACK_KEY_DANGLING in MergePlanner, live-id gated) covers the real check.
+            if (result.MergePlan.VisualFallbacks.Count > 0)
+            {
+                var shippedThingIds = new HashSet<string>(result.MergePlan.Things.Select(t => t.Id), StringComparer.Ordinal);
+                int foreignKeys = 0;
+                foreach (var kv in result.MergePlan.VisualFallbacks.OrderBy(k => k.Key, StringComparer.Ordinal))
+                {
+                    if (!shippedThingIds.Contains(kv.Key)) foreignKeys++;
+                    if (string.IsNullOrEmpty(kv.Value))
+                    {
+                        Console.WriteLine("ERROR [CF_VISUALFALLBACK_EMPTY] visualfallbacks.json entry '" + kv.Key + "' has an empty donor id.");
+                        packHasErrors = true;
+                    }
+                }
+                if (foreignKeys > 0)
+                {
+                    Console.WriteLine("WARNING [CF_VISUALFALLBACK_KEY_FOREIGN] " + foreignKeys +
+                        " visualfallbacks.json key(s) are not shipped by this pack — expected for fallback-only " +
+                        "packs targeting live/Armory ids; validated for real at merge time against live Configs.Things.");
+                }
+            }
 
             Console.WriteLine();
             Console.WriteLine("-- Core Findings (" + result.Findings.Count + ") --");
@@ -153,6 +182,57 @@ namespace ClassForge.PackCheck
             else
             {
                 Console.WriteLine("Recipes:            0 (no skillrecipes.json present)");
+            }
+
+            // statmodifiers.json (conditional-stat-modifier spec §2.2) — also engine-owned, parsed here.
+            var statModifiersPath = Path.Combine(fullPackDir, "statmodifiers.json");
+            var statModifierIds = new HashSet<string>(StringComparer.Ordinal);
+            Console.WriteLine();
+            if (File.Exists(statModifiersPath))
+            {
+                var json = File.ReadAllText(statModifiersPath);
+                var statSet = StatModifierParser.Parse(json);
+
+                Console.WriteLine("Stat modifiers:     " + statSet.Ordered.Count);
+                Console.WriteLine();
+                Console.WriteLine("-- Stat Modifier Findings (" + statSet.Findings.Count + ") --");
+                foreach (var f in statSet.Findings)
+                    Console.WriteLine(FormatRecipeFinding(f));
+                if (statSet.Findings.Count == 0) Console.WriteLine("(none)");
+                if (statSet.HasErrors) packHasErrors = true;
+
+                foreach (var m in statSet.Ordered)
+                    if (m.IsLive) statModifierIds.Add(m.Id);
+
+                // Cross-check 1: every STAT_CF_-prefixed Passives entry (class Passives or trait
+                // Equippable.Passives) must resolve to a live statmodifiers.json id.
+                var referenced = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var op in result.MergePlan.Characters)
+                    CollectStatCfPassives(op.Value.Get("Passives"), referenced);
+                foreach (var op in result.MergePlan.Things)
+                    CollectStatCfPassives(op.Value.Get("Equippable").Get("Passives"), referenced);
+
+                foreach (var id in referenced.OrderBy(x => x, StringComparer.Ordinal))
+                {
+                    if (!statModifierIds.Contains(id))
+                    {
+                        Console.WriteLine("ERROR [CF_STATMOD_DANGLING] Passives entry '" + id +
+                            "' does not resolve to a live statmodifiers.json id.");
+                        packHasErrors = true;
+                    }
+                }
+
+                // Cross-check 2: every live modifier is referenced by at least one class/trait.
+                foreach (var id in statModifierIds.OrderBy(x => x, StringComparer.Ordinal))
+                {
+                    if (!referenced.Contains(id))
+                        Console.WriteLine("WARNING [CF_STATMOD_UNREFERENCED] Stat modifier '" + id +
+                            "' is referenced by no class Passives and no trait Equippable.Passives.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Stat modifiers:     0 (no statmodifiers.json present)");
             }
 
             // M-EM3 — engine-generated encounter-modifier recipes (Encounter Modifiers spec §6.1). Exercises
@@ -201,6 +281,18 @@ namespace ClassForge.PackCheck
                 : "RESULT: " + expectedId + " -- OK (zero Errors)");
 
             return !packHasErrors;
+        }
+
+        /// <summary>Collects STAT_CF_-prefixed entries from a Core-JSON Passives array.</summary>
+        private static void CollectStatCfPassives(ClassForge.Core.Json.JsonValue passives, HashSet<string> into)
+        {
+            var arr = passives.AsArray;
+            for (int i = 0; i < arr.Count; i++)
+            {
+                var id = arr[i].AsString;
+                if (!string.IsNullOrEmpty(id) && id.StartsWith("STAT_CF_", StringComparison.Ordinal))
+                    into.Add(id);
+            }
         }
 
         private static string FormatCoreFinding(ClassForge.Core.Finding f)

@@ -88,6 +88,10 @@ namespace ClassForge.Plugin
                 // per-battle recipe runtime (budgets/cooldowns keyed to the old book).
                 RecipeEngineHost.LoadBook(result);
 
+                // Standing stat modifiers (statmodifiers.json) — same wholesale-rebuild rule as the
+                // recipe book, same reason (hot-reload must never leave a stale modifier behind).
+                StatModifierHost.LoadBook(result);
+
                 ClassForgePlugin.Log.LogInfo(
                     $"[ClassForge] {caller}: merged {result.EnabledOrderedPacks.Count} pack(s) " +
                     $"[{string.Join(", ", result.EnabledOrderedPacks.Select(p => p.Id))}] -> " +
@@ -101,7 +105,8 @@ namespace ClassForge.Plugin
                 // difference between peers becomes a genuine parity divergence instead of silent "Match".
                 var payload = ParityRegistrationBuilder.Build(
                     result, ClassForgePlugin.Guid, ClassForgePlugin.Version,
-                    ClassForgePlugin.EnableRecipeEngine.Value, ClassForgePlugin.EnableTraitLoadoutInjection.Value);
+                    ClassForgePlugin.EnableRecipeEngine.Value, ClassForgePlugin.EnableTraitLoadoutInjection.Value,
+                    ClassForgePlugin.EnableStatModifiers.Value);
                 ClassForgePlugin.RegisterParity(payload);
             }
             catch (Exception ex)

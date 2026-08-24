@@ -44,6 +44,9 @@ namespace FTK2Mods.DevKit
         {
             public ParityRegistration Registration;
             public Action<string[]> OnParityFailed;
+            /// <summary>Verdict-ARRIVAL subscriber (task #11): fires on Match too, not just mismatch.
+            /// An entry may exist with only this set (subscription before Register is legal).</summary>
+            public Action<string[]> OnVerdict;
         }
 
         private static readonly object Sync = new object();
@@ -82,6 +85,47 @@ namespace FTK2Mods.DevKit
         public static bool Register(string pluginGuid, string version, string dataHash, string[] enabledFeatures)
         {
             return RegisterWithCallback(pluginGuid, version, dataHash, enabledFeatures, null);
+        }
+
+        /// <summary>
+        /// Subscribes a mod to verdict ARRIVAL (task #11): unlike <see cref="RegisterWithCallback"/>,
+        /// which only reports mismatches, this fires on every verdict TRANSITION for a peer — Match
+        /// included — with args <c>[remotePeerId, "Match"|"Mismatch"]</c>. A mod that fails closed
+        /// until a verified Match (ClassForge's MP trait-loadout gate) subscribes here instead of
+        /// polling <see cref="GetLastVerdictRows"/>.
+        /// <para>A separate method rather than a <c>RegisterWithCallback</c> overload on purpose: the
+        /// documented reflection recipe binds <c>GetMethod("RegisterWithCallback")</c> with no
+        /// <c>Type[]</c>, and an overload would turn that into <c>AmbiguousMatchException</c> in every
+        /// mod that followed the doc. Order-independent with Register: subscribing first is fine.</para>
+        /// Returns false for an empty guid or null callback. Never throws.
+        /// </summary>
+        public static bool RegisterVerdictCallback(string pluginGuid, Action<string[]> onVerdict)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(pluginGuid) || onVerdict == null)
+                {
+                    Log("Warning", "ParityService.RegisterVerdictCallback rejected: guid and callback are both required.");
+                    return false;
+                }
+                lock (Sync)
+                {
+                    Entry entry;
+                    if (!Registry.TryGetValue(pluginGuid, out entry))
+                    {
+                        entry = new Entry();
+                        Registry[pluginGuid] = entry;
+                    }
+                    entry.OnVerdict = onVerdict;
+                }
+                Log("Info", "ParityService: verdict callback registered for '" + pluginGuid + "'.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log("Error", "ParityService.RegisterVerdictCallback failed: " + ex.Message);
+                return false;
+            }
         }
 
         /// <summary>
@@ -415,7 +459,12 @@ namespace FTK2Mods.DevKit
                 lock (Sync)
                 {
                     peerId = _localPeerId;
-                    foreach (KeyValuePair<string, Entry> kv in Registry) regs.Add(kv.Value.Registration);
+                    foreach (KeyValuePair<string, Entry> kv in Registry)
+            {
+                // A verdict-only subscription (RegisterVerdictCallback before Register) has no tuple
+                // yet; it must not surface as a null registration row.
+                if (kv.Value.Registration != null) regs.Add(kv.Value.Registration);
+            }
                 }
                 return ParityPayloadCodec.EncodeSnapshot(peerId, regs);
             }
@@ -667,6 +716,7 @@ namespace FTK2Mods.DevKit
             string signature = BuildVerdictSignature(verdicts);
             bool verdictChanged;
             List<KeyValuePair<Action<string[]>, string[]>> pending = new List<KeyValuePair<Action<string[]>, string[]>>();
+            List<Action<string[]>> verdictSubscribers = new List<Action<string[]>>();
             lock (Sync)
             {
                 string previous;
@@ -693,6 +743,13 @@ namespace FTK2Mods.DevKit
                         if (entry.OnParityFailed == null) continue;
                         pending.Add(new KeyValuePair<Action<string[]>, string[]>(entry.OnParityFailed, v.ToCallbackArgs()));
                     }
+                }
+                // Verdict-arrival subscribers (task #11) hear about EVERY transition, Match included —
+                // same m13 dedupe as the failure callbacks, collected in-lock, invoked outside it.
+                if (verdictChanged)
+                {
+                    foreach (KeyValuePair<string, Entry> kv in Registry)
+                        if (kv.Value.OnVerdict != null) verdictSubscribers.Add(kv.Value.OnVerdict);
                 }
             }
 
@@ -724,6 +781,23 @@ namespace FTK2Mods.DevKit
             {
                 Log("Info", "ParityService: parity OK against peer '" + peer + "' ("
                     + verdicts.Length.ToString(CultureInfo.InvariantCulture) + " mod(s) compared).");
+            }
+
+            if (verdictSubscribers.Count > 0)
+            {
+                string[] verdictArgs = new string[] { peer, decision.HasMismatch ? "Mismatch" : "Match" };
+                for (int i = 0; i < verdictSubscribers.Count; i++)
+                {
+                    try
+                    {
+                        verdictSubscribers[i](verdictArgs);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("Error", "ParityService: a verdict callback threw (" + ex.GetType().Name + ": "
+                            + ex.Message + ") - isolated, continuing.");
+                    }
+                }
             }
 
             // Host answers each peer's snapshot exactly once, so the client can run the same
@@ -758,7 +832,12 @@ namespace FTK2Mods.DevKit
         private static ParityRegistration[] LocalRegistrationsNoLock()
         {
             List<ParityRegistration> regs = new List<ParityRegistration>(Registry.Count);
-            foreach (KeyValuePair<string, Entry> kv in Registry) regs.Add(kv.Value.Registration);
+            foreach (KeyValuePair<string, Entry> kv in Registry)
+            {
+                // A verdict-only subscription (RegisterVerdictCallback before Register) has no tuple
+                // yet; it must not surface as a null registration row.
+                if (kv.Value.Registration != null) regs.Add(kv.Value.Registration);
+            }
             return regs.ToArray();
         }
 

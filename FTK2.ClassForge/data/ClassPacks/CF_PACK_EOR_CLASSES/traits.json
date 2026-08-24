@@ -7,8 +7,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "EVD": 10 }, "Passives": [], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "STAT_CF_TRAIT_LIGHT_FOOTED_EVD"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_TOUGHENED": {
@@ -19,8 +30,20 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "HP": 10, "DEF": 2 }, "Passives": [], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "STAT_CF_TRAIT_TOUGHENED_DEF",
+        "STAT_CF_TRAIT_TOUGHENED_HP"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_STREETWISE": {
@@ -31,8 +54,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "TAL": 10 }, "Passives": [], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "STAT_CF_TRAIT_STREETWISE_TAL"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_GOLD_INSTINCT": {
@@ -43,8 +77,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "GLD": 15 }, "Passives": [], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {
+        "GLD": 15
+      },
+      "Passives": [],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_KNIFE_EDGE": {
@@ -55,8 +100,21 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "CRT": 10, "HP": -3 }, "Passives": [], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {
+        "CRT": 10
+      },
+      "Passives": [
+        "STAT_CF_TRAIT_KNIFE_EDGE_HP"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_TREASURE_SENSE": {
@@ -67,8 +125,20 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "LCK": 10 }, "Passives": ["SKILL_CF_TRAIT_TREASURE_SENSE_LOOT"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_TRAIT_TREASURE_SENSE_LOOT",
+        "STAT_CF_TRAIT_TREASURE_SENSE_LCK"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_STEADY_AIM": {
@@ -79,8 +149,20 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "AWR": 10 }, "Passives": ["SKILL_CF_STEADY_AIM"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_STEADY_AIM",
+        "STAT_CF_TRAIT_STEADY_AIM_AWR"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_WARDBOUND": {
@@ -91,8 +173,21 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "RES": 2 }, "Passives": ["SKILL_CF_WARDBOUND_CURSE", "SKILL_CF_WARDBOUND_DEBUFF"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_WARDBOUND_CURSE",
+        "SKILL_CF_WARDBOUND_DEBUFF",
+        "STAT_CF_TRAIT_WARDBOUND_RES"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_SCHOLARS_HABIT": {
@@ -103,8 +198,20 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "INT": 10 }, "Passives": ["SKILL_CF_TRAIT_SCHOLARS_HABIT_LOOT"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_TRAIT_SCHOLARS_HABIT_LOOT",
+        "STAT_CF_TRAIT_SCHOLARS_HABIT_INT"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_PREPARED": {
@@ -115,8 +222,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_PREPARED"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_PREPARED"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_PACK_TACTICS": {
@@ -127,8 +245,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "PHY": 1 }, "Passives": [], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "STAT_CF_TRAIT_PACK_TACTICS_PHY"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_SCAVENGER": {
@@ -139,8 +268,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_TRAIT_SCAVENGER_LOOT"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_TRAIT_SCAVENGER_LOOT"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_BATTLE_RHYTHM": {
@@ -151,8 +291,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_BATTLE_RHYTHM"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_BATTLE_RHYTHM"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_ARCANE_MEMORY": {
@@ -163,8 +314,17 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": {}, "Passives": [], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_SHIELDBEARER": {
@@ -175,8 +335,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "DEF": 1 }, "Passives": [], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_TRAIT_SHIELDBEARER_MITIGATE"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_CF_FIELDMEDIC": {
@@ -187,8 +358,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_FIELDMEDIC"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_FIELDMEDIC"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_ARCANE_FOCUS": {
@@ -199,8 +381,22 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": { "MAG": 1 }, "Passives": [], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_TRAIT_ARCFOCUS_BREAK",
+        "SKILL_CF_TRAIT_ARCFOCUS_FIZZLE",
+        "SKILL_CF_TRAIT_ARCFOCUS_GAIN",
+        "STAT_CF_TRAIT_ARCANE_FOCUS_MAG"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_MOMENTUM": {
@@ -211,8 +407,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_MOMENTUM"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_MOMENTUM"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_DRUNKEN_COURAGE": {
@@ -223,8 +430,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_DRUNKEN_COURAGE"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_DRUNKEN_COURAGE"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   },
   "TRAIT_MENDERS_TOUCH": {
@@ -235,8 +453,19 @@
     "Class": "TRAIT",
     "Rarity": "COMMON",
     "Hidden": true,
-    "Equippable": { "Slots": [], "Stats": {}, "Passives": ["SKILL_CF_MENDERS_TOUCH"], "MaxCharges": 0 },
-    "Tags": ["TRAIT", "LOADOUT_0", "CF_PACK_EOR_CLASSES"],
+    "Equippable": {
+      "Slots": [],
+      "Stats": {},
+      "Passives": [
+        "SKILL_CF_MENDERS_TOUCH"
+      ],
+      "MaxCharges": 0
+    },
+    "Tags": [
+      "TRAIT",
+      "LOADOUT_0",
+      "CF_PACK_EOR_CLASSES"
+    ],
     "Expansion": ""
   }
 }

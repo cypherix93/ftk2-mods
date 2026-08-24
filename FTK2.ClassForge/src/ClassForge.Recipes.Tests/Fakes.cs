@@ -26,6 +26,9 @@ namespace ClassForge.Recipes.Tests
         /// <summary>GATE D: defaults to the team-1 convention every test Rig already uses for "foe".</summary>
         public bool EnemyFlag;
 
+        /// <summary>STATE_HASH_CHANCE spec §3.3 negative control: a systematically-throwing stat resolver.</summary>
+        public bool ThrowOnGetStat;
+
         public FakeEntity(string guid, int team)
         {
             Guid = guid;
@@ -42,6 +45,7 @@ namespace ClassForge.Recipes.Tests
 
         public int GetStat(string statKey)
         {
+            if (ThrowOnGetStat) throw new InvalidOperationException("test resolver throw");
             int v;
             return Stats.TryGetValue(statKey ?? "", out v) ? v : 0;
         }
@@ -116,12 +120,20 @@ namespace ClassForge.Recipes.Tests
         public bool IsBossFightValue;
         public readonly HashSet<string> EncounterPropertiesSet = new HashSet<string>(StringComparer.Ordinal);
 
+        /// <summary>STATE_HASH_CHANCE spec §2.1 input-token knobs (COMBAT_SEED / RUN_SEED / ENCOUNTER_GUID).</summary>
+        public int CombatSeedValue = 12345;
+        public int RunSeedValue;
+        public string EncounterGuidValue = "";
+
         public string CombatIdentity { get { return Identity; } }
         public int Round { get { return RoundValue; } }
         public IReadOnlyList<ICombatEntity> Entities { get { return EntityList; } }
         public int PartyAverageLevel { get { return PartyAverageLevelValue; } }
         public bool IsDungeon { get { return IsDungeonValue; } }
         public bool IsBossFight { get { return IsBossFightValue; } }
+        public int CombatSeed { get { return CombatSeedValue; } }
+        public int RunSeed { get { return RunSeedValue; } }
+        public string EncounterGuid { get { return EncounterGuidValue; } }
         public bool HasEncounterProperty(string propertyName) { return propertyName != null && EncounterPropertiesSet.Contains(propertyName); }
 
         public bool AreOpponents(ICombatEntity a, ICombatEntity b)

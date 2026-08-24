@@ -56,10 +56,9 @@ namespace ClassForge.Plugin
     /// merely "not blocked" — so the pool cannot diverge in length between peers during the window before the
     /// handshake resolves. This means MP trait injection may legitimately be off for the first loadout build
     /// of an online session; that is the fail-closed, SP-safe-today posture (see <see cref="SessionInjectionGate"/>).
-    /// FOLLOW-UP (not fixed here): full day-one MP trait support needs DevKit's handshake to run BEFORE
-    /// <c>PartyManagementDirector</c> in the boot sequence (the B3 finding's own suggested anchor is
-    /// <c>AdventureSelectionDirector</c>, which already branches on <c>PlayingOnlineMultiplayer &amp;&amp;
-    /// IsHost</c>) — that is a DevKit-side ordering change, outside ClassForge's ownership.</para>
+    /// The day-one MP gap this used to leave is CLOSED by the task-#11 pair: DevKit runs the handshake during
+    /// party management (979bd17) and <see cref="TraitLoadoutRefresh"/> rebuilds the cached pool when the
+    /// Match verdict lands, re-entering this postfix with the gate now open.</para>
     /// </summary>
     public static class TraitLoadoutPatches
     {
@@ -218,9 +217,9 @@ namespace ClassForge.Plugin
                         (allowed
                             ? "DevKit parity handshake already verified Match; injecting."
                             : "no verified parity Match yet (handshake may not have completed) — injection " +
-                              "FAILS CLOSED this call (MP review B3). This is expected on the very first " +
-                              "loadout build of an online session; full day-one MP trait support needs the " +
-                              "handshake to run before party management (follow-up, DevKit-side ordering change)."));
+                              "FAILS CLOSED this call (MP review B3). Expected on the very first loadout " +
+                              "build of an online session; the party-phase handshake delivers a verdict " +
+                              "shortly and TraitLoadoutRefresh rebuilds the pool automatically on Match."));
                 }
             }
 

@@ -213,6 +213,30 @@ namespace ClassForge.Recipes.Runtime
     }
 
     /// <summary>
+    /// <c>DAMAGE_TAKEN_MULT</c> (v1.3, state-hash-chance spec M-SH3) — the retired SPEC-DELTA §7.4 park.
+    /// <para><b>Plugin call:</b> mutate <c>CalculateFinalDamage</c>'s <c>ref int __result</c> by
+    /// <c>delta = sign(Percent) * max(MinDelta, ceil(result * |Percent| / 100))</c>, flooring the result
+    /// at 0 — EOR 0.7.0.62's SHIELDBEARER arithmetic verbatim (Plugin.cs L26733). A postfix mutating a
+    /// return value is NOT suppression; SPEC-DELTA §5.2 invariant 6 is not engaged (spec §5.1).</para>
+    /// <para><b>No RNG permitted on this path</b> — the validator rejects a chance-gated
+    /// <c>ON_DAMAGE_PENDING</c> recipe outright; the only legal gate is <c>STATE_HASH_CHANCE</c>.</para>
+    /// </summary>
+    public sealed class DamageTakenMultAction : EngineAction
+    {
+        public string TargetGuid;
+        public int Percent;
+        public int? MinDelta;
+
+        public override string Kind { get { return "DamageTakenMult"; } }
+
+        public override string Describe()
+        {
+            return "DamageTakenMult{recipe=" + S(RecipeId) + ",owner=" + S(OwnerGuid) + ",target=" + S(TargetGuid) +
+                   ",pct=" + Percent.ToString(CultureInfo.InvariantCulture) + ",min=" + N(MinDelta) + "}";
+        }
+    }
+
+    /// <summary>
     /// <c>COUNTER_ADD</c> (E3) — SPEC-DELTA-v1.1 §4.2.
     /// <para><b>Plugin call: none.</b> This is a pure per-battle state write (§6) that the engine has
     /// ALREADY performed; the action is emitted for logging/parity-audit only. <c>[LOCAL]</c> state,

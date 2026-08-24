@@ -154,6 +154,20 @@ namespace ClassForge.Recipes.Abstractions
         /// ⇒ false (matches EOR's default, L22772-3).</summary>
         bool HasEncounterProperty(string propertyName);
 
+        /// <summary>STATE_HASH_CHANCE spec §2.1 <c>COMBAT_SEED</c>: adapter — <c>CombatState.Random.Seed</c>
+        /// (<c>public readonly int</c>, PSN §10, identical on every peer). Deliberately NOT
+        /// <see cref="CombatIdentity"/>, whose ReferenceEquals-identity half is process-local and must never
+        /// feed a cross-peer hash. 0 outside combat.</summary>
+        int CombatSeed { get; }
+
+        /// <summary>STATE_HASH_CHANCE spec §2.1 <c>RUN_SEED</c>: adapter — <c>GameRunData.MapGenSeed</c>.
+        /// 0 when no run.</summary>
+        int RunSeed { get; }
+
+        /// <summary>STATE_HASH_CHANCE spec §2.1 <c>ENCOUNTER_GUID</c>: adapter —
+        /// <c>GameRun.AdventureState.EncounterGUID</c>. Empty string when absent.</summary>
+        string EncounterGuid { get; }
+
         /// <summary>
         /// Action sink. The dispatcher both returns the ordered plan AND pushes each action here, so the
         /// Plugin can translate to <c>CombatHelper.ApplyAction</c> calls streaming rather than in a batch

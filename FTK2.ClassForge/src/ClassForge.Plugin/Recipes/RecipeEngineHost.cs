@@ -229,6 +229,33 @@ namespace ClassForge.Plugin
             CombatHookPatches.ClearHealOrigin();
         }
 
+        /// <summary>
+        /// Passive read of a per-battle counter for the stat-modifier read path
+        /// (<see cref="StatModifierPatches"/>). Never allocates and never <c>Sync</c>s — a stat read must
+        /// not mutate engine state. Returns 0 when there is no live combat, when the live
+        /// <c>CombatState</c> is not the one the cached dispatcher was built for, or when no per-battle
+        /// runtime has been allocated yet. Out-of-combat ⇒ 0 mirrors EOR's CombatGeneration gate
+        /// (EOR62 Plugin.cs L24522: stacks only count while <c>value.CombatGeneration ==
+        /// _classSkillCombatGeneration</c>).
+        /// </summary>
+        internal static int PeekCounter(string ownerGuid, string name)
+        {
+            try
+            {
+                var env = RouterHelper.Env;
+                var state = env != null && env.GameRun != null ? env.GameRun.CombatState : null;
+                if (state == null || !ReferenceEquals(state, _cachedState)) return 0;
+
+                var dispatcher = _cachedDispatcher;
+                var runtime = dispatcher != null && dispatcher.State != null ? dispatcher.State.Current : null;
+                return runtime == null ? 0 : runtime.GetCounter(ownerGuid, name);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         // =====================================================================================
         // Recipe book loading
         // =====================================================================================
