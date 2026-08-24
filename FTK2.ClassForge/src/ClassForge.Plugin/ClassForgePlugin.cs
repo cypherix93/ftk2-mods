@@ -372,8 +372,9 @@ namespace ClassForge.Plugin
             Patch(harmony, typeof(CombatPhase), "Initialize",
                 prefix: M(typeof(SummonLeakPatches), nameof(SummonLeakPatches.Initialize_Prefix)));
 
-            // Larger combat arena (opt-in). Postfix, because the phase assigns
-            // _combatState.GridType = _diorama.VenueGrid during setup and this overwrites the result.
+            // Larger combat arena (opt-in). PREFIX on the diorama argument: Initialize reads
+            // _diorama.VenueGrid into _combatState.GridType and then builds tiles from it, all
+            // within the same call, so a postfix lands after the tiles already exist.
             Patch(harmony, typeof(CombatPhase), "Initialize",
                 postfix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.Initialize_Postfix)));
 

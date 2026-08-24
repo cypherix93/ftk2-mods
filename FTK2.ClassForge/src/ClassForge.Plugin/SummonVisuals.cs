@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 
@@ -68,14 +69,30 @@ namespace ClassForge.Plugin
                 if (actor == null) return false;
                 maps.FromCharacter[entity] = actor;
 
-                // Position it on its tile. OccupiedTiles is filled by TryCreateSummon; an empty list
-                // averages ZERO tiles and drops the model at the diorama origin.
-                var venue = entity.Get<VenueComponent>();
-                if (venue?.OccupiedTiles != null && venue.OccupiedTiles.Count > 0)
+                // Place it with the GAME'S OWN placement call rather than computing a world
+                // position by hand.
+                //
+                // The hand-rolled version -- GetAveragePositionOfTiles + the diorama's PlayerOffset
+                // -- put the model on the grass BELOW the board instead of on its tile. Measured
+                // from a screenshot: the creature was real, drawn, and had a working health tooltip,
+                // while standing entirely off the grid.
+                //
+                // LoadCharacterEntitiesToVenueGrid is what the phase itself uses, including in its
+                // CHANGE_VENUE_GRID path where it re-places existing characters after a resize. It
+                // is handed ONLY this one character plus the tile list, which is the safe shape: an
+                // earlier attempt passed the full roster and re-laid-out the whole venue.
+                try
                 {
-                    var centre = VenueViewHelper.GetAveragePositionOfTiles(venue.OccupiedTiles, maps.FromTile)
-                                 + DioramaOffset(phase);
-                    actor.transform.position = CharacterVisualHelper.GetCharacterRootPosition(entity, centre);
+                    var tileList = new List<Entity>(maps.FromTile.Keys);
+                    VenueViewHelper.LoadCharacterEntitiesToVenueGrid(
+                        canvas3D.transform, new List<Entity> { entity }, maps, tileList,
+                        DioramaOf(phase), new GameRandom());
+                }
+                catch (Exception ex)
+                {
+                    ClassForgePlugin.Log.LogWarning(
+                        "[ClassForge] a summon was drawn but could not be placed on its tile: "
+                        + ex.Message);
                 }
 
                 // A freshly built actor has NO animation running and keeps its spawn rotation, so
@@ -144,6 +161,13 @@ namespace ClassForge.Plugin
                 ClassForgePlugin.Log.LogWarning(
                     "[ClassForge] a summon was drawn but could not be faced/animated: " + ex.Message);
             }
+        }
+
+
+        /// <summary>The phase's diorama, needed by the game's own placement call.</summary>
+        private static Diorama DioramaOf(object phase)
+        {
+            return FindField(phase.GetType(), "_diorama")?.GetValue(phase) as Diorama;
         }
 
         /// <summary>

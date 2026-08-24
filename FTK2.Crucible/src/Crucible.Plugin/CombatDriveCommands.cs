@@ -129,7 +129,10 @@ namespace Crucible.Plugin
                     else if (tile != null && venue != null)
                     {
                         tiles++;
-                        if (tiles <= 30)
+                        // 30 was too low to see a whole board: a standard venue already has 30
+                        // tiles counting the neutral ones, so the list truncated exactly at the
+                        // cap and made an ENLARGED grid look identical to a standard one.
+                        if (tiles <= 120)
                         {
                             grid.Append("\n  ").Append(Str(PartyAccess.ReadMember(venue, "TilePosition")))
                                 .Append(" group=").Append(Str(PartyAccess.ReadMember(tile, "GroupIndex")))
@@ -229,20 +232,35 @@ namespace Crucible.Plugin
                 object combatState;
                 if (!TryGetCombatState(out combatState, out error)) { LastResult = "error: " + error; return; }
 
+                // InteractableHelper.GetAbilityConfig(string pAbilityName, bool pAllowNull = false) --
+                // TWO parameters. MethodInfo.Invoke does not backfill defaulted parameters, so
+                // calling it with a 1-element args array throws
+                // TargetParameterCountException("Number of parameters specified does not match the
+                // expected number.") -- exactly the error crucible_list_targets was throwing on
+                // every call, ability-agnostic, because this line runs before any ability-specific
+                // work.
                 Type interactableHelper = AccessTools.TypeByName("InteractableHelper");
                 MethodInfo getAbilityConfig = interactableHelper == null ? null : AccessTools.Method(interactableHelper, "GetAbilityConfig");
                 if (getAbilityConfig == null) { LastResult = "error: InteractableHelper.GetAbilityConfig not found"; return; }
-                object abilityConfig = getAbilityConfig.Invoke(null, new object[] { abilityName });
+                object abilityConfig = getAbilityConfig.Invoke(null, new object[] { abilityName, false });
                 if (abilityConfig == null) { LastResult = "error: no ability config for '" + abilityName + "'"; return; }
 
+                // VenueHelper.GetTargetableTiles is overloaded:
+                //   (Entity, List<Entity>, CombatAbilityConfig, string pThingName = null)              -- 4 params
+                //   (Entity, List<Entity>, eTileOccupancies, eTileRowPositions, eTileRowPositions,
+                //    eTargets, eTileTargetAreas, List<(eCombatActions, object)>,
+                //    bool pAllowInanimateTarget = true)                                                -- 8/9 params
+                // Selected by parameter COUNT (4), matching the args actually supplied, per the
+                // codebase's standing rule against name-only lookups on overloaded helpers.
                 Type venueHelper = AccessTools.TypeByName("VenueHelper");
                 MethodInfo getTargetable = null;
                 foreach (MethodInfo m in venueHelper.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
                 {
                     if (!string.Equals(m.Name, "GetTargetableTiles", StringComparison.Ordinal)) continue;
-                    if (m.GetParameters().Length == 4) { getTargetable = m; break; }
+                    ParameterInfo[] ps = m.GetParameters();
+                    if (ps.Length == 4 && ps[2].ParameterType.Name == "CombatAbilityConfig") { getTargetable = m; break; }
                 }
-                if (getTargetable == null) { LastResult = "error: VenueHelper.GetTargetableTiles(4 args) not found"; return; }
+                if (getTargetable == null) { LastResult = "error: VenueHelper.GetTargetableTiles(4 args, CombatAbilityConfig overload) not found"; return; }
 
                 object entities = PartyAccess.ReadMember(combatState, "Entities");
                 object result = getTargetable.Invoke(null, new object[] { entity, entities, abilityConfig, null });
@@ -258,13 +276,17 @@ namespace Crucible.Plugin
                     foreach (object tileEntity in tiles)
                     {
                         object venue = PartyAccess.FindComponent(tileEntity, "VenueComponent");
+                        object tileComp = PartyAccess.FindComponent(tileEntity, "VenueTileComponent");
                         if (venue == null) continue;
                         count++;
-                        sb.Append("\n  tile=").Append(Str(PartyAccess.ReadMember(venue, "TilePosition")))
-                          .Append(" occupant=").Append(OccupantAt(combatState, PartyAccess.ReadMember(venue, "TilePosition")));
+                        object pos = PartyAccess.ReadMember(venue, "TilePosition");
+                        sb.Append("\n  tile=").Append(Str(pos))
+                          .Append(" group=").Append(tileComp == null ? "(unknown)" : Str(PartyAccess.ReadMember(tileComp, "GroupIndex")))
+                          .Append(" occupant=").Append(OccupantAt(combatState, pos));
                     }
                 }
-                sb.Append("\ntargetableTiles=").Append(count);
+                sb.Append("\ntargetableTiles=").Append(count)
+                  .Append("\nNOTE: pass a tile= coordinate straight to crucible_use_ability <abilityName> <x> <y>.");
                 LastResult = sb.ToString();
             }
             catch (TargetInvocationException ex)

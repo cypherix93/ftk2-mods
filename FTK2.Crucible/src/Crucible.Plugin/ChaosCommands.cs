@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using BepInEx.Logging;
@@ -57,9 +58,11 @@ namespace Crucible.Plugin
 
         private static readonly MethodInfo FreezeHandler = typeof(ChaosCommands).GetMethod("CrucibleChaosFreeze", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo StateHandler = typeof(ChaosCommands).GetMethod("CrucibleChaosState", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo AdvanceHandler = typeof(ChaosCommands).GetMethod("CrucibleChaosAdvance", BindingFlags.Public | BindingFlags.Static);
 
         private static bool _freezeRegistered;
         private static bool _stateRegistered;
+        private static bool _advanceRegistered;
 
         internal static void Initialize(Harmony harmony, ManualLogSource log)
         {
@@ -112,9 +115,10 @@ namespace Crucible.Plugin
 
         internal static void TryRegister()
         {
-            if (_freezeRegistered && _stateRegistered) return;
+            if (_freezeRegistered && _stateRegistered && _advanceRegistered) return;
             if (!_freezeRegistered) _freezeRegistered = GameBridge.RegisterCommand("crucible_chaos_freeze", FreezeHandler, new List<string> { "on|off" });
             if (!_stateRegistered) _stateRegistered = GameBridge.RegisterCommand("crucible_chaos_state", StateHandler, new List<string>());
+            if (!_advanceRegistered) _advanceRegistered = GameBridge.RegisterCommand("crucible_chaos_advance", AdvanceHandler, new List<string> { "chaosConfigName" });
         }
 
         public static void CrucibleChaosFreeze(string pOnOff)
@@ -185,6 +189,172 @@ namespace Crucible.Plugin
                     + "is the best available proxy (each applied increase is presumed to append an entry).";
             }
             catch (Exception ex) { LastResult = "error: crucible_chaos_state threw: " + ex.Message; }
+        }
+
+        // ============================================================== crucible_chaos_advance
+
+        /// <summary>
+        /// crucible_chaos_advance &lt;chaosConfigName&gt; -- advances the chaos STAGE (a whole
+        /// ChaosConfig), by invoking AdventureDirector._processWorldTrigger(eWorldTriggers.CHAOS_ACTIVE,
+        /// pArg) via reflection, matching the game's own CHAOS_ACTIVE world-trigger case:
+        ///     _env.GameRun.AdventureState.MapState.ChaosState = ChaosState.Create(pArg, ...RoundCount);
+        /// after reading Env.Configs.ChaosConfigs[pArg] (decompiled AdventureDirector.cs, CHAOS_ACTIVE
+        /// case).
+        ///
+        /// An empty/whitespace arg is REFUSED before it ever reaches the director: the same case sets
+        /// ChaosState to null on an empty pArg, and AdventureHelper.ModifyChaosLevel dereferences
+        /// ChaosState.ChaosHistory with no null guard on the next chaos tick -- so the empty-arg path is
+        /// a live NullReferenceException, not a harmless no-op.
+        ///
+        /// _processWorldTrigger is a protected async instance method with no public accessible
+        /// signature; it is reachable only by reflection on the live AdventureDirector instance, the
+        /// same posture RunCommands.TryPump uses for _tryCompleteQuests. The stage swap itself is the
+        /// FIRST statement in the CHAOS_ACTIVE case, executed synchronously before any await point in
+        /// the state machine, so it has already happened by the time Invoke returns -- but the Task it
+        /// returns is deliberately not awaited (matches _tryCompleteQuests), so the caller should
+        /// re-read crucible_chaos_state to confirm nothing downstream is still resolving.
+        /// </summary>
+        public static void CrucibleChaosAdvance(string pConfigName)
+        {
+            LastResult = null;
+            try
+            {
+                string configName = (pConfigName ?? string.Empty).Trim();
+                if (string.IsNullOrEmpty(configName))
+                {
+                    LastResult = "error: usage: crucible_chaos_advance <chaosConfigName> -- REFUSED an "
+                        + "empty/whitespace config name. AdventureDirector._processWorldTrigger(CHAOS_ACTIVE, \"\") "
+                        + "sets AdventureState.MapState.ChaosState to null, and AdventureHelper.ModifyChaosLevel "
+                        + "then dereferences ChaosState.ChaosHistory with no null guard on the next chaos tick -- "
+                        + "that is a live NullReferenceException, not a harmless no-op. " + AvailableConfigsNote();
+                    return;
+                }
+
+                object gameRun = RunAccess.GetGameRun();
+                if (gameRun == null) { LastResult = "error: no run loaded"; return; }
+
+                object mapState = RunAccess.GetMember(RunAccess.GetAdventureState(), "MapState");
+                if (mapState == null) { LastResult = "error: AdventureState.MapState is null -- no run loaded"; return; }
+
+                object beforeState = RunAccess.GetMember(mapState, "ChaosState");
+                string configNameBefore = Describe(RunAccess.GetMember(beforeState, "ConfigName"));
+                int historyCountBefore = RunAccess.CountOf(RunAccess.GetMember(beforeState, "ChaosHistory"));
+
+                object director = PartyAccess.Director();
+                if (director == null) { LastResult = "error: AdventureDirector unavailable"; return; }
+
+                MethodInfo trigger = FindProcessWorldTrigger(director.GetType());
+                if (trigger == null)
+                {
+                    LastResult = "error: AdventureDirector._processWorldTrigger(eWorldTriggers, string, ...) not "
+                        + "found (game update?); crucible_chaos_advance unavailable";
+                    return;
+                }
+
+                ParameterInfo[] parameters = trigger.GetParameters();
+                object triggerValue;
+                try
+                {
+                    triggerValue = Enum.Parse(parameters[0].ParameterType, "CHAOS_ACTIVE");
+                }
+                catch (Exception ex)
+                {
+                    LastResult = "error: eWorldTriggers.CHAOS_ACTIVE could not be resolved: " + ex.Message;
+                    return;
+                }
+
+                object[] args = new object[parameters.Length];
+                args[0] = triggerValue;
+                args[1] = configName;
+                for (int i = 2; i < args.Length; i++) args[i] = null;
+
+                object task;
+                try
+                {
+                    task = trigger.Invoke(director, args);
+                }
+                catch (TargetInvocationException ex)
+                {
+                    Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                    LastResult = "error: _processWorldTrigger threw: " + root.GetType().Name + ": " + root.Message
+                        + " (is '" + configName + "' a real key in Env.Configs.ChaosConfigs?) " + AvailableConfigsNote();
+                    return;
+                }
+
+                object afterState = RunAccess.GetMember(mapState, "ChaosState");
+                string configNameAfter = Describe(RunAccess.GetMember(afterState, "ConfigName"));
+                int historyCountAfter = RunAccess.CountOf(RunAccess.GetMember(afterState, "ChaosHistory"));
+
+                bool changed = !string.Equals(configNameBefore, configNameAfter, StringComparison.Ordinal)
+                    || historyCountBefore != historyCountAfter;
+
+                LastResult = "configArg=" + configName
+                    + " configNameBefore=" + configNameBefore + " configNameAfter=" + configNameAfter
+                    + " chaosHistoryCountBefore=" + historyCountBefore + " chaosHistoryCountAfter=" + historyCountAfter
+                    + " changed=" + changed
+                    + " taskState=" + (task == null ? "(null)" : "returned, not awaited")
+                    + "\nNOTE: _processWorldTrigger's Task is deliberately not awaited (same posture as "
+                    + "RunCommands._tryCompleteQuests). The ChaosState swap above runs synchronously before any "
+                    + "await in that method, so configNameAfter/chaosHistoryCountAfter should already reflect it, "
+                    + "but re-read crucible_chaos_state afterward if anything downstream (GenerateChaosTimelineEvents "
+                    + "etc.) needs to be confirmed settled."
+                    + "\n" + AvailableConfigsNote();
+                if (_log != null) _log.LogInfo("crucible_chaos_advance: " + LastResult);
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_chaos_advance threw: " + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Locates AdventureDirector._processWorldTrigger(eWorldTriggers, string, ...) by name and
+        /// leading-parameter shape rather than an exact overload match, since the trailing optional
+        /// parameters (List, QuestState, Entity) are game-internal types Crucible has no compile-time
+        /// reference to.
+        /// </summary>
+        private static MethodInfo FindProcessWorldTrigger(Type directorType)
+        {
+            foreach (MethodInfo m in directorType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                if (!string.Equals(m.Name, "_processWorldTrigger", StringComparison.Ordinal)) continue;
+                ParameterInfo[] ps = m.GetParameters();
+                if (ps.Length < 2) continue;
+                if (!string.Equals(ps[0].ParameterType.Name, "eWorldTriggers", StringComparison.Ordinal)) continue;
+                if (ps[1].ParameterType != typeof(string)) continue;
+                return m;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Lists the keys of Env.Configs.ChaosConfigs (SerializedSortedDictionary&lt;string, ChaosConfig&gt;
+        /// in the decompiled Configs.cs), so a tester can discover valid crucible_chaos_advance arguments
+        /// instead of guessing. Degrades to a note rather than guessing when the map cannot be reached.
+        /// </summary>
+        private static string AvailableConfigsNote()
+        {
+            try
+            {
+                object env = GameBridge.GetEnv();
+                if (env == null) return "availableChaosConfigs=(Env unavailable)";
+
+                object configs = RunAccess.GetMember(env, "Configs");
+                if (configs == null) return "availableChaosConfigs=(Env.Configs is null)";
+
+                object chaosConfigs = RunAccess.GetMember(configs, "ChaosConfigs");
+                IDictionary dict = chaosConfigs as IDictionary;
+                if (dict == null) return "availableChaosConfigs=(Env.Configs.ChaosConfigs not reachable as a dictionary)";
+
+                List<string> keys = new List<string>();
+                foreach (object k in dict.Keys) keys.Add(k == null ? "(null)" : k.ToString());
+                keys.Sort(StringComparer.Ordinal);
+                return "availableChaosConfigs(" + keys.Count + ")=[" + string.Join(", ", keys.ToArray()) + "]";
+            }
+            catch (Exception ex)
+            {
+                return "availableChaosConfigs=(error reading Env.Configs.ChaosConfigs: " + ex.Message + ")";
+            }
         }
 
         private static object ReadChaosHistory()

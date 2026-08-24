@@ -301,13 +301,27 @@ namespace Crucible.Plugin
                 return;
             }
 
-            string routeNote = TryRouteToAdventureSelection();
-            System.Threading.Thread.Sleep(200); // brief settle, not a completion wait -- see method doc.
+            // NO pre-route. The game's own "load a save" action -- the escape menu's Load callback,
+            // bound in AdventureDirector.Initialize as `base._loadSave` -- invokes _loadSave DIRECTLY
+            // on whichever director currently owns the screen. It never hops to ADVENTURE_SELECTION.
+            //
+            // Routing there first is what broke this: ADVENTURE_SELECTION is the pre-game slot
+            // picker, and going there while a run is live tears the AdventureDirector down.
+            // _loadSave then ran against a director being destroyed and its own internal try/catch
+            // swallowed the failure, so this reported a dispatched Task while SelectedGameRunId never
+            // moved. Measured: loaded=False with the PREVIOUS run id still selected.
+            string routeNote = "no pre-route (the game loads on the live director)";
 
             string pFilename = pRunId + ".ftk2"; // ASSUMED filename convention -- see method doc.
             object invokeResult; string invokeStrategy; string invokeError;
             bool invokeOk = TryInvoke("AdventureDirector", "_loadSave", new[] { pRunId, pFilename, "-" },
                 out invokeResult, out invokeStrategy, out invokeError);
+            if (!invokeOk)
+            {
+                // Same base method on the dungeon director, for a run saved inside a dungeon.
+                invokeOk = TryInvoke("DungeonDirector", "_loadSave", new[] { pRunId, pFilename, "-" },
+                    out invokeResult, out invokeStrategy, out invokeError);
+            }
 
             if (!invokeOk)
             {
