@@ -1,0 +1,301 @@
+{
+  "SKILL_CF_VAMPIRIC_BLOOD_PRICE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Blood Price",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
+    ],
+    "Effects": [
+      {
+        "Type": "STAT_CHANGE",
+        "Target": "SELF",
+        "Stat": "HP",
+        "StatChangeType": "MAGICAL",
+        "FlatValue": 3,
+        "Blockable": false
+      }
+    ],
+    "VerboseLogTag": "BloodPrice",
+    "_design": "The cost half of the class. Fires on every hostile ability, not on the damage, so a whiff still costs blood -- that is the whole tension. Unblockable so armour cannot make it free. Shape copied from the shipped SKILL_CF_HEXBLADE_BARGAIN. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
+  },
+  "SKILL_CF_VAMPIRIC_CRIMSON_DRAIN": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Crimson Drain",
+    "Trigger": "ON_DAMAGE_DEALT",
+    "Effects": [
+      {
+        "Type": "STAT_CHANGE",
+        "Target": "SELF",
+        "Stat": "HP",
+        "StatChangeType": "REGEN",
+        "FlatValueFrom": "DAMAGE_DEALT_PCT",
+        "Percent": -25
+      }
+    ],
+    "VerboseLogTag": "CrimsonDrain",
+    "_design": "The payoff half. Uses the DAMAGE_DEALT_PCT value source added for this class -- before it, damage magnitude was reachable only as a STATE_HASH_CHANCE input, so this had to be a flat number that is far too weak early and far too strong late. Min 1 means a chip hit still returns something. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
+  },
+  "SKILL_CF_VAMPIRIC_ENGORGED": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Engorged",
+    "Trigger": "ON_HEAL_PENDING",
+    "Conditions": [
+      {
+        "Type": "HP_THRESHOLD",
+        "Comparator": "GTE",
+        "Percent": 100
+      }
+    ],
+    "Effects": [
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_CF_ENGORGED",
+        "Duration": 3
+      },
+      {
+        "Type": "COUNTER_ADD",
+        "Name": "cf_gorged",
+        "Delta": 1,
+        "Max": 3
+      }
+    ],
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
+    "VerboseLogTag": "Engorged",
+    "_design": "Overheal, done the only way the engine allows. AddHealth clamps to max HP, so healing past full is impossible -- instead this RAISES max HP and lets the drain fill it, which lands on the same fantasy from the other side. Gated on already being at full HP so it rewards sustained feeding rather than topping off. ONCE_PER_ROUND so a multi-hit turn cannot stack it into absurdity."
+  },
+  "SKILL_CF_VAMPIRIC_BAT_SWARM": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Bat Swarm",
+    "Trigger": "ON_KILL",
+    "Conditions": [
+      {
+        "Type": "COUNTER",
+        "Name": "cf_gorged",
+        "Comparator": "GTE",
+        "Value": 3
+      }
+    ],
+    "Effects": [
+      {
+        "Type": "SUMMON",
+        "Target": "SELF",
+        "CharacterConfig": "BAT_VAMPIRE_01",
+        "Count": 1
+      },
+      {
+        "Type": "COUNTER_SET",
+        "Name": "cf_gorged",
+        "Value": 0
+      }
+    ],
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
+    "VerboseLogTag": "BatSwarm",
+    "_design": "Gorging three times then felling an enemy calls a vampire bat into the corpse's place, and resets the count. SUMMON can only place on a target entity's EXACT tile, and CombatHelper.ApplyAction's ADD_CHARACTER case silently breaks out if any LIVING entity stands there. So the only reliably-empty tile is one an enemy just vacated by dying -- which is why every vanilla summon hangs off a kill. Measured 2026-08-24: SELF (the caster's own tile) and TRIGGER_TARGET_POSITION on a hostile ability (the live enemy's tile) both ran cleanly and placed nothing."
+  },
+  "SKILL_CF_PACIFIST_WHY_CANT_WE_BE_FRIENDS": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Why Can't We Be Friends",
+    "Trigger": "ON_DAMAGE_TAKEN",
+    "Effects": [
+      {
+        "Type": "STAT_CHANGE",
+        "Target": "TRIGGER_SOURCE",
+        "Stat": "HP",
+        "StatChangeType": "MAGICAL",
+        "FlatValueFrom": "DAMAGE_DEALT_PCT",
+        "Percent": 30,
+        "Max": 12
+      }
+    ],
+    "VerboseLogTag": "WhyCantWeBeFriends",
+    "_design": "The Pacifist never attacks -- their weapon carries only ONLY_* abilities, which roll and animate but have no CHANGE_STAT HP action at all. Their damage comes from aggression turned back on the attacker. Negative Percent sends the share the other way; Min caps a single reflect at 12 so a boss's big hit cannot one-shot its own caster's target. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
+  },
+  "SKILL_CF_PACIFIST_CROUCHING_TIGER": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Crouching Tiger",
+    "Trigger": "ON_TURN_END",
+    "Effects": [
+      {
+        "Type": "ADD_STATUS",
+        "Target": "SELF",
+        "Status": "STATUS_REFLECT_00",
+        "Duration": 2
+      }
+    ],
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
+    "VerboseLogTag": "CrouchingTiger",
+    "_design": "Readies a parry at the end of every turn. STATUS_REFLECT_00 is the game's own reflect: it returns max(1, 50%) of ONE incoming hit and is then consumed, which is exactly the brief without needing a new primitive."
+  },
+  "SKILL_CF_PACIFIST_FIELD_MEDIC": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Field Medic",
+    "Trigger": "ON_TURN_END",
+    "Effects": [
+      {
+        "Type": "STAT_CHANGE",
+        "Target": "ALLY_BY_RANK",
+        "Rank": {
+          "Stat": "HP_PCT",
+          "Order": "LOWEST",
+          "ExcludeSelf": false
+        },
+        "Stat": "HP",
+        "StatChangeType": "REGEN",
+        "FlatValue": -4
+      }
+    ],
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
+    "VerboseLogTag": "FieldMedic",
+    "_design": "Always finds the most hurt ally rather than healing at random. ALLY_BY_RANK{HP_PCT, LOWEST} is the engine's own targeting for exactly this. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
+  },
+  "SKILL_CF_TRAINER_FIRST_PARTNER": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "First Partner",
+    "Trigger": "ON_COMBAT_START",
+    "Effects": [
+      {
+        "Type": "SUMMON",
+        "Target": "SELF",
+        "CharacterConfig": "WOLF_CHAOSHOUND_01",
+        "Count": 1
+      }
+    ],
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT"
+    },
+    "VerboseLogTag": "FirstPartner",
+    "_design": "The partner joins at the start of every combat. Target SELF only identifies the summoner: the executor places the beast on a FREE tile of the summoner's OWN group, because TryCreateSummon copies the tile's GroupIndex onto the new character -- summoning onto an enemy tile spawns a hostile creature."
+  },
+  "SKILL_CF_TRAINER_TYPE_ADVANTAGE": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Type Advantage",
+    "Trigger": "ON_ABILITY_USED",
+    "Conditions": [
+      {
+        "Type": "ROLL_TIER",
+        "Comparator": "EQ",
+        "Value": "PERFECT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
+    ],
+    "Effects": [
+      {
+        "Type": "ADD_STATUS",
+        "Target": "TRIGGER_TARGET",
+        "StatusOneOf": [
+          "STATUS_SHOCK_00",
+          "STATUS_BLEED_00",
+          "STATUS_POISON_00",
+          "STATUS_RESISTANCEDOWN_00"
+        ],
+        "Duration": 2
+      }
+    ],
+    "ProcChance": 35,
+    "AiProcChance": 35,
+    "VerboseLogTag": "TypeAdvantage",
+    "_design": "Reads the matchup and picks an element. ADD_STATUS only lands on a PERFECT roll in this engine, so this is implicitly an accuracy payoff -- which is why the Trainer's AWR and LCK are high."
+  },
+  "SKILL_CF_TRAINER_GOTTA_TRAIN_EM": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Gotta Train 'Em",
+    "Trigger": "ON_KILL",
+    "Effects": [
+      {
+        "Type": "COUNTER_ADD",
+        "Name": "cf_bond",
+        "Delta": 1,
+        "Max": 10
+      }
+    ],
+    "VerboseLogTag": "GottaTrainEm",
+    "_design": "Bond grows with every kill. The bonus it feeds lives in SKILL_CF_TRAINER_BOND_STRENGTH, because ROLL_STAT_BONUS is ON_ABILITY_DECLARED-only -- it replaces the PerformAbility prefix's stat delegates, so under ON_KILL it would never be consulted."
+  },
+  "SKILL_CF_TRAINER_BOND_STRENGTH": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Bond Strength",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "Effects": [
+      {
+        "Type": "ROLL_STAT_BONUS",
+        "Target": "SELF",
+        "Stat": "AWR",
+        "PercentFrom": "COUNTER:cf_bond",
+        "PerUnit": 3,
+        "Max": 30
+      }
+    ],
+    "VerboseLogTag": "BondStrength",
+    "_design": "Spends the Bond counter that Gotta Train 'Em accumulates. ON_ABILITY_DECLARED is the only legal scope for ROLL_STAT_BONUS. Mirrors the shipped STAT_CF_TRAIT_ARCANE_FOCUS_MAG counter-scaling shape, so it is a proven pattern rather than a new one."
+  },
+  "SKILL_CF_TRAINER_SECOND_PARTNER": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Ember Partner",
+    "Trigger": "ON_KILL",
+    "Conditions": [
+      {
+        "Type": "COUNTER",
+        "Name": "cf_bond",
+        "Comparator": "GTE",
+        "Value": 3
+      }
+    ],
+    "Effects": [
+      {
+        "Type": "SUMMON",
+        "Target": "SELF",
+        "SummonType": "SPECIFIC",
+        "CharacterConfig": "WOLF_HELLHOUND_02",
+        "Count": 1
+      }
+    ],
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT"
+    },
+    "VerboseLogTag": "EmberPartner",
+    "_design": "The FIRE partner, earned at Bond 3. Balanced against each other by an inverse HP/ATK trade rather than by raw power: Chaoshound 41hp/14atk, Hellhound 36hp/18atk, Snake 39hp/11atk. All are shipped level-1/2 creatures, so they scale with the game's own curve instead of a bespoke one. Each is ONCE_PER_COMBAT and the later two cost Bond, so a full team of three has to be earned by killing rather than handed over at the opening bell."
+  },
+  "SKILL_CF_TRAINER_THIRD_PARTNER": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Venom Partner",
+    "Trigger": "ON_KILL",
+    "Conditions": [
+      {
+        "Type": "COUNTER",
+        "Name": "cf_bond",
+        "Comparator": "GTE",
+        "Value": 6
+      }
+    ],
+    "Effects": [
+      {
+        "Type": "SUMMON",
+        "Target": "SELF",
+        "SummonType": "SPECIFIC",
+        "CharacterConfig": "COMPANION_SNAKE_BASIC_01",
+        "Count": 1
+      }
+    ],
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT"
+    },
+    "VerboseLogTag": "VenomPartner",
+    "_design": "The VENOM partner, earned at Bond 6 -- the frailest attacker but the highest speed tier. Balanced against each other by an inverse HP/ATK trade rather than by raw power: Chaoshound 41hp/14atk, Hellhound 36hp/18atk, Snake 39hp/11atk. All are shipped level-1/2 creatures, so they scale with the game's own curve instead of a bespoke one. Each is ONCE_PER_COMBAT and the later two cost Bond, so a full team of three has to be earned by killing rather than handed over at the opening bell."
+  }
+}

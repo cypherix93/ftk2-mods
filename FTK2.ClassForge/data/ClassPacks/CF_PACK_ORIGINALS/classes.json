@@ -1,0 +1,129 @@
+{
+  "CF_ORIG_VAMPIRIC": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_ORIG_VAMPIRIC",
+    "Passives": [
+      "SKILL_CF_VAMPIRIC_BLOOD_PRICE",
+      "SKILL_CF_VAMPIRIC_CRIMSON_DRAIN",
+      "SKILL_CF_VAMPIRIC_ENGORGED",
+      "SKILL_CF_VAMPIRIC_BAT_SWARM"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 66,
+      "CRT": 6,
+      "DEF": 1,
+      "EVD": 2,
+      "FOC": 4,
+      "HP": 38,
+      "INT": 72,
+      "LCK": 54,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 66,
+      "STR": 74,
+      "TAL": 60,
+      "VIT": 78
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_ORIGINALS"
+    ],
+    "Things": {
+      "ARM_ORIG_STARTER_VAMPIRIC_BLOODLETTER": 1,
+      "TRINKET_BUFF_RESIST": 1,
+      "HERB_GOLDENROOT_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_ORIG_PACIFIST": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "F",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_ORIG_PACIFIST",
+    "Passives": [
+      "SKILL_CF_PACIFIST_WHY_CANT_WE_BE_FRIENDS",
+      "SKILL_CF_PACIFIST_CROUCHING_TIGER",
+      "SKILL_CF_PACIFIST_FIELD_MEDIC"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 84,
+      "CRT": 5,
+      "DEF": 1,
+      "EVD": 4,
+      "FOC": 5,
+      "HP": 32,
+      "INT": 68,
+      "LCK": 56,
+      "PA": 1,
+      "RES": 2,
+      "SA": 1,
+      "SPD": 64,
+      "STR": 50,
+      "TAL": 78,
+      "VIT": 66
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_ORIGINALS"
+    ],
+    "Things": {
+      "ARM_ORIG_STARTER_PACIFIST_OLIVE_BRANCH": 1,
+      "TRINKET_BUFF_RESIST": 1,
+      "HERB_GOLDENROOT_01": 1
+    },
+    "Threat": 0
+  },
+  "CF_ORIG_TRAINER": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_ORIG_TRAINER",
+    "Passives": [
+      "SKILL_CF_TRAINER_FIRST_PARTNER",
+      "SKILL_CF_TRAINER_TYPE_ADVANTAGE",
+      "SKILL_CF_TRAINER_GOTTA_TRAIN_EM",
+      "SKILL_CF_TRAINER_BOND_STRENGTH",
+      "SKILL_CF_TRAINER_SECOND_PARTNER",
+      "SKILL_CF_TRAINER_THIRD_PARTNER"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 72,
+      "CRT": 6,
+      "DEF": 0,
+      "EVD": 3,
+      "FOC": 5,
+      "HP": 32,
+      "INT": 70,
+      "LCK": 72,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 66,
+      "STR": 52,
+      "TAL": 68,
+      "VIT": 62
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_ORIGINALS"
+    ],
+    "Things": {
+      "ARM_ORIG_STARTER_TRAINER_BEAST_WHISTLE": 1,
+      "TRINKET_BUFF_RESIST": 1,
+      "HERB_GOLDENROOT_01": 1
+    },
+    "Threat": 0
+  }
+}

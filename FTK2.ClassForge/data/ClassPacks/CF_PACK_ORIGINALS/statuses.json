@@ -1,0 +1,16 @@
+{
+  "STATUS_CF_ENGORGED": {
+    "Type": "VIGOR",
+    "Duration": 3,
+    "TickFrequency": 1,
+    "TickOverworld": false,
+    "TickCombat": true,
+    "TickExpire": false,
+    "TileSync": false,
+    "GroupSync": false,
+    "Passives": [],
+    "AddProperties": [],
+    "Stats": { "HP": 8 },
+    "CustomStats": {}
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "author": "ben",
+  "dependencies": [],
+  "description": "Original classes authored for this repo (not re-hosted from any other mod): Vampiric, Pacifist and Beast Trainer. Balanced into the same measured stat band as CF_PACK_EOR_CLASSES (scaling-stat budget 432-474) so a party can mix them with the EOR classes without one side dominating.",
+  "enabled": true,
+  "id": "CF_PACK_ORIGINALS",
+  "loadOrder": 110,
+  "name": "Original Classes",
+  "version": "0.1.0"
+}
