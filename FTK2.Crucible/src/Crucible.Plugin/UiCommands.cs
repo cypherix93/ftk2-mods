@@ -243,6 +243,13 @@ namespace Crucible.Plugin
                 // Strategy ladder: try each in order, stop at the first success, but report every
                 // attempt made (up to and including the one that succeeded) so a failed click is
                 // fully diagnosable from this one call.
+                //
+                // Order matters, and it is deliberate: the first two strategies report whether the
+                // element ACTED, while the last two only report that an event was DISPATCHED.
+                // Synthesising a NavigationSubmitEvent "succeeds" whether or not any handler is
+                // listening, so running it earlier masked a real failure -- a story dialogue
+                // reported invoked=True through focus+submit and did not advance, which stalled
+                // quest resolution and stopped the adventure from ever ending.
                 bool succeeded = false;
                 string succeededVia = null;
 
@@ -253,9 +260,17 @@ namespace Crucible.Plugin
 
                 if (!succeeded)
                 {
+                    string s4Detail;
+                    bool s4 = TryGameSubmit(targetButton, out s4Detail);
+                    result.Append("\nstrategy2[UIToolkitHelper.Submit]: ").Append(s4Detail);
+                    if (s4) { succeeded = true; succeededVia = "UIToolkitHelper.Submit"; }
+                }
+
+                if (!succeeded)
+                {
                     string s2Detail;
                     bool s2 = TryFocusThenSubmit(targetButton, out s2Detail);
-                    result.Append("\nstrategy2[focus+submit]: ").Append(s2Detail);
+                    result.Append("\nstrategy3[focus+submit]: ").Append(s2Detail);
                     if (s2) { succeeded = true; succeededVia = "Focus()+NavigationSubmitEvent"; }
                 }
 
@@ -263,7 +278,7 @@ namespace Crucible.Plugin
                 {
                     string s3Detail;
                     bool s3 = TryPointerSequence(targetButton, out s3Detail);
-                    result.Append("\nstrategy3[pointer]: ").Append(s3Detail);
+                    result.Append("\nstrategy4[pointer]: ").Append(s3Detail);
                     if (s3) { succeeded = true; succeededVia = "PointerDownEvent+PointerUpEvent+ClickEvent"; }
                 }
 
@@ -277,6 +292,56 @@ namespace Crucible.Plugin
             {
                 LastResult = "error: crucible_ui_click threw: " + ex.Message;
                 if (_log != null) _log.LogWarning("crucible_ui_click failed: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// The game's OWN activation path: UIToolkitHelper.Submit(element, pickFilter,
+        /// pIgnoreDisableCheck, pIsMouseAction).
+        ///
+        /// This exists because the first three strategies all reported success on a story dialogue
+        /// and advanced nothing (measured 2026-08-24). Dialogue pages are wired with
+        /// RegisterSingleSubmit and advanced by DialogueViewHelper._onSubmit, which calls exactly
+        /// this method with a pick filter that returns false -- it deliberately ignores whether
+        /// something else is painted on top. Synthesising a NavigationSubmitEvent is NOT
+        /// equivalent: an orphaned LoadingUIDocument left over from a load sits above the dialogue
+        /// and swallows the ordinary path, and that is precisely the state a quest-resolution
+        /// dialogue is reached in.
+        ///
+        /// pIgnoreDisableCheck is true for the same reason: the harness has to activate elements
+        /// the game has disabled for input while it waits on a Task.
+        /// </summary>
+        private static bool TryGameSubmit(object element, out string detail)
+        {
+            detail = null;
+            try
+            {
+                Type helperType = AccessTools.TypeByName("UIToolkitHelper");
+                if (helperType == null) { detail = "failed: UIToolkitHelper not found"; return false; }
+
+                MethodInfo submit = null;
+                foreach (MethodInfo m in helperType.GetMethods(BindingFlags.Public | BindingFlags.Static))
+                {
+                    if (!string.Equals(m.Name, "Submit", StringComparison.Ordinal)) continue;
+                    if (m.GetParameters().Length == 4) { submit = m; break; }
+                }
+                if (submit == null) { detail = "failed: UIToolkitHelper.Submit(4 args) not found"; return false; }
+
+                object returned = submit.Invoke(null, new object[] { element, null, true, false });
+                bool ok = returned is bool && (bool)returned;
+                detail = ok ? "SUCCEEDED (returned true)" : "failed: Submit returned false";
+                return ok;
+            }
+            catch (TargetInvocationException ex)
+            {
+                Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                detail = "failed: threw " + root.GetType().Name + ": " + root.Message;
+                return false;
+            }
+            catch (Exception ex)
+            {
+                detail = "failed: " + ex.Message;
+                return false;
             }
         }
 

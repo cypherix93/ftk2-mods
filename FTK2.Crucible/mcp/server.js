@@ -354,6 +354,119 @@ const TOOLS = [
     description: 'Read-only: active/completed/failed quest counts, plus each active quest\'s id and its ' +
       'CompletedObjectives bitmap (from QuestState.CompletedObjectives).',
     inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_godmode',
+    description: 'Keep the party alive so a trait can be observed instead of the party dying first. ' +
+      'Implemented as a per-tick top-up of party health rather than an invulnerability flag, which ' +
+      'matters: damage still LANDS and still fires ON_DAMAGE_TAKEN, so reflect and thorns traits stay ' +
+      'observable. A real invulnerability flag would suppress the very trigger under test. Party only ' +
+      '(group 0); enemies are untouched so a fight still behaves like a fight.',
+    inputSchema: { type: 'object', properties: {
+      mode: { type: 'string', enum: ['on', 'off', 'status'], description: 'default: status' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_combat_spawn',
+    description: 'Drop creatures straight into the CURRENT fight, wired the way the game wires its own ' +
+      'summons: tile position, initiative, actions and the 3D model. Use this when a fight is too small ' +
+      'to exercise something - a Bond-gated summon that unlocks at 3 and 6 kills cannot be reached in a ' +
+      'fight that ships one spider. NOTE the tile decides ALLEGIANCE (TryCreateSummon copies the tile ' +
+      'GroupIndex onto the new character), so group 1 needs a free enemy tile and group 0 a free player ' +
+      'one; asking for more than there are free tiles places as many as fit and says so.',
+    inputSchema: { type: 'object', required: ['characterConfig'], properties: {
+      characterConfig: { type: 'string', description: 'e.g. BEE_WORKER_01, WOLF_CHAOSHOUND_01' },
+      count: { type: 'number', description: 'default 1, capped at 12' },
+      group: { type: 'number', description: '1 = enemies (default), 0 = allies' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_combat_wipe_enemies',
+    description: 'Kill every combatant in a group instantly - the fast way to end a test fight once the ' +
+      'thing under test has been observed. Use INSTEAD OF ftk2_kill_all, which does nothing in combat: ' +
+      'it walks GameRunData.Entities while the fight runs on CombatState.Entities, and reports ' +
+      'changed=False against 74 live combatants. Defaults to group 1 so an obvious typo cannot wipe the ' +
+      'party being tested.',
+    inputSchema: { type: 'object', properties: {
+      group: { type: 'number', description: '1 = enemies (default), 0 = party' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_combat_restore_actions',
+    description: 'Refill primary/secondary actions so a character can act again this turn. Needed because ' +
+      'an ability with no actions left does NOT fail loudly: the use-ability call reports the ability and ' +
+      'target exactly as it does on success, and the only tell is pa=0 in the snapshot. A trait test that ' +
+      'lost its action to an earlier auto-play therefore reads as "the trait never fired".',
+    inputSchema: { type: 'object', properties: {
+      group: { type: 'number', description: '0 = party (default), 1 = enemies' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_loc',
+    description: 'Resolve a localization key exactly as the UI does, against the game own ' +
+      'Lang.__translations. Use it to prove a pack authored names AND descriptions that players will ' +
+      'actually see: a label looking right in a screenshot only proves the NAME resolved, while ' +
+      'descriptions live behind hover tooltips and encyclopedia panels a harness cannot easily open. An ' +
+      'unresolved key renders as the raw id. A trailing * matches by prefix, so a whole pack can be ' +
+      'checked in one call (e.g. SKILL_CF_VAMPIRIC*).',
+    inputSchema: { type: 'object', required: ['key'], properties: {
+      key: { type: 'string', description: 'Exact key, or a prefix ending in *' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_summary_dismiss',
+    description: 'Dismiss the ADVENTURE COMPLETE / adventure-summary screen by pressing its Continue button ' +
+      '(next-btn). _endAdventure AWAITS the Task that this button completes, so until it is pressed the run ' +
+      'never finishes unwinding and the game sits on the summary forever. Pressing the button rather than ' +
+      'completing the Task directly is deliberate: the button handler sets the Task RESULT, and that result ' +
+      'decides whether the save is removed. Note the other button on that screen, load-game-btn, LOADS A SAVE ' +
+      '- this tool only ever presses next-btn.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_endadventure_watch',
+    description: 'Read the latched outcome of the last adventure: whether it ended, and whether it was a ' +
+      'VICTORY or a DEFEAT. This is the ONLY sound way to assert an outcome - _endAdventure routes a win and ' +
+      'a loss to the SAME screen, so route tells you nothing. Backed by a Harmony prefix that also SNAPSHOTS ' +
+      'the save, which matters because a victorious run DELETES its own save on the way out; the snapshot run ' +
+      'id is returned so the finished state can be reloaded. Also reports how many camera faults were ' +
+      'suppressed during resolution.',
+    inputSchema: { type: 'object', properties: {
+      action: { type: 'string', enum: ['read', 'reset', 'snapshot'], description: 'read (default), reset the latch, or snapshot on/off' },
+      value: { type: 'string', enum: ['on', 'off'], description: 'For action=snapshot' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_run_status',
+    description: 'The assertion surface for a whole run: map, round, stage, time of day, active/completed/' +
+      'failed/future quests with their objective bitmaps, whether the party is in a dungeon, whether the ' +
+      'summary screen is up, and whether a quest carrying AdventureEndTrigger=WIN has completed. Also reports ' +
+      'the state of the last quest-completion pump INCLUDING its exception and stack trace - those run as ' +
+      'async Tasks whose faults are otherwise swallowed, so a pump that died half-way looks exactly like a ' +
+      'pump that found nothing to do. Warns when a STORY quest hits 0 rounds left, which ends the run in ' +
+      'DEFEAT with no combat involved.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_quest_activate',
+    description: 'DEBUG: put any quest straight into ActiveQuests, built the way the game builds it ' +
+      '(QuestHelper.CreateQuestState), including stamping the ACTIVE map id - a quest with the wrong MapID ' +
+      'can never complete. Needed because the quest chain CANNOT be walked by completing objectives alone: ' +
+      'promotion out of FutureQuests is gated on QuestStartWorldTriggers (the route to chapter 1-1s WIN ' +
+      'quest needs chaos stage 3), so a harness would otherwise have to play the game to get there.',
+    inputSchema: { type: 'object', required: ['questId'], properties: {
+      questId: { type: 'string', description: 'e.g. STORY_1_1_CLEAR_BANDIT_KING' }, ...INSTANCE_ARG } } },
+  { name: 'ftk2_quest_complete_objective',
+    description: 'Complete quest objectives BY ID (unlike ftk2_quest_complete, which takes an index), then ' +
+      'pump the game own resolution pass. Flags EVERY active quest carrying that id, because ActiveQuests ' +
+      'can hold duplicates and the duplicate is otherwise unreachable - and a duplicate that throws inside ' +
+      'CheckObjectiveCompletion aborts the completion pass for EVERY quest ordered after it. Expect queued ' +
+      'Choose Reward prompts afterwards: resolution awaits them, and unanswered they look exactly like a hang.',
+    inputSchema: { type: 'object', required: ['questId'], properties: {
+      questId: { type: 'string' },
+      objective: { type: 'string', description: 'Objective index, or "all" (default)' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_tutorials_suppress',
+    description: 'Mark every tutorial as already seen and switch the tutorial system off. Ids are harvested ' +
+      'from the game own Tutorials.json rather than hard-coded, so a game update cannot silently ' +
+      'reintroduce one. Worth calling before any unattended run: several Royal Tutor popups fire from ' +
+      '_tryProceed itself (low health, end turn, receiving a portal scroll) and each one blocks the overworld.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_party_gain_xp',
+    description: 'Grant XP through the game own ProgressionHelper.EntitiesGainXP, so levelling also heals ' +
+      'to full, grants focus and emits LEVELED_UP. Level is DERIVED from an XP inventory Thing, so writing ' +
+      'that stack by hand skips all three and desyncs HP. Reports levels before and after.',
+    inputSchema: { type: 'object', required: ['xpEach'], properties: {
+      xpEach: { type: 'number' },
+      slot: { type: 'string', description: 'Party slot, or "all" (default)' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_encounter_leave',
+    description: 'Close whatever encounter UI is open, via _stopEncounterAsync - the universal un-wedge. ' +
+      'Needed because the market, town-services and quest-board branches never call _closeEncounterMenuAsync, ' +
+      'so an encounter opened through them stays open forever. Also re-pumps quest completion on the way out.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
   { name: 'ftk2_quest_complete',
     description: 'DEBUG/CHEAT: marks one objective of one active quest complete. Sets ' +
       'QuestState.CompletedObjectives[objectiveIndex] = true (the one public mutator field found), THEN ' +
@@ -667,6 +780,7 @@ function statePath(schema) {
  */
 const DISMISSABLE = [
   'continue-label',
+  'dialogue-container',
   'ok-btn',
   'royal-tutor-container',
   'sys-dialog-ok-btn',
@@ -681,6 +795,8 @@ const DISMISSABLE = [
  */
 const DISMISSABLE_REASONS = {
   'continue-label': 'post-load gate, and each intro story page (there are several)',
+  'dialogue-container': 'story dialogue page; quest resolution AWAITS this, so leaving it up '
+    + 'stalls _resolveQuests and the adventure never reaches its end-of-run check',
   'ok-btn': 'tutorial or system prompt, the "Understood" button',
   'royal-tutor-container': 'Royal Tutor tutorial overlay',
   'sys-dialog-ok-btn': 'system dialog confirm (safe; NOT continue-btn despite also reading Continue)',
@@ -961,6 +1077,40 @@ async function callTool(name, args) {
       return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_pin_seed', args: [String(args.seed)] }));
     case 'ftk2_quest_state':
       return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_quest_state', args: [] }));
+    case 'ftk2_godmode':
+      return textResult(await execText(inst, 'crucible_godmode', [String(args.mode || 'status')]));
+    case 'ftk2_combat_spawn':
+      return textResult(await execText(inst, 'crucible_combat_spawn', [
+        String(args.characterConfig),
+        String(args.count === undefined ? 1 : args.count),
+        String(args.group === undefined ? 1 : args.group)]));
+    case 'ftk2_combat_wipe_enemies':
+      return textResult(await execText(inst, 'crucible_combat_wipe_enemies',
+        [String(args.group === undefined ? 1 : args.group)]));
+    case 'ftk2_combat_restore_actions':
+      return textResult(await execText(inst, 'crucible_combat_restore_actions',
+        [String(args.group === undefined ? 0 : args.group)]));
+    case 'ftk2_loc':
+      return textResult(await execText(inst, 'crucible_loc', [String(args.key)]));
+    case 'ftk2_summary_dismiss':
+      return textResult(await execText(inst, 'crucible_summary_dismiss', []));
+    case 'ftk2_endadventure_watch':
+      return textResult(await execText(inst, 'crucible_endadventure_watch',
+        [String(args.action === undefined || args.action === 'read' ? '' : args.action), String(args.value || '')]));
+    case 'ftk2_run_status':
+      return textResult(await execText(inst, 'crucible_run_status', []));
+    case 'ftk2_quest_activate':
+      return textResult(await execText(inst, 'crucible_quest_activate', [String(args.questId)]));
+    case 'ftk2_quest_complete_objective':
+      return textResult(await execText(inst, 'crucible_quest_complete_objective',
+        [String(args.questId), String(args.objective || 'all')]));
+    case 'ftk2_tutorials_suppress':
+      return textResult(await execText(inst, 'crucible_tutorials_suppress', []));
+    case 'ftk2_party_gain_xp':
+      return textResult(await execText(inst, 'crucible_party_gain_xp',
+        [String(args.xpEach), String(args.slot || 'all')]));
+    case 'ftk2_encounter_leave':
+      return textResult(await execText(inst, 'crucible_encounter_leave', []));
     case 'ftk2_quest_complete':
       return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_quest_complete', args: [String(args.questIndex), String(args.objectiveIndex)] }));
     case 'ftk2_chaos_freeze':

@@ -577,7 +577,14 @@ namespace Crucible.Plugin
                 string seg = segments[i];
                 try
                 {
-                    FieldInfo field = AccessTools.Field(currentType, seg);
+                    // A trailing [n] indexes into the value the member read produces. Without this,
+                    // every list on the run -- quests, entities, party -- could only ever be printed
+                    // whole via ToString(), so a single element's fields were unreachable and had to
+                    // be exposed as a bespoke command each time.
+                    int subscript;
+                    string memberName = SplitSubscript(seg, out subscript);
+
+                    FieldInfo field = AccessTools.Field(currentType, memberName);
                     if (field != null)
                     {
                         if (!field.IsStatic && current == null)
@@ -586,11 +593,12 @@ namespace Crucible.Plugin
                             return false;
                         }
                         current = field.GetValue(current);
+                        if (subscript >= 0 && !TryIndex(ref current, subscript, i, seg, out error)) return false;
                         currentType = current != null ? current.GetType() : field.FieldType;
                         continue;
                     }
 
-                    PropertyInfo prop = AccessTools.Property(currentType, seg);
+                    PropertyInfo prop = AccessTools.Property(currentType, memberName);
                     if (prop == null)
                     {
                         error = "segment[" + i + "] '" + seg + "': member not found on " + currentType.FullName;
@@ -605,6 +613,7 @@ namespace Crucible.Plugin
                         return false;
                     }
                     current = prop.GetValue(isStatic ? null : current, null);
+                    if (subscript >= 0 && !TryIndex(ref current, subscript, i, seg, out error)) return false;
                     currentType = current != null ? current.GetType() : prop.PropertyType;
                 }
                 catch (Exception ex)
@@ -617,6 +626,73 @@ namespace Crucible.Plugin
             result = current;
             resultType = currentType;
             return true;
+        }
+
+        /// <summary>
+        /// Splits "Name[3]" into "Name" and 3. Returns the segment unchanged with -1 when there is
+        /// no subscript, and also when the brackets are malformed -- a member genuinely named with
+        /// brackets does not exist, so the member lookup that follows produces the clearer error.
+        /// </summary>
+        private static string SplitSubscript(string segment, out int index)
+        {
+            index = -1;
+            if (segment == null || segment.Length < 4 || segment[segment.Length - 1] != ']') return segment;
+            int open = segment.IndexOf('[');
+            if (open <= 0) return segment;
+
+            string inner = segment.Substring(open + 1, segment.Length - open - 2);
+            int parsed;
+            if (!int.TryParse(inner, out parsed) || parsed < 0) return segment;
+
+            index = parsed;
+            return segment.Substring(0, open);
+        }
+
+        /// <summary>
+        /// Replaces <paramref name="current"/> with its element at <paramref name="index"/>.
+        /// Handles IList (arrays and List&lt;T&gt;) directly and falls back to walking any
+        /// IEnumerable, which covers the game's several read-only collection wrappers.
+        /// </summary>
+        private static bool TryIndex(ref object current, int index, int segmentIndex, string segment, out string error)
+        {
+            error = null;
+            if (current == null)
+            {
+                error = "segment[" + segmentIndex + "] '" + segment + "': cannot index a null value";
+                return false;
+            }
+
+            System.Collections.IList list = current as System.Collections.IList;
+            if (list != null)
+            {
+                if (index >= list.Count)
+                {
+                    error = "segment[" + segmentIndex + "] '" + segment + "': index " + index
+                          + " is out of range (count=" + list.Count + ")";
+                    return false;
+                }
+                current = list[index];
+                return true;
+            }
+
+            System.Collections.IEnumerable sequence = current as System.Collections.IEnumerable;
+            if (sequence == null)
+            {
+                error = "segment[" + segmentIndex + "] '" + segment + "': "
+                      + current.GetType().FullName + " is not indexable";
+                return false;
+            }
+
+            int seen = 0;
+            foreach (object item in sequence)
+            {
+                if (seen++ != index) continue;
+                current = item;
+                return true;
+            }
+            error = "segment[" + segmentIndex + "] '" + segment + "': index " + index
+                  + " is out of range (count=" + seen + ")";
+            return false;
         }
 
         // ----------------------------------------------------------------- crucible_invoke

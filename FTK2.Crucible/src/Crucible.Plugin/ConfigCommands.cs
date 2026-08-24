@@ -44,8 +44,15 @@ namespace Crucible.Plugin
             _log = log;
         }
 
+        private static bool _locRegistered;
+
         internal static void TryRegister()
         {
+            if (!_locRegistered)
+                _locRegistered = GameBridge.RegisterCommand("crucible_loc",
+                    typeof(ConfigCommands).GetMethod("CrucibleLoc", BindingFlags.Public | BindingFlags.Static),
+                    new List<string> { "key or prefix" });
+
             if (!_classRegistered)
                 _classRegistered = GameBridge.RegisterCommand("crucible_class_config",
                     typeof(ConfigCommands).GetMethod("CrucibleClassConfig", BindingFlags.Public | BindingFlags.Static),
@@ -299,5 +306,83 @@ namespace Crucible.Plugin
         {
             return value == null ? "(null)" : value.ToString();
         }
+        // ============================================================== crucible_loc
+
+        /// <summary>
+        /// crucible_loc &lt;key|prefix&gt; — resolve a localization key exactly as the game's UI does.
+        ///
+        /// Reads <c>Lang.__translations</c>, the dictionary every UI surface funnels through, so a key
+        /// that answers here is a key the player will actually see. This exists because "the label
+        /// looked right in a screenshot" only proves the NAME resolved: descriptions live behind
+        /// hover tooltips and encyclopedia panels that a harness cannot easily open, and an
+        /// unresolved key silently renders as the raw id or as nothing at all.
+        ///
+        /// A trailing '*' matches by prefix, which is how a whole pack's keys get checked in one call
+        /// (e.g. <c>crucible_loc SKILL_CF_VAMPIRIC*</c>).
+        /// </summary>
+        public static void CrucibleLoc(string key)
+        {
+            LastResult = null;
+            try
+            {
+                if (string.IsNullOrEmpty(key))
+                {
+                    LastResult = "error: usage: crucible_loc <key|prefix*>";
+                    return;
+                }
+                key = key.Trim();
+
+                Type lang = AccessTools.TypeByName("Lang");
+                FieldInfo field = lang == null ? null : AccessTools.Field(lang, "__translations");
+                IDictionary translations = field == null ? null : field.GetValue(null) as IDictionary;
+                if (translations == null)
+                {
+                    LastResult = "error: Lang.__translations unavailable (game may still be loading)";
+                    return;
+                }
+
+                StringBuilder sb = new StringBuilder();
+                sb.Append("totalKeys=").Append(translations.Count);
+
+                if (key.EndsWith("*", StringComparison.Ordinal))
+                {
+                    string prefix = key.Substring(0, key.Length - 1);
+                    int found = 0;
+                    foreach (DictionaryEntry entry in translations)
+                    {
+                        string k = entry.Key as string;
+                        if (k == null || !k.StartsWith(prefix, StringComparison.Ordinal)) continue;
+                        found++;
+                        sb.Append("\n  ").Append(k).Append(" = ").Append(Preview(entry.Value));
+                    }
+                    sb.Append("\nmatched=").Append(found);
+                    if (found == 0)
+                        sb.Append("  <-- NOTHING matched '").Append(prefix)
+                          .Append("'; the pack's localization file is not loaded");
+                }
+                else
+                {
+                    bool present = translations.Contains(key);
+                    sb.Append(" key=").Append(key).Append(" PRESENT=").Append(present);
+                    if (present) sb.Append("\nvalue: ").Append(Preview(translations[key]));
+                    else sb.Append("\nMISSING: the UI will render the raw key or nothing at all");
+                }
+
+                LastResult = sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_loc threw: " + ex.Message;
+            }
+        }
+
+        private static string Preview(object value)
+        {
+            string text = value as string;
+            if (text == null) return "(null)";
+            text = text.Replace("\n", " ");
+            return text.Length <= 300 ? text : text.Substring(0, 300) + "...";
+        }
+
     }
 }
