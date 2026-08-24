@@ -54,6 +54,73 @@ namespace Crucible.Plugin
             Register("crucible_hex_info", "CrucibleHexInfo", new List<string> { "x", "y" });
             Register("crucible_overworld_end_turn", "CrucibleOverworldEndTurn", new List<string>());
             Register("crucible_interact", "CrucibleInteract", new List<string> { "action (e.g. VENUE)" });
+            Register("crucible_set_diorama", "CrucibleSetDiorama", new List<string> { "dioramaConfig" });
+        }
+
+
+        // ============================================================== crucible_set_diorama
+
+        /// <summary>
+        /// crucible_set_diorama &lt;dioramaConfig&gt; — swap the BATTLEFIELD the next combat is fought on.
+        ///
+        /// <para>The tile LAYOUT comes from a map, but the tile VISUALS come from the diorama:
+        /// <c>VenueViewHelper.CreateVenueTileGameObjects</c> is handed the diorama and its
+        /// <c>IsOutdoor</c> flag, so an outdoor grass venue draws faint ground decals while a stone
+        /// interior draws hard-edged tiles. A grid can therefore be entirely correct — right tile
+        /// count, movable, targetable — and still look like it does not exist, purely because of
+        /// which battlefield it is drawn on.</para>
+        ///
+        /// <para>45 diorama configs ship. Notable ones: <c>CASTLE_QUEEN</c> (the Powerstone Castle
+        /// throne room), <c>OMUS_CASTLE_BOSS</c> (the final boss arena), <c>OMUS_CASTLE</c>,
+        /// <c>HARAZUEL_ROOF</c>, <c>MAZE_KING</c>, <c>CRYPT</c>, <c>CAVE</c>, <c>TAVERN</c>.</para>
+        ///
+        /// <para>Writes <c>GameRunData.VenueState.Venue.DioramaName</c>, which the phase reads when it
+        /// loads the venue, so set it BEFORE entering combat.</para>
+        /// </summary>
+        public static void CrucibleSetDiorama(string dioramaConfig)
+        {
+            LastResult = null;
+            try
+            {
+                if (string.IsNullOrEmpty(dioramaConfig))
+                {
+                    LastResult = "error: usage: crucible_set_diorama <dioramaConfig>"
+                        + "\nExamples: CASTLE_QUEEN (Powerstone throne room), OMUS_CASTLE_BOSS (final boss),"
+                        + "\n          HARAZUEL_ROOF, MAZE_KING, CRYPT, CAVE, TAVERN, MINES.";
+                    return;
+                }
+
+                object run = RunAccess.GetGameRun();
+                if (run == null) { LastResult = "error: no run loaded"; return; }
+
+                object venueState = RunAccess.GetMember(run, "VenueState");
+                if (venueState == null) { LastResult = "error: GameRunData.VenueState is null"; return; }
+
+                object venue = RunAccess.GetMember(venueState, "Venue");
+                if (venue == null)
+                {
+                    LastResult = "error: VenueState.Venue is null -- there is no venue staged yet."
+                        + "\nStage one first (walk onto an encounter), then set the diorama before the fight starts.";
+                    return;
+                }
+
+                FieldInfo field = AccessTools.Field(venue.GetType(), "DioramaName");
+                if (field == null) { LastResult = "error: VenueData.DioramaName not found"; return; }
+
+                string before = Str(field.GetValue(venue));
+                field.SetValue(venue, dioramaConfig.Trim());
+                string after = Str(field.GetValue(venue));
+
+                LastResult = "dioramaName " + before + " -> " + after
+                    + " changed=" + (before != after)
+                    + "\nNOTE: read when the venue LOADS, so set this before combat begins; it does not"
+                    + "\n      restyle a fight already in progress. An unknown name will fail to resolve"
+                    + "\n      its dDiorama record when the venue loads.";
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_set_diorama threw: " + ex.Message;
+            }
         }
 
         private static void Register(string command, string method, List<string> hints)

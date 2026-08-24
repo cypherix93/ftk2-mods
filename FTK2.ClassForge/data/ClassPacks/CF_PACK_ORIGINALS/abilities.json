@@ -1,5 +1,5 @@
 {
-  "CF_TRAINER_SEND_OUT_CHAOS_ATTACK": {
+  "CF_TRAINER_SUMMON_CHAOS_ATTACK": {
     "Inherits": "DEFAULT_ABILITY",
     "Target": "ALLY_ALL",
     "TileOccupancy": "EMPTY",
@@ -22,7 +22,7 @@
       }
     ]
   },
-  "CF_TRAINER_SEND_OUT_EMBER_ATTACK": {
+  "CF_TRAINER_SUMMON_EMBER_ATTACK": {
     "Inherits": "DEFAULT_ABILITY",
     "Target": "ALLY_ALL",
     "TileOccupancy": "EMPTY",
@@ -45,7 +45,7 @@
       }
     ]
   },
-  "CF_TRAINER_SEND_OUT_RIME_ATTACK": {
+  "CF_TRAINER_SUMMON_RIME_ATTACK": {
     "Inherits": "DEFAULT_ABILITY",
     "Target": "ALLY_ALL",
     "TileOccupancy": "EMPTY",

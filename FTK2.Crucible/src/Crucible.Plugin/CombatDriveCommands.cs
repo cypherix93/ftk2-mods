@@ -1622,11 +1622,16 @@ namespace Crucible.Plugin
                     object groupIndex = PartyAccess.ReadMember(character, "GroupIndex");
                     if (groupIndex == null || Convert.ToInt32(groupIndex) != 0) continue;
 
-                    object maxHealth = PartyAccess.ReadMember(character, "MaxHealth");
+                    // CharacterHelper.GetMaxHealth(Entity), NOT a "MaxHealth" member.
+                    //
+                    // CharacterComponent has no such field or property. The old lookup failed on
+                    // EVERY character on EVERY tick, and HarmonyX logs a warning for each miss:
+                    // measured 45,432 of 49,219 lines in Player.log -- 92% of the file -- from this
+                    // one line, immediately before the game died on a d3d11 out-of-memory. A
+                    // reflection miss in a per-tick loop is not a silent no-op; it is a log flood.
+                    int max = MaxHealthOf(entity);
                     FieldInfo hp = AccessTools.Field(character.GetType(), "CurrentHealth");
-                    if (hp == null || maxHealth == null) continue;
-
-                    int max = Convert.ToInt32(maxHealth);
+                    if (hp == null || max <= 0) continue;
                     int current = Convert.ToInt32(hp.GetValue(character));
                     if (current >= max || max <= 0) continue;
                     hp.SetValue(character, max);
@@ -1634,6 +1639,39 @@ namespace Crucible.Plugin
                 }
             }
             catch (Exception) { /* a tick must never throw */ }
+        }
+
+
+        /// <summary>Cached <c>CharacterHelper.GetMaxHealth(Entity)</c>; 0 when unavailable.</summary>
+        private static MethodInfo _getMaxHealth;
+        private static bool _getMaxHealthResolved;
+
+        private static int MaxHealthOf(object entity)
+        {
+            try
+            {
+                // Resolve ONCE. The point of the cache is not speed, it is that a failed lookup
+                // inside a per-tick loop floods the log and can take the process down with it.
+                if (!_getMaxHealthResolved)
+                {
+                    _getMaxHealthResolved = true;
+                    Type helper = AccessTools.TypeByName("CharacterHelper");
+                    if (helper != null)
+                        foreach (MethodInfo m in helper.GetMethods(BindingFlags.Public | BindingFlags.Static))
+                        {
+                            if (!string.Equals(m.Name, "GetMaxHealth", StringComparison.Ordinal)) continue;
+                            if (m.GetParameters().Length != 1) continue;
+                            _getMaxHealth = m; break;
+                        }
+                    if (_getMaxHealth == null && _log != null)
+                        _log.LogWarning("crucible_godmode: CharacterHelper.GetMaxHealth(Entity) not found; "
+                            + "godmode cannot top anyone up. Reported once, not per tick.");
+                }
+                if (_getMaxHealth == null) return 0;
+                object value = _getMaxHealth.Invoke(null, new[] { entity });
+                return value == null ? 0 : Convert.ToInt32(value);
+            }
+            catch (Exception) { return 0; }
         }
 
         private static bool TryGetCombatState(out object combatState, out string error)

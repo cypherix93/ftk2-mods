@@ -11,23 +11,39 @@ A tick here means an observed state change.
 
 ---
 
-## THE BLOCKER: combat UI is broken by a leaked summon
+## Method notes (learned the hard way)
+
+- A visual feature is not verified until a screenshot shows it, and the screenshot must be opened
+  and described. State readback and screenshots fail in different directions.
+- Never change the measuring instrument and the feature in the same deploy. The snapshot's
+  tile-list cap was 30 — below the tile count of even a standard venue — so the list truncated at
+  exactly the cap and an enlarged grid was indistinguishable from a normal one.
+- A reflection miss inside a per-tick loop is not a silent no-op: godmode looked up a non-existent
+  `"MaxHealth"` field every tick and produced 45,432 of 49,219 lines in Player.log, right before the
+  game died on a d3d11 out-of-memory.
+
+---
+
+## RESOLVED: combat UI was broken by an unguarded tile-render lookup
 
     KeyNotFoundException: '(WOLF_CHAOSHOUND_01) - (3, 1) e85cf401…' was not present in the dictionary
       at CombatPhase._clearTileRenderState ()
       at CombatPhase.Initialize (...)
 
-A **summoned creature persists into the NEXT combat's `Initialize`**. It is in a roster but has no
-tile-render entry, so `_clearTileRenderState` throws, which aborts the rest of combat UI setup: no
-tile grid, no action menu, nothing targetable or hoverable. The **overworld is unaffected** (hex
-grid, movement numbers and End Turn all render), which is what localises it to the combat venue.
+The root cause was **not** a leaked summon persisting into the next fight. `_clearTileRenderState`
+indexes `_gameObjectMaps.FromCharacter[occupant]` with **no membership check** — ANY combatant
+lacking a 3D model throws `KeyNotFoundException` there and aborts the rest of `Initialize`. That is
+why the symptom was a missing UI (no tile grid, no action menu, nothing targetable) rather than a
+missing creature: one absent model took the whole combat venue down with it. **Fixed** by building
+the missing model first and only removing the combatant if that genuinely fails.
 
-Cause: `TryCreateSummon` puts the creature in `GameRunData.Entities`, which is PERSISTENT, whereas
-the game's own summons are combat-scoped because `CombatState.Entities` is rebuilt per fight. Fix by
-purging summoned entities when combat ends, or by registering their tile mapping.
+Two contributing bugs found and fixed alongside it:
 
-Already ruled out by bisection: ClassForge's `DrawNewSummon` (disabling it did not restore the UI,
-so it is re-enabled) and window focus.
+- `_canvas3D` was cast `as Component`, but it is a `GameObject` (`Initialize` takes
+  `GameObject pCanvas3D`), and `GameObject` does not derive from `Component` in Unity — the cast
+  yielded null and every actor draw silently reported "canvas not up yet".
+- `_gameObjectMaps` is a **property** over `_env.VenueGameObjectMaps`, so reflective **field**
+  lookups for it returned null.
 
 ---
 
@@ -64,7 +80,11 @@ so it is re-enabled) and window focus.
 - [x] `crucible_get` indexer — `ActiveQuests[0].Data.ID` + out-of-range negative control
 - [x] **Full run to victory through the game's own quest chain**
 - [ ] Verify a **DEFEAT** latches too (only VICTORY proven)
-- [ ] The 13 new `ftk2_*` wrappers — written, **need an MCP server reload** to appear as tools
+- [!] Loading a fixture saved mid-combat does **not** resume combat: `CoreHelper.LoadIntoGameRun`
+      routes on `DungeonState` only and never inspects `CombatState`, so the combat blob rides along
+      in the save as orphaned data.
+- [ ] The 13 new `ftk2_*` wrappers — the MCP server reads its tool list from a static array at
+      startup, so new `ftk2_*` tools need a server reload before they're callable.
 
 ## C. Overworld
 
@@ -75,14 +95,19 @@ so it is re-enabled) and window focus.
 - [x] `crucible_interact VENUE` → combat
 - [x] `crucible_overworld_end_turn`
 - [x] `ftk2_map_encounters`
-- [ ] `ftk2_time_advance` — day/night
+- [x] `ftk2_time_advance` — was reading the `[Obsolete]` `AdventureState.CurrentTimeOfDayIndex`
+      alias, which the game no longer writes. Now reads `AdventureState.MapState.*`.
 - [ ] `crucible_interact` on non-combat venues (town, market, quest board)
 - [ ] Dungeon entry / `DungeonState.LoopState`
 
 ## D. Combat
 
-- [x] `crucible_combat_snapshot` — combatants, hp, tiles, turn order
-- [x] `crucible_list_abilities` (by guid) / `crucible_list_targets`
+- [x] `crucible_combat_snapshot` — combatants, hp, tiles, turn order; now also prints each
+      combatant's statuses
+- [x] `crucible_list_abilities` (by guid)
+- [x] `crucible_list_targets` — was throwing "Number of parameters specified does not match the
+      expected number" on every call, because `InteractableHelper.GetAbilityConfig` takes
+      `(string, bool)` and was invoked with one argument. Fixed.
 - [x] `crucible_use_ability` — **measured 7→6 damage**
 - [x] `crucible_win_combat` (EndPhase) — 4 combatants → 1
 - [x] `ftk2_heal_party` — **0→60 and 0→48; it also REVIVES the dead**
@@ -90,31 +115,43 @@ so it is re-enabled) and window focus.
 - [x] `crucible_combat_restore_actions` — refills `pa`/`sa`
 - [x] `crucible_combat_wipe_enemies`
 - [x] `crucible_godmode`
-- [!] `ftk2_kill_all` — **does nothing in combat**; walks `GameRunData.Entities` while the fight runs
-      on `CombatState.Entities`. Measured `entities=74 deadBefore=0 deadAfter=0`.
+- [x] `crucible_combat_end_turn` — works; the active character walks the initiative order. It
+      appeared broken only because the whole board was dead at the time.
+- [x] `ftk2_kill_all` — was invoking **nothing**: it looked for one-argument
+      `TryKillCharacter`/`KillCharacter` overloads that do not exist (they take six and three
+      parameters). Now binds `KillCharacter` properly and skips tile entities.
+      Measured `attempted=8 deadAfter=8`.
 - [!] `crucible_force_combat` — routes to COMBAT without initialising the phase; camera ends up under
       the map. Only a restart recovers. **Do not use** — spawn + the Fight button instead.
 - [ ] `crucible_use_ability_auto`
-- [ ] `crucible_combat_end_turn`
 - [ ] `ftk2_end_phase` / `ftk2_debug_end_phase`
 - [ ] **Losing** a fight → party wipe → DEFEAT path
 - [ ] Multi-wave combat
-- [ ] Status effects applied in combat and read back (`state.v2` statuses)
+- [x] Status effects applied in combat and read back (`state.v2` statuses)
+- [ ] Status **duration decay** — unverified. The status applies and reads back, but decay ticks at
+      the OWNER's turn start and only when the status config's `TickCombat` is true; a clean
+      measurement has not been taken.
 
 ## E. Items, gear, stats
 
 - [x] `crucible_equip` — starter weapons, 30/31 classes
-- [ ] `ftk2_give` / `crucible_give_item` — item lands in inventory
-- [ ] Equipping changes **abilities** (abilities come from the WEAPON, not the class)
-- [ ] `crucible_set_stat_value` — stat write read back
-- [ ] `crucible_status_add` — status applied, duration ticks down
-- [ ] `ftk2_set_level`
-- [ ] Armory items resolve in-game (533 items, config-folder install)
+- [x] `ftk2_give` / `crucible_give_item` — item lands in inventory, measured things `9→10`
+- [x] Equipping changes **abilities** (abilities come from the WEAPON, not the class) — swapping to
+      `ARM_ASHEN_CINDERROD` gained `WAND_FIRE_ATTACK` / `MAGIC_PULL_ATTACK` / `MAGIC_STUN_ATTACK` /
+      `MAGIC_CONFUSE_ONLY_SPLASH_ATTACK` and lost both `BLADE_*` abilities
+- [x] `crucible_set_stat_value` — stat write read back, measured `79→95`
+- [x] `crucible_thing_config` — accepts a trailing `*` to list matching ids
+- [x] `ftk2_set_level` — was calling `CharacterHelper.TryProgressCharacterEntityToLevel`, which swaps
+      an ENEMY's config tier and does nothing for a player. Now grants XP via
+      `ProgressionHelper.EntityGainXP`. Measured xp `300→455`, level `3→4`.
+- [x] Armory items resolve in-game (533 items, config-folder install)
 - [ ] Inverse items (negative stats) — designed, not built
 
 ## F. Chaos / map effects
 
-- [ ] `ftk2_chaos_state` — read chaos level
+- [x] `ftk2_chaos_state` — was reading the `[Obsolete]` `GameRunData.ChaosState` /
+      `GameRunData.RoundCount` aliases, which the game no longer writes. Now reads
+      `AdventureState.MapState.*`.
 - [ ] `ftk2_chaos_freeze` — pin chaos
 - [ ] Chaos stage advance → gated quests promote (this is what stalled the quest chain)
 - [ ] Encounter modifiers pack (`CF_PACK_ENCOUNTER_MODIFIERS`) fires in a real fight
@@ -131,6 +168,9 @@ so it is re-enabled) and window focus.
 - [x] `DAMAGE_DEALT_PCT` value source + tests
 - [x] Pacifist's weapon confirmed to carry NO damaging ability
 - [x] **Traits asserted FIRING in live combat** (below)
+- [!] Beast Trainer's three Send Out abilities exist on the weapon and resolve, but never appear in
+      the in-combat action menu and report `usable=False`. Tile capacity was **ruled out** (7 free
+      ally tiles). Cause not yet known.
 - [ ] Engorged / Bat Swarm / Field Medic / Why Can't We Be Friends — not yet isolated
 - [ ] Three elemental partners (Chaoshound / Hellhound at Bond 3 / Serpent at Bond 6) — authored and
       validated; only the first is verified firing
@@ -211,19 +251,37 @@ FTK2.Summoner was checked: **data-only**, 350 lines of config merging, no runtim
 - [x] New validator rules: `E_SUMMON_TARGET`, `E_VALUE_SOURCE_SCOPE`, `E_VALUE_SOURCE_NO_PERCENT`
 - [ ] LiveDataHarness (offline config validation) — exists in docs, not run
 
+## J. Combat grid — arena sizing
+
+- [x] Arena size is moddable. A tile map is a rectangle of characters: `CharacterHelper.GetGroupIndex(c)`
+      is `c - ('a' or 'A')`, so `A`/`a` is group 0 and `B`/`b` is group 1; uppercase is the BACK row,
+      lowercase the FRONT row; any non-letter is a neutral tile with group `-1`.
+- [x] The stock row `|..Aa.bB..|` gives each side exactly one back and one front column, so a
+      TWO_BY_TWO creature has no 2x2 block of same-group tiles anywhere on a standard board.
+- [x] Presets ship behind `[Combat] VenueGridPreset` (off / extended / large / huge). Measured:
+      preset `large` produced 120 tiles and 24 tiles per side against the stock 8.
+- [x] The step that made it actually work: new tiles must be given the render pass `Initialize`
+      already ran on the old ones (`RenderVenueTile(..., TileRender.Hidden)`), otherwise they exist
+      and are active but are neither drawn nor interactive.
+- [ ] Camera framing for the larger arena — not verified.
+- [ ] Enemy AI placement across a wider board — not verified.
+
 ---
 
 ## Ordering for autopilot
 
-1. **Fix the combat-UI blocker** — nothing below is testable on screen until summons stop leaking
-   into the next fight.
-2. **Reload the MCP server** so the 13 new `ftk2_*` tools are callable directly.
-3. **E — items/gear/stats**, the largest untested block. Note abilities come from the WEAPON, so
-   equipping must be asserted to change the ability list.
+1. **Status duration decay** — needs a clean measurement: apply a status with `TickCombat: true`,
+   end the OWNER's turn, and confirm the duration counts down in the snapshot.
+2. **Beast Trainer Send Out abilities** — resolve why a usable, tile-eligible ability reports
+   `usable=False` and never reaches the action menu.
+3. **Fixture mid-combat resume** — teach `CoreHelper.LoadIntoGameRun` to route on `CombatState` when
+   present, not just `DungeonState`.
 4. **Remaining G traits** — Engorged, Bat Swarm, Field Medic, Why Can't We Be Friends, and the
    Bond-3 / Bond-6 partners. Each needs a specific trigger condition the harness can now reach.
 5. **F — chaos**, since chaos staging is what gates the quest chain.
-6. Re-run the class sweep for 31/31, then the cheap A/C leftovers.
+6. **J — camera framing and enemy AI placement** on enlarged arenas.
+7. Reload the MCP server so the 13 new `ftk2_*` tools are callable directly, then re-run the class
+   sweep for 31/31 and the cheap A/C leftovers.
 
 ## Fast test bed
 

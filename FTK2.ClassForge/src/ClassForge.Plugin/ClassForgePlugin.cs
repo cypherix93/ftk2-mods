@@ -375,8 +375,11 @@ namespace ClassForge.Plugin
             // Larger combat arena (opt-in). PREFIX on the diorama argument: Initialize reads
             // _diorama.VenueGrid into _combatState.GridType and then builds tiles from it, all
             // within the same call, so a postfix lands after the tiles already exist.
-            Patch(harmony, typeof(CombatPhase), "Initialize",
-                postfix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.Initialize_Postfix)));
+            // Substitute the tile MAP the game is about to build, so the engine constructs the
+            // larger grid itself. Rebuilding the grid after Initialize left stale tile references
+            // that broke drawing and enemy targeting -- see VenueGridPatches.
+            Patch(harmony, typeof(VenueHelper), "CreateVenueTileEntities",
+                prefix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.CreateVenueTileEntities_Prefix)));
 
             // The line that actually throws. _clearTileRenderState indexes
             // _gameObjectMaps.FromCharacter for each tile's living occupant with no membership check,

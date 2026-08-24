@@ -39,111 +39,171 @@ namespace ClassForge.Plugin
     /// </summary>
     public static class VenueGridPatches
     {
-        internal static ConfigEntry<bool> Enabled;
+        internal static ConfigEntry<string> Preset;
+
+        /// <summary>
+        /// The tile maps this mod can install, decoded from the game's own format.
+        ///
+        /// <para>A map is a rectangle of characters, one tile per cell, and every row must be the
+        /// same length. <c>CharacterHelper.GetGroupIndex(c)</c> is <c>c - ('a' or 'A')</c>, so an
+        /// A/a cell belongs to group 0 and a B/b cell to group 1; <c>VenueHelper.getSlotRow</c>
+        /// makes UPPERCASE the BACK row and lowercase the FRONT row. Anything that is not a letter
+        /// becomes a neutral tile with group -1. That is the whole format.</para>
+        ///
+        /// <para>Which means the shipped maps are not a constraint. The standard row,
+        /// <c>|..Aa.bB..|</c>, gives each side exactly ONE back column and ONE front column — so a
+        /// TWO_BY_TWO creature has no 2x2 block of same-group tiles to stand on anywhere on the
+        /// board. Widening the letter runs fixes that, and is the reason these presets exist rather
+        /// than just using Extended.</para>
+        /// </summary>
+        private static readonly Dictionary<string, string[]> Presets = new Dictionary<string, string[]>(
+            StringComparer.OrdinalIgnoreCase)
+        {
+            // The game's own deeper board: 6 rows, still one column per side per row.
+            { "extended", null },
+
+            // The Kraken boss arena, VERBATIM as the game ships it. Included because a known-good
+            // shipped map is the honest baseline: if this draws and targets correctly then the
+            // substitution mechanism is sound and any remaining problem is in a custom map, not in
+            // the approach. Note its shape is boss-shaped -- ally 8, enemy 32 -- so it gives the
+            // PLAYER no more room than the standard board.
+            { "kraken", null },
+
+            // Two back + two front columns a side, six rows. Room for 2x2 creatures and for a
+            // summoner to field a team without filling the party's own side.
+            { "large", new[]
+                {
+                    "+-------------+",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "+-------------+",
+                } },
+
+            // The same width, eight rows deep.
+            { "huge", new[]
+                {
+                    "+-------------+",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "|..AAaa.bbBB..|",
+                    "+-------------+",
+                } },
+        };
+
+        internal static ConfigEntry<string> CameraRig;
+        internal static ConfigEntry<float> ZoomOut;
 
         internal static void Bind(ConfigFile config)
         {
-            Enabled = config.Bind("Combat", "ExtendedVenueGrid", false,
-                "Use the larger EXTENDED combat grid (6 rows per side) for ordinary fights instead of "
-                + "the standard 4. More room for summons and bigger encounters. The camera is not "
-                + "re-framed, so on some venues the arena may sit loosely in view.");
+            CameraRig = config.Bind("Combat", "VenueCameraRig", "",
+                "Camera rig to switch to when a grid preset is active. Empty leaves the camera alone. "
+                + "The game pairs its own grid change with a rig change, and without one a bigger "
+                + "arena is framed for the small board -- zoomed in, with the outer tiles off screen. "
+                + "Valid: OutdoorCameraRig, IndoorCameraRig, KrakenCameraRig, SpiderQueenCameraRig, "
+                + "QueenCameraRig, HarazuelRoofRig, HarazuelFlyingRoofRig, OmusCameraRig, "
+                + "OutdoorCondensedCameraRig. The boss rigs are the ones framing the big arenas.");
+
+            ZoomOut = config.Bind("Combat", "VenueCameraZoomOut", 0f,
+                "Degrees of extra camera field of view during combat, so a larger arena fits on "
+                + "screen. 0 leaves the camera as the game sets it; 10-25 is a reasonable range for "
+                + "the wider grid presets. This is applied on top of whatever zoom the game chose, "
+                + "and re-applied whenever the game resets it.");
+
+            Preset = config.Bind("Combat", "VenueGridPreset", "off",
+                "Combat arena size. 'off' leaves every fight as the game ships it. 'kraken' uses the "
+                + "shipped Kraken boss map verbatim (ally 8, enemy 32). 'extended' uses "
+                + "the game's own deeper board. 'large' and 'huge' are custom maps that also widen "
+                + "each side to two back and two front columns, which is what a TWO_BY_TWO creature "
+                + "needs to stand anywhere at all. The camera is not re-framed for the bigger "
+                + "arenas, so they sit loosely in view on some venues.");
         }
 
-        /// <summary>Postfix on <c>CombatPhase.Initialize</c> — the grid is rebuilt after the phase has
-        /// finished its own setup, exactly as the boss event does mid-fight.</summary>
-        public static void Initialize_Postfix(object __instance)
+        /// <summary>
+        /// Prefix on <c>VenueHelper.CreateVenueTileEntities(string[] pMap)</c> — swaps the map the
+        /// game is about to build, so the ENGINE constructs the larger grid natively.
+        ///
+        /// <para><b>Why this rather than resizing afterwards.</b> The first approach replayed the
+        /// game's own CHANGE_VENUE_GRID routine from a postfix on <c>CombatPhase.Initialize</c>:
+        /// destroy the tile GameObjects, build new ones, re-place the characters. It half-worked —
+        /// the tiles were real and characters could be moved onto them — but the board did not draw
+        /// and enemy tiles could not be targeted, because <c>Initialize</c> had already wired the
+        /// ORIGINAL tiles into the rest of combat. Anything still holding one of those references was
+        /// left pointing at a destroyed object, which surfaced as:</para>
+        /// <code>
+        /// NullReferenceException
+        ///   at CombatViewHelper.JoinAbilityHitEffectNode (… pTargetTileEntity, pGameObjectMaps …)
+        ///   at CombatViewHelper._damageAppliedToCharacter → CreateVisualSequence
+        ///   at CombatPhase._performAbility → _engageActiveEntity
+        /// </code>
+        /// <para>Substituting the argument instead means there is never a second set of tiles and
+        /// never a stale reference: every consumer — rendering, targeting, placement, the visual
+        /// sequence — is built once, by the game, against the map we handed it. The game's own
+        /// CHANGE_VENUE_GRID gets away with the destructive path only because it runs mid-fight,
+        /// after everything is initialised and where it also re-centres and re-caches.</para>
+        ///
+        /// <para>The map format is the game's: <c>CharacterHelper.GetGroupIndex(c)</c> is
+        /// <c>c - ('a' or 'A')</c>, so A/a is group 0 and B/b group 1; uppercase is the BACK row and
+        /// lowercase the FRONT row; any non-letter is a neutral tile with group -1. Rows must all be
+        /// the same length.</para>
+        /// </summary>
+        public static void CreateVenueTileEntities_Prefix(ref string[] pMap)
         {
             try
             {
-                if (Enabled == null || !Enabled.Value || __instance == null) return;
+                if (Preset == null || pMap == null) return;
+                string preset = (Preset.Value ?? "off").Trim();
+                if (preset.Length == 0 || preset.Equals("off", StringComparison.OrdinalIgnoreCase)) return;
 
-                var combatState = RouterHelper.Env?.GameRun?.CombatState;
-                if (combatState == null) return;
+                // Only ever widen the ordinary board. A boss arena is authored as a whole -- grid,
+                // diorama and camera rig together -- and KrakenMap1 in particular has a hard-coded
+                // travel-animation clamp in CombatViewHelper keyed to its grid type.
+                if (!SameMap(pMap, VenueHelper.VenueMap1)
+                    && !SameMap(pMap, VenueHelper.ExtendedVenueMap1)) return;
 
-                // Leave a boss arena as its designer authored it.
-                if (combatState.GridType != eVenueGrids.Standard) return;
+                string[] wanted;
+                if (!Presets.TryGetValue(preset, out wanted))
+                {
+                    ClassForgePlugin.Log.LogWarning(
+                        "[ClassForge] unknown VenueGridPreset '" + preset + "'; the fight keeps its "
+                        + "normal size.");
+                    return;
+                }
 
-                Resize(__instance, combatState);
+                if (wanted == null)
+                    wanted = preset.Equals("kraken", StringComparison.OrdinalIgnoreCase)
+                        ? VenueHelper.KrakenMap1
+                        : VenueHelper.ExtendedVenueMap1;
+                if (SameMap(pMap, wanted)) return;
+
+                ClassForgePlugin.Log.LogInfo(
+                    "[ClassForge] combat grid preset '" + preset + "': "
+                    + pMap.Length + "x" + pMap[0].Length + " -> "
+                    + wanted.Length + "x" + wanted[0].Length + " (built by the game itself).");
+
+                pMap = wanted;
             }
             catch (Exception ex)
             {
                 ClassForgePlugin.Log.LogWarning(
-                    "[ClassForge] could not enlarge the combat grid; the fight keeps its normal size: "
-                    + ex.Message);
+                    "[ClassForge] could not substitute the combat grid; the fight keeps its normal "
+                    + "size: " + ex.Message);
             }
         }
 
-        private static void Resize(object phase, CombatState combatState)
+        private static bool SameMap(string[] a, string[] b)
         {
-            var maps = RouterHelper.Env?.VenueGameObjectMaps;
-            if (maps?.FromTile == null) return;
-
-            var diorama = Field(phase, "_diorama") as Diorama;
-            var canvas3D = Field(phase, "_canvas3D") as GameObject;
-            if (diorama == null || canvas3D == null) return;
-
-            var newTiles = VenueHelper.CreateVenueTileEntities(VenueHelper.ExtendedVenueMap1);
-            if (newTiles == null || newTiles.Count == 0) return;
-
-            // Depth of the old grid, measured the way the game measures it: how many tiles share the
-            // largest x. This is what the recentre offset is computed from.
-            int oldDepth = DepthAtMaxX(maps.FromTile.Keys);
-
-            foreach (var go in maps.FromTile.Values)
-                if (go != null) UnityEngine.Object.Destroy(go.gameObject);
-            maps.FromTile = null;
-            combatState.Entities.RemoveAll(e => e.Has<VenueTileComponent>());
-
-            combatState.Entities.AddRange(newTiles);
-            var root = diorama.GetVenueGridRoot().transform;
-            maps.FromTile = VenueViewHelper.CreateVenueTileGameObjects(
-                newTiles, diorama, root.position, root.rotation, diorama.IsOutdoor);
-
-            int newDepth = DepthAtMaxX(maps.FromTile.Keys);
-            int shift = (newDepth - oldDepth) / 2;
-
-            // Recentre everyone already on the board. Skip this and the party keeps the coordinates
-            // the SMALL grid gave it, which on a deeper grid is off-centre or off the board.
-            var characters = combatState.Entities.FindAll(
-                e => e.Has<CharacterComponent>() && e.Has<VenueComponent>());
-            if (shift != 0)
-                foreach (var e in characters)
-                {
-                    var venue = e.Get<VenueComponent>();
-                    if (venue == null) continue;
-                    venue.TilePosition = (venue.TilePosition.x, venue.TilePosition.y + shift);
-                    var moved = new List<(int, int)>();
-                    foreach (var t in venue.OccupiedTiles) moved.Add((t.Item1, t.Item2 + shift));
-                    venue.OccupiedTiles = moved;
-                }
-
-            RecacheActorTiles(phase, characters);
-
-            VenueViewHelper.LoadCharacterEntitiesToVenueGrid(
-                canvas3D.transform, characters, maps, newTiles, diorama,
-                Field(phase, "_gameRandom") as GameRandom);
-
-            foreach (var go in maps.FromTile.Values)
-                if (go != null) go.gameObject.SetActive(true);
-
-            combatState.GridType = eVenueGrids.Extended;
-
-            // Give every NEW tile the render pass Initialize already ran on the OLD ones.
-            //
-            // This is the step whose absence made the enlarged grid invisible. Initialize walks
-            // every tile calling RenderVenueTile(..., TileRender.Hidden) and then reveals them
-            // through the placement call. Tiles created afterwards -- which is exactly what this
-            // does -- never receive that pass, so they exist, are active, and are neither drawn nor
-            // interactive. The data said 88 tiles while the screen showed the small board.
-            foreach (var pair in maps.FromTile)
-                if (pair.Value != null)
-                    VenueViewHelper.RenderVenueTile(pair.Value, null, TileRender.Hidden);
-
-            AccessTools.Method(phase.GetType(), "_clearTileRenderState")?.Invoke(phase, null);
-
-            ClassForgePlugin.Log.LogInfo(
-                "[ClassForge] combat grid enlarged to Extended: " + newTiles.Count
-                + " tiles, depth " + oldDepth + " -> " + newDepth + ", characters shifted " + shift + ".");
+            if (a == null || b == null || a.Length != b.Length) return false;
+            for (int i = 0; i < a.Length; i++) if (!string.Equals(a[i], b[i], StringComparison.Ordinal)) return false;
+            return true;
         }
 
         /// <summary>How many tiles share the largest x — the game's own measure of grid depth.</summary>

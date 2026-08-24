@@ -177,47 +177,17 @@
           "MinValue": 0,
           "Rolls": 2,
           "Stat": "TAL"
-        },
-        "CF_TRAINER_SEND_OUT_CHAOS_ATTACK": {
-          "ACC": 0,
-          "Ammo": 0,
-          "MaxValue": 0,
-          "MinValue": 0,
-          "Rolls": 2,
-          "Stat": "TAL"
-        },
-        "CF_TRAINER_SEND_OUT_EMBER_ATTACK": {
-          "ACC": 0,
-          "Ammo": 0,
-          "MaxValue": 0,
-          "MinValue": 0,
-          "Rolls": 2,
-          "Stat": "TAL"
-        },
-        "CF_TRAINER_SEND_OUT_RIME_ATTACK": {
-          "ACC": 0,
-          "Ammo": 0,
-          "MaxValue": 0,
-          "MinValue": 0,
-          "Rolls": 2,
-          "Stat": "TAL"
         }
       },
       "AbilityBag": [
         "STAFF_BASIC_ATTACK",
         "ONLY_SCARE_ATTACK",
-        "ONLY_ATTACKUP_OTHER_ATTACK",
-        "CF_TRAINER_SEND_OUT_CHAOS_ATTACK",
-        "CF_TRAINER_SEND_OUT_EMBER_ATTACK",
-        "CF_TRAINER_SEND_OUT_RIME_ATTACK"
+        "ONLY_ATTACKUP_OTHER_ATTACK"
       ],
       "AbilityFillBag": [
         "STAFF_BASIC_ATTACK",
         "ONLY_SCARE_ATTACK",
-        "ONLY_ATTACKUP_OTHER_ATTACK",
-        "CF_TRAINER_SEND_OUT_CHAOS_ATTACK",
-        "CF_TRAINER_SEND_OUT_EMBER_ATTACK",
-        "CF_TRAINER_SEND_OUT_RIME_ATTACK"
+        "ONLY_ATTACKUP_OTHER_ATTACK"
       ],
       "ShuffleAbilityBag": false
     },
@@ -235,5 +205,89 @@
       "DROPPABLE"
     ],
     "Value": 5
+  },
+  "ARM_ORIG_TRAINER_BALL_CHAOS": {
+    "ConsumableType": "ANY",
+    "Value": 0,
+    "MinTier": 0,
+    "MaxTier": 3,
+    "Class": "TOOL",
+    "Rarity": "RARE",
+    "Material": "NONE",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Interactable": {
+      "Abilities": {
+        "CF_TRAINER_SUMMON_CHAOS_ATTACK": null
+      },
+      "ShuffleAbilityBag": false
+    },
+    "Tags": [
+      "FIXED",
+      "FAVORITE",
+      "TOOLBELT",
+      "RARE",
+      "TOOL",
+      "USEABLE",
+      "LOOTABLE"
+    ],
+    "Expansion": "BASE"
+  },
+  "ARM_ORIG_TRAINER_BALL_EMBER": {
+    "ConsumableType": "ANY",
+    "Value": 0,
+    "MinTier": 0,
+    "MaxTier": 3,
+    "Class": "TOOL",
+    "Rarity": "RARE",
+    "Material": "NONE",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Interactable": {
+      "Abilities": {
+        "CF_TRAINER_SUMMON_EMBER_ATTACK": null
+      },
+      "ShuffleAbilityBag": false
+    },
+    "Tags": [
+      "FIXED",
+      "FAVORITE",
+      "TOOLBELT",
+      "RARE",
+      "TOOL",
+      "USEABLE",
+      "LOOTABLE"
+    ],
+    "Expansion": "BASE"
+  },
+  "ARM_ORIG_TRAINER_BALL_RIME": {
+    "ConsumableType": "ANY",
+    "Value": 0,
+    "MinTier": 0,
+    "MaxTier": 3,
+    "Class": "TOOL",
+    "Rarity": "RARE",
+    "Material": "NONE",
+    "Hidden": false,
+    "Stacks": false,
+    "Ammo": 0,
+    "Interactable": {
+      "Abilities": {
+        "CF_TRAINER_SUMMON_RIME_ATTACK": null
+      },
+      "ShuffleAbilityBag": false
+    },
+    "Tags": [
+      "FIXED",
+      "FAVORITE",
+      "TOOLBELT",
+      "RARE",
+      "TOOL",
+      "USEABLE",
+      "LOOTABLE"
+    ],
+    "Expansion": "BASE"
   }
 }

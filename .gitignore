@@ -25,3 +25,4 @@ __pycache__/
 .claude/
 .playwright-mcp/
 .temp/
+.decompile-scratch/
