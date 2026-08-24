@@ -221,6 +221,24 @@ const TOOLS = [
       selector: { type: 'string', description: 'Id or name substring, or "-" to list' },
       ...INSTANCE_ARG },
       required: ['kind'] } },
+  { name: 'ftk2_refresh_saves',
+    description: 'Re-scan the save folder so newly written .ftk2 files become loadable. Env.GameRuns ' +
+      'is cached at startup, so a fixture created while the game is running is invisible and the ' +
+      'load silently does nothing on the correct screen with no error.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_dialogs',
+    description: 'List every blocking dialogue, modal or gate currently on screen, with the ' +
+      'document that owns it and whether it is safe to dismiss. Read-only; presses nothing. ' +
+      'Use this when the game appears frozen or a load "did not take" - almost always something ' +
+      'is sitting on top of the screen swallowing input.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_dismiss',
+    description: 'Dismiss one blocking element BY EXACT NAME (see ftk2_dialogs). Refuses any name ' +
+      'not on the safe list, because "Continue" appears on several unrelated controls including ' +
+      'continue-btn, which resumes the owner live co-op campaign.',
+    inputSchema: { type: 'object', properties: {
+      name: { type: 'string', description: 'Exact element name, e.g. ok-btn' },
+      ...INSTANCE_ARG }, required: ['name'] } },
   { name: 'ftk2_screen',
     description: 'The semantic "where am I" tool. Returns route (from /state), the set of active on-screen ' +
       'UI document names, on-screen Buttons/Labels, and which element is FOCUSED. Route alone is not ' +
@@ -637,28 +655,113 @@ function statePath(schema) {
  * behaviour is to keep pressing until none remains. Focus is set explicitly before each
  * press: a key press acts only on a focused target and focus does not persist between calls.
  */
-async function clearGates(inst, maxPresses) {
-  const cap = Math.max(1, Math.min(maxPresses || 20, 50));
+/**
+ * Blocking elements that are safe to dismiss, by EXACT name.
+ *
+ * Never match on text: "Continue" appears on several unrelated controls including
+ * continue-btn, which resumes the owner's live co-op campaign.
+ *
+ * ok-btn and royal-tutor-container were observed blocking adventure selection - a tutorial
+ * modal and the Royal Tutor overlay sit above the screen and silently prevent a fixture load,
+ * which looks like "the load did not take" rather than like a modal.
+ */
+const DISMISSABLE = [
+  'continue-label',
+  'ok-btn',
+  'royal-tutor-container',
+  'sys-dialog-ok-btn',
+  'online-quit-btn',
+];
+
+/**
+ * Everything currently on screen that can block progress, annotated.
+ *
+ * The reason each entry exists is carried with it: a bare list of names does not tell a caller
+ * whether an "ok-btn" is a harmless tutorial prompt or something that matters.
+ */
+const DISMISSABLE_REASONS = {
+  'continue-label': 'post-load gate, and each intro story page (there are several)',
+  'ok-btn': 'tutorial or system prompt, the "Understood" button',
+  'royal-tutor-container': 'Royal Tutor tutorial overlay',
+  'sys-dialog-ok-btn': 'system dialog confirm (safe; NOT continue-btn despite also reading Continue)',
+  'online-quit-btn': 'boot-time online error modal',
+};
+
+async function listDialogs(inst) {
+  const dump = await execText(inst, 'crucible_ui_dump', ['-', 'button']);
+  const blocking = [];
+  for (const [name, reason] of Object.entries(DISMISSABLE_REASONS)) {
+    if (!dump.includes(`name='${name}'`)) continue;
+    let doc = null;
+    for (const line of dump.split('\n')) {
+      if (line.includes(`name='${name}'`)) {
+        const match = line.match(/doc='([^']+)'/);
+        doc = match ? match[1] : null;
+        break;
+      }
+    }
+    blocking.push({ name, doc, reason, safeToDismiss: true });
+  }
+  return {
+    blocking,
+    blockingCount: blocking.length,
+    docs: await activeDocs(inst),
+    hint: blocking.length
+      ? 'Dismiss with ftk2_dismiss, or clear them all with ftk2_clear_gates.'
+      : 'Nothing is blocking. If the game still ignores input, check ftk2_state route and interactionEnabled.',
+  };
+}
+
+async function dismissDialog(inst, name) {
+  if (!Object.prototype.hasOwnProperty.call(DISMISSABLE_REASONS, name)) {
+    return {
+      ok: false,
+      error: `refusing to press '${name}': not on the safe list`,
+      safeNames: Object.keys(DISMISSABLE_REASONS),
+    };
+  }
+  const before = await activeDocs(inst);
+  // Focus first: a key press acts only on a focused target and focus does not persist.
+  await execText(inst, 'crucible_ui_focus', [name]);
+  await execText(inst, 'crucible_key', ['enter']);
+  await sleep(2000);
+  const after = await activeDocs(inst);
+  const dump = await execText(inst, 'crucible_ui_dump', ['-', 'button']);
+  return {
+    ok: !dump.includes(`name='${name}'`),
+    name,
+    docsBefore: before,
+    docsAfter: after,
+  };
+}
+
+async function clearGates(inst, maxRounds) {
+  const cap = Math.max(1, Math.min(maxRounds || 12, 40));
   const pressed = [];
 
-  for (let i = 0; i < cap; i++) {
-    const dump = await execText(inst, 'crucible_ui_dump', ['continue-label', 'button']);
-    if (!dump.includes("name='continue-label'")) {
-      return { ok: true, presses: pressed.length, pressed, docs: await activeDocs(inst) };
+  for (let round = 0; round < cap; round++) {
+    const dump = await execText(inst, 'crucible_ui_dump', ['-', 'button']);
+    const present = DISMISSABLE.filter((name) => dump.includes(`name='${name}'`));
+    if (present.length === 0) {
+      return { ok: true, pressed, docs: await activeDocs(inst) };
     }
-    await execText(inst, 'crucible_ui_focus', ['continue-label']);
-    await execText(inst, 'crucible_key', ['enter']);
-    pressed.push(i + 1);
-    await sleep(2000);
+    for (const name of present) {
+      // Focus first: a key press acts only on a focused target, and focus does not persist.
+      await execText(inst, 'crucible_ui_focus', [name]);
+      await execText(inst, 'crucible_key', ['enter']);
+      pressed.push(name);
+      await sleep(1500);
+    }
   }
 
-  const stillThere = (await execText(inst, 'crucible_ui_dump', ['continue-label', 'button']))
-    .includes("name='continue-label'");
+  const dump = await execText(inst, 'crucible_ui_dump', ['-', 'button']);
+  const remaining = DISMISSABLE.filter((name) => dump.includes(`name='${name}'`));
   return {
-    ok: !stillThere,
-    presses: pressed.length,
+    ok: remaining.length === 0,
+    pressed,
+    remaining,
     docs: await activeDocs(inst),
-    warning: stillThere ? `a gate was still showing after ${cap} presses` : undefined,
+    warning: remaining.length ? `still blocked by: ${remaining.join(', ')}` : undefined,
   };
 }
 
@@ -721,6 +824,9 @@ async function bootToRun(inst, runId) {
     if (!reached) { steps.push('  never reached adventure selection'); continue; }
     steps.push('  adventure selection is up');
 
+    // Env.GameRuns is cached at startup: a save file created while the game is running is
+    // invisible to it and the load silently does nothing. Refresh the list first.
+    await execText(inst, 'crucible_refresh_saves', []);
     await execText(inst, 'crucible_invoke',
       ['AdventureSelectionDirector', '_loadGameRun', `${runId} -`]);
 
@@ -818,6 +924,9 @@ async function callTool(name, args) {
       return textResult(await rpc(inst, 'POST', '/exec', { command: 'EndPhase', args: [] }));
     case 'ftk2_state':         return textResult(await rpc(inst, 'GET', statePath(args.schema)));
     case 'ftk2_clear_gates':   return textResult(await clearGates(inst, args.maxPresses));
+    case 'ftk2_refresh_saves': return textResult(await execText(inst, 'crucible_refresh_saves', []));
+    case 'ftk2_dialogs':       return textResult(await listDialogs(inst));
+    case 'ftk2_dismiss':       return textResult(await dismissDialog(inst, args.name));
     case 'ftk2_party':         return textResult(await execText(inst, 'crucible_party_list', []));
     case 'ftk2_set_class':     return textResult(await execText(inst, 'crucible_party_set_class', [String(args.slot), args.classId]));
     case 'ftk2_fixture_save':  return textResult(await execText(inst, 'crucible_fixture_save', [args.label || 'fixture']));

@@ -131,19 +131,53 @@ def visible_docs():
     return sorted(found)
 
 
-def clear_gate(max_presses=6):
+# Elements that block progress and are safe to dismiss, in priority order.
+#
+# Every entry is an EXACT element name, never a text match. "Continue" as text appears on
+# several unrelated controls including continue-btn, which resumes the owner's live co-op
+# campaign - so text matching here would eventually load somebody's real save.
+#
+# ok-btn / royal-tutor-container were found blocking adventure selection: a tutorial modal
+# ("Understood") plus the Royal Tutor overlay sit on top of the screen and silently prevent a
+# fixture load, which presents as "the load did not take".
+DISMISSABLE = [
+    ("continue-label", "post-load gate and each intro story page"),
+    ("ok-btn", "tutorial/system prompt (Understood)"),
+    ("royal-tutor-container", "Royal Tutor tutorial overlay"),
+    ("sys-dialog-ok-btn", "system dialog confirm"),
+    ("online-quit-btn", "boot-time online error modal"),
+]
+
+
+def visible_names(names):
+    """Which of the given element names are currently on screen."""
+    dump = run("crucible_ui_dump", ["-", "button"])
+    return [name for name in names if ("name='%s'" % name) in dump]
+
+
+def clear_gates(max_rounds=12):
     """
-    Clears a 'Click to Continue' gate. Focus is set explicitly first: a key press acts only on a
-    focused target, and focus does not persist between commands.
+    Dismisses every known blocking element until none remain.
+
+    Loops rather than pressing once: the intro is several pages, and dismissing one modal
+    frequently reveals another behind it.
     """
-    for _ in range(max_presses):
-        dump = run("crucible_ui_dump", ["continue-label", "button"])
-        if "continue-label" not in dump:
-            return True
-        run("crucible_ui_focus", ["continue-label"])
-        run("crucible_key", ["enter"])
-        time.sleep(2)
-    return "continue-label" not in run("crucible_ui_dump", ["continue-label", "button"])
+    pressed = []
+    for _ in range(max_rounds):
+        present = visible_names([name for name, _reason in DISMISSABLE])
+        if not present:
+            return {"ok": True, "pressed": pressed}
+
+        for name in present:
+            # Focus first: a key press acts only on a focused target and focus does not
+            # persist between commands.
+            run("crucible_ui_focus", [name])
+            run("crucible_key", ["enter"])
+            pressed.append(name)
+            time.sleep(1.5)
+
+    remaining = visible_names([name for name, _reason in DISMISSABLE])
+    return {"ok": not remaining, "pressed": pressed, "remaining": remaining}
 
 
 def load_run(run_id, attempts=3):
@@ -158,23 +192,38 @@ def load_run(run_id, attempts=3):
     """
     steps = []
 
+    # Wait for the UI to exist, not merely for the RPC pump. The pump answers while the game is
+    # still on the splash screen, where a dump returns no documents at all and every navigation
+    # click lands on nothing -- which reads as "did not reach adventure selection".
+    for _ in range(30):
+        if visible_docs():
+            break
+        time.sleep(3)
+    else:
+        return "FAILED: no UI documents appeared; the game never finished loading"
+
     for attempt in range(attempts):
         snap = snapshot()
         steps.append("attempt %d: route=%s" % (attempt + 1, snap.get("route")))
 
-        # Already in a run? Go back to the main menu first. The adventure selection screen is
-        # only reachable from there, and _loadGameRun needs it to exist -- otherwise loading a
-        # second fixture in one session silently does nothing.
-        if (snap.get("run") or {}).get("present"):
-            run("crucible_invoke", ["RouterMono", "Route", "MAIN_MENU 0 - false true"])
-            for _ in range(8):
-                time.sleep(3)
-                if not (snapshot().get("run") or {}).get("present"):
-                    break
-            steps.append("  returned to the main menu")
+        # A CLEAN main menu is required. Forcing RouterMono.Route(MAIN_MENU) does change the
+        # route enum but does NOT tear down the previous screen's UIDocuments, so the main menu
+        # ends up rendered on top of a still-live adventure selection (or venue) screen, and
+        # _loadGameRun silently does nothing against that mixed state -- the file resolves, no
+        # error is logged, and the load simply never happens. A restart is the only reliable
+        # reset, so refuse to proceed from a dirty screen rather than fail three times over.
+        docs_now = visible_docs()
+        dirty = [d for d in docs_now if d not in ("MainMenuUIDocument", "PromptUIDocument", "TutorialUIDocument")]
+        if dirty:
+            steps.append("  screen is dirty (%s); a restart is required" % ", ".join(dirty))
+            return "\n".join(steps) + "\nFAILED: dirty screen, restart the game first"
 
         # Escape whatever boot left on screen, including the multiplayer lobby it routes itself to.
         for _ in range(6):
+            # Dismiss modals EVERY iteration, not only after loading. A tutorial prompt or the
+            # Royal Tutor overlay sits on top of adventure selection and swallows the clicks that
+            # would get us there, so clearing only afterwards never runs at all.
+            clear_gates(max_rounds=4)
             docs = visible_docs()
             if "AdventureSelectionUIDocument" in docs:
                 break
@@ -195,6 +244,9 @@ def load_run(run_id, attempts=3):
             continue
         steps.append("  adventure selection is up")
 
+        # Env.GameRuns is cached at startup, so a file copied in while the game runs is invisible
+        # and _loadGameRun silently does nothing. Refresh first.
+        run("crucible_refresh_saves", [])
         run("crucible_invoke", ["AdventureSelectionDirector", "_loadGameRun", "%s -" % run_id])
 
         loaded = False
@@ -208,7 +260,7 @@ def load_run(run_id, attempts=3):
             continue
 
         steps.append("  loaded: %s" % describe())
-        steps.append("  gate cleared: %s" % clear_gate())
+        steps.append("  gates: %s" % clear_gates())
         steps.append("  final: %s" % describe())
         return "\n".join(steps)
 
@@ -231,7 +283,7 @@ def main():
         print("docs: %s" % ", ".join(visible_docs()))
         return 0
     if action == "gate":
-        print("cleared: %s" % clear_gate())
+        print(clear_gates())
         return 0
     if action == "load":
         if len(sys.argv) < 3:

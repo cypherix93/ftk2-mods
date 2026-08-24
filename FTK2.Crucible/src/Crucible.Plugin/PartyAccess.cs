@@ -63,6 +63,58 @@ namespace Crucible.Plugin
             catch (Exception) { return null; }
         }
 
+        /// <summary>
+        /// A usable GameRandom, trying the live sources before constructing one.
+        ///
+        /// Several game APIs take a GameRandom and dereference it. AdventureDirector._gameRandom is
+        /// the natural source but is NULL for a while after a load, which made
+        /// EquipmentHelper.Equip throw a NullReferenceException in a sweep while the same call
+        /// worked by hand minutes later - a timing-dependent failure that reads as a broken command.
+        /// Constructing one as a last resort keeps callers deterministic instead of flaky; a
+        /// harness-supplied seed is fine because none of these calls is meant to reproduce a
+        /// specific in-game roll.
+        /// </summary>
+        internal static object ResolveGameRandom()
+        {
+            object fromDirector = ReadMember(Director(), "_gameRandom");
+            if (fromDirector != null) return fromDirector;
+
+            object env = GameBridge.GetEnv();
+            object gameRun = ReadMember(env, "GameRun");
+            object fromCombat = ReadMember(ReadMember(gameRun, "CombatState"), "Random");
+            if (fromCombat != null) return fromCombat;
+
+            try
+            {
+                Type gameRandomType = AccessTools.TypeByName("GameRandom");
+                if (gameRandomType == null) return null;
+
+                object created = Activator.CreateInstance(gameRandomType);
+
+                FieldInfo inner = AccessTools.Field(gameRandomType, "random");
+                if (inner != null && inner.GetValue(created) == null)
+                {
+                    inner.SetValue(created, new System.Random(12345));
+                }
+                FieldInfo seed = AccessTools.Field(gameRandomType, "Seed");
+                if (seed != null) seed.SetValue(created, 12345);
+                return created;
+            }
+            catch (Exception) { return null; }
+        }
+
+        internal static object Director()
+        {
+            try
+            {
+                Type routerHelper = AccessTools.TypeByName("RouterHelper");
+                FieldInfo routerField = routerHelper == null ? null : AccessTools.Field(routerHelper, "_router");
+                object router = routerField == null ? null : routerField.GetValue(null);
+                return router == null ? null : ReadMember(router, "_adventureDirector");
+            }
+            catch (Exception) { return null; }
+        }
+
         /// <summary>Field first, then property: game types use both, and a field-only read silently misses properties.</summary>
         internal static object ReadMember(object instance, string name)
         {

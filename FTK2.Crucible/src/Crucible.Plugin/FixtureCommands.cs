@@ -37,6 +37,7 @@ namespace Crucible.Plugin
         private static bool _setClassRegistered;
         private static bool _saveRegistered;
         private static bool _listRegistered;
+        private static bool _refreshRegistered;
 
         internal static void Initialize(ManualLogSource log)
         {
@@ -59,6 +60,11 @@ namespace Crucible.Plugin
                 _saveRegistered = GameBridge.RegisterCommand("crucible_fixture_save",
                     typeof(FixtureCommands).GetMethod("CrucibleFixtureSave", BindingFlags.Public | BindingFlags.Static),
                     new List<string> { "label" });
+
+            if (!_refreshRegistered)
+                _refreshRegistered = GameBridge.RegisterCommand("crucible_refresh_saves",
+                    typeof(FixtureCommands).GetMethod("CrucibleRefreshSaves", BindingFlags.Public | BindingFlags.Static),
+                    new List<string>());
 
             if (!_listRegistered)
                 _listRegistered = GameBridge.RegisterCommand("crucible_fixture_list",
@@ -227,6 +233,73 @@ namespace Crucible.Plugin
             catch (Exception ex)
             {
                 LastResult = "error: crucible_fixture_save threw: " + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// crucible_refresh_saves — re-scan the save folder and refresh Env.GameRuns.
+        ///
+        /// Env.GameRuns is populated once at startup, so a .ftk2 file written or copied in while
+        /// the game is running is invisible to it and _loadGameRun silently does nothing. That
+        /// presents as "the load did not take" on the correct screen with no error anywhere, which
+        /// is indistinguishable from a harness bug. Refreshing avoids restarting the game for every
+        /// fixture.
+        ///
+        /// Verified API: SaveGameHelper.ListGameRunsSync() static -> List(String)
+        /// </summary>
+        public static void CrucibleRefreshSaves()
+        {
+            LastResult = null;
+            try
+            {
+                object env = GameBridge.GetEnv();
+                if (env == null) { LastResult = "error: Env unavailable"; return; }
+
+                int before = CountOf(ReadMember(env, "GameRuns"));
+
+                Type saveHelper = AccessTools.TypeByName("SaveGameHelper");
+                MethodInfo list = saveHelper == null ? null : AccessTools.Method(saveHelper, "ListGameRunsSync");
+                if (list == null) { LastResult = "error: SaveGameHelper.ListGameRunsSync not found"; return; }
+
+                object runs = list.Invoke(null, null);
+                if (runs == null) { LastResult = "error: ListGameRunsSync returned null"; return; }
+
+                FieldInfo field = AccessTools.Field(env.GetType(), "GameRuns");
+                if (field == null) { LastResult = "error: Env.GameRuns field not found"; return; }
+
+                // ListGameRunsSync returns List<SaveGameHelper.GameRunFileInfo> while Env.GameRuns
+                // is List<string> of run ids, so the ids have to be projected out. Assigning the
+                // raw result throws a type-mismatch that says nothing about which field is wrong.
+                IEnumerable found = runs as IEnumerable;
+                object rebuilt = Activator.CreateInstance(field.FieldType);
+                MethodInfo add = field.FieldType.GetMethod("Add");
+                int projected = 0;
+                if (found != null && add != null)
+                {
+                    foreach (object info in found)
+                    {
+                        if (info == null) continue;
+                        object id = info is string ? info : ReadMember(info, "GameRunId");
+                        if (id == null) continue;
+                        add.Invoke(rebuilt, new object[] { id.ToString() });
+                        projected++;
+                    }
+                }
+                if (projected == 0) { LastResult = "error: no run ids projected from ListGameRunsSync"; return; }
+                field.SetValue(env, rebuilt);
+
+                int after = CountOf(ReadMember(env, "GameRuns"));
+                LastResult = "gameRunsBefore=" + before + " gameRunsAfter=" + after
+                    + " changed=" + (before != after);
+            }
+            catch (TargetInvocationException ex)
+            {
+                Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                LastResult = "error: ListGameRunsSync threw: " + root.GetType().Name + ": " + root.Message;
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_refresh_saves threw: " + ex.Message;
             }
         }
 

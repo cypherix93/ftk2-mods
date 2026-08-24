@@ -582,7 +582,9 @@ namespace Crucible.Plugin
             {
                 // Widest query: a narrow one hides abilities, and an absent ability is
                 // indistinguishable from one that does not exist.
-                object result = get.Invoke(null, new object[] { entity, false, true, true, false, false, true, true });
+                // Same flags the game uses; forcing the hook/charge flags on hides the weapon's
+                // real attacks behind the HOOK_* movement abilities.
+                object result = get.Invoke(null, new object[] { entity, false, true, true, false, false, false, false });
                 IEnumerable list = result as IEnumerable;
                 if (list == null) { error = "GetAbilities returned a non-enumerable"; return false; }
                 foreach (object item in list) if (item != null) abilities.Add(item);

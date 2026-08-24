@@ -115,10 +115,12 @@ namespace Crucible.Plugin
                 }
                 if (m == null) return "(CombatHelper.GetAbilities 8-arg overload not found)";
 
-                // mainHandOnly=false, includeDefaults=true, includeConsumables=true, and no filtering
-                // of confuse/revive/charge/hook: a test wants the WIDEST list, because an ability that
-                // is missing from a narrow query is indistinguishable from one that does not exist.
-                object result = m.Invoke(null, new object[] { entity, false, true, true, false, false, true, true });
+                // Matches the game's own call in CombatHelper.GetFirstEntityDecision:
+                // GetAbilities(entity, mainHandOnly:false, includeDefaults:true, includeConsumables:true)
+                // with the remaining flags left at their defaults. Forcing pGetHookAbilities=true
+                // returned ONLY the HOOK_* movement abilities and hid the equipped weapon's real
+                // attacks, which made every weapon look identical.
+                object result = m.Invoke(null, new object[] { entity, false, true, true, false, false, false, false });
                 return RenderList(result);
             }
             catch (TargetInvocationException ex)

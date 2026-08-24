@@ -324,18 +324,13 @@ namespace Crucible.Plugin
             return true;
         }
 
-        /// <summary>The overworld director's GameRandom, or null. Several APIs accept a null random.</summary>
+        /// <summary>
+        /// A GameRandom that is never null. Passing null here made Equip throw a
+        /// NullReferenceException whenever it ran shortly after a load.
+        /// </summary>
         private static object GameRandomOrNull()
         {
-            try
-            {
-                Type routerHelper = AccessTools.TypeByName("RouterHelper");
-                FieldInfo routerField = routerHelper == null ? null : AccessTools.Field(routerHelper, "_router");
-                object router = routerField == null ? null : routerField.GetValue(null);
-                object director = router == null ? null : PartyAccess.ReadMember(router, "_adventureDirector");
-                return director == null ? null : PartyAccess.ReadMember(director, "_gameRandom");
-            }
-            catch (Exception) { return null; }
+            return PartyAccess.ResolveGameRandom();
         }
 
         private static string DescribeEquippedWeapon(object characterComponent)
