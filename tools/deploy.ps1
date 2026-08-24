@@ -399,14 +399,23 @@ function Do-Install {
 
     foreach ($m in $Mods) {
         $def = $ModDefs[$m]
-        $src = Join-Path $PayloadDir $def.sub
+        # Most mods stage at their real game-relative path, so one 'sub' serves as both source and
+        # target. Crucible deliberately does NOT: it stages under 'plugins' so a copy-paste extract
+        # into the game folder cannot install dev tooling, and only a manifest install remaps it to
+        # BepInEx\plugins\. Reading only .sub gave crucible a NULL source and target, which made
+        # Join-Path return the payload ROOT and Install-Files' Substring trim one character too many
+        # -- so the whole payload installed into garbage-named siblings ('epInEx', 'lugins')
+        # while the mod itself never updated.
+        $payloadSub = if ($def.payloadSub) { $def.payloadSub } else { $def.sub }
+        $targetSub  = if ($def.targetSub)  { $def.targetSub }  else { $def.sub }
+        $src = Join-Path $PayloadDir $payloadSub
         if (-not (Test-Path $src)) { Log "-- $m : NOT IN PAYLOAD, skipped"; continue }
         if ($m -eq 'armory') {
-            $thingsDir = Join-Path $game $def.sub
-            if (-not (Test-Path $thingsDir)) { Log "-- armory: game Things config folder not found at '$($def.sub)' — SKIPPED (game layout drifted?)"; continue }
+            $thingsDir = Join-Path $game $targetSub
+            if (-not (Test-Path $thingsDir)) { Log "-- armory: game Things config folder not found at '$targetSub' - SKIPPED (game layout drifted?)"; continue }
         }
         Log "-- $m : $($def.note)"
-        Install-Files -Game $game -FromDir $src -TargetSub $def.sub -ModName $m -Manifest $manifest -BackupRoot $game
+        Install-Files -Game $game -FromDir $src -TargetSub $targetSub -ModName $m -Manifest $manifest -BackupRoot $game
     }
 
     if (-not $DryRun) { Save-Manifest $game $manifest }
