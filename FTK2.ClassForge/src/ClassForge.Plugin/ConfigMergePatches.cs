@@ -157,6 +157,8 @@ namespace ClassForge.Plugin
                 catch (Exception ex) { LogApplyFailed("thing", op, ex); }
             }
 
+            EnsureRecipeEffectAbility(configs);
+
             foreach (var op in plan.Abilities)
             {
                 try
@@ -278,5 +280,52 @@ namespace ClassForge.Plugin
             // Fail-safe per entry: one malformed id doesn't take down the rest of the pack's merge.
             ClassForgePlugin.Log.LogError($"[ClassForge] Failed to apply {kind} '{op.Id}' from pack '{op.SourcePackId}': {ex.Message} — entry skipped.");
         }
+        /// <summary>
+        /// Registers the one ability config every recipe-emitted <c>CHANGE_STAT</c> is attributed to.
+        ///
+        /// <para><b>Why this is required, not cosmetic.</b> <c>InteractableHelper.ApplyStatChange</c>
+        /// ends with an unconditional dereference:</para>
+        /// <code>
+        /// if (flag4)
+        ///     foreach (var a in abilityConfig.Actions.Where(x =&gt; x.Item1 == ADD_STATUS))
+        /// </code>
+        /// <para><c>abilityConfig</c> comes from <c>GetAbilityConfig(pAbilityName, pAllowNull: true)</c>,
+        /// and <c>flag4</c> is initialised to <c>true</c> and only cleared by a SKILL_STEADFAST
+        /// reaction. So ANY ability name that does not resolve makes every <c>STAT_CHANGE</c> effect
+        /// throw <c>NullReferenceException</c> after having already applied its stat change — the
+        /// per-action catch then logs it as "skipped" and the effect looks inert.</para>
+        /// <para>Recipe effects were attributed to a synthetic <c>CF_RECIPE_&lt;id&gt;</c> name that
+        /// exists in no config, so this hit EVERY STAT_CHANGE recipe. Measured live 2026-08-24 on
+        /// SKILL_CF_VAMPIRIC_BLOOD_PRICE. Registering a single real, empty-Actions config keeps the
+        /// attribution readable while giving the native path something to enumerate.</para>
+        /// </summary>
+        internal const string RecipeEffectAbilityId = "CF_RECIPE_EFFECT";
+
+        private static void EnsureRecipeEffectAbility(Configs configs)
+        {
+            try
+            {
+                if (configs == null || configs.Abilities == null) return;
+                if (configs.Abilities.ContainsKey(RecipeEffectAbilityId)) return;
+
+                // Actions MUST be a present, empty collection: null would fail the same dereference
+                // this exists to prevent.
+                configs.Abilities[RecipeEffectAbilityId] =
+                    DeserializeGameConfig<CombatAbilityConfig>(
+                        "{\"Inherits\":\"DEFAULT_ABILITY\",\"Actions\":[],\"RequiresSkillRoll\":false," +
+                        "\"IsMajorAction\":false,\"RequiresFocus\":0,\"IsFocusable\":false}");
+
+                ClassForgePlugin.Log.LogInfo(
+                    "[ClassForge] Registered " + RecipeEffectAbilityId + " so recipe STAT_CHANGE effects " +
+                    "resolve an ability config (ApplyStatChange dereferences it unconditionally).");
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] Could not register " + RecipeEffectAbilityId + "; STAT_CHANGE effects " +
+                    "will throw inside ApplyStatChange: " + ex.Message);
+            }
+        }
+
     }
 }

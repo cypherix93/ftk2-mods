@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using UnityEngine;
+using HarmonyLib;
 using ClassForge.Recipes.Model;
 using ClassForge.Recipes.Runtime;
 
@@ -25,6 +27,17 @@ namespace ClassForge.Plugin
 
         /// <summary>The hook's own <c>pGetTileStat</c>, when it had one.</summary>
         internal Func<Entity, string, int> GetTileStat;
+
+        /// <summary>A copy carrying a different Thing. Used where the native path needs one and the
+        /// recipe, not being item-sourced, has none.</summary>
+        internal RecipeExecEnvironment WithThing(Thing thing)
+        {
+            return new RecipeExecEnvironment
+            {
+                Ctx = Ctx, Party = Party, Results = Results, Thing = thing,
+                GetStat = GetStat, GetTileStat = GetTileStat,
+            };
+        }
     }
 
     /// <summary>
@@ -206,7 +219,7 @@ namespace ClassForge.Plugin
                 // override can only be expressed through the single-target overload directly
                 // (InteractableHelper.cs L1219, `int? pDurationOverride = null`). This is still a native
                 // verb — it is the exact call ApplyAction itself makes one line deeper (CombatHelper.cs L1993).
-                InteractableHelper.ApplyStatus(origin, target, env.Thing, AbilityName(recipeId), statusId,
+                InteractableHelper.ApplyStatus(origin, target, env.Thing, ResolvableAbilityName(), statusId,
                     env.Ctx.Random, results, true, true, duration);
                 return;
             }
@@ -248,7 +261,60 @@ namespace ClassForge.Plugin
             string json = BuildChangeStatJson(a);
             using (var doc = JsonDocument.Parse(json))
             {
-                ApplyAction(eCombatActions.CHANGE_STAT, doc.RootElement, origin, target, env, party, results, a.RecipeId);
+                // HP needs a Thing; FOC does not.
+                //
+                // InteractableHelper.ApplyStatChange's "HP" case runs the full damage/heal pipeline
+                // -- CalculateFinalDamage, the thorn/protect/steadfast reactions, dungeon modifiers
+                // -- and several of those dereference pThing without a null check. Recipe effects
+                // are not item-sourced, so env.Thing is null and the whole effect died with a
+                // NullReferenceException that the per-action catch then swallowed as "skipped".
+                //
+                // Nothing caught this earlier because EVERY shipped STAT_CHANGE in
+                // CF_PACK_EOR_CLASSES targets FOC, whose case is a simple stat write that never
+                // touches pThing. Measured live 2026-08-24 on SKILL_CF_VAMPIRIC_BLOOD_PRICE.
+                //
+                // The origin's equipped weapon is the honest stand-in: it is the Thing the game
+                // would have passed had this damage come from an ordinary attack by the same
+                // character.
+                var env2 = env;
+                if (env.Thing == null && IsHealthStat(a.Stat))
+                {
+                    var weapon = TryGetEquippedWeapon(origin);
+                    if (weapon != null)
+                        env2 = env.WithThing(weapon);
+                    else if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
+                        ClassForgePlugin.Log.LogDebug(
+                            "[ClassForge] STAT_CHANGE on " + a.Stat + " has no Thing and the origin has no " +
+                            "equipped weapon; the native damage path may throw.");
+                }
+
+                ApplyStatChangeAction(doc.RootElement, origin, target, env2, party, results);
+            }
+        }
+
+        /// <summary>HP and its aliases route through the native damage pipeline, which needs a Thing.</summary>
+        private static bool IsHealthStat(string stat)
+        {
+            return string.Equals(stat, "HP", StringComparison.Ordinal)
+                || string.Equals(stat, "MXHP", StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// The origin's equipped main-hand weapon, or null. Never throws: a missing weapon is a
+        /// normal state (an unarmed summon, an inanimate) and must not take the effect down.
+        /// </summary>
+        private static Thing TryGetEquippedWeapon(Entity origin)
+        {
+            try
+            {
+                if (origin == null) return null;
+                CharacterComponent character;
+                if (!origin.TryGet<CharacterComponent>(out character)) return null;
+                return EquipmentHelper.GetEquippedWeaponThing(character);
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
 
@@ -295,22 +361,239 @@ namespace ClassForge.Plugin
             var target = env.Ctx.NativeByGuid(a.TargetGuid);
             if (target == null || string.IsNullOrEmpty(a.CharacterConfig)) return;
 
+            // ADD_CHARACTER needs a TILE entity, not a character.
+            //
+            // CombatHelper.ApplyAction's ADD_CHARACTER case reads
+            // `pTarget.Get<VenueTileComponent>().GroupIndex` and `.RowPositionsType` — both
+            // unconditionally. A character carries a VenueComponent, NOT a VenueTileComponent, so
+            // handing it the killed enemy throws NullReferenceException before TryCreateSummon is
+            // ever reached. UseTargetPosition (set by the dispatcher for TRIGGER_TARGET_POSITION)
+            // was being computed and then ignored here, which is the whole bug: the recipe procced,
+            // the effect threw, and no creature appeared.
+            //
+            // So resolve the tile the target is standing on and summon against that.
+            // ALWAYS resolve a friendly tile, whatever the authored Target was. A summon has to land
+            // on a tile entity regardless (ADD_CHARACTER reads VenueTileComponent off the target,
+            // which a character does not have), and the tile decides allegiance, so there is no
+            // authored Target for which passing the raw entity is correct.
+            {
+                // The summoned creature's ALLEGIANCE comes from the tile it lands on:
+                // TryCreateSummon is handed `pTarget.Get<VenueTileComponent>().GroupIndex` and
+                // assigns it straight onto the new character. Placing on a slain enemy's tile
+                // therefore spawns a HOSTILE creature -- measured 2026-08-24, the Beast Trainer's
+                // "partner" appeared in red on the enemy side and fought the party.
+                //
+                // So a summon is placed on a free tile belonging to the SUMMONER's own group. That
+                // also removes the dependency on something having just died: any empty friendly
+                // tile will do.
+                var tile = FindFreeTileForGroup(origin, env);
+                if (tile == null)
+                {
+                    if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
+                        ClassForgePlugin.Log.LogDebug(
+                            "[ClassForge] SUMMON for " + a.RecipeId + ": the summoner's side has no free " +
+                            "tile, so " + a.CharacterConfig + " could not be placed.");
+                    return;
+                }
+                target = tile;
+            }
+
             // OQ#4: AddCharacterAction is { eSummonTypes Type; string Value; } with NO count field, and
             // TryCreateSummon returns a single `out Entity`. The engine has already expanded the authored
             // Count into N sequential SummonActions (Index 0..Count-1 ascending), each of which becomes its
             // own ApplyAction call with its own freshly-deserialized payload and its own placement draws.
             string json = "{\"Type\":" + JsonString(a.SummonType.ToString()) +
                           ",\"Value\":" + JsonString(a.CharacterConfig) + "}";
+            // Note which combatants exist before, so the new one can be found and DRAWN afterwards.
+            var before = SnapshotCombatRoster();
+
             using (var doc = JsonDocument.Parse(json))
             {
                 ApplyAction(eCombatActions.ADD_CHARACTER, doc.RootElement, origin, target, env, party, results, a.RecipeId);
+            }
+
+            DrawNewSummon(before, a.RecipeId, a.CharacterConfig);
+        }
+
+        /// <summary>Identity set of the current combat roster, for diffing after a summon.</summary>
+        private static HashSet<Entity> SnapshotCombatRoster()
+        {
+            var set = new HashSet<Entity>();
+            try
+            {
+                var entities = RouterHelper.Env?.GameRun?.CombatState?.Entities;
+                if (entities != null) foreach (var e in entities) if (e != null) set.Add(e);
+            }
+            catch (Exception) { }
+            return set;
+        }
+
+        /// <summary>
+        /// Builds the actor GameObject for a creature ADD_CHARACTER just created, and places it.
+        ///
+        /// <para>ADD_CHARACTER does NOT draw anything. CharacterVisualHelper's
+        /// <c>CHARACTER_ADDED_SMOKE</c> case opens with <c>pActorGameObjects[entity]</c> -- it LOOKS
+        /// UP an actor that must already exist and merely activates it. Creation is the caller's
+        /// job, which is why CombatPhase's own summon branches do
+        /// <c>_gameObjectMaps.FromCharacter[e] = CreateActorGameObject(...)</c> themselves.</para>
+        ///
+        /// <para>Without this a recipe summon is a fully functional combatant that is never drawn:
+        /// the Beast Trainer's partner wolf was correctly created as an ALLY on the party's side of
+        /// the grid, took turns, and was invisible -- <c>FromCharacter</c> simply had no entry for
+        /// it. Measured 2026-08-24.</para>
+        ///
+        /// Presentation only: every failure is logged and swallowed so a drawing problem can never
+        /// take down a summon that is otherwise correct.
+        /// </summary>
+        /// <summary>The diorama's PlayerOffset, or zero when it cannot be read.</summary>
+        private static UnityEngine.Vector3 DioramaOffset(object phase)
+        {
+            try
+            {
+                var diorama = AccessTools.Field(phase.GetType(), "_diorama")?.GetValue(phase);
+                if (diorama == null) return UnityEngine.Vector3.zero;
+                var offset = AccessTools.Field(diorama.GetType(), "PlayerOffset")?.GetValue(diorama);
+                return offset is UnityEngine.Vector3 ? (UnityEngine.Vector3)offset : UnityEngine.Vector3.zero;
+            }
+            catch (Exception) { return UnityEngine.Vector3.zero; }
+        }
+
+        private static void DrawNewSummon(HashSet<Entity> before, string recipeId, string characterConfig)
+        {
+            try
+            {
+                var entities = RouterHelper.Env?.GameRun?.CombatState?.Entities;
+                if (entities == null) return;
+
+                Entity spawned = null;
+                foreach (var e in entities) if (e != null && !before.Contains(e)) spawned = e;
+                if (spawned == null) return;
+
+                // The phase and its private view state, reached the same way Crucible does: these
+                // are internals of CombatPhase with no public accessor.
+                var router = AccessTools.Field(AccessTools.TypeByName("RouterHelper"), "_router")?.GetValue(null);
+                var phase = router == null ? null : AccessTools.Field(router.GetType(), "_combatPhase")?.GetValue(router);
+                if (phase == null) return;
+
+                var maps = AccessTools.Field(phase.GetType(), "_gameObjectMaps")?.GetValue(phase)
+                           as VenueGameObjectMaps;
+                if (maps == null || maps.FromCharacter == null) return;
+                if (maps.FromCharacter.ContainsKey(spawned)) return;
+
+                var canvas3D = AccessTools.Field(phase.GetType(), "_canvas3D")?.GetValue(phase) as Component;
+                if (canvas3D == null) return;
+
+                var actor = CharacterVisualHelper.CreateActorGameObject(
+                    spawned, canvas3D.transform, new GameRandom(), pUseOverworldOverrides: false);
+                if (actor == null) return;
+                maps.FromCharacter[spawned] = actor;
+
+                // Position it on its tile. OccupiedTiles is filled by TryCreateSummon; an empty list
+                // averages ZERO tiles and would drop the model at the diorama origin.
+                var venue = spawned.Get<VenueComponent>();
+                if (venue != null && venue.OccupiedTiles != null && venue.OccupiedTiles.Count > 0)
+                {
+                    var centre = VenueViewHelper.GetAveragePositionOfTiles(venue.OccupiedTiles, maps.FromTile)
+                                 + DioramaOffset(phase);
+                    actor.transform.position = CharacterVisualHelper.GetCharacterRootPosition(spawned, centre);
+                }
+
+                if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
+                    ClassForgePlugin.Log.LogDebug(
+                        "[ClassForge] drew summon " + characterConfig + " for " + recipeId + ".");
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] summon for " + recipeId + " was created but could not be drawn: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// A free combat tile belonging to <paramref name="summoner"/>'s group, or null.
+        ///
+        /// Tiles are entities in their own right: they carry a <c>VenueTileComponent</c> holding the
+        /// GroupIndex and RowPositionsType that <c>TryCreateSummon</c> consumes, while characters
+        /// carry a <c>VenueComponent</c> holding a TilePosition. A tile counts as free when no LIVING
+        /// character stands on it -- the same test <c>CombatHelper.ApplyAction</c> applies before it
+        /// will place anything.
+        ///
+        /// Front tiles are preferred so a summoned ally lands where it can act rather than stranded
+        /// in the back row.
+        /// </summary>
+        private static Entity FindFreeTileForGroup(Entity summoner, RecipeExecEnvironment env)
+        {
+            try
+            {
+                CharacterComponent summonerCharacter;
+                if (summoner == null || !summoner.TryGet<CharacterComponent>(out summonerCharacter)) return null;
+                int wantedGroup = summonerCharacter.GroupIndex;
+
+                var routerEnv = RouterHelper.Env;
+                var entities = routerEnv == null || routerEnv.GameRun == null || routerEnv.GameRun.CombatState == null
+                    ? null : routerEnv.GameRun.CombatState.Entities;
+                if (entities == null) return null;
+
+                // Positions held by anything still alive.
+                var occupied = new HashSet<(int, int)>();
+                for (int i = 0; i < entities.Count; i++)
+                {
+                    var e = entities[i];
+                    if (e == null || !e.Has<CharacterComponent>()) continue;
+                    if (CharacterHelper.IsDead(e)) continue;
+                    VenueComponent venue;
+                    if (!e.TryGet<VenueComponent>(out venue)) continue;
+                    occupied.Add(venue.TilePosition);
+                }
+
+                Entity fallback = null;
+                for (int i = 0; i < entities.Count; i++)
+                {
+                    var candidate = entities[i];
+                    if (candidate == null) continue;
+
+                    VenueTileComponent tile;
+                    if (!candidate.TryGet<VenueTileComponent>(out tile)) continue;
+                    if (tile.GroupIndex != wantedGroup) continue;
+
+                    VenueComponent venue;
+                    if (!candidate.TryGet<VenueComponent>(out venue)) continue;
+                    if (occupied.Contains(venue.TilePosition)) continue;
+
+                    if (tile.RowPositionsType == eTileRowPositions.FRONT) return candidate;
+                    if (fallback == null) fallback = candidate;
+                }
+                return fallback;
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
 
         // ------------------------------------------------------------------ the one native seam
 
+        /// <summary>CHANGE_STAT goes through the resolvable ability name; see <see cref="ResolvableAbilityName"/>.</summary>
+        private static void ApplyStatChangeAction(object args, Entity origin, Entity target,
+            RecipeExecEnvironment env, List<Entity> party, List<(eAbilityResults, object)> results)
+        {
+            ApplyActionNamed(eCombatActions.CHANGE_STAT, args, origin, target, env, party, results,
+                ResolvableAbilityName());
+        }
+
         private static void ApplyAction(eCombatActions verb, object args, Entity origin, Entity target,
             RecipeExecEnvironment env, List<Entity> party, List<(eAbilityResults, object)> results, string recipeId)
+        {
+            // EVERY verb goes through the resolvable name, not just CHANGE_STAT. Any native path may
+            // look the ability config up, and an unresolvable name is a NullReferenceException that
+            // the per-action catch turns into a silent "skipped". SUMMON hit exactly this after
+            // CHANGE_STAT was fixed: the recipe procced, then ADD_CHARACTER threw and no creature
+            // appeared. Attribution is preserved by the verbose proc log, which names the recipe.
+            ApplyActionNamed(verb, args, origin, target, env, party, results, ResolvableAbilityName());
+        }
+
+        private static void ApplyActionNamed(eCombatActions verb, object args, Entity origin, Entity target,
+            RecipeExecEnvironment env, List<Entity> party, List<(eAbilityResults, object)> results, string abilityName)
         {
             // SkillContext is a primary-constructor struct (eSkills Skill, int Level, string GlobalAnimModifier);
             // ApplyAction takes both by ref, so they need real locals.
@@ -337,7 +620,7 @@ namespace ClassForge.Plugin
                 target,                 // pPrimaryTarget
                 party,                  // pParty
                 env.Thing,              // pThing (may be null — recipe effects are not item-sourced)
-                AbilityName(recipeId),  // pAbilityName
+                abilityName,            // pAbilityName
                 verb,                   // pAction
                 ref originSkill,        // pOriginSkillContext
                 ref targetSkill,        // pTargetSkillContext
@@ -367,9 +650,24 @@ namespace ClassForge.Plugin
         /// </summary>
         private static readonly Func<Entity, string, int> DefaultGetTileStat = (e, s) => 0;
 
+        /// <summary>
+        /// The ability name handed to the native pipeline.
+        ///
+        /// This is NOT free-form. <c>InteractableHelper.ApplyStatChange</c> dereferences
+        /// <c>GetAbilityConfig(pAbilityName).Actions</c> unconditionally, so a name that resolves to
+        /// nothing makes every STAT_CHANGE effect throw. It therefore returns the registered
+        /// <see cref="ConfigMergePatches.RecipeEffectAbilityId"/> for effects that reach that path,
+        /// and keeps the descriptive per-recipe name only where nothing looks the config up.
+        /// </summary>
         private static string AbilityName(string recipeId)
         {
             return AbilityNamePrefix + (string.IsNullOrEmpty(recipeId) ? "UNKNOWN" : recipeId);
+        }
+
+        /// <summary>The name to use where the native path will look up an ability config.</summary>
+        private static string ResolvableAbilityName()
+        {
+            return ConfigMergePatches.RecipeEffectAbilityId;
         }
 
         private static string JsonString(string value)
