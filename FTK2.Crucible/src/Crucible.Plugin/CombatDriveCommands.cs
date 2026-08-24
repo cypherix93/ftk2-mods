@@ -120,7 +120,11 @@ namespace Crucible.Plugin
                               .Append(" tile=").Append(venue == null ? "(none)" : Str(PartyAccess.ReadMember(venue, "TilePosition")))
                               .Append(" pa=").Append(Str(PartyAccess.ReadMember(combat, "PrimaryActions")))
                               .Append(" sa=").Append(Str(PartyAccess.ReadMember(combat, "SecondaryActions")))
-                              .Append(" dead=").Append(IsDead(entity));
+                              .Append(" dead=").Append(IsDead(entity))
+                              // Statuses belong here: crucible_status_add could APPLY one but the
+                              // snapshot never showed it, so "does the duration tick down" -- the
+                              // only question that matters for a status -- was unanswerable.
+                              .Append(" statuses=").Append(CharacterCommands.DescribeStatuses(entity));
                     }
                     else if (tile != null && venue != null)
                     {

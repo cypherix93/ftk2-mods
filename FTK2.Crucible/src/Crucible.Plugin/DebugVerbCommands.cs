@@ -93,20 +93,66 @@ namespace Crucible.Plugin
                 int deadBefore = 0;
                 foreach (object e in snapshot) if (IsDeadEntity(helperType, e)) deadBefore++;
 
+                // CharacterHelper.KillCharacter(Entity, List<(eAbilityResults, object)>, bool).
+                //
+                // Neither kill API is unary, which is why this verb used to do nothing at all: the old
+                // code asked for a ONE-argument TryKillCharacter, then fell back to a one-argument
+                // KillCharacter, and no such overload exists either -- TryKillCharacter takes six
+                // parameters and KillCharacter three. Both lookups missed, the loop invoked nothing,
+                // and the verb reported deadBefore=0 deadAfter=0 while appearing to work.
+                //
+                // KillCharacter is the right one of the two: TryKillCharacter is the DAMAGE path and
+                // wants a damage figure, an Env and a results container to route the kill through.
+                // KillCharacter is the unconditional one -- zero health, zero focus, statuses cleared,
+                // DIED appended -- which is what "wipe the field" means.
+                MethodInfo kill = null;
+                foreach (MethodInfo m in helperType.GetMethods(BindingFlags.Public | BindingFlags.Static))
+                {
+                    if (!string.Equals(m.Name, "KillCharacter", StringComparison.Ordinal)) continue;
+                    ParameterInfo[] ps = m.GetParameters();
+                    if (ps.Length >= 2 && ps[0].ParameterType.Name == "Entity") { kill = m; break; }
+                }
+                if (kill == null) { LastResult = "error: CharacterHelper.KillCharacter(Entity, ...) not found"; return; }
+
+                // A real results list, not null: KillCharacter appends DIED to it, and the summary
+                // screen and combat-end checks read those entries.
+                object results = Activator.CreateInstance(kill.GetParameters()[1].ParameterType);
+
+                int attempted = 0;
+                string firstFailure = null;
                 foreach (object e in snapshot)
                 {
-                    object result;
-                    if (!TryInvokeUnary(helperType, "TryKillCharacter", e, out result))
-                        TryInvokeUnary(helperType, "KillCharacter", e, out result);
+                    // CombatState.Entities holds the TILES as well as the combatants, and
+                    // KillCharacter opens with pTargetEntity.Get<CharacterComponent>().
+                    // Handing it a tile is a guaranteed NullReferenceException.
+                    if (RunAccess.GetComponent(e, "CharacterComponent") == null) continue;
+                    if (IsDeadEntity(helperType, e)) continue;
+                    try
+                    {
+                        object[] args = BuildOptionalArgs(kill, new object[] { e, results });
+                        if (args == null) { firstFailure = firstFailure ?? "unexpected KillCharacter signature"; break; }
+                        kill.Invoke(null, args);
+                        attempted++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                        firstFailure = firstFailure ?? (root.GetType().Name + ": " + root.Message);
+                    }
                 }
 
                 int deadAfter = 0;
                 foreach (object e in snapshot) if (IsDeadEntity(helperType, e)) deadAfter++;
 
-                LastResult = "api=CharacterHelper.TryKillCharacter(Entity)/.KillCharacter(Entity) "
+                LastResult = "api=CharacterHelper.KillCharacter(Entity, results) "
                     + "observable=CharacterHelper.IsDead(Entity) entities=" + snapshot.Count
+                    + " attempted=" + attempted
                     + " deadBefore=" + deadBefore + " deadAfter=" + deadAfter
-                    + " changed=" + (deadAfter > deadBefore);
+                    + " changed=" + (deadAfter > deadBefore)
+                    + (firstFailure == null ? "" : ("\nfirst failure: " + firstFailure))
+                    + "\nNOTE: kills BOTH sides -- this is 'wipe the field', not 'make me win'."
+                    + "\n      Turn godmode OFF first; it tops the party back up every tick and"
+                    + "\n      will resurrect them faster than this can read the result back.";
             }
             catch (Exception ex) { LastResult = "error: crucible_kill_all threw: " + ex.Message; }
         }
@@ -198,12 +244,29 @@ namespace Crucible.Plugin
 
         // ============================================================== crucible_set_level
 
-        /// <summary>Resolves a party entity by index into GetPartyEntities() (documented as a
-        /// best-available, non-persistent ordering -- see RunAccess.GetPartyEntities), finds the
-        /// live CharacterHelper.TryProgressCharacterEntityToLevel overload accepting (Entity, Int32)
-        /// by runtime parameter matching (never a guessed fixed signature), and verifies via
-        /// CharacterComponent.ExtraLevel before/after -- the closest documented level-shaped field;
-        /// no direct GetLevel accessor was found, so this is reported explicitly as a proxy.</summary>
+        /// <summary>
+        /// crucible_set_level &lt;slot&gt; &lt;level&gt; — raise a party member to a level by granting the XP
+        /// the game itself requires for it, then reading the level back through the game's own
+        /// <c>ProgressionHelper.GetEntityLevel</c>.
+        ///
+        /// <para><b>This verb used to call the wrong API entirely.</b> It was anchored on
+        /// <c>CharacterHelper.TryProgressCharacterEntityToLevel</c>, whose actual job is to swap a
+        /// character's CONFIG for a level-appropriate variant -- how an enemy becomes its tier-3 self.
+        /// For a player, <c>GetCharacterConfigAtLevel</c> returns the config it was handed, the method
+        /// short-circuits on <c>!config.Equals(current)</c> and returns false having done nothing. It
+        /// reported <c>changed=False</c> forever and the observable it printed,
+        /// <c>CharacterComponent.ExtraLevel</c>, is not where a player's level lives either.</para>
+        ///
+        /// <para>A player's level is DERIVED, not stored: <c>GetEntityLevel</c> counts an "XP" Thing's
+        /// stack against <c>PLAYER_XP_LEVELS</c>. So the way to reach level N is to hold at least
+        /// <c>PLAYER_XP_LEVELS[N-1]</c> XP, and the way to grant it is
+        /// <c>ProgressionHelper.EntityGainXP</c> -- the same call the game makes after a fight, which
+        /// heals to full, adds focus and emits LEVELED_UP. Writing the XP stack by hand skips all
+        /// three and desyncs HP.</para>
+        ///
+        /// <para>Levels only go UP. Requesting a level at or below the current one is reported as such
+        /// rather than silently doing nothing, because XP cannot be taken back through this path.</para>
+        /// </summary>
         public static void CrucibleSetLevel(string pSlot, string pLevel)
         {
             LastResult = null;
@@ -225,37 +288,75 @@ namespace Crucible.Plugin
                 object entity = party[slot];
                 string name = RunAccess.DisplayName(entity) ?? "?";
 
-                Type helperType = AccessTools.TypeByName("CharacterHelper");
-                if (helperType == null) { LastResult = "error: CharacterHelper type not found"; return; }
+                Type progression = AccessTools.TypeByName("ProgressionHelper");
+                if (progression == null) { LastResult = "error: ProgressionHelper type not found"; return; }
 
-                MethodInfo method = FindBinaryStatic(helperType, "TryProgressCharacterEntityToLevel", entity, typeof(int));
-                if (method == null)
+                MethodInfo getLevel = AccessTools.Method(progression, "GetEntityLevel");
+                MethodInfo getXp = AccessTools.Method(progression, "GetEntityXP");
+                MethodInfo gainXp = AccessTools.Method(progression, "EntityGainXP");
+                if (getLevel == null || getXp == null || gainXp == null)
                 {
-                    LastResult = "error: CharacterHelper.TryProgressCharacterEntityToLevel(<Entity>, Int32) overload not found on the live assembly";
+                    LastResult = "error: ProgressionHelper.GetEntityLevel/GetEntityXP/EntityGainXP not all found";
                     return;
                 }
 
-                object[] args; string buildError;
-                if (!BuildArgs(method, entity, level, out args, out buildError))
+                FieldInfo table = AccessTools.Field(progression, "PLAYER_XP_LEVELS");
+                int[] thresholds = table == null ? null : table.GetValue(null) as int[];
+                if (thresholds == null) { LastResult = "error: ProgressionHelper.PLAYER_XP_LEVELS not readable"; return; }
+
+                if (level < 1 || level > thresholds.Length)
                 {
-                    LastResult = "error: " + buildError;
+                    LastResult = "error: level " + level + " out of range (1.." + thresholds.Length + ")";
                     return;
                 }
 
-                object character = RunAccess.GetComponent(entity, "CharacterComponent");
-                int before = ReadInt(character, "ExtraLevel");
+                int levelBefore = Convert.ToInt32(getLevel.Invoke(null, new[] { entity }));
+                int xpBefore = Convert.ToInt32(getXp.Invoke(null, new[] { entity }));
 
-                try { method.Invoke(null, args); }
-                catch (Exception ex) { LastResult = "error: invoke failed: " + ex.Message; return; }
+                if (level <= levelBefore)
+                {
+                    LastResult = "entity=" + name + " slot=" + slot + " level=" + levelBefore
+                        + " requestedLevel=" + level + " changed=False"
+                        + "\nAlready at or above that level, and this path only goes UP: level is derived from an"
+                        + "\nXP stack via ProgressionHelper.GetEntityLevel, and XP cannot be taken back by granting it.";
+                    return;
+                }
 
-                int after = ReadInt(character, "ExtraLevel");
+                // The threshold for level N is PLAYER_XP_LEVELS[N-1]; grant exactly the shortfall.
+                int needed = thresholds[level - 1] - xpBefore;
 
-                LastResult = "api=CharacterHelper.TryProgressCharacterEntityToLevel entity=" + name + " slot=" + slot
-                    + " requestedLevel=" + level
-                    + " observable=CharacterComponent.ExtraLevel (proxy -- no direct GetLevel accessor found)"
-                    + " before=" + before + " after=" + after + " changed=" + (before != after);
+                object[] args = BuildOptionalArgs(gainXp, new object[] { entity, needed, false, null });
+                if (args == null) { LastResult = "error: EntityGainXP has an unexpected signature"; return; }
+                gainXp.Invoke(null, args);
+
+                int levelAfter = Convert.ToInt32(getLevel.Invoke(null, new[] { entity }));
+                int xpAfter = Convert.ToInt32(getXp.Invoke(null, new[] { entity }));
+
+                LastResult = "api=ProgressionHelper.EntityGainXP observable=ProgressionHelper.GetEntityLevel"
+                    + " entity=" + name + " slot=" + slot + " requestedLevel=" + level
+                    + " xp=" + xpBefore + "->" + xpAfter + " (granted " + needed + ")"
+                    + " level=" + levelBefore + "->" + levelAfter
+                    + " changed=" + (levelAfter != levelBefore)
+                    + "\nGranting XP is what the game does after a fight, so the level-up heals to full, adds"
+                    + "\nfocus and emits LEVELED_UP. Writing the XP stack directly skips all three.";
             }
             catch (Exception ex) { LastResult = "error: crucible_set_level threw: " + ex.Message; }
+        }
+
+        /// <summary>Pads <paramref name="supplied"/> with defaults for any trailing optional
+        /// parameters; null if a required parameter is left unfilled.</summary>
+        private static object[] BuildOptionalArgs(MethodInfo method, object[] supplied)
+        {
+            ParameterInfo[] ps = method.GetParameters();
+            if (ps.Length < supplied.Length) return null;
+            object[] args = new object[ps.Length];
+            Array.Copy(supplied, args, supplied.Length);
+            for (int i = supplied.Length; i < ps.Length; i++)
+            {
+                if (!ps[i].IsOptional) return null;
+                args[i] = ps[i].DefaultValue;
+            }
+            return args;
         }
 
         // ============================================================== crucible_give
@@ -574,16 +675,59 @@ namespace Crucible.Plugin
             args[1] = secondArg;
             for (int i = 2; i < ps.Length; i++)
             {
-                if (!ps[i].IsOptional)
+                if (ps[i].IsOptional) { args[i] = ps[i].DefaultValue; continue; }
+
+                // A required GameRandom is suppliable rather than guessable: the run owns one, and
+                // handing over the game's own stream is what the game would have done itself.
+                // CharacterHelper.TryProgressCharacterEntityToLevel needs exactly this, and refusing
+                // on it left crucible_set_level permanently unusable.
+                if (string.Equals(ps[i].ParameterType.Name, "GameRandom", StringComparison.Ordinal))
                 {
-                    error = method.Name + " has a required parameter '" + ps[i].Name + "' (" + ps[i].ParameterType.Name
-                        + ") beyond the two this verb supplies -- refusing rather than guessing a value";
-                    args = null;
-                    return false;
+                    object random = ResolveGameRandom(ps[i].ParameterType);
+                    if (random == null)
+                    {
+                        error = method.Name + " needs a GameRandom and none could be resolved from the "
+                            + "live run -- refusing rather than guessing a value";
+                        args = null;
+                        return false;
+                    }
+                    args[i] = random;
+                    continue;
                 }
-                args[i] = ps[i].DefaultValue;
+
+                error = method.Name + " has a required parameter '" + ps[i].Name + "' (" + ps[i].ParameterType.Name
+                    + ") beyond the two this verb supplies -- refusing rather than guessing a value";
+                args = null;
+                return false;
             }
             return true;
+        }
+
+
+        /// <summary>
+        /// The run's own GameRandom, preferring the combat stream when a fight is live.
+        ///
+        /// <para>Preferring the live stream over a fresh instance matters for multiplayer parity: a
+        /// verb that draws from its own private random advances nothing the other peers know about,
+        /// so their streams stay in step while this one silently does not.</para>
+        /// </summary>
+        private static object ResolveGameRandom(Type gameRandomType)
+        {
+            try
+            {
+                object combatState = RunAccess.GetCombatState();
+                object fromCombat = combatState == null
+                    ? null
+                    : RunAccess.GetMember(combatState, "Random");
+                if (fromCombat != null) return fromCombat;
+
+                object run = RunAccess.GetGameRun();
+                object fromRun = run == null ? null : RunAccess.GetMember(run, "Random");
+                if (fromRun != null) return fromRun;
+
+                return Activator.CreateInstance(gameRandomType);
+            }
+            catch (Exception) { return null; }
         }
 
         private static bool TrySetField(object instance, string name, object value, out string error)

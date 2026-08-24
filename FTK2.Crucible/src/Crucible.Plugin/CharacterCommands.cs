@@ -349,7 +349,10 @@ namespace Crucible.Plugin
             catch (Exception) { return "(unreadable)"; }
         }
 
-        private static string DescribeStatuses(object entity)
+        /// <summary>Renders an entity's statuses as <c>count=N [NAME(d=N), ...]</c>.
+        /// Internal so the combat snapshot can print the same thing -- a status the harness can
+        /// apply but not READ back is untestable.</summary>
+        internal static string DescribeStatuses(object entity)
         {
             object component = PartyAccess.FindComponent(entity, "StatusEffectComponent");
             if (component == null) return "(no StatusEffectComponent)";

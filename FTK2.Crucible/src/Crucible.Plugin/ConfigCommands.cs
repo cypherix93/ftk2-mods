@@ -177,7 +177,7 @@ namespace Crucible.Plugin
             {
                 if (string.IsNullOrEmpty(thingId))
                 {
-                    LastResult = "error: usage: crucible_thing_config <thingId>";
+                    LastResult = "error: usage: crucible_thing_config <thingId|prefix*>";
                     return;
                 }
                 thingId = thingId.Trim();
@@ -185,6 +185,16 @@ namespace Crucible.Plugin
                 object map;
                 string error;
                 if (!TryGetConfigMap("Things", out map, out error)) { LastResult = "error: " + error; return; }
+
+                // A trailing * lists matching ids instead of describing one. Item ids are not
+                // guessable -- there are 2418 of them and no naming convention that survives
+                // contact with the shipped data -- so without a way to SEARCH, every item test
+                // starts by guessing a key and getting KeyNotFoundException.
+                if (thingId.EndsWith("*", StringComparison.Ordinal))
+                {
+                    LastResult = ListThingIds(map, thingId.Substring(0, thingId.Length - 1));
+                    return;
+                }
 
                 object config = LookUp(map, thingId);
                 if (config == null)
@@ -206,6 +216,31 @@ namespace Crucible.Plugin
             {
                 LastResult = "error: crucible_thing_config threw: " + ex.Message;
             }
+        }
+
+
+        /// <summary>Ids in <paramref name="map"/> starting with <paramref name="prefix"/>, case-insensitively.</summary>
+        private static string ListThingIds(object map, string prefix)
+        {
+            var keys = PartyAccess.ReadMember(map, "Keys") as IEnumerable;
+            if (keys == null) return "error: Configs.Things exposes no Keys";
+
+            var hits = new List<string>();
+            foreach (object k in keys)
+            {
+                string key = Str(k);
+                if (key == null) continue;
+                if (prefix.Length > 0 &&
+                    key.IndexOf(prefix, StringComparison.OrdinalIgnoreCase) != 0) continue;
+                hits.Add(key);
+            }
+            hits.Sort(StringComparer.Ordinal);
+
+            var sb = new StringBuilder();
+            sb.Append("prefix=").Append(prefix).Append("* matches=").Append(hits.Count);
+            for (int i = 0; i < hits.Count && i < 60; i++) sb.Append("\n  ").Append(hits[i]);
+            if (hits.Count > 60) sb.Append("\n  ... ").Append(hits.Count - 60).Append(" more");
+            return sb.ToString();
         }
 
         // ============================================================== helpers
