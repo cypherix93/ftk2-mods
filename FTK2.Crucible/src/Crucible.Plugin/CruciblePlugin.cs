@@ -151,6 +151,8 @@ namespace Crucible.Plugin
             MouseCommands.Initialize(_log);
             KeyboardCommands.Initialize(_log);
             FixtureCommands.Initialize(_log);
+            AbilityCommands.Initialize(_log);
+            ConfigCommands.Initialize(_log);
             DebugVerbCommands.Initialize(_log);
             ChaosCommands.Initialize(_harmony, _log);
             MainThreadPump.Initialize(_harmony, _log);
@@ -212,6 +214,8 @@ namespace Crucible.Plugin
             MouseCommands.TryRegister();
             KeyboardCommands.TryRegister();
             FixtureCommands.TryRegister();
+            AbilityCommands.TryRegister();
+            ConfigCommands.TryRegister();
             DebugVerbCommands.TryRegister();
             ChaosCommands.TryRegister();
             InputFocusGateCommands.TryRegister();

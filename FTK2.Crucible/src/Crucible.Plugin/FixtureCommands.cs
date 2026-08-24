@@ -247,75 +247,19 @@ namespace Crucible.Plugin
 
         // ============================================================== helpers
 
-        /// <summary>
-        /// Party = entities carrying a PlayerComponent. Enumeration order is the slot order used by
-        /// every command here; it is NOT a persistent slot id, so a caller must not cache it across
-        /// a reload.
-        /// </summary>
         private static bool TryGetParty(out List<object> party, out string error)
         {
-            party = new List<object>();
-            error = null;
-
-            object env = GameBridge.GetEnv();
-            if (env == null) { error = "Env unavailable"; return false; }
-
-            object gameRun = ReadMember(env, "GameRun");
-            if (gameRun == null) { error = "Env.GameRun is null — no run is loaded"; return false; }
-
-            object entities = ReadMember(gameRun, "Entities");
-            if (entities == null) entities = ReadMember(gameRun, "_entities");
-
-            IEnumerable list = entities as IEnumerable;
-            if (list == null) { error = "GameRunData.Entities is not enumerable"; return false; }
-
-            foreach (object entity in list)
-            {
-                if (entity == null) continue;
-                if (FindComponent(entity, "PlayerComponent") != null) party.Add(entity);
-            }
-
-            if (party.Count == 0) { error = "no entities carry a PlayerComponent (is a run loaded?)"; return false; }
-            return true;
+            return PartyAccess.TryGetParty(out party, out error);
         }
 
-        /// <summary>Finds a component on an Entity by type name, via the Components dictionary.</summary>
         private static object FindComponent(object entity, string componentTypeName)
         {
-            if (entity == null) return null;
-            try
-            {
-                object components = ReadMember(entity, "Components");
-                IDictionary map = components as IDictionary;
-                if (map == null) return null;
-
-                foreach (object value in map.Values)
-                {
-                    if (value == null) continue;
-                    if (string.Equals(value.GetType().Name, componentTypeName, StringComparison.Ordinal)) return value;
-                }
-                return null;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return PartyAccess.FindComponent(entity, componentTypeName);
         }
 
         private static object ReadMember(object instance, string name)
         {
-            if (instance == null) return null;
-            try
-            {
-                FieldInfo f = AccessTools.Field(instance.GetType(), name);
-                if (f != null) return f.GetValue(instance);
-                PropertyInfo p = AccessTools.Property(instance.GetType(), name);
-                return p == null ? null : p.GetValue(instance, null);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return PartyAccess.ReadMember(instance, name);
         }
 
         private static string StringOf(object value)
