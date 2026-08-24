@@ -48,7 +48,9 @@ namespace Crucible.Plugin
         {
             Register("crucible_overworld_state", "CrucibleOverworldState", new List<string>());
             Register("crucible_path_preview", "CruciblePathPreview", new List<string> { "x", "y" });
-            Register("crucible_move", "CrucibleMove", new List<string> { "x", "y", "consumeActionPoints(true|false)" });
+            Register("crucible_move", "CrucibleMove", new List<string> {
+                "x", "y", "consumeActionPoints(true|false)",
+                "canBeAmbushed(true|false|auto)", "showEncounterMenu(true|false)" });
             Register("crucible_hex_info", "CrucibleHexInfo", new List<string> { "x", "y" });
             Register("crucible_overworld_end_turn", "CrucibleOverworldEndTurn", new List<string>());
             Register("crucible_interact", "CrucibleInteract", new List<string> { "action (e.g. VENUE)" });
@@ -188,8 +190,15 @@ namespace Crucible.Plugin
         /// hoping: an invalid move is silently ignored by the game, which is indistinguishable from
         /// a harness fault. Passing consumeActionPoints=false gives the pathfinder unlimited range,
         /// which is the game's own free-move path.
+        ///
+        /// <c>canBeAmbushed</c> and <c>showEncounterMenu</c> default to FALSE for traversal. They are
+        /// the two ways a scripted move stops being a move: an ambush drops the party into a combat
+        /// nobody asked for, and the encounter menu opens a UI that several branches (market, town
+        /// services, quest board) never close by themselves. Pass <c>canBeAmbushed=auto</c> to restore
+        /// the game's own behaviour, which follows <c>PlayerComponent.Sneaked</c>.
         /// </summary>
-        public static void CrucibleMove(string x, string y, string consumeActionPoints)
+        public static void CrucibleMove(string x, string y, string consumeActionPoints,
+            string canBeAmbushedArg, string showEncounterMenuArg)
         {
             LastResult = null;
             try
@@ -197,7 +206,7 @@ namespace Crucible.Plugin
                 int goalX, goalY;
                 if (!int.TryParse((x ?? "").Trim(), out goalX) || !int.TryParse((y ?? "").Trim(), out goalY))
                 {
-                    LastResult = "error: usage: crucible_move <x> <y> [true|false]";
+                    LastResult = "error: usage: crucible_move <x> <y> [consumeAP] [canBeAmbushed|auto] [showEncounterMenu]";
                     return;
                 }
                 bool consume = !string.Equals((consumeActionPoints ?? "true").Trim(), "false", StringComparison.OrdinalIgnoreCase);
@@ -229,16 +238,30 @@ namespace Crucible.Plugin
                 if (move == null) { LastResult = describe + "\nerror: AdventureDirector._move(AdventureMoveData, ...) not found"; return; }
 
                 // Defaults are not supplied by reflection, so all four arguments are passed
-                // explicitly, matching the game's own call: canBeAmbushed follows Sneaked.
-                object active = ActiveCharacter();
-                object player = PartyAccess.FindComponent(active, "PlayerComponent");
-                object sneaked = PartyAccess.ReadMember(player, "Sneaked");
-                bool canBeAmbushed = !(sneaked is bool && (bool)sneaked);
+                // explicitly. "auto" reproduces the game's own call, where canBeAmbushed follows
+                // PlayerComponent.Sneaked; the harness default is a flat false.
+                string ambushArg = (canBeAmbushedArg ?? "false").Trim();
+                bool canBeAmbushed;
+                if (string.Equals(ambushArg, "auto", StringComparison.OrdinalIgnoreCase))
+                {
+                    object active = ActiveCharacter();
+                    object player = PartyAccess.FindComponent(active, "PlayerComponent");
+                    object sneaked = PartyAccess.ReadMember(player, "Sneaked");
+                    canBeAmbushed = !(sneaked is bool && (bool)sneaked);
+                }
+                else
+                {
+                    canBeAmbushed = string.Equals(ambushArg, "true", StringComparison.OrdinalIgnoreCase);
+                }
 
-                move.Invoke(director, new object[] { moveData, consume, canBeAmbushed, true });
+                bool showEncounterMenu = string.Equals((showEncounterMenuArg ?? "false").Trim(), "true",
+                    StringComparison.OrdinalIgnoreCase);
+
+                move.Invoke(director, new object[] { moveData, consume, canBeAmbushed, showEncounterMenu });
 
                 LastResult = describe
-                    + "\nmove invoked (consumeAP=" + consume + " canBeAmbushed=" + canBeAmbushed + ")"
+                    + "\nmove invoked (consumeAP=" + consume + " canBeAmbushed=" + canBeAmbushed
+                    + " showEncounterMenu=" + showEncounterMenu + ")"
                     + "\nNOTE: _move returns a Task that is NOT awaited -- it plays a visual stack and"
                     + "\n      then chains into the encounter menu or end-of-turn. Re-read"
                     + "\n      crucible_overworld_state after a few seconds.";
