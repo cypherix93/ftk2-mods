@@ -24,6 +24,7 @@ Usage:
 """
 
 import json
+import subprocess
 import sys
 import time
 import urllib.error
@@ -142,6 +143,11 @@ def visible_docs():
 # fixture load, which presents as "the load did not take".
 DISMISSABLE = [
     ("continue-label", "post-load gate and each intro story page"),
+    # Quest resolution AWAITS the dialogue it opens. _resolveQuests is awaited by
+    # _tryCompleteQuests BEFORE the AdventureEndTrigger==WIN check, so an undismissed dialogue
+    # does not merely sit there -- it stops the run from ever ending. Measured 2026-08-24: the
+    # WIN quest completed, and _endAdventure never fired, because this was on screen.
+    ("dialogue-container", "story dialogue page; blocks _resolveQuests"),
     ("ok-btn", "tutorial/system prompt (Understood)"),
     ("royal-tutor-container", "Royal Tutor tutorial overlay"),
     ("sys-dialog-ok-btn", "system dialog confirm"),
@@ -169,8 +175,10 @@ def clear_gates(max_rounds=12):
             return {"ok": True, "pressed": pressed}
 
         for name in present:
-            # Focus first: a key press acts only on a focused target and focus does not
-            # persist between commands.
+            # Focus + Enter is the path that actually retires these. It looks weaker than
+            # crucible_ui_click (which reports whether the element ACTED) but it is what works:
+            # continue-label ignores UIToolkitHelper.Submit entirely. Where Submit IS needed -- the
+            # story dialogue and the summary's next-btn -- callers use crucible_ui_click directly.
             run("crucible_ui_focus", [name])
             run("crucible_key", ["enter"])
             pressed.append(name)
@@ -178,6 +186,131 @@ def clear_gates(max_rounds=12):
 
     remaining = visible_names([name for name, _reason in DISMISSABLE])
     return {"ok": not remaining, "pressed": pressed, "remaining": remaining}
+
+
+def pick_reward(max_prompts=8):
+    """
+    Answers queued "Choose Reward" prompts by taking the first option.
+
+    Deliberately NOT part of clear_gates. choice-menu-btn is present in AdventureUIDocument's tree
+    even when no prompt is on screen, so a blanket dismiss loop clicks it forever and reports
+    "remaining" every time -- which is exactly what happened when it was in DISMISSABLE. The panel
+    title is the reliable signal, so this looks for that first and does nothing when it is absent.
+
+    Answering matters: quest resolution AWAITS these, they QUEUE one per completed quest, and a
+    stack of unanswered prompts presents as a hang with a healthy game thread and a fully rendered
+    overworld.
+    """
+    answered = []
+    for _ in range(max_prompts):
+        dump = run("crucible_ui_dump", ["-", "button,label"])
+        if "Choose Reward" not in dump:
+            break
+        run("crucible_ui_click", ["choice-menu-btn"])
+        answered.append("choice-menu-btn")
+        time.sleep(2)
+        run("crucible_ui_click", ["dialogue-container"])
+        time.sleep(2)
+    return {"answered": len(answered), "rewardPromptStillUp": "Choose Reward" in run("crucible_ui_dump", ["-", "button,label"])}
+
+
+def interaction_enabled():
+    """
+    The AUTHORITATIVE readiness signal: AdventureDirector._enableInteraction has run.
+
+    Screen-shape checks are not enough on their own. LoadingUIDocument lingers as an orphaned
+    overlay after a load and can report present when the game is perfectly playable, and it can be
+    absent while a reward prompt still has interaction switched off. This field is what the game
+    itself consults.
+    """
+    for line in run("crucible_overworld_state").splitlines():
+        if line.startswith("interactionEnabled="):
+            return line.split()[0] == "interactionEnabled=True"
+    return False
+
+
+def wait_ready(timeout_seconds=180, verbose=False):
+    """
+    Drives the game to a genuinely interactive overworld, clearing whatever is in the way.
+
+    Call this after EVERY transition -- load, spawn, combat exit -- not just after a load. The
+    blockers reappear: a "Click to Continue" gate comes back after a debug spawn, the intro is
+    several pages, quest resolution queues one reward prompt per completed quest, and each of those
+    silently holds interaction off while the overworld looks completely normal in a screenshot.
+
+    Returns a dict describing what it cleared and whether the game is ready, rather than raising,
+    so a caller can report the real reason instead of failing later somewhere unrelated.
+    """
+    cleared = []
+    deadline = time.time() + timeout_seconds
+
+    while time.time() < deadline:
+        if interaction_enabled():
+            return {"ready": True, "cleared": cleared, "docs": visible_docs()}
+
+        dump = run("crucible_ui_dump", ["-", "button,label"])
+
+        if "name='continue-label'" in dump:
+            # FOCUS + ENTER, not crucible_ui_click. UIToolkitHelper.Submit returns true on this
+            # element and advances nothing -- measured 2026-08-24 at 48 consecutive "successful"
+            # presses with the gate still up. The keyboard path clears the same gate in two.
+            run("crucible_ui_focus", ["continue-label"])
+            run("crucible_key", ["enter"])
+            cleared.append("continue-label")
+            time.sleep(2)
+            continue
+
+        if "Choose Reward" in dump:
+            run("crucible_ui_click", ["choice-menu-btn"])
+            cleared.append("reward")
+            time.sleep(2)
+            continue
+
+        if "name='dialogue-container'" in dump:
+            run("crucible_ui_click", ["dialogue-container"])
+            cleared.append("dialogue")
+            time.sleep(2)
+            continue
+
+        if "name='ok-btn'" in dump:
+            run("crucible_ui_click", ["ok-btn"])
+            cleared.append("ok-btn")
+            time.sleep(2)
+            continue
+
+        # Nothing recognised is in the way but interaction is still off -- the game is mid
+        # transition. Wait rather than hammering it.
+        if verbose:
+            print("  waiting: docs=%s" % ", ".join(visible_docs()))
+        time.sleep(3)
+
+    return {
+        "ready": False,
+        "cleared": cleared,
+        "docs": visible_docs(),
+        "reason": "interactionEnabled never became true within %ds" % timeout_seconds,
+    }
+
+
+def restart_game(timeout_seconds=240):
+    """
+    Kills the game by PID and relaunches it through Steam.
+
+    The only reliable exit from the stale-overlay state: once LoadingUIDocument is orphaned, its
+    continue-label has no handler wired, so pressing it succeeds and changes nothing -- measured
+    2026-08-24 at 48 consecutive presses with interaction still disabled. Nothing short of a
+    restart clears it.
+
+    PID-scoped on purpose. A blanket kill on the process name would also take out unrelated
+    processes, and this machine runs the agent that is driving the test.
+    """
+    subprocess.run([
+        "powershell", "-NoProfile", "-Command",
+        "Get-Process | Where-Object { $_.Path -like '*For The King II\\For The King*' } "
+        "| ForEach-Object { Stop-Process -Id $_.Id -Force }; Start-Sleep -Seconds 6; "
+        "Start-Process 'steam://rungameid/1676840'",
+    ], capture_output=True)
+    return boot(timeout_seconds=timeout_seconds)
 
 
 def load_run(run_id, attempts=3):
