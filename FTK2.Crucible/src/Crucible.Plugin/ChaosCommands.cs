@@ -151,10 +151,20 @@ namespace Crucible.Plugin
             try
             {
                 object gameRun = RunAccess.GetGameRun();
-                object chaosState = RunAccess.GetMember(gameRun, "ChaosState");
+
+                // AdventureState.MapState.ChaosState, NOT GameRunData.ChaosState.
+                //
+                // GameRunData still carries a ChaosState field, but it is declared
+                //     [Obsolete("Use AdventureState.MapState.ChaosState")]
+                // and nothing writes it any more -- AdventureHelper.ModifyChaosLevel only ever
+                // mutates the MapState copy. Reading the alias reported a chaos level that could
+                // never move, whatever the game did. GameRunData.RoundCount is obsolete the same way.
+                object mapState = RunAccess.GetMember(RunAccess.GetAdventureState(), "MapState");
+                object chaosState = RunAccess.GetMember(mapState, "ChaosState");
                 if (chaosState == null)
                 {
-                    LastResult = "frozen=" + _frozen + " patched=" + _patched + " note=no active run (GameRunData.ChaosState is null)";
+                    LastResult = "frozen=" + _frozen + " patched=" + _patched
+                        + " note=no active chaos (AdventureState.MapState.ChaosState is null)";
                     return;
                 }
 
@@ -163,7 +173,7 @@ namespace Crucible.Plugin
                 object maxChaos = RunAccess.GetMember(chaosState, "MaxChaos");
                 object lastRound = RunAccess.GetMember(chaosState, "LastChaosRoundAdded");
                 object startedAt = RunAccess.GetMember(chaosState, "StartedAtRound");
-                object roundCount = RunAccess.GetMember(gameRun, "RoundCount");
+                object roundCount = RunAccess.GetMember(mapState, "RoundCount");
 
                 LastResult = "frozen=" + _frozen + " patched=" + _patched
                     + " chaosHistoryCount=" + historyCount

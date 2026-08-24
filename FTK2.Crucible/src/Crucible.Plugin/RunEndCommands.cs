@@ -388,9 +388,39 @@ namespace Crucible.Plugin
                 if (stop == null) { LastResult = "error: _stopEncounterAsync(5 args) not found"; return; }
 
                 object active = PartyAccess.ReadMember(director, "_activeCharacterEntity");
+                object encounter = PartyAccess.ReadMember(director, "_encounterEntity");
+
+                // CLOSE the menu before stopping the encounter -- the game's own LEAVE/CLOSE branch
+                // calls BOTH, in this order, and calling only _stopEncounterAsync is not equivalent.
+                //
+                // _stopEncounterAsync re-enables interaction and re-pumps quests, but it never clears
+                // _encounterEntity and never hides the market / quest-board / town-services /
+                // merc-guild panels. Those branches are exactly the ones that do not close
+                // themselves, so this verb -- the documented way out of a stuck encounter -- did not
+                // actually get out of the ones that most needed it.
+                string closed = "not attempted";
+                MethodInfo close = null;
+                foreach (MethodInfo m in director.GetType().GetMethods(
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    if (!string.Equals(m.Name, "_closeEncounterMenuAsync", StringComparison.Ordinal)) continue;
+                    if (m.GetParameters().Length == 2) { close = m; break; }
+                }
+                if (close == null) closed = "_closeEncounterMenuAsync(2 args) not found";
+                else
+                {
+                    try { close.Invoke(director, new object[] { encounter, false }); closed = "closed"; }
+                    catch (Exception ex) { closed = "threw: " + ex.GetType().Name; }
+                }
+
                 stop.Invoke(director, new object[] { null, active, false, true, true });
 
-                LastResult = "called _stopEncounterAsync(null, activeCharacter, false, true, true)"
+                object encounterAfter = PartyAccess.ReadMember(director, "_encounterEntity");
+
+                LastResult = "_closeEncounterMenuAsync=" + closed
+                    + " then _stopEncounterAsync(null, activeCharacter, false, true, true)"
+                    + " _encounterEntity " + (encounter == null ? "null" : "set")
+                    + " -> " + (encounterAfter == null ? "null" : "STILL SET")
                     + "\nNOTE: returns a Task that is not awaited; it also re-pumps quest completion."
                     + "\n      Re-read crucible_state to confirm the encounter UI is gone.";
             }

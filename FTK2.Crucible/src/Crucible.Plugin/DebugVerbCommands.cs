@@ -429,8 +429,14 @@ namespace Crucible.Plugin
                 if (adventureState == null) { LastResult = "error: not in an adventure (GameRunData.AdventureState is null)"; return; }
                 object gameRun = RunAccess.GetGameRun();
 
-                int timeBefore = ReadInt(adventureState, "CurrentTimeOfDayIndex");
-                int roundBefore = ReadInt(gameRun, "RoundCount");
+                // MapState, NOT AdventureState/GameRunData directly. Both
+                // AdventureState.CurrentTimeOfDayIndex and GameRunData.RoundCount are declared
+                // [Obsolete("Use MapState....")] and are never written; every assignment in
+                // AdventureDirector targets AdventureState.MapState.*. Asserting on the aliases
+                // meant this verb's changed= result was comparing dead state against itself.
+                object mapState = RunAccess.GetMember(adventureState, "MapState");
+                int timeBefore = ReadInt(mapState, "CurrentTimeOfDayIndex");
+                int roundBefore = ReadInt(mapState, "RoundCount");
 
                 int dispatched = 0;
                 string lastError = null;
@@ -442,15 +448,17 @@ namespace Crucible.Plugin
                     dispatched++;
                 }
 
-                int timeAfter = ReadInt(adventureState, "CurrentTimeOfDayIndex");
-                int roundAfter = ReadInt(gameRun, "RoundCount");
+                int timeAfter = ReadInt(mapState, "CurrentTimeOfDayIndex");
+                int roundAfter = ReadInt(mapState, "RoundCount");
+                string timeOfDay = Describe(RunAccess.GetMember(mapState, "TimeOfDay"));
 
                 LastResult = "api=AdventureDirector._doEndTurn() (dispatched " + dispatched + "/" + steps + " time(s))"
                     + (lastError != null ? " lastError=" + lastError : "")
                     + " caveat=_doEndTurn returns Task and is not awaited; if changed=false, re-read "
-                    + "RouterHelper.Env.GameRun.AdventureState.CurrentTimeOfDayIndex via crucible_get a "
+                    + "RouterHelper.Env.GameRun.AdventureState.MapState.CurrentTimeOfDayIndex via crucible_get a "
                     + "moment later before concluding it failed"
-                    + " observable=AdventureState.CurrentTimeOfDayIndex,GameRunData.RoundCount"
+                    + " observable=AdventureState.MapState.CurrentTimeOfDayIndex,MapState.RoundCount"
+                    + " timeOfDay=" + timeOfDay
                     + " timeOfDayIndexBefore=" + timeBefore + " timeOfDayIndexAfter=" + timeAfter
                     + " roundCountBefore=" + roundBefore + " roundCountAfter=" + roundAfter
                     + " changed=" + (timeBefore != timeAfter || roundBefore != roundAfter);
