@@ -148,10 +148,25 @@ namespace Crucible.Plugin
                 object after = ReadMember(character, "ConfigName");
                 bool changed = !string.Equals(StringOf(before), StringOf(after), StringComparison.Ordinal);
 
+                // Max health is COMPUTED from the class config, but CurrentHealth is stored on the
+                // component -- so a swap alone leaves the old class's current HP against the new
+                // class's maximum. Observed live: a Corsair (34) swapped to Chronomancer rendered as
+                // "34 / 21" in the HUD. A fixture that starts in an out-of-range state is not a
+                // clean baseline for testing anything, so the character is healed to the new
+                // maximum here.
+                object hpBefore = ReadMember(character, "CurrentHealth");
+                string healError;
+                bool healed = TryHealToMax(party[index], out healError);
+                object hpAfter = ReadMember(character, "CurrentHealth");
+
                 LastResult = "slot=" + index
                     + " classBefore=" + StringOf(before)
                     + " classAfter=" + StringOf(after)
-                    + " changed=" + changed;
+                    + " changed=" + changed
+                    + " hpBefore=" + StringOf(hpBefore)
+                    + " hpAfter=" + StringOf(hpAfter)
+                    + " healedToMax=" + healed
+                    + (healError == null ? "" : " healError=" + healError);
             }
             catch (Exception ex)
             {
@@ -246,6 +261,39 @@ namespace Crucible.Plugin
         }
 
         // ============================================================== helpers
+
+        /// <summary>
+        /// CharacterHelper.SetToMaxHealth(Entity) — verified signature. Best-effort: a swap that
+        /// succeeded but could not be healed is still reported as a successful swap, with the heal
+        /// failure named, rather than being rolled back or silently ignored.
+        /// </summary>
+        private static bool TryHealToMax(object entity, out string error)
+        {
+            error = null;
+            try
+            {
+                Type characterHelper = AccessTools.TypeByName("CharacterHelper");
+                if (characterHelper == null) { error = "CharacterHelper not found"; return false; }
+
+                MethodInfo setMax = null;
+                foreach (MethodInfo m in characterHelper.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                {
+                    if (!string.Equals(m.Name, "SetToMaxHealth", StringComparison.Ordinal)) continue;
+                    if (m.GetParameters().Length == 1) { setMax = m; break; }
+                }
+                if (setMax == null) { error = "SetToMaxHealth(Entity) not found"; return false; }
+
+                setMax.Invoke(null, new object[] { entity });
+                return true;
+            }
+            catch (TargetInvocationException ex)
+            {
+                Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                error = root.Message;
+                return false;
+            }
+            catch (Exception ex) { error = ex.Message; return false; }
+        }
 
         private static bool TryGetParty(out List<object> party, out string error)
         {
