@@ -475,8 +475,11 @@ namespace ClassForge.Plugin
                 var phase = router == null ? null : AccessTools.Field(router.GetType(), "_combatPhase")?.GetValue(router);
                 if (phase == null) return;
 
-                var maps = AccessTools.Field(phase.GetType(), "_gameObjectMaps")?.GetValue(phase)
-                           as VenueGameObjectMaps;
+                // Straight off the env. VenueDirectorBase declares this as
+                //     protected VenueGameObjectMaps _gameObjectMaps => _env.VenueGameObjectMaps;
+                // so it is a PROPERTY, and a reflective lookup by FIELD name returns null -- which
+                // silently skipped every draw and is why recipe summons were invisible.
+                var maps = RouterHelper.Env?.VenueGameObjectMaps;
                 if (maps == null || maps.FromCharacter == null) return;
                 if (maps.FromCharacter.ContainsKey(spawned)) return;
 

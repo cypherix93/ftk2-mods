@@ -358,6 +358,26 @@ namespace ClassForge.Plugin
             Patch(harmony, typeof(LootDropHelper), "GetLootDropsFromEnemies",
                 postfix: M(typeof(LootGrantPatches), nameof(LootGrantPatches.GetLootDropsFromEnemies_Postfix)));
 
+            // Summon leak — CombatPhase._endCombatAsync only banishes summons when pIsImmediate is
+            // false, so every immediate exit leaves one standing on a tile. It then survives into the
+            // next fight, where _clearTileRenderState indexes _gameObjectMaps.FromCharacter for it with
+            // no membership check and throws, taking the whole combat UI down with it. Both ends are
+            // patched: Deinitialize so nothing leaks, Initialize so a save that already leaked one is
+            // still playable. Prefixes in both cases -- Deinitialize's own body calls
+            // _clearTileRenderState, so a postfix would run after the throw. See SummonLeakPatches.
+            Patch(harmony, typeof(CombatPhase), "Deinitialize",
+                prefix: M(typeof(SummonLeakPatches), nameof(SummonLeakPatches.Deinitialize_Prefix)));
+            Patch(harmony, typeof(CombatPhase), "Initialize",
+                prefix: M(typeof(SummonLeakPatches), nameof(SummonLeakPatches.Initialize_Prefix)));
+
+            // The line that actually throws. _clearTileRenderState indexes
+            // _gameObjectMaps.FromCharacter for each tile's living occupant with no membership check,
+            // so any combatant lacking a 3D model takes the method down -- and the rest of Initialize
+            // with it. This prefix sweeps those out of the roster first, whatever their provenance,
+            // which is what makes the fix independent of how the creature got there.
+            Patch(harmony, typeof(CombatPhase), "_clearTileRenderState",
+                prefix: M(typeof(SummonLeakPatches), nameof(SummonLeakPatches.ClearTileRenderState_Prefix)));
+
             // M-LG3 — the loot-grant SafeMode latch's own session-start reset, on the SAME anchor
             // ParityBridge uses for its (unrelated, whole-engine) latch. A separate patch registration so
             // this file never has to touch ParityBridge.cs for a verb-local concern.
