@@ -469,41 +469,16 @@ namespace ClassForge.Plugin
                 foreach (var e in entities) if (e != null && !before.Contains(e)) spawned = e;
                 if (spawned == null) return;
 
-                // The phase and its private view state, reached the same way Crucible does: these
-                // are internals of CombatPhase with no public accessor.
-                var router = AccessTools.Field(AccessTools.TypeByName("RouterHelper"), "_router")?.GetValue(null);
-                var phase = router == null ? null : AccessTools.Field(router.GetType(), "_combatPhase")?.GetValue(router);
-                if (phase == null) return;
-
-                // Straight off the env. VenueDirectorBase declares this as
-                //     protected VenueGameObjectMaps _gameObjectMaps => _env.VenueGameObjectMaps;
-                // so it is a PROPERTY, and a reflective lookup by FIELD name returns null -- which
-                // silently skipped every draw and is why recipe summons were invisible.
-                var maps = RouterHelper.Env?.VenueGameObjectMaps;
-                if (maps == null || maps.FromCharacter == null) return;
-                if (maps.FromCharacter.ContainsKey(spawned)) return;
-
-                var canvas3D = AccessTools.Field(phase.GetType(), "_canvas3D")?.GetValue(phase) as Component;
-                if (canvas3D == null) return;
-
-                var actor = CharacterVisualHelper.CreateActorGameObject(
-                    spawned, canvas3D.transform, new GameRandom(), pUseOverworldOverrides: false);
-                if (actor == null) return;
-                maps.FromCharacter[spawned] = actor;
-
-                // Position it on its tile. OccupiedTiles is filled by TryCreateSummon; an empty list
-                // averages ZERO tiles and would drop the model at the diorama origin.
-                var venue = spawned.Get<VenueComponent>();
-                if (venue != null && venue.OccupiedTiles != null && venue.OccupiedTiles.Count > 0)
-                {
-                    var centre = VenueViewHelper.GetAveragePositionOfTiles(venue.OccupiedTiles, maps.FromTile)
-                                 + DioramaOffset(phase);
-                    actor.transform.position = CharacterVisualHelper.GetCharacterRootPosition(spawned, centre);
-                }
+                // Shared with the modelless sweep so a summon has exactly one drawing path.
+                // A failure here is NOT fatal and is not even unusual: a summon raised on
+                // ON_COMBAT_START predates the combat canvas, so this cannot succeed yet and
+                // SummonLeakPatches retries once the canvas is up.
+                bool drawn = SummonVisuals.TryBuildActor(spawned);
 
                 if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
                     ClassForgePlugin.Log.LogDebug(
-                        "[ClassForge] drew summon " + characterConfig + " for " + recipeId + ".");
+                        "[ClassForge] summon " + characterConfig + " for " + recipeId
+                        + (drawn ? " drawn." : " not drawn yet (combat canvas not up); will be retried."));
             }
             catch (Exception ex)
             {

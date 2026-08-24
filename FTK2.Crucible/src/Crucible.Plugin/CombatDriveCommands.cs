@@ -794,8 +794,15 @@ namespace Crucible.Plugin
                     else sb.Append(' ').Append(EnsureActorVisual(spawned, pos));
                 }
 
+                // Redraw the turn-order banner. RoundEntities is already correct by this point --
+                // the spawn adds to it -- but CombatPhase._refreshTimeline is only called on turn
+                // transitions, so a spawned creature has no banner icon until something else
+                // happens to trigger a redraw. (Clicking its tile does it, which is how this was
+                // spotted: the banners appeared on a click, not on the spawn.)
+                string timeline = RefreshTimeline();
+
                 LastResult = "config=" + characterConfig + " group=" + group
-                    + " requested=" + count + " placed=" + placed + sb
+                    + " requested=" + count + " placed=" + placed + sb + timeline
                     + "\nNOTE: routed through the game's own ADD_CHARACTER verb, so placement,"
                     + "\n      initiative, actions, the 3D model and the UI refresh are all done by"
                     + "\n      the game itself -- the same seam ClassForge's SUMMON effect uses."
@@ -1154,6 +1161,31 @@ namespace Crucible.Plugin
                 if (p != null && p.ToString() == wanted) return e;
             }
             return null;
+        }
+
+
+        /// <summary>
+        /// Invokes <c>CombatPhase._refreshTimeline()</c>, which rebuilds the turn-order banner from
+        /// <c>CombatState.RoundEntities</c>. Returns a note only when it could not be done.
+        /// </summary>
+        private static string RefreshTimeline()
+        {
+            try
+            {
+                object phase = CombatPhaseInstance();
+                if (phase == null) return "\n  (timeline not refreshed: no CombatPhase)";
+
+                MethodInfo refresh = AccessTools.Method(phase.GetType(), "_refreshTimeline");
+                if (refresh == null) return "\n  (timeline not refreshed: _refreshTimeline not found)";
+
+                refresh.Invoke(phase, null);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                return "\n  (timeline refresh threw: " + root.GetType().Name + ")";
+            }
         }
 
         /// <summary>A public static overload picked by parameter count, avoiding AmbiguousMatchException.</summary>

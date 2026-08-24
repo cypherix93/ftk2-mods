@@ -47,7 +47,6 @@ def press_fight(timeout_seconds=40):
                 print("pressed Fight")
                 return True
         drive.wait_ready(timeout_seconds=20)
-        time.sleep(3)
     return False
 
 
@@ -83,7 +82,6 @@ def walk_onto_encounter():
         result = drive.run("crucible_move", [str(x), str(y), "false", "false", "true"])
         if "move invoked" in result:
             print("walked onto (%d,%d) %s" % (x, y, name))
-            time.sleep(8)
             drive.wait_ready(timeout_seconds=40)
             # Only the ACTIVE character walks; the rest stay put and would sit the fight out.
             # Teleport them onto the encounter hex so the whole party is in the combat.
@@ -118,7 +116,6 @@ def make_active(class_id, max_turns=8):
                     print("active character is %s (%s)" % (active_name, class_id))
                     return True
         drive.run("crucible_overworld_end_turn", [])
-        time.sleep(4)
         drive.wait_ready(timeout_seconds=45)
     return False
 
@@ -130,7 +127,7 @@ def wait_for_combat(timeout_seconds=120):
         combat = snap.get("combat") or {}
         if combat.get("active"):
             return combat
-        time.sleep(5)
+        time.sleep(0.5)
     return None
 
 
@@ -204,7 +201,7 @@ def main():
         gathered = drive.run("crucible_party_set_hex", [lead.group(1), lead.group(2)])
         print("gathered party at (%s,%s): %s" % (
             lead.group(1), lead.group(2), gathered.splitlines()[0] if gathered else "(no result)"))
-        time.sleep(3)
+        drive.wait_until(drive.interaction_enabled, timeout_seconds=6, interval=0.3)
 
     # Bring the fight to the party rather than walking into one.
     spawn = drive.run("crucible_debug_spawn", ["enemies", options.enemy])
@@ -212,7 +209,10 @@ def main():
         print("spawn failed:\n%s" % spawn)
         return 3
     print("spawned %s" % options.enemy)
-    time.sleep(6)
+    # The encounter menu appears when it appears; press_fight already polls for it, so sleeping a
+    # flat 6s here just added 6s to every single run.
+    drive.wait_until(lambda: "fight" in drive.run("crucible_ui_dump", ["-", "button"]).lower(),
+                     timeout_seconds=8, interval=0.3)
 
     # The spawn USUALLY opens the encounter menu on the party's own hex, but where it places the
     # enemy varies, and when it lands out of reach no menu appears at all. So: try the menu, and if

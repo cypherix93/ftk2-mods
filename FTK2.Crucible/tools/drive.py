@@ -229,6 +229,28 @@ def interaction_enabled():
     return False
 
 
+def wait_until(predicate, timeout_seconds=60, interval=0.4):
+    """Poll `predicate` until it returns truthy, or the deadline passes; returns its value or None.
+
+    Replaces the fixed `time.sleep(n)` calls this harness used to pace itself with. Those were
+    padding chosen to be safely LONGER than the slowest observed transition, which meant every run
+    paid the worst case every time even when the game was ready immediately. Polling pays the
+    ACTUAL cost instead, and a whole boot-to-combat cycle is dominated by these waits.
+    """
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        value = predicate()
+        if value:
+            return value
+        time.sleep(interval)
+    return None
+
+
+def _settle(timeout_seconds=8):
+    """Wait for interaction to come back after dismissing a gate, rather than a flat sleep."""
+    return wait_until(interaction_enabled, timeout_seconds=timeout_seconds, interval=0.3)
+
+
 def wait_ready(timeout_seconds=180, verbose=False):
     """
     Drives the game to a genuinely interactive overworld, clearing whatever is in the way.
@@ -257,32 +279,32 @@ def wait_ready(timeout_seconds=180, verbose=False):
             run("crucible_ui_focus", ["continue-label"])
             run("crucible_key", ["enter"])
             cleared.append("continue-label")
-            time.sleep(2)
+            _settle()
             continue
 
         if "Choose Reward" in dump:
             run("crucible_ui_click", ["choice-menu-btn"])
             cleared.append("reward")
-            time.sleep(2)
+            _settle()
             continue
 
         if "name='dialogue-container'" in dump:
             run("crucible_ui_click", ["dialogue-container"])
             cleared.append("dialogue")
-            time.sleep(2)
+            _settle()
             continue
 
         if "name='ok-btn'" in dump:
             run("crucible_ui_click", ["ok-btn"])
             cleared.append("ok-btn")
-            time.sleep(2)
+            _settle()
             continue
 
         # Nothing recognised is in the way but interaction is still off -- the game is mid
         # transition. Wait rather than hammering it.
         if verbose:
             print("  waiting: docs=%s" % ", ".join(visible_docs()))
-        time.sleep(3)
+        time.sleep(0.4)
 
     return {
         "ready": False,

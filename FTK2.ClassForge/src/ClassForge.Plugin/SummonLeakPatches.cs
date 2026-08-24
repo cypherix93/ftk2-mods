@@ -70,7 +70,7 @@ namespace ClassForge.Plugin
         /// <para>Deliberately NOT a finalizer: swallowing the exception would leave the tiles undrawn,
         /// which is the same broken screen by a quieter route.</para>
         /// </summary>
-        public static void ClearTileRenderState_Prefix()
+        public static void ClearTileRenderState_Prefix(object __instance)
         {
             try
             {
@@ -93,7 +93,7 @@ namespace ClassForge.Plugin
                     return;
                 }
 
-                List<Entity> orphans = null;
+                List<Entity> modelless = null;
                 foreach (var e in entities)
                 {
                     if (e == null) continue;
@@ -102,12 +102,26 @@ namespace ClassForge.Plugin
                     if (CharacterHelper.IsDead(e)) continue;
                     if (maps.FromCharacter.ContainsKey(e)) continue;
 
-                    (orphans ?? (orphans = new List<Entity>())).Add(e);
+                    (modelless ?? (modelless = new List<Entity>())).Add(e);
                 }
-                if (orphans == null) return;
+                if (modelless == null) return;
 
-                foreach (var e in orphans)
+                int drawn = 0, removed = 0;
+                foreach (var e in modelless)
                 {
+                    // DRAW FIRST. Deleting is the fallback, not the fix.
+                    //
+                    // A summon created during ON_COMBAT_START has no model yet because the combat
+                    // canvas it would be parented to does not exist that early, so the draw at
+                    // creation time fails. By the time this runs the canvas IS up, which makes this
+                    // the natural second chance -- and the Beast Trainer's partner wolf only exists
+                    // at all because of it.
+                    if (SummonVisuals.TryBuildActor(e, __instance)) { drawn++; continue; }
+
+                    // Could not be drawn. Now it has to go, because the original method is about to
+                    // index the actor map for it and throw, and a thrown _clearTileRenderState takes
+                    // the entire combat UI down -- no grid, no action menu, nothing targetable. A
+                    // missing creature is a smaller loss than an unplayable fight.
                     try
                     {
                         if (e.Has<CombatComponent>()) e.Remove<CombatComponent>();
@@ -115,18 +129,25 @@ namespace ClassForge.Plugin
                         entities.Remove(e);
                         combatState.RoundEntities?.Remove(e);
                         RouterHelper.Env?.GameRun?.Entities?.Remove(e);
+                        removed++;
                     }
                     catch (Exception ex)
                     {
                         ClassForgePlugin.Log.LogWarning(
-                            "[ClassForge] a modelless combatant could not be removed from the roster; " +
+                            "[ClassForge] a combatant with no 3D model could not be drawn OR removed; " +
                             "the combat UI may fail to draw: " + ex.Message);
                     }
                 }
 
-                ClassForgePlugin.Log.LogInfo(
-                    "[ClassForge] removed " + orphans.Count + " combatant(s) with no 3D model from the " +
-                    "roster; without this _clearTileRenderState throws and the combat UI does not draw.");
+                if (drawn > 0)
+                    ClassForgePlugin.Log.LogInfo(
+                        "[ClassForge] built a 3D model for " + drawn + " combatant(s) that had none " +
+                        "(summons created before the combat canvas existed).");
+                if (removed > 0)
+                    ClassForgePlugin.Log.LogWarning(
+                        "[ClassForge] removed " + removed + " combatant(s) whose 3D model could NOT be " +
+                        "built. They are gone from the fight -- this is a fallback to keep the combat " +
+                        "UI alive, not intended behaviour. Investigate the character config.");
             }
             catch (Exception ex)
             {
@@ -156,11 +177,15 @@ namespace ClassForge.Plugin
         /// Strips combat residue from every SUMMON-tagged creature, mirroring
         /// <c>CombatPhase._removeEntityFromCombat(e, pAddToWaves: false)</c>.
         ///
-        /// <para>Removing EITHER component is enough to hide the creature from
-        /// <c>_clearTileRenderState</c>'s predicate; both go, plus the roster entries, because a
-        /// half-cleaned entity is a worse failure to diagnose than an uncleaned one. It is also dropped
-        /// from <c>GameRunData.Entities</c> -- that list is persistent and survives the fight, and is
-        /// how a summon reaches a later combat in the first place.</para>
+        /// <para>This is the game's own intent applied where it cannot be skipped:
+        /// <c>_endCombatAsync</c> banishes summons inside an <c>if (!pIsImmediate)</c> block, so every
+        /// immediate exit leaves one standing on a tile and it is still there when the next fight
+        /// starts.</para>
+        ///
+        /// <para>The SUMMON actor property is the right discriminator because it is what
+        /// <c>_endCombatAsync</c> itself selects on, and <c>TryCreateSummon</c> deliberately withholds
+        /// it when <c>CharacterType == COMPANION</c> — so permanent companions and AS_FOLLOWER
+        /// recruits are invisible to this pass and are never banished by it.</para>
         /// </summary>
         private static void Purge(string when)
         {
@@ -204,7 +229,6 @@ namespace ClassForge.Plugin
                     "; combat continues unchanged: " + ex.Message);
             }
         }
-
 
         /// <summary>Adds the live, SUMMON-tagged characters in <paramref name="source"/> to
         /// <paramref name="into"/>, skipping ones already collected from the other roster.</summary>
