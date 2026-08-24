@@ -153,6 +153,8 @@ namespace Crucible.Plugin
             FixtureCommands.Initialize(_log);
             AbilityCommands.Initialize(_log);
             ConfigCommands.Initialize(_log);
+            CombatCommands.Initialize(_log);
+            DebugSpawnCommands.Initialize(_log);
             DebugVerbCommands.Initialize(_log);
             ChaosCommands.Initialize(_harmony, _log);
             MainThreadPump.Initialize(_harmony, _log);
@@ -171,6 +173,7 @@ namespace Crucible.Plugin
                 InputFocusGateCommands.AutoApplyTick();
                 KeyboardCommands.Tick();
                 GamepadCommands.Tick();
+                MouseCommands.Tick();
                 PollHotkeys();
             };
 
@@ -216,6 +219,8 @@ namespace Crucible.Plugin
             FixtureCommands.TryRegister();
             AbilityCommands.TryRegister();
             ConfigCommands.TryRegister();
+            CombatCommands.TryRegister();
+            DebugSpawnCommands.TryRegister();
             DebugVerbCommands.TryRegister();
             ChaosCommands.TryRegister();
             InputFocusGateCommands.TryRegister();

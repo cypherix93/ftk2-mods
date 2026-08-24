@@ -93,26 +93,74 @@ namespace Crucible.Plugin
         // ============================================================== press/release
 
         /// <summary>
-        /// Moves the pointer and presses-then-releases the left button: queue a MouseState with
-        /// position set and the button bit set, InputSystem.Update(), wait, then queue
-        /// position-only (button cleared) and Update() again. The release is always attempted, even
-        /// if the press failed -- a press with no release would jam the virtual pointer, same
-        /// reasoning as GamepadCommands.TapButton.
+        /// Moves the pointer, queues the left-button press, and SCHEDULES the release for a later
+        /// frame.
+        ///
+        /// It does not sleep and release in-line. Command handlers run on the game thread inside the
+        /// RouterMono.Update postfix, so a press/Thread.Sleep/release sequence completes within a
+        /// single frame and no frame ever renders with the button held. UIToolkit still resolved
+        /// such a click because it processes both queued events, which is why menu clicking appeared
+        /// to work -- but the world/hex click path did not, and that is the reported symptom of
+        /// clicking a hex showing a movement path preview that nothing ever executes.
+        ///
+        /// A separate move-only state is queued FIRST so the pointer position is established on its
+        /// own frame before the button goes down. A click whose position and button change in the
+        /// same event can be read as a click at the previous location.
         /// </summary>
         private static void TapAt(object device, float x, float y, out bool sentPress, out string pressError, out bool sentRelease, out string releaseError)
         {
             pressError = null;
             releaseError = null;
 
+            object moveState;
+            string moveError;
+            if (BuildMouseState(x, y, false, out moveState, out moveError))
+            {
+                string ignored;
+                QueueAndUpdate(device, moveState, out ignored);
+            }
+
             object pressedState;
             bool builtPressed = BuildMouseState(x, y, true, out pressedState, out pressError);
             sentPress = builtPressed && QueueAndUpdate(device, pressedState, out pressError);
 
-            Thread.Sleep(33);
-
             object releasedState;
             bool builtReleased = BuildMouseState(x, y, false, out releasedState, out releaseError);
-            sentRelease = builtReleased && QueueAndUpdate(device, releasedState, out releaseError);
+            if (builtReleased)
+            {
+                _pendingRelease = releasedState;
+                _pendingReleaseDevice = device;
+                _pendingReleaseFrames = HoldFrames.Minimum;
+            }
+
+            // "Scheduled", not "sent": reporting a release that has not happened yet would be
+            // exactly the kind of false success this harness exists to avoid.
+            sentRelease = false;
+        }
+
+        private static object _pendingRelease;
+        private static object _pendingReleaseDevice;
+        private static int _pendingReleaseFrames;
+
+        /// <summary>
+        /// Called every tick. Flushes a scheduled button release once enough frames have passed, so
+        /// a click spans real frames instead of collapsing inside one handler call. Never throws.
+        /// </summary>
+        internal static void Tick()
+        {
+            if (_pendingRelease == null) return;
+            if (_pendingReleaseFrames > 0) { _pendingReleaseFrames--; return; }
+
+            object state = _pendingRelease;
+            object device = _pendingReleaseDevice;
+            _pendingRelease = null;
+            _pendingReleaseDevice = null;
+
+            string error;
+            if (!QueueAndUpdate(device, state, out error) && _log != null)
+            {
+                _log.LogWarning("crucible_mouse_click: scheduled release failed: " + error);
+            }
         }
 
         // ============================================================== device resolution
