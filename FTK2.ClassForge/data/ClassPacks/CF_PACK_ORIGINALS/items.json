@@ -5,18 +5,42 @@
     "ConsumableType": "NONE",
     "Equippable": {
       "MaxCharges": -1,
-      "Slots": [ "MAIN_HAND" ],
-      "Stats": { "ATK": 6 }
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 6
+      }
     },
     "Expansion": "BASE",
     "Hidden": false,
     "Interactable": {
       "Abilities": {
-        "BLADE_BASIC_ATTACK": { "ACC": 0, "Ammo": 0, "MaxValue": 1, "MinValue": 0, "Rolls": 2, "Stat": "STR" },
-        "BLADE_BASIC_MAGIC_ATTACK": { "ACC": -5, "Ammo": 0, "MaxValue": 0.8, "MinValue": 0, "Rolls": 2, "Stat": "INT" }
+        "BLADE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "STR"
+        },
+        "BLADE_BASIC_MAGIC_ATTACK": {
+          "ACC": -5,
+          "Ammo": 0,
+          "MaxValue": 0.8,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        }
       },
-      "AbilityBag": [ "BLADE_BASIC_ATTACK", "BLADE_BASIC_MAGIC_ATTACK" ],
-      "AbilityFillBag": [ "BLADE_BASIC_ATTACK", "BLADE_BASIC_MAGIC_ATTACK" ],
+      "AbilityBag": [
+        "BLADE_BASIC_ATTACK",
+        "BLADE_BASIC_MAGIC_ATTACK"
+      ],
+      "AbilityFillBag": [
+        "BLADE_BASIC_ATTACK",
+        "BLADE_BASIC_MAGIC_ATTACK"
+      ],
       "ShuffleAbilityBag": false
     },
     "Material": "METAL",
@@ -24,30 +48,78 @@
     "MinTier": -1,
     "Rarity": "COMMON",
     "Stacks": false,
-    "Tags": [ "ARM_STARTER_WEAPON", "COMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "DROPPABLE" ],
+    "Tags": [
+      "ARM_STARTER_WEAPON",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "DROPPABLE"
+    ],
     "Value": 5
   },
-
   "ARM_ORIG_STARTER_PACIFIST_OLIVE_BRANCH": {
     "Ammo": 0,
     "Class": "STAFF",
     "ConsumableType": "NONE",
     "Equippable": {
       "MaxCharges": -1,
-      "Slots": [ "MAIN_HAND" ],
-      "Stats": { "ATK": 2 }
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 2
+      }
     },
     "Expansion": "BASE",
     "Hidden": false,
     "Interactable": {
       "Abilities": {
-        "ONLY_STUN_ATTACK": { "ACC": 0, "Ammo": 0, "MaxValue": 0, "MinValue": 0, "Rolls": 2, "Stat": "AWR" },
-        "ONLY_ATTACKDOWN_ATTACK": { "ACC": 0, "Ammo": 0, "MaxValue": 0, "MinValue": 0, "Rolls": 2, "Stat": "AWR" },
-        "ONLY_ARMORUP_OTHER_ATTACK": { "ACC": 0, "Ammo": 0, "MaxValue": 0, "MinValue": 0, "Rolls": 2, "Stat": "TAL" },
-        "ONLY_ATTACKUP_OTHER_ATTACK": { "ACC": 0, "Ammo": 0, "MaxValue": 0, "MinValue": 0, "Rolls": 2, "Stat": "TAL" }
+        "ONLY_STUN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "AWR"
+        },
+        "ONLY_ATTACKDOWN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "AWR"
+        },
+        "ONLY_ARMORUP_OTHER_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "TAL"
+        },
+        "ONLY_ATTACKUP_OTHER_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "TAL"
+        }
       },
-      "AbilityBag": [ "ONLY_STUN_ATTACK", "ONLY_ATTACKDOWN_ATTACK", "ONLY_ARMORUP_OTHER_ATTACK", "ONLY_ATTACKUP_OTHER_ATTACK" ],
-      "AbilityFillBag": [ "ONLY_STUN_ATTACK", "ONLY_ATTACKDOWN_ATTACK", "ONLY_ARMORUP_OTHER_ATTACK", "ONLY_ATTACKUP_OTHER_ATTACK" ],
+      "AbilityBag": [
+        "ONLY_STUN_ATTACK",
+        "ONLY_ATTACKDOWN_ATTACK",
+        "ONLY_ARMORUP_OTHER_ATTACK",
+        "ONLY_ATTACKUP_OTHER_ATTACK"
+      ],
+      "AbilityFillBag": [
+        "ONLY_STUN_ATTACK",
+        "ONLY_ATTACKDOWN_ATTACK",
+        "ONLY_ARMORUP_OTHER_ATTACK",
+        "ONLY_ATTACKUP_OTHER_ATTACK"
+      ],
       "ShuffleAbilityBag": false
     },
     "Material": "WOOD",
@@ -55,29 +127,98 @@
     "MinTier": -1,
     "Rarity": "COMMON",
     "Stacks": false,
-    "Tags": [ "ARM_STARTER_WEAPON", "COMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "DROPPABLE" ],
+    "Tags": [
+      "ARM_STARTER_WEAPON",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "DROPPABLE"
+    ],
     "Value": 5
   },
-
   "ARM_ORIG_STARTER_TRAINER_BEAST_WHISTLE": {
     "Ammo": 0,
     "Class": "STAFF",
     "ConsumableType": "NONE",
     "Equippable": {
       "MaxCharges": -1,
-      "Slots": [ "MAIN_HAND" ],
-      "Stats": { "ATK": 5 }
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 5
+      }
     },
     "Expansion": "BASE",
     "Hidden": false,
     "Interactable": {
       "Abilities": {
-        "STAFF_BASIC_ATTACK": { "ACC": 0, "Ammo": 0, "MaxValue": 1, "MinValue": 0, "Rolls": 2, "Stat": "INT" },
-        "ONLY_SCARE_ATTACK": { "ACC": 0, "Ammo": 0, "MaxValue": 0, "MinValue": 0, "Rolls": 2, "Stat": "AWR" },
-        "ONLY_ATTACKUP_OTHER_ATTACK": { "ACC": 0, "Ammo": 0, "MaxValue": 0, "MinValue": 0, "Rolls": 2, "Stat": "TAL" }
+        "STAFF_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "ONLY_SCARE_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "AWR"
+        },
+        "ONLY_ATTACKUP_OTHER_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "TAL"
+        },
+        "CF_TRAINER_SEND_OUT_CHAOS_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "TAL"
+        },
+        "CF_TRAINER_SEND_OUT_EMBER_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "TAL"
+        },
+        "CF_TRAINER_SEND_OUT_RIME_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "TAL"
+        }
       },
-      "AbilityBag": [ "STAFF_BASIC_ATTACK", "ONLY_SCARE_ATTACK", "ONLY_ATTACKUP_OTHER_ATTACK" ],
-      "AbilityFillBag": [ "STAFF_BASIC_ATTACK", "ONLY_SCARE_ATTACK", "ONLY_ATTACKUP_OTHER_ATTACK" ],
+      "AbilityBag": [
+        "STAFF_BASIC_ATTACK",
+        "ONLY_SCARE_ATTACK",
+        "ONLY_ATTACKUP_OTHER_ATTACK",
+        "CF_TRAINER_SEND_OUT_CHAOS_ATTACK",
+        "CF_TRAINER_SEND_OUT_EMBER_ATTACK",
+        "CF_TRAINER_SEND_OUT_RIME_ATTACK"
+      ],
+      "AbilityFillBag": [
+        "STAFF_BASIC_ATTACK",
+        "ONLY_SCARE_ATTACK",
+        "ONLY_ATTACKUP_OTHER_ATTACK",
+        "CF_TRAINER_SEND_OUT_CHAOS_ATTACK",
+        "CF_TRAINER_SEND_OUT_EMBER_ATTACK",
+        "CF_TRAINER_SEND_OUT_RIME_ATTACK"
+      ],
       "ShuffleAbilityBag": false
     },
     "Material": "WOOD",
@@ -85,7 +226,14 @@
     "MinTier": -1,
     "Rarity": "COMMON",
     "Stacks": false,
-    "Tags": [ "ARM_STARTER_WEAPON", "COMMON", "WEAPON", "HAND_EQUIP", "WEAPON_ONE_HAND", "DROPPABLE" ],
+    "Tags": [
+      "ARM_STARTER_WEAPON",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "DROPPABLE"
+    ],
     "Value": 5
   }
 }

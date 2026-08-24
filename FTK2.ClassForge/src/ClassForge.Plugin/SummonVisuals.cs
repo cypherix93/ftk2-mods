@@ -78,6 +78,10 @@ namespace ClassForge.Plugin
                     actor.transform.position = CharacterVisualHelper.GetCharacterRootPosition(entity, centre);
                 }
 
+                // A freshly built actor has NO animation running and keeps its spawn rotation, so
+                // without this it stands frozen and facing the wrong way -- which reads as "the
+                // summon is broken" even though it is a perfectly functional combatant.
+                FaceAndIdle(entity, actor, maps);
                 return true;
             }
             catch (Exception ex)
@@ -85,6 +89,60 @@ namespace ClassForge.Plugin
                 ClassForgePlugin.Log.LogWarning(
                     "[ClassForge] could not build a 3D model for a combatant: " + ex.Message);
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Turns the actor to face the opposing side and starts its combat idle.
+        ///
+        /// <para>Presentation only, so every failure is swallowed: a creature that is standing
+        /// still is a far smaller problem than a summon that threw on its way in.</para>
+        /// </summary>
+        private static void FaceAndIdle(Entity entity, object actor, VenueGameObjectMaps maps)
+        {
+            try
+            {
+                int myGroup = entity.Get<CharacterComponent>().GroupIndex;
+
+                // Face a TILE, not a character: VenueViewHelper.CharacterLookAtTarget's parameter
+                // is pTileTarget and handing it a character does not turn the model.
+                Entity target = null;
+                var entities = RouterHelper.Env?.GameRun?.CombatState?.Entities;
+                if (entities != null)
+                    foreach (var e in entities)
+                    {
+                        if (e == null) continue;
+                        var tile = e.Get<VenueTileComponent>();
+                        if (tile == null || tile.GroupIndex == myGroup || tile.GroupIndex < 0) continue;
+                        target = e; break;
+                    }
+
+                if (target != null)
+                {
+                    foreach (var m in typeof(VenueViewHelper).GetMethods(
+                        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+                    {
+                        if (m.Name != "CharacterLookAtTarget") continue;
+                        if (m.GetParameters().Length != 4) continue;
+                        m.Invoke(null, new object[] { entity, target, true, maps });
+                        break;
+                    }
+                }
+
+                foreach (var m in actor.GetType().GetMethods(
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                {
+                    if (m.Name != "PlayAnimation") continue;
+                    var ps = m.GetParameters();
+                    if (ps.Length != 1) continue;
+                    m.Invoke(actor, new object[] { Enum.Parse(ps[0].ParameterType, "IDLE_COMBAT") });
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] a summon was drawn but could not be faced/animated: " + ex.Message);
             }
         }
 

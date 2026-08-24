@@ -115,6 +115,8 @@ namespace ClassForge.Plugin
 
             Enabled = Config.Bind("General", "Enabled", true,
                 "Master switch; if false, no pack is scanned and vanilla behavior is untouched.");
+            VenueGridPatches.Bind(Config);
+
             VerboseLogging = Config.Bind("General", "VerboseLogging", false,
                 "Pack discovery/merge decisions at Debug level.");
             AdditionalRoots = Config.Bind("Packs", "AdditionalRoots", "",
@@ -369,6 +371,11 @@ namespace ClassForge.Plugin
                 prefix: M(typeof(SummonLeakPatches), nameof(SummonLeakPatches.Deinitialize_Prefix)));
             Patch(harmony, typeof(CombatPhase), "Initialize",
                 prefix: M(typeof(SummonLeakPatches), nameof(SummonLeakPatches.Initialize_Prefix)));
+
+            // Larger combat arena (opt-in). Postfix, because the phase assigns
+            // _combatState.GridType = _diorama.VenueGrid during setup and this overwrites the result.
+            Patch(harmony, typeof(CombatPhase), "Initialize",
+                postfix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.Initialize_Postfix)));
 
             // The line that actually throws. _clearTileRenderState indexes
             // _gameObjectMaps.FromCharacter for each tile's living occupant with no membership check,

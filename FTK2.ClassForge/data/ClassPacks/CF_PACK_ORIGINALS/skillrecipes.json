@@ -161,24 +161,6 @@
     "VerboseLogTag": "FieldMedic",
     "_design": "Always finds the most hurt ally rather than healing at random. ALLY_BY_RANK{HP_PCT, LOWEST} is the engine's own targeting for exactly this. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
   },
-  "SKILL_CF_TRAINER_FIRST_PARTNER": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "First Partner",
-    "Trigger": "ON_COMBAT_START",
-    "Effects": [
-      {
-        "Type": "SUMMON",
-        "Target": "SELF",
-        "CharacterConfig": "WOLF_CHAOSHOUND_01",
-        "Count": 1
-      }
-    ],
-    "Budget": {
-      "Scope": "ONCE_PER_COMBAT"
-    },
-    "VerboseLogTag": "FirstPartner",
-    "_design": "The partner joins at the start of every combat. Target SELF only identifies the summoner: the executor places the beast on a FREE tile of the summoner's OWN group, because TryCreateSummon copies the tile's GroupIndex onto the new character -- summoning onto an enemy tile spawns a hostile creature."
-  },
   "SKILL_CF_TRAINER_TYPE_ADVANTAGE": {
     "SchemaVersion": "1.1",
     "DisplayName": "Type Advantage",
@@ -227,6 +209,99 @@
     "VerboseLogTag": "GottaTrainEm",
     "_design": "Bond grows with every kill. The bonus it feeds lives in SKILL_CF_TRAINER_BOND_STRENGTH, because ROLL_STAT_BONUS is ON_ABILITY_DECLARED-only -- it replaces the PerformAbility prefix's stat delegates, so under ON_KILL it would never be consulted."
   },
+  "SKILL_CF_TRAINER_CHAOS_1": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Chaos Partner (Hatchling)",
+    "Trigger": "ON_COMBAT_START",
+    "Conditions": [
+      {
+        "Type": "COUNTER",
+        "Name": "cf_bond",
+        "Comparator": "GTE",
+        "Value": 0
+      },
+      {
+        "Type": "COUNTER",
+        "Name": "cf_bond",
+        "Comparator": "LT",
+        "Value": 3
+      }
+    ],
+    "Effects": [
+      {
+        "Type": "SUMMON",
+        "Target": "SELF",
+        "SummonType": "SPECIFIC",
+        "CharacterConfig": "WOLF_FOREST_01",
+        "Count": 1
+      }
+    ],
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT"
+    },
+    "VerboseLogTag": "Chaos1",
+    "_design": "Stage selection by BOND BAND, not a new evolution engine. cf_bond is already fed by SKILL_CF_TRAINER_GOTTA_TRAIN_EM on every kill, and a band is just two COUNTER conditions (GTE lower, LT upper), so which stage shows up is pure data. The bands are mutually exclusive, so exactly one stage of each line can fire per combat. Every config id here was confirmed present in the shipped Characters.json -- an id that does not resolve throws at summon time, which is why the ids are not inferred from the naming pattern. The engine ALSO resolves ids by that pattern (GetCharacterConfigAtLevel rewrites the trailing two digits), which is why these lines are named on the _NN convention."
+  },
+  "SKILL_CF_TRAINER_CHAOS_2": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Chaos Partner (Grown)",
+    "Trigger": "ON_COMBAT_START",
+    "Conditions": [
+      {
+        "Type": "COUNTER",
+        "Name": "cf_bond",
+        "Comparator": "GTE",
+        "Value": 3
+      },
+      {
+        "Type": "COUNTER",
+        "Name": "cf_bond",
+        "Comparator": "LT",
+        "Value": 6
+      }
+    ],
+    "Effects": [
+      {
+        "Type": "SUMMON",
+        "Target": "SELF",
+        "SummonType": "SPECIFIC",
+        "CharacterConfig": "WOLF_HELLHOUND_01",
+        "Count": 1
+      }
+    ],
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT"
+    },
+    "VerboseLogTag": "Chaos2",
+    "_design": "Stage 2 of the Chaos line. Bond band 3-6."
+  },
+  "SKILL_CF_TRAINER_CHAOS_3": {
+    "SchemaVersion": "1.1",
+    "DisplayName": "Chaos Partner (Apex)",
+    "Trigger": "ON_COMBAT_START",
+    "Conditions": [
+      {
+        "Type": "COUNTER",
+        "Name": "cf_bond",
+        "Comparator": "GTE",
+        "Value": 6
+      }
+    ],
+    "Effects": [
+      {
+        "Type": "SUMMON",
+        "Target": "SELF",
+        "SummonType": "SPECIFIC",
+        "CharacterConfig": "WOLF_CHAOSHOUND_01",
+        "Count": 1
+      }
+    ],
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT"
+    },
+    "VerboseLogTag": "Chaos3",
+    "_design": "Stage 3 of the Chaos line. Bond band 6-up."
+  },
   "SKILL_CF_TRAINER_BOND_STRENGTH": {
     "SchemaVersion": "1.1",
     "DisplayName": "Bond Strength",
@@ -243,59 +318,5 @@
     ],
     "VerboseLogTag": "BondStrength",
     "_design": "Spends the Bond counter that Gotta Train 'Em accumulates. ON_ABILITY_DECLARED is the only legal scope for ROLL_STAT_BONUS. Mirrors the shipped STAT_CF_TRAIT_ARCANE_FOCUS_MAG counter-scaling shape, so it is a proven pattern rather than a new one."
-  },
-  "SKILL_CF_TRAINER_SECOND_PARTNER": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Ember Partner",
-    "Trigger": "ON_KILL",
-    "Conditions": [
-      {
-        "Type": "COUNTER",
-        "Name": "cf_bond",
-        "Comparator": "GTE",
-        "Value": 3
-      }
-    ],
-    "Effects": [
-      {
-        "Type": "SUMMON",
-        "Target": "SELF",
-        "SummonType": "SPECIFIC",
-        "CharacterConfig": "WOLF_HELLHOUND_02",
-        "Count": 1
-      }
-    ],
-    "Budget": {
-      "Scope": "ONCE_PER_COMBAT"
-    },
-    "VerboseLogTag": "EmberPartner",
-    "_design": "The FIRE partner, earned at Bond 3. Balanced against each other by an inverse HP/ATK trade rather than by raw power: Chaoshound 41hp/14atk, Hellhound 36hp/18atk, Snake 39hp/11atk. All are shipped level-1/2 creatures, so they scale with the game's own curve instead of a bespoke one. Each is ONCE_PER_COMBAT and the later two cost Bond, so a full team of three has to be earned by killing rather than handed over at the opening bell."
-  },
-  "SKILL_CF_TRAINER_THIRD_PARTNER": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Venom Partner",
-    "Trigger": "ON_KILL",
-    "Conditions": [
-      {
-        "Type": "COUNTER",
-        "Name": "cf_bond",
-        "Comparator": "GTE",
-        "Value": 6
-      }
-    ],
-    "Effects": [
-      {
-        "Type": "SUMMON",
-        "Target": "SELF",
-        "SummonType": "SPECIFIC",
-        "CharacterConfig": "COMPANION_SNAKE_BASIC_01",
-        "Count": 1
-      }
-    ],
-    "Budget": {
-      "Scope": "ONCE_PER_COMBAT"
-    },
-    "VerboseLogTag": "VenomPartner",
-    "_design": "The VENOM partner, earned at Bond 6 -- the frailest attacker but the highest speed tier. Balanced against each other by an inverse HP/ATK trade rather than by raw power: Chaoshound 41hp/14atk, Hellhound 36hp/18atk, Snake 39hp/11atk. All are shipped level-1/2 creatures, so they scale with the game's own curve instead of a bespoke one. Each is ONCE_PER_COMBAT and the later two cost Bond, so a full team of three has to be earned by killing rather than handed over at the opening bell."
   }
 }

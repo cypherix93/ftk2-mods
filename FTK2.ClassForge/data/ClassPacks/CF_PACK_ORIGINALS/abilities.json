@@ -1,0 +1,71 @@
+{
+  "CF_TRAINER_SEND_OUT_CHAOS_ATTACK": {
+    "Inherits": "DEFAULT_ABILITY",
+    "Target": "ALLY_ALL",
+    "TileOccupancy": "EMPTY",
+    "DamageAgainstRow": "NONE",
+    "IsMajorAction": true,
+    "RequiresSkillRoll": true,
+    "RequiresFocus": 0,
+    "IsFocusable": true,
+    "IsRanged": true,
+    "Kamikaze": false,
+    "Ammo": 0,
+    "Chargeable": false,
+    "Actions": [
+      {
+        "Item1": "ADD_CHARACTER",
+        "Item2": {
+          "Type": "SPECIFIC",
+          "Value": "WOLF_FOREST_01"
+        }
+      }
+    ]
+  },
+  "CF_TRAINER_SEND_OUT_EMBER_ATTACK": {
+    "Inherits": "DEFAULT_ABILITY",
+    "Target": "ALLY_ALL",
+    "TileOccupancy": "EMPTY",
+    "DamageAgainstRow": "NONE",
+    "IsMajorAction": true,
+    "RequiresSkillRoll": true,
+    "RequiresFocus": 0,
+    "IsFocusable": true,
+    "IsRanged": true,
+    "Kamikaze": false,
+    "Ammo": 0,
+    "Chargeable": false,
+    "Actions": [
+      {
+        "Item1": "ADD_CHARACTER",
+        "Item2": {
+          "Type": "SPECIFIC",
+          "Value": "ELEMENTAL_FIRE_00"
+        }
+      }
+    ]
+  },
+  "CF_TRAINER_SEND_OUT_RIME_ATTACK": {
+    "Inherits": "DEFAULT_ABILITY",
+    "Target": "ALLY_ALL",
+    "TileOccupancy": "EMPTY",
+    "DamageAgainstRow": "NONE",
+    "IsMajorAction": true,
+    "RequiresSkillRoll": true,
+    "RequiresFocus": 0,
+    "IsFocusable": true,
+    "IsRanged": true,
+    "Kamikaze": false,
+    "Ammo": 0,
+    "Chargeable": false,
+    "Actions": [
+      {
+        "Item1": "ADD_CHARACTER",
+        "Item2": {
+          "Type": "SPECIFIC",
+          "Value": "GOLEM_ROCK_00"
+        }
+      }
+    ]
+  }
+}
