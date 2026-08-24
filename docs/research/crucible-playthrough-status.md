@@ -276,3 +276,59 @@ already-paired device and FTK2 is fully keyboard-navigable, so **keyboard is the
 runs fullscreen and reclaims foreground, so an unfocused test could not be forced from here. With
 `backgroundBehavior=IgnoreFocus` now applied at boot (Bug 1's fix) and the `LOST_FOCUS` gate held from
 `Initialize`, the mechanism is in place; it needs one observation while the user is on another window.
+
+## 2026-08-23 (later still) — Fixture factory works; content sweep clean; combat still gated
+
+**Fixture generation is PROVEN end to end.** From the base fixture: swapped all four party
+members to classes that had never been created by hand (Arcanist, Oracle, Chronomancer,
+Runemage), saved under a fresh run id, reloaded, and read all four class ids back.
+Character creation is no longer needed for any party combination.
+
+- `crucible_party_list` / `crucible_party_set_class` / `crucible_fixture_save` / `crucible_fixture_list`
+- The generated save is real: `ef0bac05-…ftk2`, 5.4 MB, 22 files on disk (21 before).
+- `Env.GameRuns` is an in-memory cache and does NOT reflect a new file — check the folder.
+- **Load requires being on ADVENTURE_SELECTION first**; `_loadGameRun` needs that director to
+  exist. From MAIN_MENU it silently does nothing. `crucible_load_run` still uses the known-bad
+  `AdventureDirector._loadSave` path and stalls in `WaitingForActivation` — prefer
+  `crucible_invoke AdventureSelectionDirector _loadGameRun "<runId> -"`.
+- A class swap changes only `CharacterComponent.ConfigName`. Max health is COMPUTED from the
+  class config while `CurrentHealth` is stored, so a swap produced `34 / 21` in the HUD. The
+  swap now heals to max. Display name, equipment and things still do NOT follow the swap —
+  abilities come from the equipped weapon, so a class test must equip that class's weapon too
+  (`ARM_EOR_STARTERS` holds 31 starter weapons, one per class).
+
+**Custom skills are invisible to the game's own skill API — by design, not a bug.**
+`CharacterHelper.GetPassiveSkills` maps to the `eSkills` enum, which cannot gain members at
+runtime, so an authored `SKILL_CF_*` id will never appear there. ClassForge reads the character
+config's `Passives` as raw strings instead. Verified: `CF_EOR_ARCANIST` in the LIVE merged config
+carries all three passives including `SKILL_CF_ARCANIST_OVERFLOW`, while `GetPassiveSkills`
+returns only the two vanilla ones. **Assert custom skills at the config level for presence and by
+their combat effect for behaviour** — asserting via `GetPassiveSkills` yields a confident false
+negative.
+
+**Live content sweep added** (`FTK2.Crucible/tools/content_sweep.py`), asserting authored ids
+against the running game rather than against JSON. Baseline: **31 deployed classes and 31 status
+ids all resolve.** The four `CF_PACK_BALDURS` classes are absent by design — `tools/deploy.ps1`
+has excluded that pack since 2026-08-05 behind `-IncludeBaldurs` because its 5 skill recipes have
+no localization entries. Negative control confirmed: `STATUS_CURSE_00` resolves, bare `CURSE`
+does not ("anything applying it silently does nothing") — the exact check that would have caught
+the shipped bug.
+
+**Combat is still not reachable, and the blockers are now precisely known:**
+- The post-load `Click to Continue` gate (`continue-label` in `LoadingUIDocument`) must be cleared
+  or NOTHING on the overworld responds. This is what made 25 consecutive `crucible_time_advance`
+  calls report `changed=False`. Keyboard Enter clears it.
+- Even cleared, `AdventureDirector._doEndTurn()` does not advance time (`timeOfDayIndex` stays 2,
+  `roundCount` 0), and pressing `end-turn-btn` changes the screen without advancing either — the
+  turn is presumably gated on each character acting first.
+- Overworld movement is NOT keyboard-driven: arrow keys leave action points at 5 and change
+  nothing. It remains mouse/hex based, so the movement-confirm gesture is still unsolved.
+- `MultiplayerDemoQuickCombat` is registered on this route and dispatches without error but has
+  no observable effect (route unchanged, still offline).
+- `SpawnSpecificEnemy` is NOT in the registry on the ADVENTURE route (25 shipped commands there).
+
+Remaining untried levers for combat entry, in order of promise: `EncounterPhase._debugForceCombat`
+(a shipped Boolean latch, but requires already being in an encounter phase), writing a
+`CombatState` directly into a fixture so the save loads already in a fight, and
+`RouterMono.Route(COMBAT, …)` with a `CombatEncounterArgs` payload (the docs warn that traversal
+is a graph walk through legal transitions, not teleportation).
