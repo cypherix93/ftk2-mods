@@ -37,6 +37,7 @@ namespace Crucible.Plugin
         private static ManualLogSource _log;
         private static bool _classRegistered;
         private static bool _statusRegistered;
+        private static bool _thingRegistered;
 
         internal static void Initialize(ManualLogSource log)
         {
@@ -54,6 +55,11 @@ namespace Crucible.Plugin
                 _statusRegistered = GameBridge.RegisterCommand("crucible_status_config",
                     typeof(ConfigCommands).GetMethod("CrucibleStatusConfig", BindingFlags.Public | BindingFlags.Static),
                     new List<string> { "statusId" });
+
+            if (!_thingRegistered)
+                _thingRegistered = GameBridge.RegisterCommand("crucible_thing_config",
+                    typeof(ConfigCommands).GetMethod("CrucibleThingConfig", BindingFlags.Public | BindingFlags.Static),
+                    new List<string> { "thingId" });
         }
 
         /// <summary>
@@ -145,6 +151,53 @@ namespace Crucible.Plugin
             catch (Exception ex)
             {
                 LastResult = "error: crucible_status_config threw: " + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// crucible_thing_config &lt;thingId&gt; — proves an item id resolves in the live
+        /// Configs.Things map.
+        ///
+        /// An absent id is not a cosmetic problem: EquipmentHelper.Equip throws a
+        /// NullReferenceException on one, which reads as a broken command rather than as missing
+        /// content. Measured 2026-08-23: every ARM_EOR_STARTER_* weapon was absent because the
+        /// Armory plugin had never been deployed to the game at all.
+        /// </summary>
+        public static void CrucibleThingConfig(string thingId)
+        {
+            LastResult = null;
+            try
+            {
+                if (string.IsNullOrEmpty(thingId))
+                {
+                    LastResult = "error: usage: crucible_thing_config <thingId>";
+                    return;
+                }
+                thingId = thingId.Trim();
+
+                object map;
+                string error;
+                if (!TryGetConfigMap("Things", out map, out error)) { LastResult = "error: " + error; return; }
+
+                object config = LookUp(map, thingId);
+                if (config == null)
+                {
+                    LastResult = "thingId=" + thingId + " PRESENT=False"
+                        + "\nNOT a key in the live Configs.Things map. Equipping or granting it throws."
+                        + " Total entries=" + CountOf(map);
+                    return;
+                }
+
+                StringBuilder sb = new StringBuilder();
+                sb.Append("thingId=").Append(thingId).Append(" PRESENT=True");
+                sb.Append("\ntype=").Append(Str(PartyAccess.ReadMember(config, "Type")));
+                sb.Append(" rarity=").Append(Str(PartyAccess.ReadMember(config, "Rarity")));
+                sb.Append("\nstats: ").Append(RenderKeyValues(PartyAccess.ReadMember(config, "Stats")));
+                LastResult = sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_thing_config threw: " + ex.Message;
             }
         }
 

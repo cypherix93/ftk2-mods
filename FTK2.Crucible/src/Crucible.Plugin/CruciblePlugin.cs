@@ -155,6 +155,9 @@ namespace Crucible.Plugin
             ConfigCommands.Initialize(_log);
             CombatCommands.Initialize(_log);
             DebugSpawnCommands.Initialize(_log);
+            CharacterCommands.Initialize(_log);
+            CombatDriveCommands.Initialize(_log);
+            OverworldCommands.Initialize(_log);
             DebugVerbCommands.Initialize(_log);
             ChaosCommands.Initialize(_harmony, _log);
             MainThreadPump.Initialize(_harmony, _log);
@@ -221,6 +224,9 @@ namespace Crucible.Plugin
             ConfigCommands.TryRegister();
             CombatCommands.TryRegister();
             DebugSpawnCommands.TryRegister();
+            CharacterCommands.TryRegister();
+            CombatDriveCommands.TryRegister();
+            OverworldCommands.TryRegister();
             DebugVerbCommands.TryRegister();
             ChaosCommands.TryRegister();
             InputFocusGateCommands.TryRegister();

@@ -122,10 +122,30 @@ namespace TypeProbe
             return e;
         }
 
-        /// <summary>A member whose type failed to load must not take the whole dump down.</summary>
+        /// <summary>
+        /// A member whose type failed to load must not take the whole dump down.
+        ///
+        /// Generic arguments are spelled out: a bare "Dictionary`2" hides whether a field is
+        /// keyed by string or by an enum, which is exactly what a caller must know before
+        /// writing to it. Printing List`1 with no element type has already forced live probing
+        /// of things the assembly could have answered statically.
+        /// </summary>
         private static string SafeTypeName(Type t)
         {
-            try { return t == null ? "?" : t.Name; }
+            try
+            {
+                if (t == null) return "?";
+                if (!t.IsGenericType) return t.Name;
+
+                string name = t.Name;
+                int tick = name.IndexOf('`');
+                if (tick > 0) name = name.Substring(0, tick);
+
+                Type[] args = t.GetGenericArguments();
+                string[] parts = new string[args.Length];
+                for (int i = 0; i < args.Length; i++) parts[i] = SafeTypeName(args[i]);
+                return name + "<" + string.Join(", ", parts) + ">";
+            }
             catch (Exception) { return "?"; }
         }
     }
