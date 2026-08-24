@@ -33,19 +33,41 @@ PORT = 8787
 BASE = "http://127.0.0.1:%d" % PORT
 
 
-def _post(path, payload):
-    request = urllib.request.Request(
-        BASE + path,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(request, timeout=60) as response:
-        return json.loads(response.read().decode("utf-8"))
+def _post(path, payload, attempts=3):
+    """
+    Retries transient failures. The pump answers 503 while it is busy and 400 during the
+    window where a command is not yet registered, and both are normal during boot -- a single
+    attempt turns an ordinary race into a spurious hard failure mid-sequence.
+    """
+    last = None
+    for attempt in range(attempts):
+        request = urllib.request.Request(
+            BASE + path,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            last = error
+            time.sleep(2 + 2 * attempt)
+        except (urllib.error.URLError, OSError) as error:
+            last = error
+            time.sleep(2 + 2 * attempt)
+    raise RuntimeError("POST %s failed after %d attempts: %s" % (path, attempts, last))
 
 
-def _get(path):
-    with urllib.request.urlopen(BASE + path, timeout=30) as response:
-        return json.loads(response.read().decode("utf-8"))
+def _get(path, attempts=3):
+    last = None
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(BASE + path, timeout=30) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except (urllib.error.HTTPError, urllib.error.URLError, OSError) as error:
+            last = error
+            time.sleep(2 + 2 * attempt)
+    raise RuntimeError("GET %s failed after %d attempts: %s" % (path, attempts, last))
 
 
 def run(command, args=None):
@@ -93,8 +115,18 @@ def describe():
 
 
 def visible_docs():
+    """
+    Names of the UIDocuments with something visible on screen. Screen identity must come from
+    the UI tree: route has reported MAIN_MENU while a multiplayer browser and a modal were
+    actually on screen.
+    """
     dump = run("crucible_ui_dump", ["-", "button"])
-    return sorted({part.split("'")[1] for part in dump.split("doc='")[1:] if "'" in part})
+    found = set()
+    for part in dump.split("doc='")[1:]:
+        name = part.split("'")[0]
+        if name and name.endswith("UIDocument"):
+            found.add(name)
+    return sorted(found)
 
 
 def clear_gate(max_presses=6):
@@ -112,32 +144,62 @@ def clear_gate(max_presses=6):
     return "continue-label" not in run("crucible_ui_dump", ["continue-label", "button"])
 
 
-def load_run(run_id):
-    """MAIN_MENU -> campaign -> load -> clear gate. Returns a short transcript."""
+def load_run(run_id, attempts=3):
+    """
+    MAIN_MENU -> campaign -> load -> clear gate, verified at each step.
+
+    Each step is CONFIRMED rather than assumed. Boot is a race (the game reaches MAIN_MENU and
+    can route itself to MULTIPLAYER_LOBBY about two seconds later), the campaign click can land
+    before the menu is interactive, and _loadGameRun silently does nothing when the adventure
+    selection screen is not up. An unverified sequence fails several steps later, somewhere
+    that looks unrelated.
+    """
     steps = []
-    snap = snapshot()
-    steps.append("start: route=%s" % snap.get("route"))
 
-    if snap.get("route") == "MAIN_MENU":
-        for _ in range(8):
-            if "campaign-btn" in run("crucible_ui_dump", ["campaign-btn", "button"]):
+    for attempt in range(attempts):
+        snap = snapshot()
+        steps.append("attempt %d: route=%s" % (attempt + 1, snap.get("route")))
+
+        # Escape whatever boot left on screen, including the multiplayer lobby it routes itself to.
+        for _ in range(6):
+            docs = visible_docs()
+            if "AdventureSelectionUIDocument" in docs:
                 break
-            time.sleep(3)
-        run("crucible_ui_click", ["campaign-btn"])
-        steps.append("opened campaign screen")
-        time.sleep(5)
+            if "MainMenuUIDocument" in docs:
+                run("crucible_ui_click", ["campaign-btn"])
+                time.sleep(5)
+                continue
+            if "MultiplayerUIDocument" in docs or "OnlineUIDocument" in docs:
+                run("crucible_ui_click", ["online-quit-btn"])
+                run("crucible_ui_click", ["back-btn"])
+                time.sleep(4)
+                continue
+            time.sleep(4)
 
-    run("crucible_invoke", ["AdventureSelectionDirector", "_loadGameRun", "%s -" % run_id])
-    steps.append("requested load %s" % run_id)
+        docs = visible_docs()
+        if "AdventureSelectionUIDocument" not in docs:
+            steps.append("  did not reach adventure selection (docs=%s)" % ", ".join(docs))
+            continue
+        steps.append("  adventure selection is up")
 
-    for _ in range(15):
-        time.sleep(4)
-        if (snapshot().get("run") or {}).get("present"):
-            break
-    steps.append("after load: %s" % describe())
+        run("crucible_invoke", ["AdventureSelectionDirector", "_loadGameRun", "%s -" % run_id])
 
-    steps.append("gate cleared: %s" % clear_gate())
-    steps.append("final: %s" % describe())
+        loaded = False
+        for _ in range(15):
+            time.sleep(4)
+            if (snapshot().get("run") or {}).get("present"):
+                loaded = True
+                break
+        if not loaded:
+            steps.append("  load did not take")
+            continue
+
+        steps.append("  loaded: %s" % describe())
+        steps.append("  gate cleared: %s" % clear_gate())
+        steps.append("  final: %s" % describe())
+        return "\n".join(steps)
+
+    steps.append("FAILED to load %s after %d attempts" % (run_id, attempts))
     return "\n".join(steps)
 
 

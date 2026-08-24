@@ -125,6 +125,102 @@ const TOOLS = [
     description: 'Desync oracle: snapshot every instance, compare digests, and report the first diverging field. ' +
       'Uses the v2 schema, so hp, status effects and stats are inside the compared digest.',
     inputSchema: { type: 'object', properties: {} } },
+  { name: 'ftk2_clear_gates',
+    description: 'Clear every blocking "Click to Continue" gate until the overworld is actually ' +
+      'interactive. The post-load gate and the intro story pages BOTH use the element name ' +
+      'continue-label in LoadingUIDocument, and the intro has SEVERAL pages, so one press is not ' +
+      'enough. While any gate is up, nothing on the overworld responds: end-turn reports no change, ' +
+      'hex clicks do nothing, and the game looks frozen. Call this after any load before driving.',
+    inputSchema: { type: 'object', properties: {
+      maxPresses: { type: 'number', description: 'Safety cap on presses (default 20)' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_boot_to_run',
+    description: 'THE way to get from wherever the game is to a loaded, interactive overworld. ' +
+      'Opens the campaign screen (AdventureSelectionDirector._loadGameRun silently does nothing ' +
+      'unless that screen exists), escapes the multiplayer lobby the game routes itself to on boot, ' +
+      'loads the run by id, then clears every gate and confirms the overworld is interactive. ' +
+      'Verifies each step instead of assuming it, because an unverified step fails later somewhere ' +
+      'that looks unrelated. NEVER pass a run id you did not create: the save folder also holds the ' +
+      'owner live co-op campaign.',
+    inputSchema: { type: 'object', properties: {
+      runId: { type: 'string', description: 'The run id (GUID) to load' },
+      ...INSTANCE_ARG },
+      required: ['runId'] } },
+  { name: 'ftk2_party',
+    description: 'List the loaded party: slot, class id, display name, current health, level, guid. ' +
+      'Slot order is the enumeration order of GameRunData.Entities and is NOT a persistent id, so it ' +
+      'must not be cached across a reload.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_set_class',
+    description: 'Swap one party member class by rewriting CharacterComponent.ConfigName, then heal ' +
+      'to the new maximum. This is how a test party is built: mutating a loaded run instead of ' +
+      'driving roughly twenty UI steps through character creation. Only the class id changes - ' +
+      'display name, equipment and carried things keep their previous values, and abilities come ' +
+      'from the EQUIPPED WEAPON, so a class test must equip that class weapon too.',
+    inputSchema: { type: 'object', properties: {
+      slot: { type: 'number', description: 'Party slot index (see ftk2_party)' },
+      classId: { type: 'string', description: 'Class config id, e.g. CF_EOR_ARCANIST' },
+      ...INSTANCE_ARG },
+      required: ['slot', 'classId'] } },
+  { name: 'ftk2_fixture_save',
+    description: 'Persist the live run as a NEW save under a freshly generated run id, and return ' +
+      'that id. Never overwrites: this folder also holds the owner live co-op campaign. The write is ' +
+      'asynchronous and not awaited, and Env.GameRuns is an in-memory cache that will not show the ' +
+      'new file - confirm on disk or by loading the returned id.',
+    inputSchema: { type: 'object', properties: {
+      label: { type: 'string', description: 'Human label recorded in the result' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_set_hex',
+    description: 'Teleport the whole party to a hex by writing AdventureComponent.HexPosition. ' +
+      'CAUTION: this writes state directly and does NOT run the game arrival logic - no hex reveal, ' +
+      'no encounter trigger, no movement cost. Teleporting into unexplored map leaves the party ' +
+      'surrounded by fog-of-war clouds with no clickable hexes, which looks exactly like broken input.',
+    inputSchema: { type: 'object', properties: {
+      x: { type: 'number' }, y: { type: 'number' }, ...INSTANCE_ARG },
+      required: ['x', 'y'] } },
+  { name: 'ftk2_reveal_map',
+    description: 'Remove fog of war by setting every hex visibility state (default Visible). Fog is ' +
+      'not cosmetic here: an unexplored hex has no clickable target, so a party teleported into ' +
+      'unrevealed map is surrounded by cloud and every movement click silently does nothing, which ' +
+      'looks exactly like broken input.',
+    inputSchema: { type: 'object', properties: {
+      state: { type: 'string', enum: ['Visible', 'Revealed', 'Hidden'] },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_map_encounters',
+    description: 'Scan the hex grid and report every encounter entity with its position, plus the ' +
+      'party current hex. Use it to find somewhere worth going.',
+    inputSchema: { type: 'object', properties: {
+      filter: { type: 'string', description: 'Substring filter on the encounter id' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_abilities',
+    description: 'Abilities, passive skills and equipped weapon for one party slot. Reads both ' +
+      'GetPassiveSkills overloads: the Entity one reports what the character HAS and the String one ' +
+      'what its class config DECLARES, so a divergence identifies an entity not rebuilt for its ' +
+      'class. NOTE custom SKILL_CF_* ids never appear here - that API maps to the eSkills enum, which ' +
+      'cannot gain members at runtime. Assert custom skills with ftk2_class_config instead.',
+    inputSchema: { type: 'object', properties: {
+      slot: { type: 'number' }, ...INSTANCE_ARG }, required: ['slot'] } },
+  { name: 'ftk2_class_config',
+    description: 'Read the LIVE merged character config for a class id: passives, things, stats. ' +
+      'This is the authoritative check that authored content actually reached the game, as opposed ' +
+      'to being correct on disk. PRESENT=False means the pack did not merge.',
+    inputSchema: { type: 'object', properties: {
+      classId: { type: 'string' }, ...INSTANCE_ARG }, required: ['classId'] } },
+  { name: 'ftk2_status_config',
+    description: 'Read the LIVE Configs.StatusEffects entry for a status id. This is the check that ' +
+      'would have caught two shipped recipes applying "CURSE", an eStatusEffectTypes member rather ' +
+      'than a StatusEffects key: anything applying an id that is not present silently does nothing.',
+    inputSchema: { type: 'object', properties: {
+      statusId: { type: 'string' }, ...INSTANCE_ARG }, required: ['statusId'] } },
+  { name: 'ftk2_spawn',
+    description: 'Drive the game own F6 debug spawn menus (2332 enemies, 170 encounters). Pass ' +
+      'selector "-" to LIST without spawning anything. Spawning places an entity on the map; it does ' +
+      'not start a fight by itself.',
+    inputSchema: { type: 'object', properties: {
+      kind: { type: 'string', enum: ['enemies', 'encounters'] },
+      selector: { type: 'string', description: 'Id or name substring, or "-" to list' },
+      ...INSTANCE_ARG },
+      required: ['kind'] } },
   { name: 'ftk2_screen',
     description: 'The semantic "where am I" tool. Returns route (from /state), the set of active on-screen ' +
       'UI document names, on-screen Buttons/Labels, and which element is FOCUSED. Route alone is not ' +
@@ -533,6 +629,113 @@ function statePath(schema) {
   return schema === 'v1' ? '/state' : '/state?schema=v2';
 }
 
+/**
+ * Presses through every blocking gate until none is showing.
+ *
+ * Both the post-load gate and each intro story page render as `continue-label` inside
+ * LoadingUIDocument, so "is a gate showing" cannot distinguish them and the only correct
+ * behaviour is to keep pressing until none remains. Focus is set explicitly before each
+ * press: a key press acts only on a focused target and focus does not persist between calls.
+ */
+async function clearGates(inst, maxPresses) {
+  const cap = Math.max(1, Math.min(maxPresses || 20, 50));
+  const pressed = [];
+
+  for (let i = 0; i < cap; i++) {
+    const dump = await execText(inst, 'crucible_ui_dump', ['continue-label', 'button']);
+    if (!dump.includes("name='continue-label'")) {
+      return { ok: true, presses: pressed.length, pressed, docs: await activeDocs(inst) };
+    }
+    await execText(inst, 'crucible_ui_focus', ['continue-label']);
+    await execText(inst, 'crucible_key', ['enter']);
+    pressed.push(i + 1);
+    await sleep(2000);
+  }
+
+  const stillThere = (await execText(inst, 'crucible_ui_dump', ['continue-label', 'button']))
+    .includes("name='continue-label'");
+  return {
+    ok: !stillThere,
+    presses: pressed.length,
+    docs: await activeDocs(inst),
+    warning: stillThere ? `a gate was still showing after ${cap} presses` : undefined,
+  };
+}
+
+/** Names of UIDocuments with something visible. Screen identity must come from the UI tree, not route. */
+async function activeDocs(inst) {
+  const dump = await execText(inst, 'crucible_ui_dump', ['-', 'button']);
+  const found = new Set();
+  for (const part of dump.split("doc='").slice(1)) {
+    const name = part.split("'")[0];
+    if (name && name.endsWith('UIDocument')) found.add(name);
+  }
+  return [...found].sort();
+}
+
+async function execText(inst, command, args) {
+  const res = await rpc(inst, 'POST', '/exec', { command, args: args || [] });
+  return res.result || '';
+}
+
+/**
+ * Cold state -> loaded, interactive overworld. Every step is confirmed rather than assumed:
+ * boot is a race (the game reaches MAIN_MENU then routes itself to MULTIPLAYER_LOBBY about two
+ * seconds later), a campaign click can land before the menu is interactive, and _loadGameRun
+ * silently does nothing when the adventure selection screen is not up.
+ */
+async function bootToRun(inst, runId) {
+  if (!runId) return { ok: false, error: 'runId is required' };
+  const steps = [];
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    steps.push(`attempt ${attempt}`);
+
+    let reached = false;
+    for (let i = 0; i < 8; i++) {
+      const docs = await activeDocs(inst);
+      if (docs.includes('AdventureSelectionUIDocument')) { reached = true; break; }
+      if (docs.includes('MainMenuUIDocument')) {
+        await execText(inst, 'crucible_ui_click', ['campaign-btn']);
+      } else if (docs.some((d) => d.startsWith('Multiplayer') || d.startsWith('Online'))) {
+        // The boot auto-rejoin leaves an error modal plus the lobby behind it.
+        await execText(inst, 'crucible_ui_click', ['online-quit-btn']);
+        await execText(inst, 'crucible_ui_click', ['back-btn']);
+      }
+      await sleep(4000);
+    }
+    if (!reached) { steps.push('  never reached adventure selection'); continue; }
+    steps.push('  adventure selection is up');
+
+    await execText(inst, 'crucible_invoke',
+      ['AdventureSelectionDirector', '_loadGameRun', `${runId} -`]);
+
+    let loaded = false;
+    for (let i = 0; i < 15; i++) {
+      await sleep(4000);
+      const snap = (await rpc(inst, 'GET', statePath('v2'))).snapshot || {};
+      if (snap.run && snap.run.present) { loaded = true; break; }
+    }
+    if (!loaded) { steps.push('  load did not take'); continue; }
+    steps.push('  run loaded');
+
+    const gates = await clearGates(inst, 20);
+    steps.push(`  gates cleared with ${gates.presses} press(es); docs=${(gates.docs || []).join(', ')}`);
+
+    const snap = (await rpc(inst, 'GET', statePath('v2'))).snapshot || {};
+    return {
+      ok: true,
+      runId,
+      steps,
+      route: snap.route,
+      interactive: (gates.docs || []).includes('AdventureUIDocument'),
+      docs: gates.docs,
+    };
+  }
+
+  return { ok: false, runId, steps, error: 'could not reach a loaded overworld' };
+}
+
 async function compareState() {
   const results = [];
   for (const inst of INSTANCES) {
@@ -600,6 +803,19 @@ async function callTool(name, args) {
     case 'ftk2_end_phase':
       return textResult(await rpc(inst, 'POST', '/exec', { command: 'EndPhase', args: [] }));
     case 'ftk2_state':         return textResult(await rpc(inst, 'GET', statePath(args.schema)));
+    case 'ftk2_clear_gates':   return textResult(await clearGates(inst, args.maxPresses));
+    case 'ftk2_party':         return textResult(await execText(inst, 'crucible_party_list', []));
+    case 'ftk2_set_class':     return textResult(await execText(inst, 'crucible_party_set_class', [String(args.slot), args.classId]));
+    case 'ftk2_fixture_save':  return textResult(await execText(inst, 'crucible_fixture_save', [args.label || 'fixture']));
+    case 'ftk2_set_hex':       return textResult(await execText(inst, 'crucible_party_set_hex', [String(args.x), String(args.y)]));
+    case 'ftk2_reveal_map':    return textResult(await execText(inst, 'crucible_reveal_map', [args.state || 'Visible']));
+    case 'ftk2_map_encounters':return textResult(await execText(inst, 'crucible_map_encounters', [args.filter || '-']));
+    case 'ftk2_abilities':     return textResult(await execText(inst, 'crucible_party_abilities', [String(args.slot)]));
+    case 'ftk2_class_config':  return textResult(await execText(inst, 'crucible_class_config', [args.classId]));
+    case 'ftk2_status_config': return textResult(await execText(inst, 'crucible_status_config', [args.statusId]));
+    case 'ftk2_spawn':         return textResult(await execText(inst, 'crucible_debug_spawn', [args.kind, args.selector || '-']));
+
+    case 'ftk2_boot_to_run':   return textResult(await bootToRun(inst, args.runId));
     case 'ftk2_screen':        return textResult(await screenTool(inst));
     case 'ftk2_saves':         return textResult(await savesTool(inst));
     case 'ftk2_new_game':      return textResult(await newGameTool(inst, args.category, args.adventure));
