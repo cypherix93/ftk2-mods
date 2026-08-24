@@ -431,6 +431,22 @@ namespace ClassForge.Recipes.Parsing
                     // PercentFromSelection table (§6.1 "PercentFromSelection" sugar, M-EM3) is an
                     // equally-valid alternative source of Percent, authored only by the generator — it
                     // must not trip this "no Percent at all" warning.
+                    // DAMAGE_DEALT_PCT: fail closed on both ways it can silently do nothing —
+                    // no damage in scope, or no share authored.
+                    if (string.Equals(e.FlatValueFrom, Vocabulary.SourceDamageDealtPct, StringComparison.Ordinal)
+                        || string.Equals(e.PercentFrom, Vocabulary.SourceDamageDealtPct, StringComparison.Ordinal))
+                    {
+                        if (!Contains(TriggersWithDamage, r.Trigger))
+                            RecipeParser.Err(set, r, path + ".FlatValueFrom", "E_VALUE_SOURCE_SCOPE",
+                                "DAMAGE_DEALT_PCT is only legal under a damage-carrying trigger " +
+                                "(ON_DAMAGE_DEALT, ON_DAMAGE_TAKEN, ON_DAMAGE_PENDING) — under '" +
+                                r.Trigger + "' there is no damage in scope and it resolves to 0");
+                        if (!e.Percent.HasValue)
+                            RecipeParser.Err(set, r, path + ".Percent", "E_VALUE_SOURCE_NO_PERCENT",
+                                "DAMAGE_DEALT_PCT with no Percent authored always resolves to 0 (no-op) — " +
+                                "author the share, e.g. Percent: 25 for a quarter of the damage");
+                    }
+
                     if (string.Equals(e.FlatValueFrom, Vocabulary.SourceTargetMxhpPct, StringComparison.Ordinal)
                         && !e.Percent.HasValue && string.IsNullOrEmpty(e.PercentFromSelection))
                         RecipeParser.Warn(set, r, path + ".Percent", "W_MXHP_PCT_NO_PERCENT",
@@ -444,6 +460,23 @@ namespace ClassForge.Recipes.Parsing
                 }
                 case EffectKind.SUMMON:
                 {
+                    // A summon is placed on a FREE tile belonging to the summoner's own group,
+                    // resolved at runtime by the executor -- that is what decides allegiance, since
+                    // TryCreateSummon copies the tile's GroupIndex onto the new character. Placing
+                    // on an enemy tile spawns a HOSTILE creature, which is how the Beast Trainer's
+                    // "partner" first arrived in red on the wrong side of the field.
+                    //
+                    // Because the tile is chosen at runtime there is no static trigger requirement:
+                    // any trigger works so long as the summoner's side has an empty tile when it
+                    // fires. What IS static is that the effect must resolve at least one target for
+                    // an action to be emitted at all, so a target-less trigger is still a no-op.
+                    if (e.Target == TargetKind.TRIGGER_TARGET_POSITION
+                        && !Contains(TriggersWithTarget, r.Trigger))
+                        RecipeParser.Err(set, r, path + ".Target", "E_SUMMON_TARGET",
+                            "SUMMON targeting TRIGGER_TARGET_POSITION under '" + r.Trigger + "' resolves " +
+                            "no target, so no summon action is emitted at all. Use SELF, or a trigger " +
+                            "that carries a target.");
+
                     if (e.SummonType == SummonType.SPECIFIC && string.IsNullOrEmpty(e.CharacterConfig))
                         RecipeParser.Err(set, r, path + ".CharacterConfig", "E_SUMMON_CONFIG",
                             "SUMMON with SummonType SPECIFIC requires CharacterConfig");

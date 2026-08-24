@@ -493,6 +493,28 @@ namespace ClassForge.Recipes.Runtime
             return v;
         }
 
+        /// <summary>
+        /// A share of the damage the trigger carries: <c>sign * max(1, round(|damage * Percent| / 100))</c>.
+        ///
+        /// Mirrors TARGET_MXHP_PCT's shape deliberately, including the floor at 1: a drain that rounds
+        /// to zero on a small hit reads to a player as "the trait is broken", and EOR's own percentage
+        /// effects floor the same way. With no Percent authored the share is undefined, so it yields 0
+        /// and the validator rejects that combination outright rather than shipping a silent no-op.
+        /// </summary>
+        private static int RawDamageDealtPct(RecipeEffect effect, TriggerContext t)
+        {
+            if (!effect.Percent.HasValue) return 0;
+            int damage = t.Amount;
+            if (damage < 0) damage = -damage;
+            if (damage == 0) return 0;
+
+            int percent = effect.Percent.Value;
+            long scaled = (long)damage * (percent < 0 ? -percent : percent);
+            int magnitude = (int)((scaled + 50) / 100);
+            if (magnitude < 1) magnitude = 1;
+            return percent < 0 ? -magnitude : magnitude;
+        }
+
         private static int Raw(string token, RecipeEffect effect, TriggerContext t)
         {
             if (string.IsNullOrEmpty(token)) return 0;
@@ -507,6 +529,8 @@ namespace ClassForge.Recipes.Runtime
             }
             if (string.Equals(token, Vocabulary.SourceTargetMxhpPct, StringComparison.Ordinal))
                 return RawTargetMxhpPct(effect, t);
+            if (string.Equals(token, Vocabulary.SourceDamageDealtPct, StringComparison.Ordinal))
+                return RawDamageDealtPct(effect, t);
             if (token.StartsWith(Vocabulary.SourceCounterPrefix, StringComparison.Ordinal))
             {
                 if (t.Owner == null) return 0;

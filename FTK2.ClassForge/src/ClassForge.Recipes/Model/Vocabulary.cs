@@ -352,6 +352,22 @@ namespace ClassForge.Recipes.Model
         public const string SourceStatusCountPrefix = "STATUS_COUNT:";
         public const string SourceTargetHpPct = "TARGET_HP_PCT";
 
+        /// <summary>
+        /// <c>FlatValueFrom</c>/<c>PercentFrom</c> token yielding the damage the trigger is carrying.
+        ///
+        /// This is what makes proportional lifesteal and proportional reflect expressible. Before it,
+        /// the damage magnitude was reachable ONLY as a STATE_HASH_CHANCE input, so a "drain 25% of
+        /// the damage you dealt" trait had to be written as a flat number that is far too weak early
+        /// and far too strong late.
+        ///
+        /// Raw value is the damage amount; combine with <c>PerUnit</c> to take a share of it, e.g.
+        /// <c>{FlatValueFrom: "DAMAGE_DEALT_PCT", Percent: 25, Min: 1}</c>. RNG-free, so it stays
+        /// multiplayer-safe, and scoped to damage-carrying triggers by the validator — under any
+        /// other trigger there is no damage in scope and it would silently resolve to 0, which is the
+        /// ROLL_TIER{EQ FAIL} mistake class this repo has been bitten by before.
+        /// </summary>
+        public const string SourceDamageDealtPct = "DAMAGE_DEALT_PCT";
+
         /// <summary>GATE C (Encounter Modifiers spec §5/§8.1): <c>FlatValueFrom</c> token computing a flat
         /// <c>STAT_CHANGE</c> value from <c>TRIGGER_TARGET.MXHP</c> and the effect's authored <c>Percent</c> —
         /// <c>flat = sign(Percent) * max(1, round(|targetMaxHp * Percent| / 100))</c> (EOR's rounding).</summary>
