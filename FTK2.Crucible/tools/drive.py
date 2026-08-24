@@ -81,10 +81,12 @@ def boot(timeout_seconds=180):
     deadline = time.time() + timeout_seconds
     while time.time() < deadline:
         try:
-            health = _get("/health")
+            health = _get("/health", attempts=1)
             if health.get("pumpAlive"):
                 return True
-        except (urllib.error.URLError, OSError):
+        except (urllib.error.URLError, OSError, RuntimeError):
+            # RuntimeError too: _get now raises it after exhausting retries, and during boot a
+            # refused connection is the normal case rather than a failure.
             pass
         time.sleep(5)
     return False
@@ -159,6 +161,17 @@ def load_run(run_id, attempts=3):
     for attempt in range(attempts):
         snap = snapshot()
         steps.append("attempt %d: route=%s" % (attempt + 1, snap.get("route")))
+
+        # Already in a run? Go back to the main menu first. The adventure selection screen is
+        # only reachable from there, and _loadGameRun needs it to exist -- otherwise loading a
+        # second fixture in one session silently does nothing.
+        if (snap.get("run") or {}).get("present"):
+            run("crucible_invoke", ["RouterMono", "Route", "MAIN_MENU 0 - false true"])
+            for _ in range(8):
+                time.sleep(3)
+                if not (snapshot().get("run") or {}).get("present"):
+                    break
+            steps.append("  returned to the main menu")
 
         # Escape whatever boot left on screen, including the multiplayer lobby it routes itself to.
         for _ in range(6):

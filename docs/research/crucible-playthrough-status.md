@@ -332,3 +332,59 @@ Remaining untried levers for combat entry, in order of promise: `EncounterPhase.
 `CombatState` directly into a fixture so the save loads already in a fight, and
 `RouterMono.Route(COMBAT, …)` with a `CombatEncounterArgs` payload (the docs warn that traversal
 is a graph walk through legal transitions, not teleportation).
+
+## 2026-08-23 (final) — THE LOOP CLOSES: movement, combat entry, ability firing, victory
+
+Every blocker in the handoff is resolved. Measured live, end to end, in one unattended sequence:
+
+```
+boot -> load fixture -> clear gates -> move -> interact VENUE -> COMBAT
+     -> fire ability (damage observed) -> win -> back to ADVENTURE
+```
+
+**Movement.** A move is not a click gesture, which is why clicking a hex only ever produced a
+path preview. The executor is `AdventureDirector._move(AdventureMoveData, bool consumeAP,
+bool canBeAmbushed, bool showEncounterMenu)`, with the path from
+`_getAdventureMoveData(entity, goal, consumeAP)` which also reports `IsValidMove`. Verified: a
+character moved hex to hex and spent exactly the path cost in action points. Passing
+`consumeAP=false` gives the pathfinder unlimited range — the game's own free-move path, ideal
+for a harness.
+
+**Two long-standing wrong beliefs, both corrected.**
+- `GameRunData.RoundCount` and `AdventureState.CurrentTimeOfDayIndex` are `[Obsolete]` in the
+  assembly; the game only writes `AdventureState.MapState.*`. The 25 end-turn calls that
+  reported `changed=False` were compared against dead fields, so "turn advance does not work"
+  was never actually established. Observed live in one snapshot: obsolete index = 2 while the
+  live MapState index = 1.
+- `_performVenueAction` dereferences `CombatEncounterComponent` on its twelfth line, so calling
+  it on a town throws — and being `async void`, it unwinds silently. That is precisely what
+  happened when it was aimed at the town the party was standing in.
+
+**Combat entry.** `RouterMono.Route(COMBAT, …)` can never work: the payload is a list of entity
+GUIDs, and `CombatPhase.Initialize` needs a Diorama and camera that only the Venue scene builds.
+The legal path is `_tryShowEncounterMenu` (which resolves PROXY encounters and sets
+`_encounterEntity`) followed by `_performEncounterAction(ctx, pAllowBroadcast:false)` with
+`Action = VENUE`. Result: `route=COMBAT combat.active=True combatants=70`, Shepherd versus three
+`CROW_FOREST_00`.
+
+**Firing an ability.** `CombatPhase._performAiDecision(entity, CombatDecisionData, results)` is
+the entry point the game's own AI uses; it does selection, highlight, look-at, slot roll and
+execution in the right order. **Targeting is by TILE COORDINATE, not by entity.** Verified: the
+targeted crow went hp 7 -> 6 and the attacker's secondary actions 1 -> 0.
+
+**Winning.** `_debugEndPhase()` (console `EndPhase`) removes every living enemy and then ends
+combat, so the victory test passes and loot drops. Verified: combatants 4 -> 1, route returned
+to ADVENTURE. This is NOT interchangeable with `CombatState.EndCombatEarly`, which stops the
+fight with enemies alive and therefore evaluates as a LOSS.
+
+**Fog of war is a harness concern, not cosmetic.** An unexplored hex has no clickable target, so
+a party teleported into unrevealed map is surrounded by cloud and every click silently does
+nothing — indistinguishable from broken input. `crucible_reveal_map` sets all 5850 hexes visible.
+
+**Deployment gap found, and it is large.** The live install is missing the `ftk2mods.armory`
+plugin entirely — all 386 Armory items including every one of the 31 class starter weapons —
+and `ftk2mods.warbrain`. Both are targeted by `tools/deploy.ps1`, so the install predates the
+current script. This matters because ABILITIES COME FROM THE EQUIPPED WEAPON: a class fixture
+cannot be given its intended kit until Armory is deployed. `EquipmentHelper.Equip` throws a
+NullReferenceException on an absent id, which reads as a broken command rather than as missing
+content — `crucible_thing_config` now reports it honestly instead.

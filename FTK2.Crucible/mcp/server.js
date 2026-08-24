@@ -691,6 +691,20 @@ async function bootToRun(inst, runId) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     steps.push(`attempt ${attempt}`);
 
+    // Already in a run? Return to the main menu first. Adventure selection is only reachable
+    // from there and _loadGameRun needs it to exist, so loading a second fixture in one
+    // session otherwise silently does nothing.
+    let snap0 = (await rpc(inst, 'GET', statePath('v2'))).snapshot || {};
+    if (snap0.run && snap0.run.present) {
+      await execText(inst, 'crucible_invoke', ['RouterMono', 'Route', 'MAIN_MENU 0 - false true']);
+      for (let i = 0; i < 8; i++) {
+        await sleep(3000);
+        snap0 = (await rpc(inst, 'GET', statePath('v2'))).snapshot || {};
+        if (!snap0.run || !snap0.run.present) break;
+      }
+      steps.push('  returned to the main menu');
+    }
+
     let reached = false;
     for (let i = 0; i < 8; i++) {
       const docs = await activeDocs(inst);

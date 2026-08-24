@@ -51,6 +51,7 @@ namespace Crucible.Plugin
             Register("crucible_move", "CrucibleMove", new List<string> { "x", "y", "consumeActionPoints(true|false)" });
             Register("crucible_hex_info", "CrucibleHexInfo", new List<string> { "x", "y" });
             Register("crucible_overworld_end_turn", "CrucibleOverworldEndTurn", new List<string>());
+            Register("crucible_interact", "CrucibleInteract", new List<string> { "action (e.g. VENUE)" });
         }
 
         private static void Register(string command, string method, List<string> hints)
@@ -376,6 +377,191 @@ namespace Crucible.Plugin
             }
         }
 
+        // ============================================================== crucible_interact
+
+        /// <summary>
+        /// crucible_interact &lt;action&gt; — perform an encounter action on the hex the active
+        /// character is standing on. Use VENUE to start a fight.
+        ///
+        /// This is the game's own path and the reason a direct _performVenueAction call does
+        /// nothing useful. The sequence is:
+        ///   1. _tryShowEncounterMenu(activeChar, encounterEntity, false) — this is what assigns
+        ///      _encounterEntity and _proxyEncounterEntity and resolves PROXY encounters to their
+        ///      real target. Setting those fields by hand skips that resolution.
+        ///   2. _performEncounterAction(context, pAllowBroadcast: false) — every branch of that
+        ///      method begins by checking PlayingOnlineMultiplayer &amp;&amp; pAllowBroadcast and returning
+        ///      after broadcasting, so passing true would turn this into a no-op in multiplayer.
+        ///      The VENUE branch closes the menu and then calls _performVenueAction itself.
+        ///
+        /// The action is validated against EncounterComponent.ActionList first: an action the
+        /// encounter does not offer is refused here rather than silently doing nothing.
+        ///
+        /// The context is the exact seven-field shape the game constructs internally
+        /// (Layout, EncounterEntity, ViewingCharacterEntity, ActiveCharacterEntity, Action,
+        /// ProxyEntity, ViewOnly) — the type has fifteen fields, but the game itself fills only
+        /// these, which is the evidence that the rest are optional.
+        /// </summary>
+        public static void CrucibleInteract(string action)
+        {
+            LastResult = null;
+            try
+            {
+                if (string.IsNullOrEmpty(action))
+                {
+                    LastResult = "error: usage: crucible_interact <action>  (e.g. VENUE to start a fight)";
+                    return;
+                }
+                action = action.Trim().ToUpperInvariant();
+
+                object director = FindDirector();
+                if (director == null) { LastResult = "error: AdventureDirector unavailable"; return; }
+
+                object active = ActiveCharacter();
+                if (active == null) { LastResult = "error: no active character"; return; }
+
+                object adventure = AdventureComponentOf(active);
+                object position = adventure == null ? null : PartyAccess.ReadMember(adventure, "HexPosition");
+                if (position == null) { LastResult = "error: active character has no hex position"; return; }
+
+                object encounterEntity;
+                string findError;
+                if (!TryFindEncounterAt(position, out encounterEntity, out findError))
+                {
+                    LastResult = "error: " + findError;
+                    return;
+                }
+
+                object encounterComponent = PartyAccess.FindComponent(encounterEntity, "EncounterComponent");
+                string actions = RenderList(PartyAccess.ReadMember(encounterComponent, "ActionList"));
+                if (actions.IndexOf(action, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    LastResult = "REFUSED: this encounter does not offer " + action
+                        + "\nhex=" + position + " encounter=" + Str(PartyAccess.ReadMember(encounterEntity, "Guid"))
+                        + "\nactions: " + actions;
+                    return;
+                }
+
+                StringBuilder sb = new StringBuilder();
+                sb.Append("hex=").Append(position)
+                  .Append(" encounter=").Append(Str(PartyAccess.ReadMember(encounterEntity, "Guid")))
+                  .Append(" action=").Append(action);
+
+                // Step 1: let the game set up its own encounter state.
+                MethodInfo showMenu = null;
+                foreach (MethodInfo m in director.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    if (!string.Equals(m.Name, "_tryShowEncounterMenu", StringComparison.Ordinal)) continue;
+                    if (m.GetParameters().Length == 3) { showMenu = m; break; }
+                }
+                if (showMenu == null) { LastResult = sb + "\nerror: _tryShowEncounterMenu(3 args) not found"; return; }
+                showMenu.Invoke(director, new object[] { active, encounterEntity, false });
+
+                object resolved = PartyAccess.ReadMember(director, "_encounterEntity") ?? encounterEntity;
+                object proxy = PartyAccess.ReadMember(director, "_proxyEncounterEntity");
+                sb.Append("\nafterShowMenu: _encounterEntity=").Append(Str(PartyAccess.ReadMember(resolved, "Guid")))
+                  .Append(" proxy=").Append(proxy == null ? "(none)" : Str(PartyAccess.ReadMember(proxy, "Guid")));
+
+                // Step 2: build the context and perform the action.
+                Type helperType = AccessTools.TypeByName("EncounterMenuViewHelper2");
+                if (helperType == null) { LastResult = sb + "\nerror: EncounterMenuViewHelper2 not found"; return; }
+                Type contextType = helperType.GetNestedType("EncounterActionContext",
+                    BindingFlags.Public | BindingFlags.NonPublic);
+                if (contextType == null) { LastResult = sb + "\nerror: EncounterActionContext nested type not found"; return; }
+
+                object context = Activator.CreateInstance(contextType);
+                SetField(contextType, context, "EncounterEntity", resolved);
+                SetField(contextType, context, "ViewingCharacterEntity", active);
+                SetField(contextType, context, "ActiveCharacterEntity", active);
+                SetField(contextType, context, "ProxyEntity", proxy);
+                SetField(contextType, context, "ViewOnly", false);
+
+                FieldInfo actionField = AccessTools.Field(contextType, "Action");
+                if (actionField == null) { LastResult = sb + "\nerror: EncounterActionContext.Action not found"; return; }
+                object actionValue;
+                try { actionValue = Enum.Parse(actionField.FieldType, action, true); }
+                catch (Exception)
+                {
+                    LastResult = sb + "\nerror: '" + action + "' is not an eEncounterActions member; valid: "
+                        + string.Join(", ", Enum.GetNames(actionField.FieldType));
+                    return;
+                }
+                actionField.SetValue(context, actionValue);
+
+                MethodInfo perform = null;
+                foreach (MethodInfo m in director.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    if (!string.Equals(m.Name, "_performEncounterAction", StringComparison.Ordinal)) continue;
+                    if (m.GetParameters().Length == 2) { perform = m; break; }
+                }
+                if (perform == null) { LastResult = sb + "\nerror: _performEncounterAction(2 args) not found"; return; }
+
+                string routeBefore = ReadRoute();
+                perform.Invoke(director, new object[] { context, false });
+
+                sb.Append("\nrouteBefore=").Append(routeBefore).Append(" routeAfter=").Append(ReadRoute());
+                sb.Append("\nNOTE: _performEncounterAction is async void and the venue transition");
+                sb.Append("\n      waits ~0.75s before raising the route change. Re-read state.");
+                LastResult = sb.ToString();
+                if (_log != null) _log.LogInfo("crucible_interact: " + LastResult);
+            }
+            catch (TargetInvocationException ex)
+            {
+                Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                LastResult = "error: interact threw: " + root.GetType().Name + ": " + root.Message;
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_interact threw: " + ex.Message;
+            }
+        }
+
+        private static void SetField(Type type, object instance, string name, object value)
+        {
+            FieldInfo f = AccessTools.Field(type, name);
+            if (f != null) f.SetValue(instance, value);
+        }
+
+        /// <summary>
+        /// Finds the interactable encounter on a hex, using the same ordering the game uses when a
+        /// character arrives: vehicles first, and skipping PROP / NO_MENU encounters, which exist
+        /// on the map but offer no interaction.
+        /// </summary>
+        private static bool TryFindEncounterAt(object position, out object encounterEntity, out string error)
+        {
+            encounterEntity = null;
+            error = null;
+
+            Array grid;
+            if (!TryGetHexGrid(out grid, out error)) return false;
+
+            int x = Convert.ToInt32(PartyAccess.ReadMember(position, "Item1"));
+            int y = Convert.ToInt32(PartyAccess.ReadMember(position, "Item2"));
+            if (x < 0 || y < 0 || x >= grid.GetLength(0) || y >= grid.GetLength(1))
+            {
+                error = "hex " + position + " is outside the grid";
+                return false;
+            }
+
+            IEnumerable cell = grid.GetValue(x, y) as IEnumerable;
+            if (cell == null) { error = "hex " + position + " is empty"; return false; }
+
+            foreach (object entity in cell)
+            {
+                object component = PartyAccess.FindComponent(entity, "EncounterComponent");
+                if (component == null) continue;
+
+                string properties = RenderList(PartyAccess.ReadMember(component, "Properties"));
+                if (properties.IndexOf("PROP", StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                if (properties.IndexOf("NO_MENU", StringComparison.OrdinalIgnoreCase) >= 0) continue;
+
+                encounterEntity = entity;
+                return true;
+            }
+
+            error = "no interactable encounter on hex " + position;
+            return false;
+        }
+
         // ============================================================== helpers
 
         private static bool TryBuildMoveData(int goalX, int goalY, bool consume, out object moveData, out string error)
@@ -531,6 +717,18 @@ namespace Crucible.Plugin
             foreach (object item in list) parts.Add(item == null ? "(null)" : item.ToString());
             parts.Sort(StringComparer.Ordinal);
             return "count=" + parts.Count + " [" + string.Join(", ", parts.ToArray()) + "]";
+        }
+
+        private static string ReadRoute()
+        {
+            try
+            {
+                Type routerHelper = AccessTools.TypeByName("RouterHelper");
+                MethodInfo get = routerHelper == null ? null : AccessTools.Method(routerHelper, "GetCurrentRoute");
+                object value = get == null ? null : get.Invoke(null, null);
+                return value == null ? "(unknown)" : value.ToString();
+            }
+            catch (Exception) { return "(unreadable)"; }
         }
 
         private static string Str(object value)
