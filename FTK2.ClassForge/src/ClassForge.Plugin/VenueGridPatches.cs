@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using IOG.dObjects;
 using System.Reflection;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -112,7 +114,7 @@ namespace ClassForge.Plugin
 
         internal static ConfigEntry<string> CameraRig;
         internal static ConfigEntry<float> ZoomOut;
-        internal static ConfigEntry<float> TileBrightness;
+        internal static ConfigEntry<float> TileBorderOpacity;
 
         internal static void Bind(ConfigFile config)
         {
@@ -124,11 +126,12 @@ namespace ClassForge.Plugin
                 + "QueenCameraRig, HarazuelRoofRig, HarazuelFlyingRoofRig, OmusCameraRig, "
                 + "OutdoorCondensedCameraRig. The boss rigs are the ones framing the big arenas.");
 
-            TileBrightness = config.Bind("Combat", "VenueTileBrightness", 0f,
-                "Override the combat tiles' emissive intensity. 0 leaves the game's own value. The "
-                + "game picks it from the setting: 4 by day, 3 in a dungeon or indoors, and only 2 "
-                + "at NIGHT -- which is why an outdoor night fight shows almost no grid while a "
-                + "castle interior shows a crisp one. 4-6 makes the tiles read on dark ground.");
+            TileBorderOpacity = config.Bind("Combat", "VenueTileBorderOpacity", 0f,
+                "Opacity of the resting tile BORDERS, 0 to leave the game's own value. A resting "
+                + "tile draws only its border -- TileRender.Default disables the fill renderer and "
+                + "enables the shadow one -- so this is the knob that makes the grid readable "
+                + "without filling every square in. Raising the tiles' emissive instead brightens "
+                + "the highlight FILLS, which is the wrong look entirely. Try 0.3-0.6.");
 
             ZoomOut = config.Bind("Combat", "VenueCameraZoomOut", 0f,
                 "Degrees of extra camera field of view during combat, so a larger arena fits on "
@@ -147,41 +150,75 @@ namespace ClassForge.Plugin
 
 
         /// <summary>
-        /// Postfix on <c>VenueViewHelper.CreateVenueTileGameObjects</c> — overrides the tile emissive
-        /// intensity the game just chose.
+        /// Postfix on <c>VenueTileMono.SetState</c> — raises the opacity of a RESTING tile's border.
         ///
-        /// <para>Tile visibility is a LIGHTING value, not a draw flag. CreateVenueTileGameObjects
-        /// ends by setting <c>VenueViewHelper.TileEmissiveIntensity</c> from the situation — 4 by
-        /// day, 3 in a dungeon or indoors, and <b>2 at NIGHT</b> — and
-        /// <c>VenueTileMono.SetState</c> writes that straight into the tile material as
-        /// <c>Emissive_Intensity</c>. So an outdoor night fight draws every tile correctly and at
-        /// half the daytime brightness, on dark grass, where it reads as no grid at all. The
-        /// castle-interior boss arenas people remember as "properly tiled" are dungeons on pale
-        /// stone: intensity 3 with far more contrast beneath.</para>
+        /// <para>A tile at rest draws only its border, not a fill. <c>SetState</c>'s
+        /// <c>TileRender.Default</c> branch does exactly this:</para>
+        /// <code>
+        /// _overlayRenderer.enabled = false;        // the fill is OFF
+        /// _overlayShadowRenderer.enabled = true;   // only the border renderer draws
+        /// </code>
+        /// <para>Which is why brightening the tiles the obvious way does not work.
+        /// <c>_setOpacity</c> writes <c>Emissive_Intensity</c> onto <c>_overlayRenderer</c> only —
+        /// the renderer that is DISABLED at rest — so raising it lights up the highlight, target and
+        /// active-character FILLS and leaves the resting grid exactly as faint as before. The grid
+        /// then reads as solid plates under whatever is highlighted rather than as an outlined
+        /// board.</para>
         ///
-        /// <para>Setting it here rather than at the call site matters: the value must land AFTER the
-        /// game assigns it and BEFORE the render pass, and <c>_clearTileRenderState</c> re-runs
-        /// SetState over every tile shortly after, which is what makes the override stick.</para>
+        /// <para>The border's strength is <c>_Opacity_Boost</c> on the shadow renderer, which
+        /// <c>_fade</c> tweens toward the value held on the Default tile's shadow MATERIAL. Setting
+        /// it on the material is therefore the durable place: a property block would be overwritten
+        /// by the tween a frame later.</para>
+        ///
+        /// <para><b>This mutates a shared material asset</b>, so it affects every tile using it for
+        /// the rest of the session. That is the intent — one grid look — but it is why this is
+        /// opt-in and defaults to off.</para>
         /// </summary>
-        public static void CreateVenueTileGameObjects_Postfix()
+        private static bool _loggedBorder;
+
+        public static void SetState_Postfix(TileRender pTileRenderType)
         {
             try
             {
-                if (TileBrightness == null) return;
-                float wanted = TileBrightness.Value;
+                if (TileBorderOpacity == null) return;
+                float wanted = TileBorderOpacity.Value;
                 if (wanted <= 0f) return;
 
-                float was = VenueViewHelper.TileEmissiveIntensity;
-                VenueViewHelper.TileEmissiveIntensity = wanted;
+                // Resting states only. The highlight/target/active states are MEANT to be filled --
+                // that fill is how a player reads what is selected -- so they are left alone.
+                if (pTileRenderType != TileRender.Default
+                    && pTileRenderType != TileRender.DefaultInverted
+                    && pTileRenderType != TileRender.Selectable
+                    && pTileRenderType != TileRender.SelectableInverted) return;
 
-                if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
-                    ClassForgePlugin.Log.LogDebug(
-                        "[ClassForge] tile emissive intensity " + was + " -> " + wanted + ".");
+                var record = dObjectHelper.Index.dBattleGridTile.GetAllRecords()
+                    .FirstOrDefault(t => t.TileType == pTileRenderType);
+                var shadowMat = record == null ? null : record.ShadowMaterialAsset;
+
+                // Report ONCE what was actually found, whatever the outcome. An earlier version
+                // returned quietly on every one of these branches, which is indistinguishable from
+                // "the patch never ran" -- the exact failure shape that hid a per-tick reflection
+                // miss until it had written 45,000 log lines.
+                if (!_loggedBorder)
+                {
+                    _loggedBorder = true;
+                    ClassForgePlugin.Log.LogInfo(
+                        "[ClassForge] tile border: state=" + pTileRenderType
+                        + " record=" + (record == null ? "MISSING" : "ok")
+                        + " shadowMaterial=" + (shadowMat == null ? "MISSING" : shadowMat.name)
+                        + " hasOpacityBoost=" + (shadowMat != null && shadowMat.HasProperty("_Opacity_Boost"))
+                        + " current=" + (shadowMat != null && shadowMat.HasProperty("_Opacity_Boost")
+                                            ? shadowMat.GetFloat("_Opacity_Boost").ToString() : "n/a")
+                        + " wanted=" + wanted);
+                }
+
+                if (shadowMat == null || !shadowMat.HasProperty("_Opacity_Boost")) return;
+                shadowMat.SetFloat("_Opacity_Boost", wanted);
             }
             catch (Exception ex)
             {
                 ClassForgePlugin.Log.LogWarning(
-                    "[ClassForge] could not brighten the combat tiles: " + ex.Message);
+                    "[ClassForge] could not adjust the tile border opacity: " + ex.Message);
             }
         }
 

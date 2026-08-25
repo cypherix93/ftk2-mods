@@ -381,10 +381,11 @@ namespace ClassForge.Plugin
             Patch(harmony, typeof(VenueHelper), "CreateVenueTileEntities",
                 prefix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.CreateVenueTileEntities_Prefix)));
 
-            // Tile visibility is a LIGHTING value: the game sets TileEmissiveIntensity to 2 at
-            // night against 4 by day, which is why an outdoor night fight shows almost no grid.
-            Patch(harmony, typeof(VenueViewHelper), "CreateVenueTileGameObjects",
-                postfix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.CreateVenueTileGameObjects_Postfix)));
+            // A resting tile draws only its BORDER: TileRender.Default disables the fill renderer
+            // and enables the shadow one. Emissive lives on the fill, so brightening that lights up
+            // the highlights and leaves the grid itself faint -- the border opacity is the knob.
+            Patch(harmony, typeof(VenueTileMono), "SetState",
+                postfix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.SetState_Postfix)));
 
             // The line that actually throws. _clearTileRenderState indexes
             // _gameObjectMaps.FromCharacter for each tile's living occupant with no membership check,
