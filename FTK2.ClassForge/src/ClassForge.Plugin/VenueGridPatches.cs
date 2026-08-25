@@ -71,44 +71,51 @@ namespace ClassForge.Plugin
             // PLAYER no more room than the standard board.
             { "kraken", null },
 
-            // Wide board, and every cell is a LETTER.
+            // Every cell is a LETTER, deliberately.
             //
             // A '.' cell becomes GroupIndex -1, and the renderer refuses to draw those:
             // CreateVenueTileGameObjects puts any tile with GroupIndex <= -1 on Unity's
             // "DoNotRender" layer, and SetVenueTileRenderState only escapes Hidden when
             // GroupIndex >= 0. The shipped rows are padded with dots -- "|..Aa.bB..|" is 4 letters
             // to 6 dots -- so most of a standard board is deliberately invisible and the two sides
-            // are separated by an unrendered gap. Padding a WIDER map the same way is what made the
-            // enlarged arena read as "the tiles do not exist" even though every tile was real,
-            // occupied and movable-to.
+            // are separated by an unrendered gap. Padding a wider map the same way is what made an
+            // enlarged arena read as "the tiles do not exist" while every tile was real, occupied
+            // and movable-to.
             //
-            // So these maps have no padding at all: back columns then front columns, meeting in the
-            // middle, which is the continuous outlined field the boss arenas show.
+            // Column order follows the game's own: ally BACK, ally FRONT, enemy FRONT, enemy BACK.
+            // Uppercase is the back row, lowercase the front.
+
+            // 6 rows x 2 columns a side -- 12 tiles each, same count as the shipped Extended
+            // board but fully drawn rather than padded into invisibility.
+            //
+            // The single '.' between the sides is KEPT. Only the OUTER padding causes the
+            // invisibility problem; this interior cell is the no-man's-land the shipped maps put
+            // between the two front rows, and dropping it made the sides physically adjacent
+            // (measured: ally cols [1,2] against enemy cols [3,4], touching).
             { "large", new[]
                 {
-                    "+--------+",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "+--------+",
+                    "+-----+",
+                    "|Aa.bB|",
+                    "|Aa.bB|",
+                    "|Aa.bB|",
+                    "|Aa.bB|",
+                    "|Aa.bB|",
+                    "|Aa.bB|",
+                    "+-----+",
                 } },
 
-            // The same width, eight rows deep.
+            // 6 rows x 4 columns a side -- 24 each. Room for a summoner to field a team, and the
+            // only shape here that gives a TWO_BY_TWO creature a 2x2 block of same-group tiles.
             { "huge", new[]
                 {
-                    "+--------+",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "|AAaabbBB|",
-                    "+--------+",
+                    "+---------+",
+                    "|AAaa.bbBB|",
+                    "|AAaa.bbBB|",
+                    "|AAaa.bbBB|",
+                    "|AAaa.bbBB|",
+                    "|AAaa.bbBB|",
+                    "|AAaa.bbBB|",
+                    "+---------+",
                 } },
         };
 
@@ -143,9 +150,10 @@ namespace ClassForge.Plugin
                 "Combat arena size. 'off' leaves every fight as the game ships it. 'kraken' uses the "
                 + "shipped Kraken boss map verbatim (ally 8, enemy 32). 'extended' uses "
                 + "the game's own deeper board. 'large' and 'huge' are custom maps that also widen "
-                + "each side to two back and two front columns, which is what a TWO_BY_TWO creature "
-                + "needs to stand anywhere at all. The camera is not re-framed for the bigger "
-                + "arenas, so they sit loosely in view on some venues.");
+                + "'large' is 6 rows x 2 columns a side (12 tiles each) and 'huge' is 6 x 4 (24 each). "
+                + "Both are unpadded, so every tile draws -- the shipped maps pad with '.' cells "
+                + "that are never rendered. The camera is not re-framed for the bigger arenas, so "
+                + "they sit loosely in view on some venues.");
         }
 
 
