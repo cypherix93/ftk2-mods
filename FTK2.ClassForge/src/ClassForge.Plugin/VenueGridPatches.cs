@@ -122,6 +122,7 @@ namespace ClassForge.Plugin
         internal static ConfigEntry<string> CameraRig;
         internal static ConfigEntry<float> ZoomOut;
         internal static ConfigEntry<float> TileBorderOpacity;
+        internal static ConfigEntry<float> ClearFoliage;
 
         internal static void Bind(ConfigFile config)
         {
@@ -140,6 +141,13 @@ namespace ClassForge.Plugin
                 + "without filling every square in. Raising the tiles' emissive instead brightens "
                 + "the highlight FILLS, which is the wrong look entirely. Try 0.3-0.6.");
 
+            ClearFoliage = config.Bind("Combat", "ClearFoliageOverGrid", 0f,
+                "Hide venue scenery standing ON the battle grid, so tall grass and props stop "
+                + "occluding the tiles. The value is a margin in world units around the grid's "
+                + "footprint; 0 disables it, 1-3 is a sensible range. Only scenery inside that "
+                + "footprint is touched -- the surrounding venue is left alone, so the fight still "
+                + "looks like it is happening somewhere.");
+
             ZoomOut = config.Bind("Combat", "VenueCameraZoomOut", 0f,
                 "Degrees of extra camera field of view during combat, so a larger arena fits on "
                 + "screen. 0 leaves the camera as the game sets it; 10-25 is a reasonable range for "
@@ -156,6 +164,76 @@ namespace ClassForge.Plugin
                 + "they sit loosely in view on some venues.");
         }
 
+
+
+        /// <summary>
+        /// Hides venue scenery that stands inside the battle grid's footprint.
+        ///
+        /// <para>Outdoor dioramas scatter tall grass and props across the ground, and a good deal of
+        /// it lands on the play area, where it sits between the camera and the tiles. On night grass
+        /// that is enough to make a perfectly-drawn grid unreadable.</para>
+        ///
+        /// <para>Only the footprint is cleared, not the venue: the bounds come from the tile
+        /// GameObjects themselves, so anything outside the board keeps its scenery and the fight
+        /// still looks like it is happening somewhere. Characters are safe because they are parented
+        /// to the combat canvas, not to the diorama, and the tiles are safe because they live under
+        /// their own <c>Venue_Grid</c> object rather than in the diorama hierarchy.</para>
+        ///
+        /// <para>Renderers are disabled rather than the GameObjects deactivated, which leaves
+        /// colliders, spawn anchors and any script state on those objects untouched.</para>
+        /// </summary>
+        private static string ClearFoliageOverGrid(Diorama diorama, Dictionary<Entity, GameObject> tiles)
+        {
+            try
+            {
+                if (ClearFoliage == null) return null;
+                float margin = ClearFoliage.Value;
+                if (margin <= 0f) return null;
+
+                if (diorama == null || tiles == null || tiles.Count == 0) return ",foliage:noDiorama";
+
+                // Footprint of the board in world space, taken from the tiles that were just built.
+                float minX = float.MaxValue, maxX = float.MinValue;
+                float minZ = float.MaxValue, maxZ = float.MinValue, groundY = 0f;
+                foreach (var go in tiles.Values)
+                {
+                    if (go == null) continue;
+                    Vector3 p = go.transform.position;
+                    if (p.x < minX) minX = p.x;
+                    if (p.x > maxX) maxX = p.x;
+                    if (p.z < minZ) minZ = p.z;
+                    if (p.z > maxZ) maxZ = p.z;
+                    groundY = p.y;
+                }
+                if (minX > maxX) return ",foliage:noTiles";
+                minX -= margin; maxX += margin; minZ -= margin; maxZ += margin;
+
+                int hidden = 0;
+                foreach (var r in diorama.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (r == null || !r.enabled) continue;
+                    Vector3 p = r.transform.position;
+                    if (p.x < minX || p.x > maxX || p.z < minZ || p.z > maxZ) continue;
+
+                    // Leave the ground itself: a floor is wide, so anything much larger than a
+                    // couple of tiles is terrain rather than a prop standing on it.
+                    Vector3 size = r.bounds.size;
+                    if (size.x > 12f || size.z > 12f) continue;
+
+                    // Leave anything sunk into the floor -- that is surface detail, not an occluder.
+                    if (r.bounds.max.y < groundY + 0.15f) continue;
+
+                    r.enabled = false;
+                    hidden++;
+                }
+
+                return hidden == 0 ? ",foliage:none" : (",foliage:hid" + hidden);
+            }
+            catch (Exception ex)
+            {
+                return ",foliage:" + ex.GetType().Name;
+            }
+        }
 
         /// <summary>
         /// Postfix on <c>VenueTileMono.SetState</c> — raises the opacity of a RESTING tile's border.
@@ -183,6 +261,40 @@ namespace ClassForge.Plugin
         /// opt-in and defaults to off.</para>
         /// </summary>
         private static bool _loggedBorder;
+
+        /// <summary>Postfix on <c>VenueViewHelper.CreateVenueTileGameObjects</c> — the moment the
+        /// board's footprint is first known, which is when scenery standing on it can be culled.</summary>
+        public static void CreateVenueTileGameObjects_Postfix(
+            Dictionary<Entity, GameObject> __result, Diorama pDiorama)
+        {
+            try
+            {
+                // The diorama arrives as an ARGUMENT. An earlier version dug for it through
+                // RouterHelper._router -> _combatPhase -> _diorama and got null every time
+                // ("grid foliage: noDiorama"), because this runs while the venue is still being
+                // built and the phase does not hold it yet. Reflection was never needed.
+                string note = ClearFoliageOverGrid(pDiorama, __result);
+                if (note != null)
+                    ClassForgePlugin.Log.LogInfo("[ClassForge] grid foliage" + note.Replace(",foliage:", ": "));
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] could not clear foliage over the grid: " + ex.Message);
+            }
+        }
+
+        /// <summary>The live CombatPhase, reached through the router.</summary>
+        private static object CombatPhaseInstance()
+        {
+            try
+            {
+                var router = AccessTools.Field(AccessTools.TypeByName("RouterHelper"), "_router")?.GetValue(null);
+                return router == null ? null
+                    : AccessTools.Field(router.GetType(), "_combatPhase")?.GetValue(router);
+            }
+            catch (Exception) { return null; }
+        }
 
         public static void SetState_Postfix(TileRender pTileRenderType)
         {

@@ -384,6 +384,10 @@ namespace ClassForge.Plugin
             // A resting tile draws only its BORDER: TileRender.Default disables the fill renderer
             // and enables the shadow one. Emissive lives on the fill, so brightening that lights up
             // the highlights and leaves the grid itself faint -- the border opacity is the knob.
+            // Cull scenery standing ON the board; outdoor grass occludes the tiles badly.
+            Patch(harmony, typeof(VenueViewHelper), "CreateVenueTileGameObjects",
+                postfix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.CreateVenueTileGameObjects_Postfix)));
+
             Patch(harmony, typeof(VenueTileMono), "SetState",
                 postfix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.SetState_Postfix)));
 

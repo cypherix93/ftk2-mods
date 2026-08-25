@@ -38,6 +38,7 @@ namespace Crucible.Plugin
         private static bool _classRegistered;
         private static bool _statusRegistered;
         private static bool _thingRegistered;
+        private static bool _dioramaRegistered;
 
         internal static void Initialize(ManualLogSource log)
         {
@@ -62,6 +63,11 @@ namespace Crucible.Plugin
                 _statusRegistered = GameBridge.RegisterCommand("crucible_status_config",
                     typeof(ConfigCommands).GetMethod("CrucibleStatusConfig", BindingFlags.Public | BindingFlags.Static),
                     new List<string> { "statusId" });
+
+            if (!_dioramaRegistered)
+                _dioramaRegistered = GameBridge.RegisterCommand("crucible_diorama_list",
+                    typeof(ConfigCommands).GetMethod("CrucibleDioramaList", BindingFlags.Public | BindingFlags.Static),
+                    new List<string> { "gridFilter (optional: Standard|Extended|BossKraken)" });
 
             if (!_thingRegistered)
                 _thingRegistered = GameBridge.RegisterCommand("crucible_thing_config",
@@ -241,6 +247,89 @@ namespace Crucible.Plugin
             for (int i = 0; i < hits.Count && i < 60; i++) sb.Append("\n  ").Append(hits[i]);
             if (hits.Count > 60) sb.Append("\n  ... ").Append(hits.Count - 60).Append(" more");
             return sb.ToString();
+        }
+
+
+        // ============================================================== crucible_diorama_list
+
+        /// <summary>
+        /// crucible_diorama_list [gridFilter] — every battlefield the game ships, with the tile grid
+        /// and camera rig each one is authored with.
+        ///
+        /// <para>These live in Unity AssetBundles as <c>dDiorama</c> ScriptableObjects, so they
+        /// cannot be read from the shipped JSON or the decompiled assembly — a static search for
+        /// them comes back empty. Once the game is running they are ordinary loaded objects, which
+        /// makes this the only way to answer "which venues already use the bigger grid, and what
+        /// camera is authored for it".</para>
+        ///
+        /// <para>That question matters because a venue's grid, diorama art and camera rig are
+        /// authored together. A venue shipping with Extended already has a camera framed for it,
+        /// which a widened Standard venue does not.</para>
+        /// </summary>
+        public static void CrucibleDioramaList(string gridFilter)
+        {
+            LastResult = null;
+            try
+            {
+                Type helper = AccessTools.TypeByName("dObjectHelper");
+                object index = helper == null ? null : PartyAccess.ReadMember(
+                    PartyAccess.ReadMember(null, "Index") ?? ReadStatic(helper, "Index"), "dDiorama");
+                if (index == null) index = ReadStatic(helper, "Index");
+                if (index != null && index.GetType().Name != "dDioramaIndex")
+                    index = PartyAccess.ReadMember(index, "dDiorama");
+                if (index == null) { LastResult = "error: dObjectHelper.Index.dDiorama not reachable"; return; }
+
+                MethodInfo all = AccessTools.Method(index.GetType(), "GetAllRecords");
+                if (all == null) { LastResult = "error: dDioramaIndex.GetAllRecords() not found"; return; }
+
+                IEnumerable records = all.Invoke(index, null) as IEnumerable;
+                if (records == null) { LastResult = "error: GetAllRecords returned nothing enumerable"; return; }
+
+                string want = (gridFilter ?? "").Trim();
+                var counts = new Dictionary<string, int>();
+                var sb = new StringBuilder();
+                int total = 0, shown = 0;
+
+                foreach (object rec in records)
+                {
+                    if (rec == null) continue;
+                    total++;
+                    object comp = PartyAccess.ReadMember(rec, "Composition");
+                    string grid = Str(PartyAccess.ReadMember(comp, "VenueGrid"));
+                    string rig = Str(PartyAccess.ReadMember(comp, "VenueCameraRig"));
+                    string name = Str(PartyAccess.ReadMember(rec, "name"));
+
+                    int n; counts.TryGetValue(grid, out n); counts[grid] = n + 1;
+
+                    if (want.Length > 0 && !string.Equals(grid, want, StringComparison.OrdinalIgnoreCase)) continue;
+                    shown++;
+                    if (shown <= 80) sb.Append("\n  ").Append(name)
+                        .Append("  grid=").Append(grid).Append("  camera=").Append(rig);
+                }
+
+                var summary = new StringBuilder();
+                summary.Append("dioramas=").Append(total);
+                foreach (var kv in counts) summary.Append("  ").Append(kv.Key).Append("=").Append(kv.Value);
+
+                LastResult = summary + (want.Length > 0 ? ("  filter=" + want + " matched=" + shown) : "")
+                    + sb
+                    + "\nNOTE: grid, diorama art and camera rig are authored together. A venue that already"
+                    + "\n      ships Extended has a camera framed for it; widening a Standard venue does not.";
+            }
+            catch (Exception ex)
+            {
+                Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                LastResult = "error: crucible_diorama_list threw: " + root.GetType().Name + ": " + root.Message;
+            }
+        }
+
+        private static object ReadStatic(Type type, string name)
+        {
+            if (type == null) return null;
+            FieldInfo f = AccessTools.Field(type, name);
+            if (f != null) return f.GetValue(null);
+            PropertyInfo pr = AccessTools.Property(type, name);
+            return pr == null ? null : pr.GetValue(null);
         }
 
         // ============================================================== helpers
