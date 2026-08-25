@@ -381,6 +381,11 @@ namespace ClassForge.Plugin
             Patch(harmony, typeof(VenueHelper), "CreateVenueTileEntities",
                 prefix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.CreateVenueTileEntities_Prefix)));
 
+            // Tile visibility is a LIGHTING value: the game sets TileEmissiveIntensity to 2 at
+            // night against 4 by day, which is why an outdoor night fight shows almost no grid.
+            Patch(harmony, typeof(VenueViewHelper), "CreateVenueTileGameObjects",
+                postfix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.CreateVenueTileGameObjects_Postfix)));
+
             // The line that actually throws. _clearTileRenderState indexes
             // _gameObjectMaps.FromCharacter for each tile's living occupant with no membership check,
             // so any combatant lacking a 3D model takes the method down -- and the rest of Initialize

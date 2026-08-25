@@ -112,6 +112,7 @@ namespace ClassForge.Plugin
 
         internal static ConfigEntry<string> CameraRig;
         internal static ConfigEntry<float> ZoomOut;
+        internal static ConfigEntry<float> TileBrightness;
 
         internal static void Bind(ConfigFile config)
         {
@@ -122,6 +123,12 @@ namespace ClassForge.Plugin
                 + "Valid: OutdoorCameraRig, IndoorCameraRig, KrakenCameraRig, SpiderQueenCameraRig, "
                 + "QueenCameraRig, HarazuelRoofRig, HarazuelFlyingRoofRig, OmusCameraRig, "
                 + "OutdoorCondensedCameraRig. The boss rigs are the ones framing the big arenas.");
+
+            TileBrightness = config.Bind("Combat", "VenueTileBrightness", 0f,
+                "Override the combat tiles' emissive intensity. 0 leaves the game's own value. The "
+                + "game picks it from the setting: 4 by day, 3 in a dungeon or indoors, and only 2 "
+                + "at NIGHT -- which is why an outdoor night fight shows almost no grid while a "
+                + "castle interior shows a crisp one. 4-6 makes the tiles read on dark ground.");
 
             ZoomOut = config.Bind("Combat", "VenueCameraZoomOut", 0f,
                 "Degrees of extra camera field of view during combat, so a larger arena fits on "
@@ -136,6 +143,46 @@ namespace ClassForge.Plugin
                 + "each side to two back and two front columns, which is what a TWO_BY_TWO creature "
                 + "needs to stand anywhere at all. The camera is not re-framed for the bigger "
                 + "arenas, so they sit loosely in view on some venues.");
+        }
+
+
+        /// <summary>
+        /// Postfix on <c>VenueViewHelper.CreateVenueTileGameObjects</c> — overrides the tile emissive
+        /// intensity the game just chose.
+        ///
+        /// <para>Tile visibility is a LIGHTING value, not a draw flag. CreateVenueTileGameObjects
+        /// ends by setting <c>VenueViewHelper.TileEmissiveIntensity</c> from the situation — 4 by
+        /// day, 3 in a dungeon or indoors, and <b>2 at NIGHT</b> — and
+        /// <c>VenueTileMono.SetState</c> writes that straight into the tile material as
+        /// <c>Emissive_Intensity</c>. So an outdoor night fight draws every tile correctly and at
+        /// half the daytime brightness, on dark grass, where it reads as no grid at all. The
+        /// castle-interior boss arenas people remember as "properly tiled" are dungeons on pale
+        /// stone: intensity 3 with far more contrast beneath.</para>
+        ///
+        /// <para>Setting it here rather than at the call site matters: the value must land AFTER the
+        /// game assigns it and BEFORE the render pass, and <c>_clearTileRenderState</c> re-runs
+        /// SetState over every tile shortly after, which is what makes the override stick.</para>
+        /// </summary>
+        public static void CreateVenueTileGameObjects_Postfix()
+        {
+            try
+            {
+                if (TileBrightness == null) return;
+                float wanted = TileBrightness.Value;
+                if (wanted <= 0f) return;
+
+                float was = VenueViewHelper.TileEmissiveIntensity;
+                VenueViewHelper.TileEmissiveIntensity = wanted;
+
+                if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
+                    ClassForgePlugin.Log.LogDebug(
+                        "[ClassForge] tile emissive intensity " + was + " -> " + wanted + ".");
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] could not brighten the combat tiles: " + ex.Message);
+            }
         }
 
         /// <summary>
