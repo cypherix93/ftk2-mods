@@ -76,6 +76,15 @@ namespace Crucible.Plugin
         private static bool _loggedRegistration;
         private static bool _loggedAutoApplySkip;
 
+        // Logged once: CommandLineHelper._commandRegistry is still null on the first several
+        // MainThreadPump ticks (the game's own CommandLineHelper.Initialize() hasn't run yet), so
+        // GameBridge.RegisterCommand throws/logs a NullReferenceException per attempt during that
+        // window. TryRegister is polled every tick and does NOT cache failure, so it keeps retrying
+        // and self-heals the moment the game's Initialize() runs -- verified live (crucible_input_focus_gate
+        // / crucible_input_state show several failed attempts followed by a successful registration a
+        // few ticks later). This note exists so that transient cascade isn't mistaken for a permanent bug.
+        private static bool _loggedRetryNote;
+
         internal static void Initialize(Harmony harmony, ManualLogSource log)
         {
             _log = log;
@@ -159,6 +168,13 @@ namespace Crucible.Plugin
             {
                 _loggedRegistration = true;
                 _log.LogInfo("InputFocusGateCommands registered (crucible_input_focus_gate, crucible_input_state).");
+            }
+            else if (!(_gateRegistered && _stateRegistered) && !_loggedRetryNote && _log != null)
+            {
+                _loggedRetryNote = true;
+                _log.LogInfo("InputFocusGateCommands: one or more crucible_input_* registrations failed this tick -- "
+                    + "expected if CommandLineHelper isn't initialized by the game yet; retrying every tick "
+                    + "and will self-heal (see the preceding RegisterCommand warning for which method/arity).");
             }
         }
 

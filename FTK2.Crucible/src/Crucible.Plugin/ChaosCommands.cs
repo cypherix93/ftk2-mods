@@ -64,6 +64,15 @@ namespace Crucible.Plugin
         private static bool _stateRegistered;
         private static bool _advanceRegistered;
 
+        // Logged once: CommandLineHelper._commandRegistry is still null on the first several
+        // MainThreadPump ticks (the game's own CommandLineHelper.Initialize() hasn't run yet), so
+        // GameBridge.RegisterCommand throws/logs a NullReferenceException per attempt during that
+        // window. TryRegister is polled every tick and does NOT cache failure, so it keeps retrying
+        // and self-heals the moment the game's Initialize() runs -- verified live (crucible_chaos_advance
+        // etc. show several failed attempts followed by "Registered command: ..." a few ticks later).
+        // This note exists so that transient cascade isn't mistaken for a permanent registration bug.
+        private static bool _loggedRetryNote;
+
         internal static void Initialize(Harmony harmony, ManualLogSource log)
         {
             _log = log;
@@ -119,6 +128,14 @@ namespace Crucible.Plugin
             if (!_freezeRegistered) _freezeRegistered = GameBridge.RegisterCommand("crucible_chaos_freeze", FreezeHandler, new List<string> { "on|off" });
             if (!_stateRegistered) _stateRegistered = GameBridge.RegisterCommand("crucible_chaos_state", StateHandler, new List<string>());
             if (!_advanceRegistered) _advanceRegistered = GameBridge.RegisterCommand("crucible_chaos_advance", AdvanceHandler, new List<string> { "chaosConfigName" });
+
+            if (!_loggedRetryNote && !(_freezeRegistered && _stateRegistered && _advanceRegistered) && _log != null)
+            {
+                _loggedRetryNote = true;
+                _log.LogInfo("ChaosCommands: one or more crucible_chaos_* registrations failed this tick -- "
+                    + "expected if CommandLineHelper isn't initialized by the game yet; retrying every tick "
+                    + "and will self-heal (see the preceding RegisterCommand warning for which method/arity).");
+            }
         }
 
         public static void CrucibleChaosFreeze(string pOnOff)

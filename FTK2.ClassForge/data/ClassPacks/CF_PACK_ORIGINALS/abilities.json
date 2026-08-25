@@ -1,8 +1,11 @@
 {
   "CF_TRAINER_SUMMON_CHAOS_ATTACK": {
     "Inherits": "DEFAULT_ABILITY",
+    "TargetArea": "SINGLE",
     "Target": "ALLY_ALL",
     "TileOccupancy": "EMPTY",
+    "OriginRowPosition": "ANY",
+    "TargetRowPosition": "ANY",
     "DamageAgainstRow": "NONE",
     "IsMajorAction": true,
     "RequiresSkillRoll": true,
@@ -12,20 +15,25 @@
     "Kamikaze": false,
     "Ammo": 0,
     "Chargeable": false,
+    "AnimationIdentity": "STANDARD",
+    "Tendency": "NONE",
     "Actions": [
       {
         "Item1": "ADD_CHARACTER",
         "Item2": {
-          "Type": "SPECIFIC",
-          "Value": "WOLF_FOREST_01"
+          "Type": "RANDOM",
+          "Value": "WOLF_FOREST"
         }
       }
     ]
   },
   "CF_TRAINER_SUMMON_EMBER_ATTACK": {
     "Inherits": "DEFAULT_ABILITY",
+    "TargetArea": "SINGLE",
     "Target": "ALLY_ALL",
     "TileOccupancy": "EMPTY",
+    "OriginRowPosition": "ANY",
+    "TargetRowPosition": "ANY",
     "DamageAgainstRow": "NONE",
     "IsMajorAction": true,
     "RequiresSkillRoll": true,
@@ -35,20 +43,25 @@
     "Kamikaze": false,
     "Ammo": 0,
     "Chargeable": false,
+    "AnimationIdentity": "STANDARD",
+    "Tendency": "NONE",
     "Actions": [
       {
         "Item1": "ADD_CHARACTER",
         "Item2": {
-          "Type": "SPECIFIC",
-          "Value": "ELEMENTAL_FIRE_00"
+          "Type": "RANDOM",
+          "Value": "ELEMENTAL_FIRE"
         }
       }
     ]
   },
   "CF_TRAINER_SUMMON_RIME_ATTACK": {
     "Inherits": "DEFAULT_ABILITY",
+    "TargetArea": "SINGLE",
     "Target": "ALLY_ALL",
     "TileOccupancy": "EMPTY",
+    "OriginRowPosition": "ANY",
+    "TargetRowPosition": "ANY",
     "DamageAgainstRow": "NONE",
     "IsMajorAction": true,
     "RequiresSkillRoll": true,
@@ -58,12 +71,14 @@
     "Kamikaze": false,
     "Ammo": 0,
     "Chargeable": false,
+    "AnimationIdentity": "STANDARD",
+    "Tendency": "NONE",
     "Actions": [
       {
         "Item1": "ADD_CHARACTER",
         "Item2": {
-          "Type": "SPECIFIC",
-          "Value": "GOLEM_ROCK_00"
+          "Type": "RANDOM",
+          "Value": "GOLEM_ROCK"
         }
       }
     ]

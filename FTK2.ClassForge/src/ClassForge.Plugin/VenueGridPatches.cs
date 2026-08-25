@@ -69,33 +69,44 @@ namespace ClassForge.Plugin
             // PLAYER no more room than the standard board.
             { "kraken", null },
 
-            // Two back + two front columns a side, six rows. Room for 2x2 creatures and for a
-            // summoner to field a team without filling the party's own side.
+            // Wide board, and every cell is a LETTER.
+            //
+            // A '.' cell becomes GroupIndex -1, and the renderer refuses to draw those:
+            // CreateVenueTileGameObjects puts any tile with GroupIndex <= -1 on Unity's
+            // "DoNotRender" layer, and SetVenueTileRenderState only escapes Hidden when
+            // GroupIndex >= 0. The shipped rows are padded with dots -- "|..Aa.bB..|" is 4 letters
+            // to 6 dots -- so most of a standard board is deliberately invisible and the two sides
+            // are separated by an unrendered gap. Padding a WIDER map the same way is what made the
+            // enlarged arena read as "the tiles do not exist" even though every tile was real,
+            // occupied and movable-to.
+            //
+            // So these maps have no padding at all: back columns then front columns, meeting in the
+            // middle, which is the continuous outlined field the boss arenas show.
             { "large", new[]
                 {
-                    "+-------------+",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "+-------------+",
+                    "+--------+",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "+--------+",
                 } },
 
             // The same width, eight rows deep.
             { "huge", new[]
                 {
-                    "+-------------+",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "|..AAaa.bbBB..|",
-                    "+-------------+",
+                    "+--------+",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "|AAaabbBB|",
+                    "+--------+",
                 } },
         };
 

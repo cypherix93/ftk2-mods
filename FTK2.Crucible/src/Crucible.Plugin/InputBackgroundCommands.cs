@@ -32,6 +32,14 @@ namespace Crucible.Plugin
 
         private static bool _registered;
 
+        // Logged once: CommandLineHelper._commandRegistry is still null on the first several
+        // MainThreadPump ticks (the game's own CommandLineHelper.Initialize() hasn't run yet), so
+        // GameBridge.RegisterCommand throws/logs a NullReferenceException per attempt during that
+        // window. TryRegister is polled every tick and does NOT cache failure, so it keeps retrying
+        // and self-heals the moment the game's Initialize() runs. This note exists so that transient
+        // cascade isn't mistaken for a permanent registration bug.
+        private static bool _loggedRetryNote;
+
         /// <summary>Most recent crucible_input_background result. Same handoff contract as GamepadCommands.LastResult.</summary>
         internal static string LastResult;
 
@@ -53,7 +61,17 @@ namespace Crucible.Plugin
         {
             if (_registered) return;
             _registered = GameBridge.RegisterCommand("crucible_input_background", Handler, new List<string> { "on|off" });
-            if (_registered && _log != null) _log.LogInfo("InputBackgroundCommands registered (crucible_input_background).");
+            if (_registered && _log != null)
+            {
+                _log.LogInfo("InputBackgroundCommands registered (crucible_input_background).");
+            }
+            else if (!_loggedRetryNote && _log != null)
+            {
+                _loggedRetryNote = true;
+                _log.LogInfo("InputBackgroundCommands: crucible_input_background registration failed this tick -- "
+                    + "expected if CommandLineHelper isn't initialized by the game yet; retrying every tick "
+                    + "and will self-heal (see the preceding RegisterCommand warning for which method/arity).");
+            }
         }
 
         /// <summary>
