@@ -231,8 +231,8 @@
       {
         "Type": "SUMMON",
         "Target": "SELF",
-        "SummonType": "SPECIFIC",
-        "CharacterConfig": "WOLF_FOREST_01",
+        "SummonType": "RANDOM",
+        "CharacterConfig": "WOLF_FOREST",
         "Count": 1
       }
     ],
@@ -240,7 +240,7 @@
       "Scope": "ONCE_PER_COMBAT"
     },
     "VerboseLogTag": "Chaos1",
-    "_design": "Stage selection by BOND BAND, not a new evolution engine. cf_bond is already fed by SKILL_CF_TRAINER_GOTTA_TRAIN_EM on every kill, and a band is just two COUNTER conditions (GTE lower, LT upper), so which stage shows up is pure data. The bands are mutually exclusive, so exactly one stage of each line can fire per combat. Every config id here was confirmed present in the shipped Characters.json -- an id that does not resolve throws at summon time, which is why the ids are not inferred from the naming pattern. The engine ALSO resolves ids by that pattern (GetCharacterConfigAtLevel rewrites the trailing two digits), which is why these lines are named on the _NN convention."
+    "_design": "Stage selection by BOND BAND, not a new evolution engine. cf_bond is already fed by SKILL_CF_TRAINER_GOTTA_TRAIN_EM on every kill, and a band is just two COUNTER conditions (GTE lower, LT upper), so which stage shows up is pure data. The bands are mutually exclusive, so exactly one stage of each line can fire per combat. SummonType RANDOM + a bare family tag (not SPECIFIC + a fixed _NN id) is deliberate: TryCreateSummon's RANDOM branch calls CharacterHelper.GetActorsByTags(tag, pLevel), which filters that family's tier variants down to the one whose Characters.json \"Level\" field equals the caster's current level (capped at 7) -- the exact mechanism the class's own charm items (CF_TRAINER_SUMMON_CHAOS/EMBER/RIME_ATTACK) already use, confirmed working in game. So the partner that answers this call gets stronger as the Trainer levels up over the run, on top of which evolution line answers by Bond."
   },
   "SKILL_CF_TRAINER_CHAOS_2": {
     "SchemaVersion": "1.1",
@@ -264,8 +264,8 @@
       {
         "Type": "SUMMON",
         "Target": "SELF",
-        "SummonType": "SPECIFIC",
-        "CharacterConfig": "WOLF_HELLHOUND_01",
+        "SummonType": "RANDOM",
+        "CharacterConfig": "WOLF_HELLHOUND",
         "Count": 1
       }
     ],
@@ -291,8 +291,8 @@
       {
         "Type": "SUMMON",
         "Target": "SELF",
-        "SummonType": "SPECIFIC",
-        "CharacterConfig": "WOLF_CHAOSHOUND_01",
+        "SummonType": "RANDOM",
+        "CharacterConfig": "WOLF_CHAOSHOUND",
         "Count": 1
       }
     ],
