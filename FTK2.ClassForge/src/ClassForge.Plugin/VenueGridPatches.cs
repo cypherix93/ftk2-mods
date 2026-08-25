@@ -123,6 +123,7 @@ namespace ClassForge.Plugin
         internal static ConfigEntry<float> ZoomOut;
         internal static ConfigEntry<float> TileBorderOpacity;
         internal static ConfigEntry<float> ClearFoliage;
+        internal static ConfigEntry<string> RotateDioramas;
 
         internal static void Bind(ConfigFile config)
         {
@@ -140,6 +141,15 @@ namespace ClassForge.Plugin
                 + "enables the shadow one -- so this is the knob that makes the grid readable "
                 + "without filling every square in. Raising the tiles' emissive instead brightens "
                 + "the highlight FILLS, which is the wrong look entirely. Try 0.3-0.6.");
+
+            RotateDioramas = config.Bind("Combat", "RotateDioramas", "",
+                "Comma-separated diorama names to cycle through, one per combat. Empty keeps each "
+                + "venue's own battlefield. The three that SHIP with the Extended grid are "
+                + "CASTLETHRONE, HARAZUEL_ROOF, OMUS_CASTLE_BOSS -- all interiors, so their floors "
+                + "show tiles cleanly and no grass stands on the board. Using these makes every "
+                + "fight happen in one of three places regardless of where you are on the map, "
+                + "which is the trade. When rotating onto an Extended venue, leave VenueGridPreset "
+                + "off: those venues already have the bigger grid AND a camera framed for it.");
 
             ClearFoliage = config.Bind("Combat", "ClearFoliageOverGrid", 0f,
                 "Hide venue scenery standing ON the battle grid, so tall grass and props stop "
@@ -165,6 +175,63 @@ namespace ClassForge.Plugin
         }
 
 
+
+
+        private static int _dioramaTurn;
+
+        /// <summary>
+        /// Prefix on <c>RouterMono.Route</c> — picks the battlefield the next combat is fought on.
+        ///
+        /// <para>This is the last moment the choice can be made. <c>VenueState.Venue.DioramaName</c>
+        /// is what the venue loads from, and the load happens inside this call, so writing it here
+        /// lands in time. The obvious earlier seam, <c>AdventureDirector._performVenueAction</c>, is
+        /// <c>async void</c> — a postfix there fires when the state machine STARTS, not when the
+        /// VenueState is finished.</para>
+        ///
+        /// <para>Why rotate at all: only three of the game's 98 dioramas ship with the Extended grid,
+        /// and all three are interiors. Widening an ordinary outdoor venue leaves its tall grass
+        /// standing on the board, between the camera and the tiles. Borrowing an interior sidesteps
+        /// that entirely — the floor is stone and nothing grows on it — at the cost of every fight
+        /// happening in one of three places.</para>
+        /// </summary>
+        public static void Route_Prefix(eRoutes pTargetRoute)
+        {
+            try
+            {
+                if (RotateDioramas == null) return;
+                string raw = (RotateDioramas.Value ?? "").Trim();
+                if (raw.Length == 0) return;
+                if (pTargetRoute != eRoutes.COMBAT) return;
+
+                var names = new List<string>();
+                foreach (var part in raw.Split(','))
+                {
+                    string n = part.Trim();
+                    if (n.Length > 0) names.Add(n);
+                }
+                if (names.Count == 0) return;
+
+                var venueState = RouterHelper.Env?.GameRun?.VenueState;
+                var venue = venueState == null ? null : venueState.Venue;
+                if (venue == null) return;
+
+                string chosen = names[_dioramaTurn % names.Count];
+                _dioramaTurn++;
+
+                string was = venue.DioramaName;
+                if (string.Equals(was, chosen, StringComparison.OrdinalIgnoreCase)) return;
+                venue.DioramaName = chosen;
+
+                ClassForgePlugin.Log.LogInfo(
+                    "[ClassForge] battlefield " + was + " -> " + chosen
+                    + " (rotation " + (((_dioramaTurn - 1) % names.Count) + 1) + "/" + names.Count + ").");
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] could not choose a battlefield; the venue keeps its own: " + ex.Message);
+            }
+        }
 
         /// <summary>
         /// Hides venue scenery that stands inside the battle grid's footprint.

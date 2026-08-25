@@ -384,6 +384,11 @@ namespace ClassForge.Plugin
             // A resting tile draws only its BORDER: TileRender.Default disables the fill renderer
             // and enables the shadow one. Emissive lives on the fill, so brightening that lights up
             // the highlights and leaves the grid itself faint -- the border opacity is the knob.
+            // Choose the battlefield just before the venue loads. Only 3 of 98 dioramas ship
+            // with the Extended grid, and all three are interiors with clean stone floors.
+            Patch(harmony, typeof(RouterMono), "Route",
+                prefix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.Route_Prefix)));
+
             // Cull scenery standing ON the board; outdoor grass occludes the tiles badly.
             Patch(harmony, typeof(VenueViewHelper), "CreateVenueTileGameObjects",
                 postfix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.CreateVenueTileGameObjects_Postfix)));
