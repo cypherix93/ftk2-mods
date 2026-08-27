@@ -51,15 +51,21 @@ namespace ClassForge.Recipes.Loot
 
         /// <summary>
         /// <c>GrantKey = first 16 hex of SHA256("CF_SYNC_LOOT_GRANT_V1|" + CombatSeed + "|" +
-        /// join(",", enemy guids sorted ordinal) + "|" + ListDigest + "|" + join(",", owner guids sorted
-        /// ordinal))</c>, invariant culture (GATE A #2). Enemy guids and <paramref name="listDigest"/>
+        /// join(",", enemy keys sorted ordinal) + "|" + ListDigest + "|" + join(",", owner keys sorted
+        /// ordinal))</c>, invariant culture (GATE A #2). The keys and <paramref name="listDigest"/>
         /// jointly supply the per-combat entropy <c>DrawMark</c> was meant to provide — both are
         /// replicated state, identical on every peer iff lockstep held.
+        /// <para><b>The key strings MUST be peer-stable — never <c>Entity.Guid</c>.</b> That was the shipped
+        /// behaviour until 2026-08-26 and it was wrong twice over: this value is transmitted in the
+        /// <c>CF_SYNC_LOOT_GRANT_V1</c> audit payload (so a per-peer guid guaranteed a mismatch) and it seeds
+        /// deterministic <c>Thing.Id</c> minting (so the two peers would mint different ids for the same
+        /// granted item). Callers pass <c>EntityKey.ToString()</c> roster keys — see
+        /// <c>LootGrantPatches.RosterKeysOf</c>.</para>
         /// </summary>
-        public static string ComputeGrantKey(int combatSeed, IEnumerable<string> enemyGuids, string listDigest, IEnumerable<string> ownerGuids)
+        public static string ComputeGrantKey(int combatSeed, IEnumerable<string> enemyKeys, string listDigest, IEnumerable<string> ownerKeys)
         {
-            List<string> sortedEnemies = LootHash.SortedOrdinal(enemyGuids);
-            List<string> sortedOwners = LootHash.SortedOrdinal(ownerGuids);
+            List<string> sortedEnemies = LootHash.SortedOrdinal(enemyKeys);
+            List<string> sortedOwners = LootHash.SortedOrdinal(ownerKeys);
             string msg = "CF_SYNC_LOOT_GRANT_V1|" + LootHash.IntInvariant(combatSeed) + "|" +
                          LootHash.JoinComma(sortedEnemies) + "|" + (listDigest ?? string.Empty) + "|" +
                          LootHash.JoinComma(sortedOwners);
@@ -68,12 +74,17 @@ namespace ClassForge.Recipes.Loot
 
         /// <summary>
         /// <c>grantSeed = unchecked((int)(first 4 bytes big-endian of SHA256("CF_LOOT_GRANT_V1|" +
-        /// CombatSeed + "|" + ListDigest + "|" + join(",", enemy guids sorted ordinal))))</c>, invariant
+        /// CombatSeed + "|" + ListDigest + "|" + join(",", enemy keys sorted ordinal))))</c>, invariant
         /// culture (GATE A #3). Feeds the private grant stream's seed — never the shared combat stream.
+        /// <para><b>Same rule as <see cref="ComputeGrantKey"/>: peer-stable keys only.</b> This one is the
+        /// sharper of the two — a seed derived from <c>Guid.NewGuid()</c> values makes the private grant
+        /// stream a DIFFERENT stream on every peer, so every peer computes different loot from the same
+        /// won combat. The zero-shared-draw pattern is only correct if the derived seed is derived from
+        /// REPLICATED inputs.</para>
         /// </summary>
-        public static int ComputeGrantSeed(int combatSeed, string listDigest, IEnumerable<string> enemyGuids)
+        public static int ComputeGrantSeed(int combatSeed, string listDigest, IEnumerable<string> enemyKeys)
         {
-            List<string> sortedEnemies = LootHash.SortedOrdinal(enemyGuids);
+            List<string> sortedEnemies = LootHash.SortedOrdinal(enemyKeys);
             string msg = "CF_LOOT_GRANT_V1|" + LootHash.IntInvariant(combatSeed) + "|" + (listDigest ?? string.Empty) +
                          "|" + LootHash.JoinComma(sortedEnemies);
             byte[] hash = LootHash.Sha256Bytes(msg);

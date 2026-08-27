@@ -1341,7 +1341,7 @@
     ],
     "Value": 5
   },
-  "ARM_EOR_STARTER_RUNEMAGE_CHALK_RUNE_STAFF": {
+  "ARM_EOR_STARTER_RUNEMAGE_CHALK_RUNE_STAFF_CF": {
     "Ammo": 0,
     "Class": "STAFF",
     "ConsumableType": "NONE",
@@ -1385,7 +1385,7 @@
       ],
       "ShuffleAbilityBag": false
     },
-    "Material": "CLOTH",
+    "Material": "WOOD",
     "MaxTier": -1,
     "MinTier": -1,
     "Rarity": "COMMON",

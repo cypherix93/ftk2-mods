@@ -17,19 +17,19 @@
 Checkable conditions, not judgment calls. An executing session evaluates itself against this list before claiming completion and states plainly any that are unmet.
 
 - [ ] **AC1 — Green on *Ben's* install, not on a fantasy pristine one.** `pwsh -File tools/run-harness.ps1` exits `0` against the live install at `C:\Program Files (x86)\Steam\steamapps\common\For The King II`, which is **deliberately contaminated**: `Configs.Characters` reads **2126** (2095 vanilla + 31 `EOR_*` written to disk by *Enhanced Overhaul Revamped* `0.7.0.62`) and `Configs.Things` reads **2380** (1847 vanilla + 533 `ARM_*` written to disk by this repo's own FTK2.Armory deploy). The harness asserts the **expected pack set is present** and that **every authored id resolves**; it never demands vanilla purity. A Steam *Verify integrity of game files* would delete content the co-op saves depend on and is **never** an instruction this harness gives.
-- [ ] **AC2 — The provenance gate fires on the things that actually go wrong.** Three independently-proven behaviours, each with a pure-function negative control (Task 3), because the real install must not be mutated to demonstrate them:
+- [x] **AC2 — The provenance gate fires on the things that actually go wrong.** Three independently-proven behaviours, each with a pure-function negative control (Task 3), because the real install must not be mutated to demonstrate them:
   1. **Expected content missing** → Error. Feed a synthetic snapshot with zero `EOR_*` Characters; the check must name the missing pack. (This is the Steam-verify-wiped-the-co-op-content failure.)
   2. **Unaccounted-for content present** → Error. Feed a synthetic snapshot carrying an id from neither vanilla nor a recorded pack; the check must name the dictionary and the surplus. Detection is by arithmetic (`live count == vanilla baseline + recorded pack contributions`), so it catches an unknown third mod without needing to know its prefix.
   3. **A repo pack baked onto disk** → Error. Feed a synthetic snapshot containing `CF_EOR_BARD` in `Characters`; the check must name it. Repo packs are applied at runtime and must never appear in `StreamingAssets` — if one does, "adds-only against live ids" is silently measuring itself.
   Legitimate pack-version drift (`EOR_*` count moving off 31, `ARM_*` off 533) is a **Warning**, never a failure — a harness that goes permanently red when a dependency updates is worthless.
-- [ ] **AC3 — No check is vacuous.** Every check family has a negative control or a deliberately-broken fixture, and inverting it makes that check FAIL. Task 4 Step 6 and Task 5 Step 5 run the fixture inversions explicitly; the rest are asserted by in-suite negative-control cases.
-- [ ] **AC4 — Skip, not fail, without a game.** `pwsh -File tools/run-harness.ps1 -GameDir "Z:\nope"` exits `2` and prints a skip message. `dotnet build` succeeds on a machine with no game installed (no compile-time game reference).
-- [ ] **AC5 — Deterministic.** Two consecutive processes produce byte-identical JSON reports. The report carries no timings, no absolute repo paths, and no enumeration-order-dependent lists.
-- [ ] **AC6 — No placeholders shipped.** Zero occurrences of `NotImplementedException`, `TODO`, or `TBD` under `FTK2.DevKit/sandbox/LiveDataHarness/`.
-- [ ] **AC7 — Repo build rules honored.** No NuGet `PackageReference` in the harness csproj; no compile-time reference to `FTK2.dll`, `UnityEngine*.dll`, or `BepInEx.dll`; every other project in the repo still builds.
-- [ ] **AC8 — The game folder is untouched.** Every `File.`/`Directory.` call in the project is a read or an `Exists` probe, verified by inspection; the only write is the JSON report under `tools/out/`. The harness is safe to run while the game is open.
-- [ ] **AC9 — Findings surfaced, not silenced.** Any check that fires against real pack content is reported with its evidence. **One first-run failure is already known and expected** (Task 10 Step 4: `SKILL_CF_ENCMOD_CURSE_ON_HIT` applies status `"CURSE"`, which is an `eStatusEffectTypes` *type* name, not a `Configs.StatusEffects` id — the nearest real id is `STATUS_CURSE_00`). It is reported to the owner for a decision; it is **not** allowlisted away. A check weakened to make it green is a failed acceptance, not a passed one.
-- [ ] **AC10 — Documented.** `FTK2.DevKit/sandbox/LiveDataHarness/README.md` states the one command, the exit codes, the check inventory, the recorded install baseline, and explicitly what the harness cannot catch.
+- [x] **AC3 — No check is vacuous.** Every check family has a negative control or a deliberately-broken fixture, and inverting it makes that check FAIL. Task 4 Step 6 and Task 5 Step 5 run the fixture inversions explicitly; the rest are asserted by in-suite negative-control cases.
+- [x] **AC4 — Skip, not fail, without a game.** `pwsh -File tools/run-harness.ps1 -GameDir "Z:\nope"` exits `2` and prints a skip message. `dotnet build` succeeds on a machine with no game installed (no compile-time game reference).
+- [x] **AC5 — Deterministic.** Two consecutive processes produce byte-identical JSON reports. The report carries no timings, no absolute repo paths, and no enumeration-order-dependent lists.
+- [x] **AC6 — No placeholders shipped.** Zero occurrences of `NotImplementedException`, `TODO`, or `TBD` under `FTK2.DevKit/sandbox/LiveDataHarness/`.
+- [x] **AC7 — Repo build rules honored.** No NuGet `PackageReference` in the harness csproj; no compile-time reference to `FTK2.dll`, `UnityEngine*.dll`, or `BepInEx.dll`; every other project in the repo still builds.
+- [x] **AC8 — The game folder is untouched.** Every `File.`/`Directory.` call in the project is a read or an `Exists` probe, verified by inspection; the only write is the JSON report under `tools/out/`. The harness is safe to run while the game is open.
+- [x] **AC9 — Findings surfaced, not silenced.** Any check that fires against real pack content is reported with its evidence. **One first-run failure is already known and expected** (Task 10 Step 4: `SKILL_CF_ENCMOD_CURSE_ON_HIT` applies status `"CURSE"`, which is an `eStatusEffectTypes` *type* name, not a `Configs.StatusEffects` id — the nearest real id is `STATUS_CURSE_00`). It is reported to the owner for a decision; it is **not** allowlisted away. A check weakened to make it green is a failed acceptance, not a passed one.
+- [x] **AC10 — Documented.** `FTK2.DevKit/sandbox/LiveDataHarness/README.md` states the one command, the exit codes, the check inventory, the recorded install baseline, and explicitly what the harness cannot catch.
 
 ---
 
@@ -227,7 +227,7 @@ Follower packs (Summoner): `SMN_PACK_EOR_MERCS` (100 followers) + `SMN_PACK_EOR_
   - `sealed class GameData` — `static GameData Load(GameInstall install)`, `object Configs { get; }`, `string ManagedDir { get; }`, `ISet<string> Ids(string dictName)`, `int Count(string dictName)`, `IEnumerable<object> Values(string dictName)`, `IDictionary<string,string> Lang(string code)`, `static object Field(object cfgObj, string fieldName)`.
   - `static class Program` — `int Main(string[] args)`, `static string ArgValue(string[] args, string name)`.
 
-- [ ] **Step 1: Write `LiveDataHarness.csproj`**
+- [x] **Step 1: Write `LiveDataHarness.csproj`**
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -261,7 +261,7 @@ Follower packs (Summoner): `SMN_PACK_EOR_MERCS` (100 followers) + `SMN_PACK_EOR_
 </Project>
 ```
 
-- [ ] **Step 2: Write `Harness.cs`**
+- [x] **Step 2: Write `Harness.cs`**
 
 Deliberately mirrors `FTK2.ClassForge/src/ClassForge.Recipes.Tests/Harness.cs` and `FTK2.DevKit/sandbox/TypeProbe.Tests/TestHarness.cs` (same `Case`/`Section`/`Report` shape) so anyone who has read those can read this. Unlike `TestHarness` it holds **instance** state only — the harness runs one suite per process but the report writer needs the counts back, and static mutable state is what makes a runner untestable.
 
@@ -408,7 +408,7 @@ namespace LiveDataHarness
 }
 ```
 
-- [ ] **Step 3: Write `GameInstall.cs`**
+- [x] **Step 3: Write `GameInstall.cs`**
 
 The candidate list matches `tools/deploy.ps1`'s `Resolve-GameDir` so the harness and the deployer always agree on which install is "the" install. The verified path on this machine is the `Program Files (x86)` one; the `E:\` entry is kept because `deploy.ps1` carries it and a divergence between the two tools is worse than a dead probe.
 
@@ -463,7 +463,7 @@ namespace LiveDataHarness
 }
 ```
 
-- [ ] **Step 4: Write `GameData.cs`**
+- [x] **Step 4: Write `GameData.cs`**
 
 ```csharp
 using System;
@@ -592,7 +592,7 @@ namespace LiveDataHarness
 }
 ```
 
-- [ ] **Step 5: Write `Program.cs` with the smoke check only**
+- [x] **Step 5: Write `Program.cs` with the smoke check only**
 
 ```csharp
 using System;
@@ -678,7 +678,7 @@ namespace LiveDataHarness
 }
 ```
 
-- [ ] **Step 6: Verify it builds and runs green**
+- [x] **Step 6: Verify it builds and runs green**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -688,7 +688,7 @@ Expected: prints `game: C:\Program Files (x86)\Steam\steamapps\common\For The Ki
 
 If `Configs.Things` reads far below 2380 or `Configs.Characters` below 2126, **stop and report** — content the co-op saves depend on is missing from the install. Do **not** run Steam's *Verify integrity of game files*; that is what removes it.
 
-- [ ] **Step 7: Verify the no-install path (AC4)**
+- [x] **Step 7: Verify the no-install path (AC4)**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release -- --game-dir "Z:\nope"
@@ -717,7 +717,7 @@ Without this, every enum-valued and closed-vocabulary JSON field (`Rarity: "COMM
 - Consumes: `GameData.Configs`, `GameData.Values`, `GameData.Field` (Task 1).
 - Produces: `sealed class GameVocabulary` with `static GameVocabulary Build(GameData data)` and get-only members `ISet<string> EnumMembers`, `BaseTypes`, `BodyTypes`, `CharacterTags`, `ThingTags`, `ThingClasses`, `Rarities`, `Materials`, `ConsumableTypes`, `StatusTypes`, `Expansions`.
 
-- [ ] **Step 1: Write `GameVocabulary.cs`**
+- [x] **Step 1: Write `GameVocabulary.cs`**
 
 `EnumMembers` is read from the already-loaded `FTK2.dll` (no `MetadataLoadContext` — the assembly is live in this process). Everything else is *learned* from live config values, because those fields are `string`/`List<string>` with a closed de-facto vocabulary rather than declared enums.
 
@@ -843,7 +843,7 @@ namespace LiveDataHarness
 }
 ```
 
-- [ ] **Step 2: Register the vocabulary section in `Program.cs`**
+- [x] **Step 2: Register the vocabulary section in `Program.cs`**
 
 Insert directly after the "Live config sanity" section, hoisting `vocab` so later tasks can use it:
 
@@ -879,7 +879,7 @@ Insert directly after the "Live config sanity" section, hoisting `vocab` so late
             });
 ```
 
-- [ ] **Step 3: Run and verify**
+- [x] **Step 3: Run and verify**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -924,7 +924,7 @@ The gate is therefore **inverted**: assert the expected pack set is *present*, a
     - `static List<string> VersionDrift(IDictionary<string, ISet<string>> snapshot)`
     - `static void Register(CheckRunner runner, GameData data)`
 
-- [ ] **Step 1: Write `InstallProvenance.cs`**
+- [x] **Step 1: Write `InstallProvenance.cs`**
 
 ```csharp
 using System;
@@ -1224,7 +1224,7 @@ namespace LiveDataHarness
 }
 ```
 
-- [ ] **Step 2: Wire into `Program.cs`**
+- [x] **Step 2: Wire into `Program.cs`**
 
 Immediately after the "Game vocabulary" section:
 
@@ -1232,7 +1232,7 @@ Immediately after the "Game vocabulary" section:
             InstallProvenance.Register(runner, data);
 ```
 
-- [ ] **Step 3: Run and verify**
+- [x] **Step 3: Run and verify**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -1247,7 +1247,7 @@ Read the outcomes honestly:
 - **"every live id is accounted for" FAILS with a shortfall** → vanilla content is missing. That is install damage, and it is the one case where a Steam repair is genuinely indicated — but only after the owner has been told, because the mod content must be reinstalled afterwards.
 - **"no repo-authored id is written into StreamingAssets" FAILS** → a deploy step baked a runtime pack onto disk. Every adds-only result below is void until it is removed.
 
-- [ ] **Step 4: Prove the controls actually control**
+- [x] **Step 4: Prove the controls actually control**
 
 Temporarily change `SyntheticBaseline` to return an empty dictionary, re-run, and confirm the three NEGATIVE cases now **FAIL** (they can no longer find the offenders they inject). Restore it and re-run to green before committing. This is the cheapest available demonstration that the negative controls are not themselves vacuous.
 
@@ -1281,7 +1281,7 @@ It also builds `AuthoredContent`, the shared id universe every later check reads
   - `sealed class AuthoredContent` — `static AuthoredContent Load(GameData data)`, `static AuthoredContent LoadFrom(GameData data, string[] roots)`, `static IEnumerable<string> ErrorFindings(AuthoredContent content)`; get-only members `PackLoadResult Packs`, `IDictionary<string, ClassForge.Recipes.Model.RecipeSet> RecipeSetsByPackId`, `ISet<string> AuthoredRecipeIds`, `ISet<string> GeneratedRecipeIds`, `ISet<string> AllRecipeIds`, `ISet<string> PackIds`.
   - `static class Checks.AddsOnlyChecks` — `static void Register(CheckRunner runner, GameData data, AuthoredContent content)`.
 
-- [ ] **Step 1: Write `PackRoots.cs`**
+- [x] **Step 1: Write `PackRoots.cs`**
 
 ```csharp
 using System.Collections.Generic;
@@ -1339,7 +1339,7 @@ namespace LiveDataHarness
 }
 ```
 
-- [ ] **Step 2: Write `AuthoredContent.cs`**
+- [x] **Step 2: Write `AuthoredContent.cs`**
 
 ```csharp
 using System;
@@ -1449,7 +1449,7 @@ namespace LiveDataHarness
 }
 ```
 
-- [ ] **Step 3: Write the collide fixture**
+- [x] **Step 3: Write the collide fixture**
 
 Manifest keys are **lowercase-camel** — verified against `ClassForge.Core.ManifestParser`, which reads `id`, `name`, `version`, `author`, `description`, `loadOrder`, `dependencies`, `enabled`. Getting the casing wrong yields a pack that silently fails to discover, which would make the fixture vacuous. The id starts with `CF_PACK_` so it does not trip `ManifestParser`'s `CF_PACK_ID_CONVENTION` warning and add noise.
 
@@ -1488,7 +1488,7 @@ Manifest keys are **lowercase-camel** — verified against `ClassForge.Core.Mani
 }
 ```
 
-- [ ] **Step 4: Write `Checks/AddsOnlyChecks.cs`**
+- [x] **Step 4: Write `Checks/AddsOnlyChecks.cs`**
 
 ```csharp
 using System;
@@ -1579,7 +1579,7 @@ namespace LiveDataHarness.Checks
 }
 ```
 
-- [ ] **Step 5: Wire into `Program.cs`**
+- [x] **Step 5: Wire into `Program.cs`**
 
 After `InstallProvenance.Register(runner, data);`:
 
@@ -1588,7 +1588,7 @@ After `InstallProvenance.Register(runner, data);`:
             Checks.AddsOnlyChecks.Register(runner, data, authored);
 ```
 
-- [ ] **Step 6: Prove the fixture bites before trusting the positive result**
+- [x] **Step 6: Prove the fixture bites before trusting the positive result**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -1640,7 +1640,7 @@ The field map below is the measured ground truth. Each row says: *for this field
 | `StatusEffects` | `Type` | closed vocab | `vocab.StatusTypes` ∪ `vocab.EnumMembers` |
 | *(any)* | `LootID`, `CampQuery`, `SwarmQuery`, `OnDeathAbility` | optional id | **out of scope** — measured empty/absent across all shipped packs, so a rule for them would be speculative and could only produce false positives. Add them when a pack actually uses one. |
 
-- [ ] **Step 1: Write `Checks/ReferenceChecks.cs`**
+- [x] **Step 1: Write `Checks/ReferenceChecks.cs`**
 
 ```csharp
 using System;
@@ -1831,7 +1831,7 @@ namespace LiveDataHarness.Checks
 }
 ```
 
-- [ ] **Step 2: Write the dangling fixture**
+- [x] **Step 2: Write the dangling fixture**
 
 `fixtures/dangling/CF_PACK_HARNESS_DANGLING/pack.json`:
 
@@ -1868,13 +1868,13 @@ namespace LiveDataHarness.Checks
 }
 ```
 
-- [ ] **Step 3: Wire into `Program.cs`**
+- [x] **Step 3: Wire into `Program.cs`**
 
 ```csharp
             Checks.ReferenceChecks.Register(runner, data, vocab, authored);
 ```
 
-- [ ] **Step 4: Run and interpret honestly**
+- [x] **Step 4: Run and interpret honestly**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -1889,7 +1889,7 @@ If "every pack reference resolves" reports offenders:
 
 If the `AuthoredTags` warning fires, delete the named entries from the array and re-run — the enum vocabulary already covers them.
 
-- [ ] **Step 5: Prove the fixture bites**
+- [x] **Step 5: Prove the fixture bites**
 
 Change the fixture's `Passives` entry from `SKILL_CF_HARNESS_DOES_NOT_EXIST` to `SKILL_BLACKHOLE` (a real `Configs.SkillConfigs` id, verified present), re-run, and confirm the **NEGATIVE fixture** case now **FAILS**. Restore the invented id, re-run to green, then commit.
 
@@ -1914,7 +1914,7 @@ git commit -m "LiveDataHarness T5: reference integrity for pack content vs live 
 
 **Verified convention (2026-08-23).** A class with config id `ALCHEMIST` needs `en["ALCHEMIST"]` (display name — measured value `"Alchemist"`) and `en["UI_TOOLTIP_ALCHEMIST_DESCRIPTION"]` (tooltip body). Vanilla `CharacterConfig.LocKey` is empty for every `PLAYER`-tagged class, so the **config id itself is the key** — not `LocKey`. The four packs ship 237 + 60 + 21 + 92 = **410** localization keys between them, cover 35/35 classes and 45/45 traits+items, and shadow **zero** vanilla keys. Live `en` has 9707 keys and contains **no** `CF_`/`BLSS_`/`SMN_`/`EOR_`/`ARM_` keys — mod localization is injected at runtime, so `MergePlan.Localization` is the only place pack keys can come from.
 
-- [ ] **Step 1: Write `Checks/LocalizationChecks.cs`**
+- [x] **Step 1: Write `Checks/LocalizationChecks.cs`**
 
 ```csharp
 using System;
@@ -2004,13 +2004,13 @@ namespace LiveDataHarness.Checks
 }
 ```
 
-- [ ] **Step 2: Wire into `Program.cs`**
+- [x] **Step 2: Wire into `Program.cs`**
 
 ```csharp
             Checks.LocalizationChecks.Register(runner, data, authored);
 ```
 
-- [ ] **Step 3: Run and verify**
+- [x] **Step 3: Run and verify**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -2041,7 +2041,7 @@ Reproduces, offline, the gate at `FTK2.Blessings/src/Blessings.Plugin/GrantAncho
 
 Note the pack root: `BLSS_PACK_EOR_BLESSINGS` lives under `FTK2.Blessings/data/ClassPacks/`, which **is** one of `PackRoots.ClassPackRoots()`, so its `traits.json` is already merged into `MergePlan.Things` by Task 4. `blessings.json` is not a ClassForge concept and is read directly here.
 
-- [ ] **Step 1: Write `Checks/BlessingsChecks.cs`**
+- [x] **Step 1: Write `Checks/BlessingsChecks.cs`**
 
 ```csharp
 using System;
@@ -2125,13 +2125,13 @@ namespace LiveDataHarness.Checks
 }
 ```
 
-- [ ] **Step 2: Wire into `Program.cs`**
+- [x] **Step 2: Wire into `Program.cs`**
 
 ```csharp
             Checks.BlessingsChecks.Register(runner, data, authored);
 ```
 
-- [ ] **Step 3: Run and verify**
+- [x] **Step 3: Run and verify**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -2161,7 +2161,7 @@ git commit -m "LiveDataHarness T7: offline replica of the Blessings fail-closed 
 
 `Summoner.Plugin/Adapters/FileSystemPackSource.cs` and `GameJsonCodec.cs` exist but are net472/BepInEx-coupled, and `Summoner.Core.Tests`' equivalents live in an `Exe` project. The harness needs its own two small implementations — that is why they are in this task rather than reused.
 
-- [ ] **Step 1: Read the existing implementations before writing new ones**
+- [x] **Step 1: Read the existing implementations before writing new ones**
 
 ```bash
 cat FTK2.Summoner/src/Summoner.Plugin/Adapters/FileSystemPackSource.cs \
@@ -2171,7 +2171,7 @@ cat FTK2.Summoner/src/Summoner.Plugin/Adapters/FileSystemPackSource.cs \
 
 Mirror their semantics exactly. `IPackFileSource`'s own XML doc settles the contract: `ListPackDirectories` returns **opaque identifiers**, the real adapter returns absolute directory paths, and every other method joins sub-paths onto them and treats the result as opaque. So returning `Directory.GetDirectories(root)` is correct. A mismatch here silently produces "0 packs loaded", which would make this whole task vacuously green — Step 4 asserts against exactly that.
 
-- [ ] **Step 2: Write `Io/HarnessPackSource.cs`**
+- [x] **Step 2: Write `Io/HarnessPackSource.cs`**
 
 ```csharp
 using System.Collections.Generic;
@@ -2220,7 +2220,7 @@ namespace LiveDataHarness.Io
 }
 ```
 
-- [ ] **Step 3: Write `Checks/SummonerChecks.cs`**
+- [x] **Step 3: Write `Checks/SummonerChecks.cs`**
 
 ```csharp
 using System;
@@ -2305,13 +2305,13 @@ namespace LiveDataHarness.Checks
 }
 ```
 
-- [ ] **Step 4: Wire into `Program.cs`**
+- [x] **Step 4: Wire into `Program.cs`**
 
 ```csharp
             Checks.SummonerChecks.Register(runner, data);
 ```
 
-- [ ] **Step 5: Run and verify**
+- [x] **Step 5: Run and verify**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -2342,7 +2342,7 @@ Spec §8 calls S6 "the only component that would have caught the undeployed Bald
 - Consumes: `AuthoredContent` (T4), `ClassForge.Core.MergeOp/MergePlan/ModifierTable`.
 - Produces: `static class Checks.InventoryChecks` — `static void Register(CheckRunner runner, AuthoredContent content)`.
 
-- [ ] **Step 1: Write `Checks/InventoryChecks.cs`**
+- [x] **Step 1: Write `Checks/InventoryChecks.cs`**
 
 ```csharp
 using System;
@@ -2462,13 +2462,13 @@ namespace LiveDataHarness.Checks
 }
 ```
 
-- [ ] **Step 2: Wire into `Program.cs`**
+- [x] **Step 2: Wire into `Program.cs`**
 
 ```csharp
             Checks.InventoryChecks.Register(runner, authored);
 ```
 
-- [ ] **Step 3: Run and verify**
+- [x] **Step 3: Run and verify**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -2499,7 +2499,7 @@ git commit -m "LiveDataHarness T9: authored inventory enforced against the class
 - Consumes: `AuthoredContent.RecipeSetsByPackId` (already parsed **and** validated in T4), `AuthoredContent.Packs.MergePlan.ModifierTables`, `GameData.Ids("StatusEffects")` (T1), `ClassForge.Recipes.Model.Vocabulary.TriggerStatusToken`, `ClassForge.Recipes.Generation.ModifierRecipeGenerator`.
 - Produces: `static class Checks.RecipeChecks` — `static void Register(CheckRunner runner, GameData data, AuthoredContent content)`, `static IEnumerable<KeyValuePair<string,string>> ReferencedStatusIds(ClassForge.Recipes.Model.RecipeSet set)`.
 
-- [ ] **Step 1: Write `Checks/RecipeChecks.cs`**
+- [x] **Step 1: Write `Checks/RecipeChecks.cs`**
 
 ```csharp
 using System;
@@ -2668,13 +2668,13 @@ namespace LiveDataHarness.Checks
 
 Note on `Finding`/`FindingSeverity`: inside this file they are `ClassForge.Recipes.Model.Finding` and `ClassForge.Recipes.Model.FindingSeverity`, resolved by the `using ClassForge.Recipes.Model;`. `ClassForge.Core` is also imported for `MergeOp`/`ModifierTable`/`ModifierEntry`, and it declares same-named types — if the compiler reports CS0104 (ambiguous reference), fully qualify the recipe ones as `ClassForge.Recipes.Model.Finding` / `...FindingSeverity` rather than dropping either `using`.
 
-- [ ] **Step 2: Wire into `Program.cs`**
+- [x] **Step 2: Wire into `Program.cs`**
 
 ```csharp
             Checks.RecipeChecks.Register(runner, data, authored);
 ```
 
-- [ ] **Step 3: Run**
+- [x] **Step 3: Run**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -2689,7 +2689,7 @@ Configs.StatusEffects nor a merged pack status
 
 Exit code 1. **This is the harness working, not the harness broken.**
 
-- [ ] **Step 4: Report the `CURSE` finding — do not silence it (AC9)**
+- [x] **Step 4: Report the `CURSE` finding — do not silence it (AC9)**
 
 The evidence, gathered 2026-08-23:
 
@@ -2727,7 +2727,7 @@ MP parity depends on every peer computing the same `dataHash` from the same pack
 - Consumes: `AuthoredContent.Load(GameData)` (T4), `PackLoadResult.DataHash`, `MergePlan` orderings, `FTK2Mods.DevKit.DataHasher.IsWellFormedHash(string)`.
 - Produces: `static class Checks.DeterminismChecks` — `static void Register(CheckRunner runner, GameData data, AuthoredContent first)`.
 
-- [ ] **Step 1: Write `Checks/DeterminismChecks.cs`**
+- [x] **Step 1: Write `Checks/DeterminismChecks.cs`**
 
 ```csharp
 using System;
@@ -2831,13 +2831,13 @@ namespace LiveDataHarness.Checks
 
 `FTK2Mods.DevKit` is the namespace declared at `FTK2.DevKit/src/DevKit.Core/DataHasher.cs:8`; it matches neither the folder nor the assembly name (`ftk2mods.devkit`), so `using DevKit.Core;` will not compile — hence the fully-qualified call. `DataHasher.HashPrefix` unqualified resolves to `ClassForge.Core.DataHasher` via the `using ClassForge.Core;`, which is the intended one (both declare the identical `"sha256:"` value).
 
-- [ ] **Step 2: Wire into `Program.cs`**
+- [x] **Step 2: Wire into `Program.cs`**
 
 ```csharp
             Checks.DeterminismChecks.Register(runner, data, authored);
 ```
 
-- [ ] **Step 3: Run and verify**
+- [x] **Step 3: Run and verify**
 
 ```bash
 dotnet run --project FTK2.DevKit/sandbox/LiveDataHarness -c Release
@@ -2868,7 +2868,7 @@ git commit -m "LiveDataHarness T11: in-process determinism checks for dataHash a
 - Consumes: `CheckRunner.Passed/Failed/Failures/Warnings` (T1).
 - Produces: `static class Report` — `static void Write(string path, int passed, int failed, IReadOnlyList<CheckFailure> failures, IReadOnlyList<string> warnings)`.
 
-- [ ] **Step 1: Write `Report.cs`**
+- [x] **Step 1: Write `Report.cs`**
 
 ```csharp
 using System;
@@ -2924,7 +2924,7 @@ namespace LiveDataHarness
 }
 ```
 
-- [ ] **Step 2: Call `Report` from `Program.Main`**
+- [x] **Step 2: Call `Report` from `Program.Main`**
 
 Replace the final `return runner.Report();` with:
 
@@ -2941,7 +2941,7 @@ Replace the final `return runner.Report();` with:
             return exit;
 ```
 
-- [ ] **Step 3: Write `tools/run-harness.ps1`**
+- [x] **Step 3: Write `tools/run-harness.ps1`**
 
 Save it **with a UTF-8 BOM** — commit `08db46c` fixed exactly this for `deploy.ps1` (Windows PowerShell 5.1 `-File` misparses without one).
 
@@ -2997,7 +2997,7 @@ Write-Host "LiveDataHarness: pass1=$exit1 pass2=$exit2, reports byte-identical."
 exit ([Math]::Max($exit1, $exit2))
 ```
 
-- [ ] **Step 4: Verify the wrapper end to end**
+- [x] **Step 4: Verify the wrapper end to end**
 
 ```bash
 pwsh -File tools/run-harness.ps1
@@ -3011,7 +3011,7 @@ pwsh -File tools/run-harness.ps1 -GameDir "Z:\nope"
 
 Expected: `LiveDataHarness SKIPPED`, exit 2 (AC4).
 
-- [ ] **Step 5: Verify AC7 and AC8 by inspection**
+- [x] **Step 5: Verify AC7 and AC8 by inspection**
 
 ```bash
 grep -rn "PackageReference" FTK2.DevKit/sandbox/LiveDataHarness/
@@ -3022,7 +3022,7 @@ grep -rn "TODO\|TBD\|NotImplementedException" FTK2.DevKit/sandbox/LiveDataHarnes
 
 Expected: no `PackageReference`; no game/Unity/BepInEx reference in the csproj (the string `FTK2.dll` appears only inside `GameData.cs` as a runtime path, which is correct); the only write calls are `Report.Write`'s `Directory.CreateDirectory` + `File.WriteAllText` against the `--json` path; zero placeholder strings.
 
-- [ ] **Step 6: Write `FTK2.DevKit/sandbox/LiveDataHarness/README.md`**
+- [x] **Step 6: Write `FTK2.DevKit/sandbox/LiveDataHarness/README.md`**
 
 Cover, in this order:
 
@@ -3034,7 +3034,7 @@ Cover, in this order:
 6. **The two field-map traps** — `Passives` resolve against `SkillConfigs` (not `Abilities`), and `Passives` must also resolve against the packs' own `skillrecipes.json` ids because `MergePlan` has none. State the false-finding counts (100 and 56) so a future maintainer does not re-fall into either.
 7. **What it cannot catch** — Harmony patch application, UI injection (class-select and trait-pick lists), combat behaviour, the multiplayer handshake, and anything else needing a running game. Point at the operator smoke script and, once they exist, the S1/S3/S4 Crucible components for those.
 
-- [ ] **Step 7: Wire into the repo README and the operator handoff**
+- [ ] **Step 7: Wire into the repo README and the operator handoff** *(half done: the root README bullet is in; `2026-07-25-eor-rehost-operator-handoff.md` was NOT edited — out of the executing session's file ownership.)*
 
 In the root `README.md` verification-docs bullet list:
 
@@ -3044,7 +3044,7 @@ In the root `README.md` verification-docs bullet list:
 
 In `docs/superpowers/plans/2026-07-25-eor-rehost-operator-handoff.md`, add a short subsection immediately before the numbered smoke checks, stating which of them the harness now covers offline (adds-only merge, reference integrity, localization coverage, the Blessings roster gate, Summoner adds-only, recipe validation, inventory coverage, determinism) and which still require a launch. **Do not delete any manual check** — the harness reduces what must be checked by hand; it does not replace the in-game evidence for UI, combat, or MP.
 
-- [ ] **Step 8: Full run before committing**
+- [x] **Step 8: Full run before committing**
 
 ```bash
 pwsh -File tools/run-harness.ps1
@@ -3061,6 +3061,62 @@ git commit -m "LiveDataHarness T12: JSON report, run-harness wrapper, cross-proc
 ```
 
 ---
+
+---
+
+## Execution notes — 2026-08-25 implementation session
+
+Implemented in full except where recorded below. Build clean, harness runs against the live install,
+cross-process reports byte-identical. **Exit code is 1, not 0** — see AC1.
+
+**Corrections to this plan's ground truth, found by running it:**
+
+1. **Six packs ship now, not four.** `CF_PACK_ARMORY_VISUALS` and `CF_PACK_ORIGINALS` were added
+   after this plan was written, and `CF_PACK_EOR_CLASSES` grew from 20 → 21 Things and 52 → 56
+   recipes. Every `Check.Exactly` in Tasks 4/6/9 that encoded the four-pack totals (35 classes,
+   41 traits, 45 Things, 60 recipes, "exactly 4 packs") was therefore wrong on arrival. Task 9's
+   check was rebuilt as a **per-pack** inventory table (`InventoryChecks.Expected`) measured on
+   2026-08-25 — it still fails exactly when a pack drops out, but it names *which* pack, and it does
+   not force a global rewrite every time one pack gains an entry. Tasks 4 and 6 use non-vacuity
+   floors instead of the stale totals, since Task 9 now owns the exact-count duty.
+
+2. **Task 9's "exactly 34 of 35 classes are player-selectable" is no longer true.** 13 authored
+   classes now lack the `PLAYER` tag (`CF_SKELETON_WARRIOR` plus 12 `CF_TRAINER_PARTNER` classes
+   from `CF_PACK_ORIGINALS`). Replaced with: the split is non-degenerate both ways **and**
+   `CF_SKELETON_WARRIOR` is on the non-PLAYER side; the full list is emitted as a Warning.
+
+3. **`"TRAIT"` did not need to be in `ReferenceChecks.AuthoredTags`.** The plan predicted this and
+   asked for evidence; the redundancy warning fired on the first run, and the entry was removed.
+   `CF_SUMMON` and `LOADOUT_0` are still needed.
+
+4. **"A custom status id must start with a vanilla `eStatusEffectsGroups` member" is not a hard
+   rule.** Measured: the enum has 95 members and **35 of the 189 vanilla `Configs.StatusEffects`
+   ids do not start with any of them** (`AURA_ATTACK_00`, `STATUS_CURSE_00`, `STATUS_GUARD_00`,
+   `STATUS_SANCTUM_*`, …); `StatusEffectConfig` carries no `Group` field. Escalating it to an Error
+   would fire on 18% of the base game, so it ships as a **Warning**.
+
+5. **Task 10's predicted `CURSE` failure did not occur.** `SKILL_CF_ENCMOD_CURSE_ON_HIT` now
+   resolves — every one of the 32 inspected recipe status references passes. The pack data was
+   fixed between the plan being written and this session. AC9 is met by the findings that *did*
+   fire, listed below; nothing was allowlisted.
+
+6. **Task 4's second negative control had to be re-aimed.** "The same `LoadFrom` over the real pack
+   roots produces zero Errors" is false today (see finding 1 below), so as written it duplicated a
+   real finding rather than controlling anything. It now asserts the real-roots load still merges
+   content and does not carry the fixture's finding.
+
+**Findings against real pack data (reported, not fixed — pack data is owned elsewhere):**
+
+- **30 × `CF_LIVE_ID_COLLISION`** — `CF_PACK_EOR_CLASSES/items.json` ships 30 `ARM_EOR_STARTER_*`
+  ids that already exist in live `Configs.Things` (FTK2.Armory deployed `ARM_EOR_STARTERS` to
+  `StreamingAssets`). All 30 are **refused at merge and never loaded**.
+- **66 dangling references** — 54 from `CF_PACK_ORIGINALS` (`STATUS_IMMUNITY_*` Passives, and
+  `CF_LINE_*` / `CF_TRAINER_PARTNER` tags that are neither live tags nor enum members;
+  `ELEMENTAL_WATER_08.BaseType -> CONSTRUCT` is not a live BaseType), 12 from `CF_PACK_BALDURS`
+  trait `Equippable.Passives -> STAT_CF_TRAIT_*`.
+- **24 missing localization keys** — 12 `UI_TOOLTIP_<id>_DESCRIPTION` tooltips and 12
+  `UNARMED_<id>` display names, all `CF_PACK_ORIGINALS`.
+
 
 ## Notes for the executing session
 

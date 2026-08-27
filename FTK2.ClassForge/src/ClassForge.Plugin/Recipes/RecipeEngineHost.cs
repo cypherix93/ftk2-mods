@@ -107,7 +107,10 @@ namespace ClassForge.Plugin
                 // after a fresh per-battle runtime is allocated for THIS combat (new CombatKey), using the
                 // just-built ctx so the scan sees the combat's current entities/statuses.
                 if (freshlyAllocated && dispatcher != null)
+                {
+                    SeedPersistentCounters(ctx, dispatcher);
                     RunModifierReconstruction(ctx, dispatcher);
+                }
 
                 return dispatcher != null;
             }
@@ -147,6 +150,94 @@ namespace ClassForge.Plugin
                     ") — per-battle recipe runtime reallocated from scratch (SPEC-DELTA-v1.1 §6).");
             }
             return true;
+        }
+
+        // =====================================================================================
+        // Run-persistence escape hatch — COUNTER_ADD/COUNTER_SET "Persistent" (§6 amendment)
+        // =====================================================================================
+
+        /// <summary>The free-form per-character store a <c>Persistent</c> counter round-trips through —
+        /// <c>CharacterComponent.CustomData</c>, read/written via <c>CoreHelper.Get/SetCustomData</c>. This
+        /// is the same idiom the native game already uses for durable per-character mod data (e.g. the
+        /// summon-ownership GUID key), already covered by the existing save schema and already replicated
+        /// as ordinary <c>CharacterComponent</c> state — no new save keys, no new ThingConfig.</summary>
+        private const string PersistentCounterKeyPrefix = "CF_COUNTER_";
+
+        /// <summary>
+        /// Runs once per freshly-allocated <see cref="CombatRuntime"/> (new CombatKey), right after
+        /// <see cref="SyncCombat"/>. For every counter name any live recipe marks <c>Persistent</c>, seeds
+        /// the fresh runtime's in-memory value from each combatant's <c>CustomData</c> — so a
+        /// <c>COUNTER</c> condition evaluated at <c>ON_COMBAT_START</c> (before this battle's own
+        /// <c>COUNTER_ADD</c> ever fires) still sees the value carried over from prior battles. Purely
+        /// additive to §6: within a battle the value lives and is read exactly as before (in-memory
+        /// <c>CombatRuntime._counters</c>); only the STARTING value differs from 0.
+        /// </summary>
+        private static void SeedPersistentCounters(CombatContextAdapter ctx, RecipeDispatcher dispatcher)
+        {
+            try
+            {
+                var names = CollectPersistentCounterNames();
+                if (names.Count == 0) return;
+
+                var state = ctx != null ? ctx.State : null;
+                var entities = state != null ? state.Entities : null;
+                if (entities == null) return;
+
+                var runtime = dispatcher.State.Sync(ctx);
+
+                for (int i = 0; i < entities.Count; i++)
+                {
+                    var native = entities[i];
+                    if (native == null) continue;
+                    CharacterComponent cc;
+                    if (!native.TryGet<CharacterComponent>(out cc) || cc == null) continue;
+                    string guid;
+                    try { guid = native.Guid ?? ""; } catch { continue; }
+                    if (guid.Length == 0) continue;
+
+                    for (int n = 0; n < names.Count; n++)
+                    {
+                        string raw = CoreHelper.GetCustomData(cc, PersistentCounterKeyPrefix + names[n]);
+                        int value;
+                        if (!string.IsNullOrEmpty(raw) &&
+                            int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+                        {
+                            runtime.SetCounter(guid, names[n], value);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogError(
+                    "[ClassForge] Persistent counter seeding failed (fail-safe, counters start at 0): " + ex);
+            }
+        }
+
+        /// <summary>Distinct counter names any live recipe in <see cref="Book"/> marks <c>Persistent</c> on
+        /// a COUNTER_ADD/COUNTER_SET effect. Recomputed per allocation (once per combat) rather than cached
+        /// alongside <see cref="Book"/> — cheap, and avoids a second invalidation path to keep in sync with
+        /// pack merges.</summary>
+        private static List<string> CollectPersistentCounterNames()
+        {
+            var names = new List<string>();
+            var book = Book != null ? Book.Ordered : null;
+            if (book == null) return names;
+            for (int i = 0; i < book.Count; i++)
+            {
+                var r = book[i];
+                if (r == null || !r.IsLive) continue;
+                for (int e = 0; e < r.Effects.Count; e++)
+                {
+                    var eff = r.Effects[e];
+                    if ((eff.Type == EffectKind.COUNTER_ADD || eff.Type == EffectKind.COUNTER_SET) &&
+                        eff.Persistent && !string.IsNullOrEmpty(eff.Name) && !names.Contains(eff.Name))
+                    {
+                        names.Add(eff.Name);
+                    }
+                }
+            }
+            return names;
         }
 
         // =====================================================================================

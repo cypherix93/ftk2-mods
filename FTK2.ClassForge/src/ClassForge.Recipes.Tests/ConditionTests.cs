@@ -1,5 +1,7 @@
 using System;
+using ClassForge.Recipes.Abstractions;
 using ClassForge.Recipes.Model;
+using ClassForge.Recipes.Parsing;
 using ClassForge.Recipes.Runtime;
 
 namespace ClassForge.Recipes.Tests
@@ -35,6 +37,15 @@ namespace ClassForge.Recipes.Tests
             });
         }
 
+        /// <summary>Like <see cref="J.Cond"/> but SchemaVersion 1.4 — required for the v1.4-only
+        /// ALLY_IN_FRONT condition (<see cref="J.Cond"/> hardcodes 1.1 for the pre-existing suite).</summary>
+        private static string Cond14(string trigger, string condition)
+        {
+            return "{\"SKILL_T\":{\"SchemaVersion\":\"1.4\",\"DisplayName\":\"T\",\"Trigger\":\"" + trigger +
+                   "\",\"Conditions\":[" + condition + "],\"Effects\":[" + J.CounterEffect + "]," +
+                   "\"ProcChance\":100,\"AiProcChance\":100}}";
+        }
+
         private static FakeAbility Melee(Rig r) { return (FakeAbility)r.Ctx.Abilities["AB_SLASH"]; }
 
         public static void Run(TestRunner t)
@@ -65,6 +76,18 @@ namespace ClassForge.Recipes.Tests
             Both(t, "HP_THRESHOLD (Flat)", TriggerKind.ON_KILL, "ON_KILL",
                 "{\"Type\":\"HP_THRESHOLD\",\"Comparator\":\"LT\",\"Flat\":10}",
                 r => r.Hero.With("HP", 5), r => r.Hero.With("HP", 50));
+
+            t.Case("condition HP_THRESHOLD (Percent): negative control — a stat source with no live MXHP "
+                + "(GameAdapters.GetStat's base-table fallback for a non-combat entity, whose static table "
+                + "carries no MXHP key) resolves the percentage safely to exactly 0 instead of throwing on "
+                + "the division, rather than crashing or silently computing garbage", () =>
+            {
+                var rig = Rig.Build(J.Cond("ON_KILL",
+                    "{\"Type\":\"HP_THRESHOLD\",\"Comparator\":\"EQ\",\"Percent\":0}"), 5);
+                rig.Hero.With("HP", 40).With("MXHP", 0); // no live combat state -> MXHP unresolved
+                Check.PlanCount(rig.Fire(TriggerKind.ON_KILL), 1,
+                    "max<=0 degrades HP_PCT to exactly 0, matching Comparator EQ 0 -- no throw, no garbage value");
+            });
 
             Both(t, "HAS_STATUS", TriggerKind.ON_KILL, "ON_KILL",
                 "{\"Type\":\"HAS_STATUS\",\"Value\":\"STATUS_BLEED_00\"}",
@@ -265,6 +288,404 @@ namespace ClassForge.Recipes.Tests
                 rig.Hero.With("HP", 10);
                 rig.Fire(TriggerKind.ON_KILL);
                 Check.Eq(0, rig.Rng.Draws, "ProcChance 100 + conditions = zero draws");
+            });
+
+            // ================================================================================
+            t.Section("ALLY_IN_FRONT (v1.4, cover spec)");
+
+            const string AllyInFront = "{\"Type\":\"ALLY_IN_FRONT\",\"Value\":true}";
+            const string NoAllyInFront = "{\"Type\":\"ALLY_IN_FRONT\",\"Value\":false}";
+
+            t.Case("ALLY_IN_FRONT: a living ally on the adjacent FRONT tile of the same row-line fires", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", AllyInFront), 5);
+                rig.Hero.At(3, 2); rig.Hero.RowValue = EntityRow.BACK;
+                rig.Ally.At(4, 2); rig.Ally.RowValue = EntityRow.FRONT;
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 1, "ally directly in front");
+            });
+
+            t.Case("ALLY_IN_FRONT: the direction is group-dependent — dx = -1 counts too", () =>
+            {
+                // Stock board "|..Aa.bB..|": group 0's FRONT sits at x+1, group 1's at x-1. The predicate
+                // mirrors CombatHelper.cs:2414 (|dx| == 1 + the other tile's row), never a hardcoded x+1.
+                var rig = Rig.Build(Cond14("ON_TURN_START", AllyInFront), 5);
+                rig.Hero.At(7, 2); rig.Hero.RowValue = EntityRow.BACK;
+                rig.Ally.At(6, 2); rig.Ally.RowValue = EntityRow.FRONT;
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 1, "group-1 side: FRONT is at x-1");
+            });
+
+            t.Case("ALLY_IN_FRONT: a DEAD ally in front does not count", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", AllyInFront), 5);
+                rig.Hero.At(3, 2); rig.Hero.RowValue = EntityRow.BACK;
+                rig.Ally.At(4, 2); rig.Ally.RowValue = EntityRow.FRONT;
+                rig.Ally.Alive = false;
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "corpses give no cover");
+            });
+
+            t.Case("ALLY_IN_FRONT: a FRONT ally two columns away does not count", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", AllyInFront), 5);
+                rig.Hero.At(3, 2); rig.Hero.RowValue = EntityRow.BACK;
+                rig.Ally.At(5, 2); rig.Ally.RowValue = EntityRow.FRONT;
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "|dx| == 2 is not adjacent");
+            });
+
+            t.Case("ALLY_IN_FRONT: an adjacent ally standing in the BACK row does not count", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", AllyInFront), 5);
+                rig.Hero.At(4, 2); rig.Hero.RowValue = EntityRow.FRONT;
+                rig.Ally.At(3, 2); rig.Ally.RowValue = EntityRow.BACK;
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "the tile in front must be a FRONT tile");
+            });
+
+            t.Case("ALLY_IN_FRONT: an adjacent FRONT ally on a different row-line does not count", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", AllyInFront), 5);
+                rig.Hero.At(3, 2); rig.Hero.RowValue = EntityRow.BACK;
+                rig.Ally.At(4, 3); rig.Ally.RowValue = EntityRow.FRONT;
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "different y = a different row-line");
+            });
+
+            t.Case("ALLY_IN_FRONT: an ENEMY on the adjacent FRONT tile does not count", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", AllyInFront), 5);
+                rig.Hero.At(3, 2); rig.Hero.RowValue = EntityRow.BACK;
+                rig.Foe.At(4, 2); rig.Foe.RowValue = EntityRow.FRONT;
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "opponents are not allies");
+            });
+
+            t.Case("ALLY_IN_FRONT: an unresolvable tile (int.MinValue) fails safe to false", () =>
+            {
+                var own = Rig.Build(Cond14("ON_TURN_START", AllyInFront), 5);
+                own.Ally.At(4, 2); own.Ally.RowValue = EntityRow.FRONT;   // owner keeps the sentinel
+                Check.PlanCount(own.Fire(TriggerKind.ON_TURN_START), 0, "owner tile unresolvable");
+
+                var other = Rig.Build(Cond14("ON_TURN_START", AllyInFront), 5);
+                other.Hero.At(3, 2); other.Hero.RowValue = EntityRow.BACK;
+                other.Ally.RowValue = EntityRow.FRONT;                     // ally keeps the sentinel
+                Check.PlanCount(other.Fire(TriggerKind.ON_TURN_START), 0, "ally tile unresolvable, no MinValue arithmetic");
+            });
+
+            t.Case("ALLY_IN_FRONT: Value:false inverts, and Negate inverts again", () =>
+            {
+                var empty = Rig.Build(Cond14("ON_TURN_START", NoAllyInFront), 5);
+                empty.Hero.At(3, 2); empty.Hero.RowValue = EntityRow.BACK;
+                empty.Ally.At(9, 9); empty.Ally.RowValue = EntityRow.FRONT;
+                Check.PlanCount(empty.Fire(TriggerKind.ON_TURN_START), 1, "Value:false fires with nobody in front");
+
+                var covered = Rig.Build(Cond14("ON_TURN_START", NoAllyInFront), 5);
+                covered.Hero.At(3, 2); covered.Hero.RowValue = EntityRow.BACK;
+                covered.Ally.At(4, 2); covered.Ally.RowValue = EntityRow.FRONT;
+                Check.PlanCount(covered.Fire(TriggerKind.ON_TURN_START), 0, "Value:false does not fire when covered");
+
+                var neg = Rig.Build(Cond14("ON_TURN_START", Negated(AllyInFront)), 5);
+                neg.Hero.At(3, 2); neg.Hero.RowValue = EntityRow.BACK;
+                neg.Ally.At(4, 2); neg.Ally.RowValue = EntityRow.FRONT;
+                Check.PlanCount(neg.Fire(TriggerKind.ON_TURN_START), 0, "Negate inverts the true case");
+            });
+
+            t.Case("ALLY_IN_FRONT: draws no RNG (it must be legal under the RNG-free ON_DAMAGE_PENDING)", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", AllyInFront), 5);
+                rig.Hero.At(3, 2); rig.Hero.RowValue = EntityRow.BACK;
+                rig.Ally.At(4, 2); rig.Ally.RowValue = EntityRow.FRONT;
+                rig.Fire(TriggerKind.ON_TURN_START);
+                Check.Eq(0, rig.Rng.Draws, "zero draws");
+            });
+
+            // ================================================================================
+            t.Section("SELF_LEVEL (v1.4) - THIS character's own level, not the party average");
+
+            const string LvlGte3 = "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"GTE\",\"Value\":3}";
+            const string LvlLte3 = "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"LTE\",\"Value\":3}";
+            const string LvlEq3  = "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"EQ\",\"Value\":3}";
+            const string LvlGte1 = "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"GTE\",\"Value\":1}";
+
+            t.Case("SELF_LEVEL GTE: fails below the boundary, passes at and above it", () =>
+            {
+                var below = Rig.Build(Cond14("ON_TURN_START", LvlGte3), 5);
+                below.Hero.AtLevel(2);
+                Check.PlanCount(below.Fire(TriggerKind.ON_TURN_START), 0, "level 2 is below GTE 3");
+
+                var at = Rig.Build(Cond14("ON_TURN_START", LvlGte3), 5);
+                at.Hero.AtLevel(3);
+                Check.PlanCount(at.Fire(TriggerKind.ON_TURN_START), 1, "level 3 IS the GTE boundary");
+
+                var above = Rig.Build(Cond14("ON_TURN_START", LvlGte3), 5);
+                above.Hero.AtLevel(4);
+                Check.PlanCount(above.Fire(TriggerKind.ON_TURN_START), 1, "level 4 is above GTE 3");
+            });
+
+            t.Case("SELF_LEVEL LTE: passes at and below the boundary, fails above it", () =>
+            {
+                var below = Rig.Build(Cond14("ON_TURN_START", LvlLte3), 5);
+                below.Hero.AtLevel(2);
+                Check.PlanCount(below.Fire(TriggerKind.ON_TURN_START), 1, "level 2 is below LTE 3");
+
+                var at = Rig.Build(Cond14("ON_TURN_START", LvlLte3), 5);
+                at.Hero.AtLevel(3);
+                Check.PlanCount(at.Fire(TriggerKind.ON_TURN_START), 1, "level 3 IS the LTE boundary");
+
+                var above = Rig.Build(Cond14("ON_TURN_START", LvlLte3), 5);
+                above.Hero.AtLevel(4);
+                Check.PlanCount(above.Fire(TriggerKind.ON_TURN_START), 0, "level 4 is above LTE 3");
+            });
+
+            t.Case("SELF_LEVEL EQ: passes only on the exact level", () =>
+            {
+                var lo = Rig.Build(Cond14("ON_TURN_START", LvlEq3), 5);
+                lo.Hero.AtLevel(2);
+                Check.PlanCount(lo.Fire(TriggerKind.ON_TURN_START), 0, "2 != 3");
+
+                var eq = Rig.Build(Cond14("ON_TURN_START", LvlEq3), 5);
+                eq.Hero.AtLevel(3);
+                Check.PlanCount(eq.Fire(TriggerKind.ON_TURN_START), 1, "3 == 3");
+
+                var hi = Rig.Build(Cond14("ON_TURN_START", LvlEq3), 5);
+                hi.Hero.AtLevel(4);
+                Check.PlanCount(hi.Fire(TriggerKind.ON_TURN_START), 0, "4 != 3");
+            });
+
+            t.Case("SELF_LEVEL: level 0 is a real level, never 'unknown'", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START",
+                    "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"EQ\",\"Value\":0}"), 5);
+                rig.Hero.AtLevel(0);
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 1,
+                    "ProgressionHelper.GetEntityLevel returns 0 for a character with no XP yet");
+            });
+
+            t.Case("SELF_LEVEL: reads THIS character, not the party average", () =>
+            {
+                // The whole reason the token exists: in a mixed party PARTY_AVG_LEVEL reads 5 here and
+                // would open the gate for a level-1 owner.
+                var rig = Rig.Build(Cond14("ON_TURN_START",
+                    "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"GTE\",\"Value\":5}"), 5);
+                rig.Hero.AtLevel(1);
+                rig.Ally.AtLevel(9);
+                rig.Ctx.PartyAverageLevelValue = 5;
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "the owner is level 1; the average is irrelevant");
+            });
+
+            t.Case("SELF_LEVEL: an UNKNOWN level is false", () =>
+            {
+                // Hero keeps FakeEntity's default EntityReads.UnknownLevel sentinel.
+                var rig = Rig.Build(Cond14("ON_TURN_START", LvlGte1), 5);
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "no level readable = the gate stays shut");
+            });
+
+            t.Case("SELF_LEVEL: an UNKNOWN level is false for LT/NE too, which naive arithmetic would pass", () =>
+            {
+                var lt = Rig.Build(Cond14("ON_TURN_START",
+                    "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"LT\",\"Value\":5}"), 5);
+                Check.PlanCount(lt.Fire(TriggerKind.ON_TURN_START), 0, "int.MinValue < 5 must NOT open the gate");
+
+                var ne = Rig.Build(Cond14("ON_TURN_START",
+                    "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"NE\",\"Value\":5}"), 5);
+                Check.PlanCount(ne.Fire(TriggerKind.ON_TURN_START), 0, "int.MinValue != 5 must NOT open the gate");
+            });
+
+            t.Case("SELF_LEVEL: Negate cannot turn an UNKNOWN level into a pass", () =>
+            {
+                var unknown = Rig.Build(Cond14("ON_TURN_START", Negated(LvlGte3)), 5);
+                Check.PlanCount(unknown.Fire(TriggerKind.ON_TURN_START), 0, "unknown short-circuits BEFORE Negate");
+
+                // Negate still behaves normally once the level IS readable.
+                var known = Rig.Build(Cond14("ON_TURN_START", Negated(LvlGte3)), 5);
+                known.Hero.AtLevel(1);
+                Check.PlanCount(known.Fire(TriggerKind.ON_TURN_START), 1, "Negate inverts a genuine false");
+            });
+
+            t.Case("SELF_LEVEL: a throwing level read fails safe to false", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", LvlGte1), 5);
+                rig.Hero.AtLevel(9);
+                rig.Hero.ThrowOnGetStat = true;   // FakeEntity.Level throws on the same switch
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "a throwing read never opens the gate");
+            });
+
+            t.Case("SELF_LEVEL: draws no RNG", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", LvlGte1), 5);
+                rig.Hero.AtLevel(4);
+                rig.Fire(TriggerKind.ON_TURN_START);
+                Check.Eq(0, rig.Rng.Draws, "pure read of replicated state");
+            });
+
+            t.Case("SELF_LEVEL: a well-formed condition validates clean", () =>
+            {
+                Check.NoErrors(RecipeParser.Parse(Cond14("ON_TURN_START", LvlGte3)), "canonical SELF_LEVEL");
+            });
+
+            t.Case("SELF_LEVEL: a missing Value is E_VALUE_MISSING", () =>
+            {
+                Check.HasFinding(RecipeParser.Parse(Cond14("ON_TURN_START",
+                    "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"GTE\"}")), "E_VALUE_MISSING", "no Value");
+            });
+
+            t.Case("SELF_LEVEL: a non-numeric Value is E_VALUE_MISSING", () =>
+            {
+                Check.HasFinding(RecipeParser.Parse(Cond14("ON_TURN_START",
+                    "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"GTE\",\"Value\":\"three\"}")),
+                    "E_VALUE_MISSING", "string Value");
+                Check.HasFinding(RecipeParser.Parse(Cond14("ON_TURN_START",
+                    "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"GTE\",\"Value\":true}")),
+                    "E_VALUE_MISSING", "boolean Value");
+            });
+
+            t.Case("SELF_LEVEL: a missing Comparator is E_CMP_MISSING", () =>
+            {
+                Check.HasFinding(RecipeParser.Parse(Cond14("ON_TURN_START",
+                    "{\"Type\":\"SELF_LEVEL\",\"Value\":3}")), "E_CMP_MISSING", "no Comparator");
+            });
+
+            t.Case("SELF_LEVEL: a malformed Comparator is E_CMP_UNKNOWN", () =>
+            {
+                Check.HasFinding(RecipeParser.Parse(Cond14("ON_TURN_START",
+                    "{\"Type\":\"SELF_LEVEL\",\"Comparator\":\"MORE_THAN\",\"Value\":3}")),
+                    "E_CMP_UNKNOWN", "bogus comparator token");
+            });
+
+            t.Case("SELF_LEVEL: requires SchemaVersion 1.4", () =>
+            {
+                Check.HasFinding(RecipeParser.Parse(J.Cond("ON_TURN_START", LvlGte3)),
+                    "E_SCHEMA_GATE", "SELF_LEVEL under SchemaVersion 1.1");
+            });
+
+            // ================================================================================
+            t.Section("HAS_ITEM (v1.4) - inventory possession, not the triggering ability's item");
+
+            const string Ball = "ARM_ORIG_TRAINER_BALL_WATER";
+            const string HasBall = "{\"Type\":\"HAS_ITEM\",\"Value\":\"ARM_ORIG_TRAINER_BALL_WATER\"}";
+
+            t.Case("HAS_ITEM: present in the inventory passes", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", HasBall), 5);
+                rig.Hero.Carrying(Ball);
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 1, "the owner carries the charm");
+            });
+
+            t.Case("HAS_ITEM: a readable inventory without the item is a normal false", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", HasBall), 5);
+                rig.Hero.Carrying("ARM_ORIG_TRAINER_BALL_FIRE");
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "a different charm is not this charm");
+
+                var empty = Rig.Build(Cond14("ON_TURN_START", HasBall), 5);
+                empty.Hero.WithEmptyInventory();
+                Check.PlanCount(empty.Fire(TriggerKind.ON_TURN_START), 0, "an empty inventory holds nothing");
+            });
+
+            t.Case("HAS_ITEM: Negate inverts a genuine absence", () =>
+            {
+                var absent = Rig.Build(Cond14("ON_TURN_START", Negated(HasBall)), 5);
+                absent.Hero.WithEmptyInventory();
+                Check.PlanCount(absent.Fire(TriggerKind.ON_TURN_START), 1, "readable-and-absent IS negatable");
+
+                var present = Rig.Build(Cond14("ON_TURN_START", Negated(HasBall)), 5);
+                present.Hero.Carrying(Ball);
+                Check.PlanCount(present.Fire(TriggerKind.ON_TURN_START), 0, "Negate inverts the true case");
+            });
+
+            t.Case("HAS_ITEM: an UNREADABLE inventory is false", () =>
+            {
+                // Hero keeps FakeEntity's default null ItemList: HasItem returns its unknown.
+                var rig = Rig.Build(Cond14("ON_TURN_START", HasBall), 5);
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "no inventory readable = the gate stays shut");
+            });
+
+            t.Case("HAS_ITEM: Negate cannot turn an UNREADABLE inventory into a pass", () =>
+            {
+                // THE crux: unknown and readable-absent are both "false", but only one is negatable.
+                var unknown = Rig.Build(Cond14("ON_TURN_START", Negated(HasBall)), 5);
+                Check.PlanCount(unknown.Fire(TriggerKind.ON_TURN_START), 0, "unknown short-circuits BEFORE Negate");
+            });
+
+            t.Case("HAS_ITEM: a throwing inventory read fails safe to false, Negate included", () =>
+            {
+                var plain = Rig.Build(Cond14("ON_TURN_START", HasBall), 5);
+                plain.Hero.Carrying(Ball);
+                plain.Hero.ThrowOnGetStat = true;   // FakeEntity.HasItem throws on the same switch
+                Check.PlanCount(plain.Fire(TriggerKind.ON_TURN_START), 0, "a throwing read never opens the gate");
+
+                var neg = Rig.Build(Cond14("ON_TURN_START", Negated(HasBall)), 5);
+                neg.Hero.Carrying(Ball);
+                neg.Hero.ThrowOnGetStat = true;
+                Check.PlanCount(neg.Fire(TriggerKind.ON_TURN_START), 0, "a throw is unknown, and unknown is not negatable");
+            });
+
+            t.Case("HAS_ITEM: the Thing name is matched case-SENSITIVELY", () =>
+            {
+                // Thing ids are exact keys into Env.Configs.Things (Thing.cs:40) — deliberately NOT the
+                // OrdinalIgnoreCase substring match CONFIG_NAME_CONTAINS uses.
+                var lower = Rig.Build(Cond14("ON_TURN_START", HasBall), 5);
+                lower.Hero.Carrying("arm_orig_trainer_ball_water");
+                Check.PlanCount(lower.Fire(TriggerKind.ON_TURN_START), 0, "lower-cased id is not the Thing id");
+
+                var exact = Rig.Build(Cond14("ON_TURN_START", HasBall), 5);
+                exact.Hero.Carrying(Ball);
+                Check.PlanCount(exact.Fire(TriggerKind.ON_TURN_START), 1, "the exact id matches");
+            });
+
+            t.Case("HAS_ITEM: a substring of a carried Thing id does NOT match", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START",
+                    "{\"Type\":\"HAS_ITEM\",\"Value\":\"TRAINER_BALL\"}"), 5);
+                rig.Hero.Carrying(Ball);
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "whole-id equality, never Contains");
+            });
+
+            t.Case("HAS_ITEM: reads the OWNER's inventory, not an ally's", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", HasBall), 5);
+                rig.Hero.WithEmptyInventory();
+                rig.Ally.Carrying(Ball);
+                Check.PlanCount(rig.Fire(TriggerKind.ON_TURN_START), 0, "the ally's charm is not the owner's");
+            });
+
+            t.Case("HAS_ITEM: is answerable under ON_COMBAT_START (unlike ITEM_CLASS, which needs a pThing)", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_COMBAT_START", HasBall), 5);
+                rig.Hero.Carrying(Ball);
+                Check.PlanCount(rig.Fire(TriggerKind.ON_COMBAT_START), 1, "no triggering item is needed");
+            });
+
+            t.Case("HAS_ITEM: draws no RNG", () =>
+            {
+                var rig = Rig.Build(Cond14("ON_TURN_START", HasBall), 5);
+                rig.Hero.Carrying(Ball);
+                rig.Fire(TriggerKind.ON_TURN_START);
+                Check.Eq(0, rig.Rng.Draws, "pure read of replicated state");
+            });
+
+            t.Case("HAS_ITEM: a well-formed condition validates clean", () =>
+            {
+                Check.NoErrors(RecipeParser.Parse(Cond14("ON_TURN_START", HasBall)), "canonical HAS_ITEM");
+            });
+
+            t.Case("HAS_ITEM: a missing Value is E_VALUE_MISSING", () =>
+            {
+                Check.HasFinding(RecipeParser.Parse(Cond14("ON_TURN_START",
+                    "{\"Type\":\"HAS_ITEM\"}")), "E_VALUE_MISSING", "no Value");
+                Check.HasFinding(RecipeParser.Parse(Cond14("ON_TURN_START",
+                    "{\"Type\":\"HAS_ITEM\",\"Value\":\"\"}")), "E_VALUE_MISSING", "empty-string Value");
+            });
+
+            t.Case("HAS_ITEM: a non-string Value is E_VALUE_MISSING", () =>
+            {
+                // The parser stringifies numbers and bools into Value, so these must be rejected on the
+                // ValueInt/ValueBool witnesses, not on Value being empty.
+                Check.HasFinding(RecipeParser.Parse(Cond14("ON_TURN_START",
+                    "{\"Type\":\"HAS_ITEM\",\"Value\":7}")), "E_VALUE_MISSING", "numeric Value");
+                Check.HasFinding(RecipeParser.Parse(Cond14("ON_TURN_START",
+                    "{\"Type\":\"HAS_ITEM\",\"Value\":true}")), "E_VALUE_MISSING", "boolean Value");
+            });
+
+            t.Case("HAS_ITEM: requires SchemaVersion 1.4", () =>
+            {
+                Check.HasFinding(RecipeParser.Parse(J.Cond("ON_TURN_START", HasBall)),
+                    "E_SCHEMA_GATE", "HAS_ITEM under SchemaVersion 1.1");
             });
         }
     }

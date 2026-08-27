@@ -236,10 +236,24 @@ namespace ClassForge.Core
                 var id = kv.Key;
                 var value = kv.Value;
 
-                if (!id.StartsWith("STATUS_CF_", StringComparison.Ordinal))
+                // The engine's own HUD/combat-detail icon loops (CharacterHudController.cs,
+                // CombatDetailViewHelper.cs, CharacterCombatHudHelper.cs) never look up a status by its
+                // full id. They iterate the compiled eStatusEffectsGroups enum and only call
+                // GetRecordByName for a live status whose id STARTS WITH one of those enum member names
+                // (e.g. "STATUS_VIGOR_"). A pure "STATUS_CF_*" id matches no enum member, so it is
+                // silently skipped on every icon path -- it can be fully live in state and still render
+                // no HUD icon and no world FX (see StatusVisualPatches.cs / STATUS_VIGOR_CF_ENGORGED).
+                // The only fix is to prefix the id with a real vanilla group name so the engine's gate
+                // passes, which puts "STATUS_CF_" in the middle of the id instead of at the front. So
+                // this check accepts either the plain 'STATUS_CF_' prefix convention OR an id that
+                // embeds '_CF_' after a leading vanilla group segment (e.g. 'STATUS_VIGOR_CF_...').
+                // Do NOT "fix" a status id back to a pure STATUS_CF_ prefix to satisfy this warning --
+                // that silently makes its icon unreachable again.
+                if (!id.StartsWith("STATUS_CF_", StringComparison.Ordinal) &&
+                    !(id.StartsWith("STATUS_", StringComparison.Ordinal) && id.Contains("_CF_")))
                 {
                     findings.Add(Finding.Warning("CF_STATUS_ID_PREFIX",
-                        $"Status id '{id}' in pack '{pack.Manifest.Id}' does not start with 'STATUS_CF_' (Encounter Modifiers spec §3.1 id convention).",
+                        $"Status id '{id}' in pack '{pack.Manifest.Id}' does not start with 'STATUS_CF_' and has no '_CF_' segment after a vanilla group prefix (Encounter Modifiers spec §3.1 id convention; see the icon-gate exception comment above).",
                         pack.Manifest.Id));
                 }
 

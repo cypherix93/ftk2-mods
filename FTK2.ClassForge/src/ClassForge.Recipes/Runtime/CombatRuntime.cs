@@ -255,7 +255,7 @@ namespace ClassForge.Recipes.Runtime
             if (ctx == null || runtime == null || registry == null || registry.Count == 0) return;
             if (string.IsNullOrEmpty(selectionName)) return;
 
-            var entities = EntitySets.SortedByGuid(ctx.Entities);
+            var entities = EntitySets.SortedByRosterOrdinal(ctx.Entities);
 
             string chosenModifierId = null;
             string chosenStatusId = null;

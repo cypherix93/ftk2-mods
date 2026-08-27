@@ -1,174 +1,600 @@
 {
-  "SKILL_CF_VAMPIRIC_BLOOD_PRICE": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Blood Price",
-    "Trigger": "ON_ABILITY_USED",
+  "SKILL_CF_CHAOSMAGE_BACKLASH": {
+    "AiProcChance": 100,
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
     "Conditions": [
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Comparator": "EQ",
+        "Type": "ROLL_TIER",
+        "Value": "CRIT_FAIL"
+      }
+    ],
+    "DisplayName": "Backlash",
+    "Effects": [
+      {
+        "Duration": 2,
+        "StatusOneOf": [
+          "STATUS_POISON_00",
+          "STATUS_FIRE_00",
+          "STATUS_SHOCK_00",
+          "STATUS_WATER_00",
+          "STATUS_BLEED_00",
+          "STATUS_ACID_00",
+          "STATUS_ICE_00",
+          "STATUS_CONFUSE_00"
+        ],
+        "Target": "SELF",
+        "Type": "ADD_STATUS"
+      }
+    ],
+    "ProcChance": 100,
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_ABILITY_USED",
+    "VerboseLogTag": "Backlash",
+    "_design": "The cost. Botch a hostile spell and it goes off on YOU, drawn from the same stun-free pool Entropy uses, so what you inflict is exactly what you risk. ONCE_PER_ROUND so a multi-action turn cannot compound it. STUN is absent here too and that is deliberate: a self-stun is a lost turn with no counterplay, which is the same objection that got stun banned in the first place."
+  },
+  "SKILL_CF_CHAOSMAGE_ENTROPY": {
+    "AiProcChance": 100,
+    "Conditions": [
+      {
+        "Type": "WEAPON_CLASS",
+        "Value": "STAFF"
+      },
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "INT"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      },
+      {
+        "Comparator": "EQ",
+        "Type": "ROLL_TIER",
+        "Value": "PERFECT"
+      }
+    ],
+    "DisplayName": "Entropy",
+    "Effects": [
+      {
+        "Duration": 2,
+        "StatusOneOf": [
+          "STATUS_POISON_00",
+          "STATUS_FIRE_00",
+          "STATUS_SHOCK_00",
+          "STATUS_WATER_00",
+          "STATUS_BLEED_00",
+          "STATUS_ACID_00",
+          "STATUS_ICE_00",
+          "STATUS_CONFUSE_00"
+        ],
+        "Target": "TRIGGER_TARGET",
+        "Type": "ADD_STATUS"
+      }
+    ],
+    "ProcChance": 100,
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_ABILITY_USED",
+    "VerboseLogTag": "Entropy",
+    "_design": "The random ATTACK half of the class. Deliberately NOT ADD_STATUS \"CHAOS\": InteractableHelper.cs:1231-1246 only strips CHARACTER_ONLY_STATUS (which holds STUN) when the ApplyStatus target is a TILE; for a character target the only filter is ENEMY_FILTER_STATUS (ACID), so a character-targeted CHAOS roll CAN stun and Ben has banned stun. This list is CHAOS_STATUS_NAMES (InteractableHelper.cs:302) minus STATUS_STUN_00, hand-authored, so stun cannot come back at runtime. Shape copied verbatim from the shipped, run-13-verified SKILL_CF_TRAINER_TYPE_ADVANTAGE. Gated on PERFECT so the roll decides WHETHER and the draw decides WHAT. NOT gated on ABILITY_TAG any more: the Entropy Rod's damage slot now carries the VANILLA ability MAGIC_DARK_ATTACK, because a pack-authored ability id has no dAbility art record -- dAbilityIndex.GetRecordByName returns null and CharacterVisualHelper.renderAbilityFX (CharacterVisualHelper.cs:2567-2571, reached from case eAbilityResults.TRIGGER_ABILITY at :2162-2181) plus CombatViewHelper.cs:183/:320 dereference it unguarded, which is the live NullReferenceException that CF_CHAOSMAGE_ENTROPY_BOLT_ATTACK threw. Only 4 of the 992 vanilla abilities carry Tags at all and packs are adds-only, so a vanilla id cannot be tagged. The gate is instead WEAPON_CLASS + ABILITY_STAT, the same discriminator the four SKILL_CF_TRAINER_CMD_* recipes use: AbilityInfoAdapter.Stat (GameAdapters.cs:826-845) reads the ACTING THING's Interactable.Abilities[\"MAGIC_DARK_ATTACK\"].Stat, which this pack authors as INT on the Entropy Rod, and Evaluation.cs:151-152 compares WeaponClass by exact ordinal so STAFF does not match STAFF_2H. Across all shipped Things/*.json NO weapon combines Class STAFF + MAGIC_DARK_ATTACK + Stat INT (the six shipped carriers are ORB_DARK_LIGHT_00 and ORB_CRACKED_LIGHT_00 at ORB_2H/AWR-VIT and STAFF_CULTIST_BASIC_00-03 at STAFF_2H), so no looted weapon can fire this rider -- which MAGIC_BASIC_ATTACK could NOT claim, since eight shipped STAFF weapons carry it at INT including four EOR starter staffs. RecipeScope defaults to OWNED (SkillRecipe.cs:310) so only a Chaos Mage dispatches it at all. The ability bar will read the vanilla name \"Dark Bolt\": LocalizationPatches.SetLanguage_Postfix writes Lang.__translations[key] with no collision check, so shadowing MAGIC_DARK_ATTACK would rename it for every cultist staff in the game. Mitigated in UI_ENCYCLOPEDIA_ARM_ORIG_STARTER_CHAOSMAGE_ENTROPY_ROD instead, exactly as the Trainer team commands do. StatusConflicts (FIRE/WATER, ICE/WATER) mean a later draw can wash off an earlier one -- that is intended, the class fights itself sometimes."
+  },
+  "SKILL_CF_CHAOSMAGE_RESONANCE": {
+    "DisplayName": "Resonance",
+    "Effects": [
+      {
+        "Conditions": [
+          {
+            "Category": "HARMFUL",
+            "Comparator": "GTE",
+            "Of": "TRIGGER_TARGET",
+            "Type": "STATUS_COUNT",
+            "Value": 2
+          }
+        ],
+        "Percent": 15,
+        "Stat": "INT",
+        "Target": "SELF",
+        "Type": "ROLL_STAT_BONUS"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "VerboseLogTag": "Resonance",
+    "_design": "The payoff that turns variance into a plan. Against a target already carrying 2+ harmful statuses -- from Entropy, from a Wild Magic Surge tile it walked into, or from anyone else in the party -- the Chaos Mage rolls with +15% INT, raising PERFECT chance and therefore the odds of landing a third. ROLL_STAT_BONUS is ON_ABILITY_DECLARED-only (RecipeValidator.cs:501 -- it replaces the PerformAbility prefix's stat delegates); do NOT move this trigger or the recipe is disabled with E_EFFECT_TRIGGER_SCOPE."
+  },
+  "SKILL_CF_CHAOSMAGE_WILD_MAGIC_SURGE": {
+    "AiProcChance": 15,
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
+    "DisplayName": "Wild Magic Surge",
+    "Effects": [
+      {
+        "Duration": 5,
+        "StatusOneOf": [
+          "STATUS_FIRE_00",
+          "STATUS_WATER_00",
+          "STATUS_SHOCK_00",
+          "STATUS_ACID_00"
+        ],
+        "Target": "RANDOM_TILE",
+        "Type": "ADD_STATUS"
+      }
+    ],
+    "ProcChance": 15,
+    "SchemaVersion": "1.4",
+    "Trigger": "ON_TURN_START",
+    "VerboseLogTag": "WildMagicSurge",
+    "_design": "The random-TILE skill, on the RANDOM_TILE target primitive (schema 1.4). Duration is authored EXPLICITLY and must stay that way: with a Duration the effect takes the proven InteractableHelper.ApplyStatus path (the same call CombatPhase.cs:2013 makes for weather); without one it routes through CombatHelper.ApplyAction, which was never traced end-to-end for a tile target. Pool is the four statuses CombatPhase.cs:2296 itself treats as tile hazards. STUN is not a tile status and is absent by construction; the validator also refuses it twice over (E_TILE_STATUS_ILLEGAL plus a plan-time StatusEffectConfig.Type check), so this pool is belt-and-braces, not the only guard. Tile choice uses the combat's seeded RNG over tiles sorted by (Y,X), so it is replication-safe for co-op. DELIBERATELY NOT scoped to the enemy half: it can land under your own party, and that friendly-fire risk is the class's stated weakness."
+  },
+  "SKILL_CF_GARY_RIVALS_EDGE": {
+    "DisplayName": "Rival's Edge",
+    "Effects": [
+      {
+        "Flat": 6,
+        "Stat": "LCK",
+        "Target": "SELF",
+        "Type": "ROLL_STAT_BONUS"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "VerboseLogTag": "RivalsEdge",
+    "_design": "Gary's identity stat is LCK, because his whole class is a PERFECT-roll gate: capture happens on ROLL_TIER EQ PERFECT and nowhere else. A flat +6 LCK on every declared ability is the cheapest honest way to say that. ROLL_STAT_BONUS is ON_ABILITY_DECLARED only (SPEC-DELTA-v1.1 4.2 E1: it replaces the PerformAbility prefix's stat delegates), and the wrapper's lifetime is the single PerformAbility call -- no status, no persistent state, no RNG. Flat rather than PercentFrom COUNTER:* on purpose: Gary earns nothing over a run the way Ash earns Bond, which is the class contrast."
+  },
+  "SKILL_CF_GARY_SMELL_YA_LATER": {
+    "DisplayName": "Smell Ya Later",
+    "Effects": [
+      {
+        "Duration": 2,
+        "Status": "STATUS_EVADEUP_02",
+        "Target": "SELF",
+        "Type": "ADD_STATUS"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_KILL",
+    "VerboseLogTag": "SmellYaLater",
+    "_design": "Felling an enemy lets Gary swagger out of reach for two turns. STATUS_EVADEUP_02 is a REAL shipped Configs.StatusEffects key of Type BUFF (verified against the live StatusEffects.json 2026-08-25), not an eStatusEffectTypes member -- the CURSE-vs-STATUS_CURSE_00 mistake this repo has shipped before. Duration is authored EXPLICITLY: an ADD_STATUS with no Duration inherits whatever the status config says, which is invisible from this file. No stun anywhere in this class (Ben: 'too broken'); a captured monster's OWN kit is filtered for the same thing at capture time by TrainerCaptureRules."
+  },
+  "SKILL_CF_PACIFIST_CROUCHING_TIGER": {
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
+    "DisplayName": "Crouching Tiger",
+    "Effects": [
+      {
+        "Duration": 2,
+        "Status": "STATUS_REFLECT_00",
+        "Target": "SELF",
+        "Type": "ADD_STATUS"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_TURN_END",
+    "VerboseLogTag": "CrouchingTiger",
+    "_design": "Readies a parry at the end of every turn. STATUS_REFLECT_00 is the game's own reflect: it returns max(1, 50%) of ONE incoming hit and is then consumed, which is exactly the brief without needing a new primitive."
+  },
+  "SKILL_CF_PACIFIST_FIELD_MEDIC": {
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
+    "DisplayName": "Field Medic",
+    "Effects": [
+      {
+        "FlatValue": -4,
+        "Rank": {
+          "ExcludeSelf": false,
+          "Order": "LOWEST",
+          "Stat": "HP_PCT"
+        },
+        "Stat": "HP",
+        "StatChangeType": "REGEN",
+        "Target": "ALLY_BY_RANK",
+        "Type": "STAT_CHANGE"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_TURN_END",
+    "VerboseLogTag": "FieldMedic",
+    "_design": "Always finds the most hurt ally rather than healing at random. ALLY_BY_RANK{HP_PCT, LOWEST} is the engine's own targeting for exactly this. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
+  },
+  "SKILL_CF_PACIFIST_WHY_CANT_WE_BE_FRIENDS": {
+    "DisplayName": "Why Can't We Be Friends",
+    "Effects": [
+      {
+        "FlatValueFrom": "DAMAGE_DEALT_PCT",
+        "Max": 12,
+        "Percent": 30,
+        "Stat": "HP",
+        "StatChangeType": "MAGICAL",
+        "Target": "TRIGGER_SOURCE",
+        "Type": "STAT_CHANGE"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_DAMAGE_TAKEN",
+    "VerboseLogTag": "WhyCantWeBeFriends",
+    "_design": "The Pacifist never attacks -- their weapon carries only ONLY_* abilities, which roll and animate but have no CHANGE_STAT HP action at all. Their damage comes from aggression turned back on the attacker. Negative Percent sends the share the other way; Min caps a single reflect at 12 so a boss's big hit cannot one-shot its own caster's target. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
+  },
+  "SKILL_CF_PARTNER_CMD_FOCUS_FIRE": {
+    "Budget": {
+      "Scope": "ONCE_PER_TARGET_PER_ROUND"
+    },
+    "Conditions": [
+      {
+        "Of": "SELF",
+        "Type": "HAS_STATUS",
+        "Value": "STATUS_CHARGE_CF_FOCUS_FIRE"
+      },
       {
         "Type": "HOSTILE_ACTION",
         "Value": true
       }
     ],
+    "DisplayName": "Focus Fire",
     "Effects": [
       {
-        "Type": "STAT_CHANGE",
-        "Target": "SELF",
+        "FlatValue": 6,
         "Stat": "HP",
         "StatChangeType": "MAGICAL",
-        "FlatValue": 3,
-        "Blockable": false
+        "Target": "TRIGGER_TARGET",
+        "Type": "STAT_CHANGE"
       }
     ],
-    "VerboseLogTag": "BloodPrice",
-    "_design": "The cost half of the class. Fires on every hostile ability, not on the damage, so a whiff still costs blood -- that is the whole tension. Unblockable so armour cannot make it free. Shape copied from the shipped SKILL_CF_HEXBLADE_BARGAIN. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
-  },
-  "SKILL_CF_VAMPIRIC_CRIMSON_DRAIN": {
     "SchemaVersion": "1.1",
-    "DisplayName": "Crimson Drain",
-    "Trigger": "ON_DAMAGE_DEALT",
-    "Effects": [
-      {
-        "Type": "STAT_CHANGE",
-        "Target": "SELF",
-        "Stat": "HP",
-        "StatChangeType": "REGEN",
-        "FlatValueFrom": "DAMAGE_DEALT_PCT",
-        "Percent": -25
-      }
-    ],
-    "VerboseLogTag": "CrimsonDrain",
-    "_design": "The payoff half. Uses the DAMAGE_DEALT_PCT value source added for this class -- before it, damage magnitude was reachable only as a STATE_HASH_CHANCE input, so this had to be a flat number that is far too weak early and far too strong late. Min 1 means a chip hit still returns something. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
+    "Trigger": "ON_ABILITY_USED",
+    "VerboseLogTag": "PartnerFocusFire",
+    "_design": "Partner half of a TEAM COMMAND. Lives in every CF_TRAINER_PARTNER class's Passives. This is the only cross-character channel data has: COUNTER is keyed on the owner's own GUID (Evaluation.cs:231), so a partner can never read the Trainer's counters -- a STATUS stamped on ALLY_ALL can be. Concentrating fire is paid for: +6 damage, but ONLY onto the enemy the Trainer marked with ARMORDOWN this round. HP sign is INVERTED in InteractableHelper.ApplyStatChange -- a POSITIVE HP delta is damage and a negative one heals -- which is why FlatValue is +6, not -6. || REBALANCE (Ben, 2026-08-26): the 'target carries STATUS_ARMORDOWN_00' precondition is removed because Command: Focus Fire no longer applies ARMORDOWN. The marker on the partner is now the whole gate; TrainerFocusFire's AIComponent.PriorityTargets order is what still points the partners at the named enemy, unchanged."
   },
-  "SKILL_CF_VAMPIRIC_ENGORGED": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Engorged",
-    "Trigger": "ON_HEAL_PENDING",
+  "SKILL_CF_PARTNER_CMD_SPREAD_OUT": {
     "Conditions": [
       {
-        "Type": "HP_THRESHOLD",
-        "Comparator": "GTE",
-        "Percent": 100
-      }
-    ],
-    "Effects": [
-      {
-        "Type": "ADD_STATUS",
-        "Target": "SELF",
-        "Status": "STATUS_CF_ENGORGED",
-        "Duration": 3
+        "Of": "SELF",
+        "Type": "HAS_STATUS",
+        "Value": "STATUS_EVASIVE_CF_SPREAD_OUT"
       },
       {
-        "Type": "COUNTER_ADD",
-        "Name": "cf_gorged",
-        "Delta": 1,
-        "Max": 3
+        "Type": "HOSTILE_ACTION",
+        "Value": true
       }
     ],
+    "DisplayName": "Spread Out",
+    "Effects": [
+      {
+        "FlatValue": 5,
+        "Stat": "HP",
+        "StatChangeType": "MAGICAL",
+        "Target": "TRIGGER_TARGET",
+        "Type": "STAT_CHANGE"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_ABILITY_USED",
+    "VerboseLogTag": "PartnerSpreadOut",
+    "_design": "PARTNER-SIDE payout for Command: Spread Out, rewritten 2026-08-26. Was a defensive DAMAGE_TAKEN_MULT of -25% on ON_DAMAGE_PENDING; is now 5 flat MAGICAL damage on a hostile action while the marker is up, budgeted ONCE_PER_TARGET_PER_ROUND. The budget is the whole design: hitting a NEW enemy pays, hitting the same one twice in a round does not, which is the only 'spread your attacks' incentive expressible in data. Mirrors SKILL_CF_PARTNER_CMD_FOCUS_FIRE exactly (same budget, same STAT_CHANGE shape, 5 instead of 6) so the two commands are directly comparable: Focus Fire pays more per hit on one target, Spread Out pays less per hit but on every fresh target.",
+    "Budget": {
+      "Scope": "ONCE_PER_TARGET_PER_ROUND"
+    }
+  },
+  "SKILL_CF_TRAINER_BOND_STRENGTH": {
+    "DisplayName": "Bond Strength",
+    "Effects": [
+      {
+        "Max": 30,
+        "PerUnit": 3,
+        "PercentFrom": "COUNTER:cf_bond",
+        "Stat": "AWR",
+        "Target": "SELF",
+        "Type": "ROLL_STAT_BONUS"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_ABILITY_DECLARED",
+    "VerboseLogTag": "BondStrength",
+    "_design": "Spends the Bond counter that Gotta Train 'Em accumulates. ON_ABILITY_DECLARED is the only legal scope for ROLL_STAT_BONUS. Mirrors the shipped STAT_CF_TRAIT_ARCANE_FOCUS_MAG counter-scaling shape, so it is a proven pattern rather than a new one."
+  },
+  "SKILL_CF_TRAINER_CAPTURE_1": {
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT"
+    },
+    "Conditions": [
+      {
+        "Type": "HAS_ITEM",
+        "Value": "ARM_ORIG_TRAINER_BALL_CAPTURE"
+      }
+    ],
+    "DisplayName": "Go, Partner!",
+    "Effects": [
+      {
+        "CharacterConfigFrom": "ITEM_CUSTOM_DATA:ARM_ORIG_TRAINER_BALL_CAPTURE:CF_POKE_CONFIG",
+        "Count": 1,
+        "SummonType": "SPECIFIC",
+        "Target": "SELF",
+        "Type": "SUMMON"
+      }
+    ],
+    "SchemaVersion": "1.5",
+    "Trigger": "ON_COMBAT_START",
+    "VerboseLogTag": "CaptureSendOut",
+    "_design": "GARY -- the send-out half, and the reason SUMMON needed a new primitive at all. SUMMON.CharacterConfig is a STATIC authored string, so a recipe can only ever summon a creature the AUTHOR named; a captured monster is chosen by the PLAYER at runtime and cannot be in this file. CharacterConfigFrom resolves the id at EXECUTION time out of the ball's Thing.CustomData. || HP PERSISTENCE IS REUSED, NOT REBUILT. The recipe id is SKILL_CF_TRAINER_CAPTURE_1, which TrainerPartnerPersistence.ResolveSlot parses as line CAPTURE + stage 1 and binds to ARM_ORIG_TRAINER_BALL_CAPTURE -- the SAME CF_POKE_HP / CF_POKE_MAXHP / CF_POKE_DOWNED / CF_POKE_STAGE store, the same write-through on every health change, the same town-only revival, and the same Records/StateSummary read-back that Ash's partners use. That is why the ball is named ARM_ORIG_TRAINER_BALL_<LINE> even though the class is Gary: the id IS the binding. || EXACTLY ONE MINION. One ball, one CF_POKE_CONFIG slot. Capturing again overwrites it and clears the health record, so the replacement arrives at full HP rather than inheriting its predecessor's wounds. || ON_COMBAT_START, NOT ON CAPTURE. The captured monster is sent out at the start of the NEXT fight. Summoning it in the same postfix that requested its removal would put the new combatant on the board before CombatPhase._processCombatResults has run removeFromCombat on the old one, which is a tile-occupancy and charge-retarget race for no gameplay gain. || HAS_ITEM fails SHUT: an unreadable inventory is false BEFORE Negate, so no ball means no partner."
+  },
+  "SKILL_CF_TRAINER_CAPTURE_CATCH": {
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT"
+    },
+    "Conditions": [
+      {
+        "Type": "HAS_ITEM",
+        "Value": "ARM_ORIG_TRAINER_BALL_CAPTURE"
+      },
+      {
+        "Comparator": "EQ",
+        "Type": "ROLL_TIER",
+        "Value": "PERFECT"
+      },
+      {
+        "Of": "TRIGGER_TARGET",
+        "Type": "IS_ENEMY",
+        "Value": true
+      },
+      {
+        "Negate": true,
+        "Of": "TRIGGER_TARGET",
+        "Type": "ENTITY_TAG",
+        "Value": "BOSS"
+      },
+      {
+        "Negate": true,
+        "Of": "TRIGGER_TARGET",
+        "Type": "ENTITY_TAG",
+        "Value": "SCOURGE"
+      },
+      {
+        "Negate": true,
+        "Of": "TRIGGER_TARGET",
+        "Type": "CHARACTER_TYPE",
+        "Value": "BOSS"
+      },
+      {
+        "Of": "TRIGGER_TARGET",
+        "Type": "ENTITY_TAG",
+        "Value": "CF_CAPTURABLE"
+      }
+    ],
+    "DisplayName": "Catch 'Em All",
+    "Effects": [
+      {
+        "IntoItem": "ARM_ORIG_TRAINER_BALL_CAPTURE",
+        "IntoKey": "CF_POKE_CONFIG",
+        "Target": "TRIGGER_TARGET",
+        "Type": "CAPTURE"
+      }
+    ],
+    "SchemaVersion": "1.5",
+    "Trigger": "ON_ABILITY_USED",
+    "VerboseLogTag": "Capture",
+    "_design": "GARY, THE CAPTURE TRAINER -- the capture half. Throwing the ball is the vanilla ability ONLY_RESISTDOWN_ATTACK; this recipe watches that throw resolve and, on a PERFECT roll only, binds the target to the ball and takes it off the board. || WHY THESE CONDITIONS AND NOT OTHERS. ROLL_TIER {EQ PERFECT} is the whole gate -- ADD_STATUS already only lands on PERFECT natively, so the ball's resistance-down and its capture share one roll and one moment. IS_ENEMY{Of TRIGGER_TARGET} is CharacterHelper.IsEnemy, i.e. GroupIndex == 1 (CharacterHelper.cs:1492): without it a mis-aimed ball could capture an ally. || THE BOSS GUARD IS A TAG TEST, NOT IsBoss. ENTITY_TAG resolves to CharacterHelper.ActorHasTag(entity, eConfigTags.X), a read of the CONFIG's Tags, and BOSS/SCOURGE are real eConfigTags members (eConfigTags.cs:140, :520) carried by 437 and 80 shipped configs. CHARACTER_TYPE{EQ BOSS, negated} is only the SECOND layer: it reads the RUNTIME CharacterComponent.CharacterType, which is set to BOSS only for scripted boss fights (VenueHelper.cs:904/913/969, AdventureHelper.cs:3043, CombatPhase.cs:6477 inside _bossFightState), so a BOSS_* config wandering the overworld reports STANDARD and would walk straight through it. Threat is NOT consulted -- it is a 0-9 aggro weight, and BOSS_NECROMANCER_00 has Threat 2, the same as a cave bat. || THE ART, PLAYTHING AND NO-STUN GATES ARE ASKED THROUGH ONE VIRTUAL TAG. None of them is expressible as an ordinary condition -- recipe conditions are ANDed and there is no OR, so the 20-member PLAYTHING_* family cannot be asked about, and a creature's kit is a graph walk over its Things' abilities. They still live in TrainerCaptureRules; ENTITY_TAG {Of TRIGGER_TARGET, Value CF_CAPTURABLE} asks that ONE predicate (EntityAdapter.HasTag's single virtual-tag branch -- CF_CAPTURABLE is not an eConfigTags member, so nothing else can hit it). This is here and not only inside the effect BECAUSE OF THE BUDGET: RecipeDispatcher evaluates Conditions (RecipeDispatcher.cs:407) BEFORE it consumes the budget (:420-467), so a throw at an uncapturable target now leaves the fight's ONCE_PER_COMBAT slot untouched instead of burning it -- the live bug where one throw at an untagged golem silently blocked every later capture that fight. The effect re-runs the same gate as defence in depth. The PLAYTHING_* test is a CRASH guard first: the removal path calls SkillHelper.GetEnemyDoll, which returns null without that tag, and InventoryHelper.CreateThing(null) throws inside the game's own frame. || REMOVAL. The CAPTURE effect does not kill: KillCharacter leaves a corpse. It pushes (eAbilityResults.PLAYTHINGED, target) into the ability's results list, the only reachable route to CombatPhase's local removeFromCombat (CombatPhase.cs:4362) and -- just as important -- to _checkChargeRetargets() (CombatPhase.cs:4401), without which charged abilities stay aimed at an entity that has left the board. || ONCE PER COMBAT. One successful catch per fight. The ball is not consumed on a throw -- it carries the UNLIMITED tag, which is the ONLY exemption InventoryHelper.Consume honours (InventoryHelper.cs:413), the shipped precedent being MISC_SAFETYSTONE_01. That is not generosity: the ball IS the partner's storage (CF_POKE_CONFIG lives in its Thing.CustomData), so consuming it would delete the monster it had just caught. || ONE SLOT, N BALLS. Extra copies of the ball are spare throwables only. Capture, send-out and the HP write-through all resolve through TrainerPartnerPersistence.CanonicalBall -- the copy already carrying a creature -- so a second ball can never open a second minion slot or orphan the first ball's monster."
+  },
+  "SKILL_CF_TRAINER_CMD_FOCUS_FIRE": {
     "Budget": {
       "Scope": "ONCE_PER_ROUND"
     },
-    "VerboseLogTag": "Engorged",
-    "_design": "Overheal, done the only way the engine allows. AddHealth clamps to max HP, so healing past full is impossible -- instead this RAISES max HP and lets the drain fill it, which lands on the same fantasy from the other side. Gated on already being at full HP so it rewards sustained feeding rather than topping off. ONCE_PER_ROUND so a multi-hit turn cannot stack it into absurdity."
-  },
-  "SKILL_CF_VAMPIRIC_BAT_SWARM": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Bat Swarm",
-    "Trigger": "ON_KILL",
     "Conditions": [
       {
-        "Type": "COUNTER",
-        "Name": "cf_gorged",
+        "Type": "WEAPON_CLASS",
+        "Value": "STAFF"
+      },
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "AWR"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": true
+      }
+    ],
+    "DisplayName": "Command: Focus Fire",
+    "Effects": [
+      {
+        "Duration": 2,
+        "Status": "STATUS_CHARGE_CF_FOCUS_FIRE",
+        "Target": "ALLY_ALL",
+        "Type": "ADD_STATUS"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_ABILITY_USED",
+    "VerboseLogTag": "CmdFocusFire",
+    "_design": "TEAM COMMAND 1 of 4. The Trainer points at ONE enemy (ONLY_RESISTDOWN_ATTACK is Target ENEMY / Area SINGLE, so the player picks it). Two things happen, both mechanical: the named enemy is reliably stamped ARMORDOWN (-10 DEF) and RESISTANCEDOWN (-10 RES), and every ally is stamped the Focus Fire marker. SKILL_CF_PARTNER_CMD_FOCUS_FIRE, held in every partner class's Passives, then pays a damage bonus ONLY when that partner's target is the one carrying ARMORDOWN -- so concentrating fire is strictly better than spreading it. What DATA CANNOT DO is force the choice: AIComponent.PriorityTargets (AIHelper.cs:516-537) is a GUID queue drained unconditionally before GetPreferredTarget and is the exact primitive for 'attack THIS', but it is written from C# and no recipe effect enqueues a GUID. Discriminated by ABILITY_STAT: the roll Stat is read off the ACTING THING's Interactable.Abilities[<id>].Stat (GameAdapters.cs:829-845), which this pack authors on the Beast Whistle, so four VANILLA ability ids can be told apart without inventing a pack ability id. Pack ability ids are avoided on purpose: CharacterVisualHelper.renderAbilityFX (CharacterVisualHelper.cs:2567) dereferences GetCharacterAbilityRecord unguarded under case eAbilityResults.TRIGGER_ABILITY, so ANY pack-authored id that resolves onto a BODY is an NRE. WEAPON_CLASS STAFF narrows the gate further so a looted weapon that happens to roll the same stat cannot fire the command. The command payload lives in the RECIPE, not in the ability: a recipe synthesizes PERFECT (RecipeActionExecutor.cs:63-66) so its ADD_STATUS lands every time, while the ability's own ADD_STATUS does not -- which is why every command ability is authored at Rolls 1 (PERFECT chance is perSlot^rolls). || REBALANCE (Ben, 2026-08-26): the ARMORDOWN and RESISTANCEDOWN stamps are DELETED. The command now does exactly one thing -- mark the enemy and stamp STATUS_CHARGE_CF_FOCUS_FIRE on every ally -- and the payout moved wholly into SKILL_CF_PARTNER_CMD_FOCUS_FIRE, whose ARMORDOWN precondition had to go with it or the bonus would never pay again. The whistle ability itself is still ONLY_RESISTDOWN_ATTACK and applies its own vanilla RESISTANCEDOWN on a PERFECT roll; that is the shipped ability's behaviour, not the command's, and it is left alone because swapping the ability id needs a vanilla id verified against the game's Abilities.json and the game was not to be launched. ALSO: this pack is down to TWO commands. Command: Afflict and Command: Finish It are deleted, along with their partner-side recipes, their statuses, their localization and the two Beast Whistle ability-bar slots (ONLY_RESISTDOWN_AOE_ATTACK / TAL and ONLY_ATTACKUP_SPLASH_ATTACK / LCK) that existed only as ABILITY_STAT discriminators for them. The three surviving whistle slots still carry distinct roll stats (INT basic, AWR Focus Fire, SPD Spread Out), so the discriminator still works."
+  },
+  "SKILL_CF_TRAINER_CMD_SPREAD_OUT": {
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
+    "Conditions": [
+      {
+        "Type": "WEAPON_CLASS",
+        "Value": "STAFF"
+      },
+      {
+        "Type": "ABILITY_STAT",
+        "Value": "SPD"
+      },
+      {
+        "Type": "HOSTILE_ACTION",
+        "Value": false
+      }
+    ],
+    "DisplayName": "Command: Spread Out",
+    "Effects": [
+      {
+        "Duration": 2,
+        "Status": "STATUS_EVASIVE_CF_SPREAD_OUT",
+        "Target": "ALLY_ALL",
+        "Type": "ADD_STATUS"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_ABILITY_USED",
+    "VerboseLogTag": "CmdSpreadOut",
+    "_design": "TEAM COMMAND 2 of 4, and the WEAKEST of the four -- read this before trusting the name. The POSITIONAL half of Spread Out ('partners fan across the line') is NOT expressible in data and is not expressible by the tendency layer either: eAiTendencies biases TARGET SELECTION, never movement, so nothing short of real movement code makes partners physically fan out. What ships is the honest half -- a scatter STANCE. The marker carries EVD +8 outright, and SKILL_CF_PARTNER_CMD_SPREAD_OUT cuts incoming physical damage by 25% on ON_DAMAGE_PENDING while it is up. That is a real, measurable effect that pays off exactly when the enemy swings wide, but it is a defensive posture and not a formation change. Discriminated by ABILITY_STAT: the roll Stat is read off the ACTING THING's Interactable.Abilities[<id>].Stat (GameAdapters.cs:829-845), which this pack authors on the Beast Whistle, so four VANILLA ability ids can be told apart without inventing a pack ability id. Pack ability ids are avoided on purpose: CharacterVisualHelper.renderAbilityFX (CharacterVisualHelper.cs:2567) dereferences GetCharacterAbilityRecord unguarded under case eAbilityResults.TRIGGER_ABILITY, so ANY pack-authored id that resolves onto a BODY is an NRE. WEAPON_CLASS STAFF narrows the gate further so a looted weapon that happens to roll the same stat cannot fire the command. The command payload lives in the RECIPE, not in the ability: a recipe synthesizes PERFECT (RecipeActionExecutor.cs:63-66) so its ADD_STATUS lands every time, while the ability's own ADD_STATUS does not -- which is why every command ability is authored at Rolls 1 (PERFECT chance is perSlot^rolls). || REBALANCE (Ben, 2026-08-26): Spread Out is no longer a defensive stance. STATUS_EVASIVE_CF_SPREAD_OUT drops EVD +8 for ATK +5, and SKILL_CF_PARTNER_CMD_SPREAD_OUT drops its -25% physical DAMAGE_TAKEN_MULT for a flat bonus-damage payout on a hostile action, budgeted ONCE_PER_TARGET_PER_ROUND so re-hitting the same enemy pays nothing and working across the board does. That budget IS the 'spread' -- the literal 'each partner takes a DIFFERENT enemy' rule was dropped on Ben's call: it needs C# that writes AIComponent.PriorityTargets, which is the same anti-focus targeting hazard AiDrawNeutrality exists to contain, and with ONE partner line for Ash and one minion for Gary a normal party has exactly ONE pokemon on the board, so there is nothing to spread. Read honestly: with a single partner this command is 'your pokemon hits harder for two turns', which is observable but is NOT a formation change. The status id keeps the word EVASIVE only to avoid a rename that would churn two localization keys for no gameplay gain. The whistle slot is still ONLY_EVADEUP_SPLASH_ATTACK (SPD, non-hostile) -- making the command itself a damaging 'fire attack' needs a vanilla attack ability id verified against the shipped Abilities.json, which could not be done without launching the game, and authoring an unverified ability id onto a body is the unguarded-GetCharacterAbilityRecord NRE."
+  },
+  "SKILL_CF_TRAINER_GOTTA_TRAIN_EM": {
+    "DisplayName": "Gotta Train 'Em",
+    "Effects": [
+      {
+        "Delta": 1,
+        "Max": 10,
+        "Name": "cf_bond",
+        "Persistent": true,
+        "Type": "COUNTER_ADD"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_KILL",
+    "VerboseLogTag": "GottaTrainEm",
+    "_design": "Bond grows with every kill and now survives between fights (Persistent: true -- SPEC-DELTA-v1.1 SS6 amendment): cf_bond is seeded at the start of every combat from the owner's CharacterComponent.CustomData and written back there on every proc, so the CHAOS_1/2/3 band a run is in keeps advancing across the whole run instead of resetting to CHAOS_1 every fight. The bonus it feeds lives in SKILL_CF_TRAINER_BOND_STRENGTH, because ROLL_STAT_BONUS is ON_ABILITY_DECLARED-only -- it replaces the PerformAbility prefix's stat delegates, so under ON_KILL it would never be consulted."
+  },
+  "SKILL_CF_TRAINER_GRASS_1": {
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT"
+    },
+    "Conditions": [
+      {
+        "Type": "HAS_ITEM",
+        "Value": "ARM_ORIG_TRAINER_BALL_GRASS"
+      },
+      {
         "Comparator": "GTE",
+        "Name": "cf_bond",
+        "Type": "COUNTER",
+        "Value": 0
+      },
+      {
+        "Comparator": "LT",
+        "Name": "cf_bond",
+        "Type": "COUNTER",
         "Value": 3
       }
     ],
+    "DisplayName": "Grass Partner (Stage 1)",
     "Effects": [
       {
-        "Type": "SUMMON",
+        "CharacterConfig": "WOLF_GRASS_08",
+        "Count": 1,
+        "SummonType": "SPECIFIC",
         "Target": "SELF",
-        "CharacterConfig": "BAT_VAMPIRE_01",
-        "Count": 1
-      },
-      {
-        "Type": "COUNTER_SET",
-        "Name": "cf_gorged",
-        "Value": 0
+        "Type": "SUMMON"
       }
     ],
+    "SchemaVersion": "1.4",
+    "Trigger": "ON_COMBAT_START",
+    "VerboseLogTag": "Grass1",
+    "_design": "Bond band 0-2 auto-sends stage 1 of 3 of the GRASS line (Barkling, WOLF_GRASS_08). Its kit on UNARMED_WOLF_GRASS_08 is ONLY_ARMORUP_OTHER_ATTACK, SHIELD_TAUNT_ATTACK and BITE_BASIC_ATTACK (replacing the old JELLY_ACID_ATTACK -- a wolf does not spit acid; same Rolls/Stat/MaxValue, but ENEMY/SPLASH becomes ENEMY/SINGLE, flagged as a real nerf to the stage-1 damage slot). The shipped WOLF_GRASS records carry no Passives, so the jelly stage-1 poison immunity is gone -- flagged. WOLF LINE (Ben, 2026-08-26): the GRASS line is three wolves, not four jellies -- a common wolf, then a hellhound, then a chaoshound as the final stage. THREE stages, matching Ben's original 'Chaoshound / Hellhound at Bond 3' partner-line note; the old SKILL_CF_TRAINER_GRASS_4 is deleted and its bond band folded into stage 2 so the top stage still lands at bond 9 exactly as before. SPECIFIC, not RANDOM: CharacterHelper.GetActorsByTags filters every RANDOM candidate through CharacterVisualHelper.GetCharacterTierRecord, a Unity dCharacter index lookup no JSON pack can add to, so a RANDOM summon of pack content resolves to nothing. Every config id is a REAL shipped wolf family stem with a FREE two-digit suffix (WOLF_GRASS / WOLF_HELLHOUND / WOLF_CHAOSHOUND all ship _00.._07, so _08/_09/_10 are the first free slots): GetCharacterTierRecord halves the suffix and lands on WOLF_GRASS_04 / WOLF_HELLHOUND_04 / WOLF_CHAOSHOUND_05, all real prefabs. Authoring the shipped _00.._07 ids directly is NOT an option -- MergePlanner is adds-only against LiveIdSets and would refuse the entry, and overwriting them would rewrite every wild wolf in the game. The chaoshound record deliberately OMITS the shipped QUEEN_CHAOSHOUND and PLAYTHING_CREATURE_ARTIFACT tags: QUEEN_CHAOSHOUND is the RANDOM selector EVILQUEEN_SUMMON_ATTACK draws from, so carrying it would put our partner in the Evil Queen's summon pool. GRASS is still the PROTECT line: ally armour/resistance/defence buffs, PROTECT (STATUS_PROTECT_00), and a self-TAUNT to pull attacks off the party. It is the body the Trainer hides behind -- SKILL_CF_TRAINER_SHIELDED needs a living partner on the tile directly in front. Every buff/protect move is a 1-ROLL move because ADD_STATUS lands only on a PERFECT roll and PERFECT chance is perSlot^rolls. One damage move is kept per stage so a grass-first run can still land a kill and feed cf_bond via GOTTA_TRAIN_EM. No stun anywhere (Ben: 'too broken'). NOTE: the config suffix drives status tier via InteractableHelper.GetTieredStatusName -> ProgressionHelper.GetTierFromLevel (clamped 0-3), so all three wolves apply tier-3 statuses where the jellies applied 0/1/2/3 -- unavoidable, every low wolf suffix is shipped and therefore un-authorable. || POSSESSION GATE (economy, 2026-08-25). This line only fields a partner if the Trainer is CARRYING its own charm -- HAS_ITEM is InventoryHelper.HasItemByName's read over CharacterComponent.Things, and an unreadable inventory is a FALSE before Negate, so the gate fails SHUT. The class grants exactly ONE charm at creation (the Grass starter); the other two are earned. SELF_LEVEL is the tier ceiling on top of the cf_bond band: bond is earned by kills and could otherwise rush the top stage at level 1. Stage 1 deliberately carries NO SELF_LEVEL condition -- SELF_LEVEL reads UNKNOWN for a non-player and short-circuits to false, so a level gate on stage 1 could leave the class with no partner at all. || ONE LINE ONLY (Ben, 2026-08-26): the Trainer is down to a SINGLE partner line -- the three wolves. The FIRE and WATER CREATURE records, their UNARMED_* weapons, their visualfallbacks donors, their ON_COMBAT_START summon recipes and the localization for all of those are DELETED. What deliberately SURVIVES is all three ARM_ORIG_TRAINER_BALL_{GRASS,FIRE,WATER} items, their CF_TRAINER_SUMMON_* abilities, their localization and TrainerCharmProgression: Ben wants three balls, each a persistence slot, and a ball is what ResolveSlot binds a partner to. The FIRE and WATER balls are therefore EMPTY-BUT-VALID -- carried, named, and pointing at no creature -- rather than deleted. The recipe ids SKILL_CF_TRAINER_GRASS_1/2/3 are deliberately NOT renamed even though 'GRASS' now names a wolf line: TrainerPartnerPersistence.ResolveSlot parses SKILL_CF_TRAINER_<LINE>_<STAGE> and binds the result to ARM_ORIG_TRAINER_BALL_<LINE>, so renaming or renumbering these three silently breaks partner HP persistence between fights. The name is wrong and the binding is right; the binding wins. || GATING (2026-08-26): the SELF_LEVEL conditions that used to sit on stages 2 and 3 are REMOVED. With bands of bond 0-2 / 3-8 / 9+ AND a level floor, a Trainer at bond 3 and level 1 had stage 1 already expired and stage 2 not yet legal -- a DEAD BAND with no partner at all, and the same hole again at bond 9 below level 6. cf_bond alone is now the single monotone axis: the three bands are contiguous and mutually exclusive, stage 1 is available from the first fight, and stage 3 lands at 9 kills, which a normal run reaches. cf_bond persists across fights (Persistent: true writes CF_COUNTER_cf_bond to CharacterComponent.CustomData; RecipeEngineHost.SeedPersistentCounters reads it back before ON_COMBAT_START dispatches), so the ladder does not reset every combat."
+  },
+  "SKILL_CF_TRAINER_GRASS_2": {
     "Budget": {
-      "Scope": "ONCE_PER_ROUND"
+      "Scope": "ONCE_PER_COMBAT"
     },
-    "VerboseLogTag": "BatSwarm",
-    "_design": "Gorging three times then felling an enemy calls a vampire bat into the corpse's place, and resets the count. SUMMON can only place on a target entity's EXACT tile, and CombatHelper.ApplyAction's ADD_CHARACTER case silently breaks out if any LIVING entity stands there. So the only reliably-empty tile is one an enemy just vacated by dying -- which is why every vanilla summon hangs off a kill. Measured 2026-08-24: SELF (the caster's own tile) and TRIGGER_TARGET_POSITION on a hostile ability (the live enemy's tile) both ran cleanly and placed nothing."
-  },
-  "SKILL_CF_PACIFIST_WHY_CANT_WE_BE_FRIENDS": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Why Can't We Be Friends",
-    "Trigger": "ON_DAMAGE_TAKEN",
-    "Effects": [
-      {
-        "Type": "STAT_CHANGE",
-        "Target": "TRIGGER_SOURCE",
-        "Stat": "HP",
-        "StatChangeType": "MAGICAL",
-        "FlatValueFrom": "DAMAGE_DEALT_PCT",
-        "Percent": 30,
-        "Max": 12
-      }
-    ],
-    "VerboseLogTag": "WhyCantWeBeFriends",
-    "_design": "The Pacifist never attacks -- their weapon carries only ONLY_* abilities, which roll and animate but have no CHANGE_STAT HP action at all. Their damage comes from aggression turned back on the attacker. Negative Percent sends the share the other way; Min caps a single reflect at 12 so a boss's big hit cannot one-shot its own caster's target. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
-  },
-  "SKILL_CF_PACIFIST_CROUCHING_TIGER": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Crouching Tiger",
-    "Trigger": "ON_TURN_END",
-    "Effects": [
-      {
-        "Type": "ADD_STATUS",
-        "Target": "SELF",
-        "Status": "STATUS_REFLECT_00",
-        "Duration": 2
-      }
-    ],
-    "Budget": {
-      "Scope": "ONCE_PER_ROUND"
-    },
-    "VerboseLogTag": "CrouchingTiger",
-    "_design": "Readies a parry at the end of every turn. STATUS_REFLECT_00 is the game's own reflect: it returns max(1, 50%) of ONE incoming hit and is then consumed, which is exactly the brief without needing a new primitive."
-  },
-  "SKILL_CF_PACIFIST_FIELD_MEDIC": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Field Medic",
-    "Trigger": "ON_TURN_END",
-    "Effects": [
-      {
-        "Type": "STAT_CHANGE",
-        "Target": "ALLY_BY_RANK",
-        "Rank": {
-          "Stat": "HP_PCT",
-          "Order": "LOWEST",
-          "ExcludeSelf": false
-        },
-        "Stat": "HP",
-        "StatChangeType": "REGEN",
-        "FlatValue": -4
-      }
-    ],
-    "Budget": {
-      "Scope": "ONCE_PER_ROUND"
-    },
-    "VerboseLogTag": "FieldMedic",
-    "_design": "Always finds the most hurt ally rather than healing at random. ALLY_BY_RANK{HP_PCT, LOWEST} is the engine's own targeting for exactly this. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
-  },
-  "SKILL_CF_TRAINER_TYPE_ADVANTAGE": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Type Advantage",
-    "Trigger": "ON_ABILITY_USED",
     "Conditions": [
       {
-        "Type": "ROLL_TIER",
+        "Type": "HAS_ITEM",
+        "Value": "ARM_ORIG_TRAINER_BALL_GRASS"
+      },
+      {
+        "Comparator": "GTE",
+        "Name": "cf_bond",
+        "Type": "COUNTER",
+        "Value": 3
+      },
+      {
+        "Comparator": "LT",
+        "Name": "cf_bond",
+        "Type": "COUNTER",
+        "Value": 9
+      }
+    ],
+    "DisplayName": "Grass Partner (Stage 2)",
+    "Effects": [
+      {
+        "CharacterConfig": "WOLF_HELLHOUND_09",
+        "Count": 1,
+        "SummonType": "SPECIFIC",
+        "Target": "SELF",
+        "Type": "SUMMON"
+      }
+    ],
+    "SchemaVersion": "1.4",
+    "Trigger": "ON_COMBAT_START",
+    "VerboseLogTag": "Grass2",
+    "_design": "Bond band 3-8 auto-sends stage 2 of 3 of the GRASS line (Hellhowl, WOLF_HELLHOUND_09). This band is the old stage-2 (3-5) and stage-3 (6-8) bands merged, so nothing above it is dead and the top stage still arrives at bond 9. SELF_LEVEL stays at 2 (the old stage-2 gate) -- raising it would open a dead window where stage 1 has already expired at bond 3 and stage 2 is not yet legal. Its statline is the rounded midpoint of the two jelly stages it replaces, so the merge is neither a buff at bond 3 nor a nerf at bond 8. Its kit on UNARMED_WOLF_HELLHOUND_09 is the old stage-3 protect bag (MAGIC_PROTECT_ATTACK, ONLY_RESISTUP_SPLASH_ATTACK, WOLF_SPECIAL_ONLY_DEFENSEUP_SPLASH_ATTACK, LANCE_TAUNT_ATTACK) with PLANT_AOE_POISON_ATTACK replaced by HELLHOUND_FIRE_ATTACK -- same Rolls/Stat/MaxValue, ENEMY/AOE becomes ENEMY/SPLASH (6 tiles to 4), which also honours the pack's no-whole-group-AoE rule. STATUS_IMMUNITY_FIRE is copied verbatim from the shipped WOLF_HELLHOUND records. WOLF LINE (Ben, 2026-08-26): the GRASS line is three wolves, not four jellies -- a common wolf, then a hellhound, then a chaoshound as the final stage. THREE stages, matching Ben's original 'Chaoshound / Hellhound at Bond 3' partner-line note; the old SKILL_CF_TRAINER_GRASS_4 is deleted and its bond band folded into stage 2 so the top stage still lands at bond 9 exactly as before. SPECIFIC, not RANDOM: CharacterHelper.GetActorsByTags filters every RANDOM candidate through CharacterVisualHelper.GetCharacterTierRecord, a Unity dCharacter index lookup no JSON pack can add to, so a RANDOM summon of pack content resolves to nothing. Every config id is a REAL shipped wolf family stem with a FREE two-digit suffix (WOLF_GRASS / WOLF_HELLHOUND / WOLF_CHAOSHOUND all ship _00.._07, so _08/_09/_10 are the first free slots): GetCharacterTierRecord halves the suffix and lands on WOLF_GRASS_04 / WOLF_HELLHOUND_04 / WOLF_CHAOSHOUND_05, all real prefabs. Authoring the shipped _00.._07 ids directly is NOT an option -- MergePlanner is adds-only against LiveIdSets and would refuse the entry, and overwriting them would rewrite every wild wolf in the game. The chaoshound record deliberately OMITS the shipped QUEEN_CHAOSHOUND and PLAYTHING_CREATURE_ARTIFACT tags: QUEEN_CHAOSHOUND is the RANDOM selector EVILQUEEN_SUMMON_ATTACK draws from, so carrying it would put our partner in the Evil Queen's summon pool. GRASS is still the PROTECT line: ally armour/resistance/defence buffs, PROTECT (STATUS_PROTECT_00), and a self-TAUNT to pull attacks off the party. It is the body the Trainer hides behind -- SKILL_CF_TRAINER_SHIELDED needs a living partner on the tile directly in front. Every buff/protect move is a 1-ROLL move because ADD_STATUS lands only on a PERFECT roll and PERFECT chance is perSlot^rolls. One damage move is kept per stage so a grass-first run can still land a kill and feed cf_bond via GOTTA_TRAIN_EM. No stun anywhere (Ben: 'too broken'). NOTE: the config suffix drives status tier via InteractableHelper.GetTieredStatusName -> ProgressionHelper.GetTierFromLevel (clamped 0-3), so all three wolves apply tier-3 statuses where the jellies applied 0/1/2/3 -- unavoidable, every low wolf suffix is shipped and therefore un-authorable. || POSSESSION GATE (economy, 2026-08-25). This line only fields a partner if the Trainer is CARRYING its own charm -- HAS_ITEM is InventoryHelper.HasItemByName's read over CharacterComponent.Things, and an unreadable inventory is a FALSE before Negate, so the gate fails SHUT. The class grants exactly ONE charm at creation (the Grass starter); the other two are earned. SELF_LEVEL is the tier ceiling on top of the cf_bond band: bond is earned by kills and could otherwise rush the top stage at level 1. Stage 1 deliberately carries NO SELF_LEVEL condition -- SELF_LEVEL reads UNKNOWN for a non-player and short-circuits to false, so a level gate on stage 1 could leave the class with no partner at all. || ONE LINE ONLY (Ben, 2026-08-26): the Trainer is down to a SINGLE partner line -- the three wolves. The FIRE and WATER CREATURE records, their UNARMED_* weapons, their visualfallbacks donors, their ON_COMBAT_START summon recipes and the localization for all of those are DELETED. What deliberately SURVIVES is all three ARM_ORIG_TRAINER_BALL_{GRASS,FIRE,WATER} items, their CF_TRAINER_SUMMON_* abilities, their localization and TrainerCharmProgression: Ben wants three balls, each a persistence slot, and a ball is what ResolveSlot binds a partner to. The FIRE and WATER balls are therefore EMPTY-BUT-VALID -- carried, named, and pointing at no creature -- rather than deleted. The recipe ids SKILL_CF_TRAINER_GRASS_1/2/3 are deliberately NOT renamed even though 'GRASS' now names a wolf line: TrainerPartnerPersistence.ResolveSlot parses SKILL_CF_TRAINER_<LINE>_<STAGE> and binds the result to ARM_ORIG_TRAINER_BALL_<LINE>, so renaming or renumbering these three silently breaks partner HP persistence between fights. The name is wrong and the binding is right; the binding wins. || GATING (2026-08-26): the SELF_LEVEL conditions that used to sit on stages 2 and 3 are REMOVED. With bands of bond 0-2 / 3-8 / 9+ AND a level floor, a Trainer at bond 3 and level 1 had stage 1 already expired and stage 2 not yet legal -- a DEAD BAND with no partner at all, and the same hole again at bond 9 below level 6. cf_bond alone is now the single monotone axis: the three bands are contiguous and mutually exclusive, stage 1 is available from the first fight, and stage 3 lands at 9 kills, which a normal run reaches. cf_bond persists across fights (Persistent: true writes CF_COUNTER_cf_bond to CharacterComponent.CustomData; RecipeEngineHost.SeedPersistentCounters reads it back before ON_COMBAT_START dispatches), so the ladder does not reset every combat."
+  },
+  "SKILL_CF_TRAINER_GRASS_3": {
+    "Budget": {
+      "Scope": "ONCE_PER_COMBAT"
+    },
+    "Conditions": [
+      {
+        "Type": "HAS_ITEM",
+        "Value": "ARM_ORIG_TRAINER_BALL_GRASS"
+      },
+      {
+        "Comparator": "GTE",
+        "Name": "cf_bond",
+        "Type": "COUNTER",
+        "Value": 9
+      }
+    ],
+    "DisplayName": "Grass Partner (Stage 3)",
+    "Effects": [
+      {
+        "CharacterConfig": "WOLF_CHAOSHOUND_10",
+        "Count": 1,
+        "SummonType": "SPECIFIC",
+        "Target": "SELF",
+        "Type": "SUMMON"
+      }
+    ],
+    "SchemaVersion": "1.4",
+    "Trigger": "ON_COMBAT_START",
+    "VerboseLogTag": "Grass3",
+    "_design": "Bond band 9-+ auto-sends the FINAL stage of the GRASS line (Chaosmutt, WOLF_CHAOSHOUND_10) -- the same bond 9 / SELF_LEVEL 6 gate the deleted stage 4 used, so the capstone costs exactly what it did before. Its kit on UNARMED_WOLF_CHAOSHOUND_10 is the old stage-4 bag (MAGIC_PROTECT_SPLASH_ATTACK, SKRAEVIN_ARMOR_RES_BUFF, ONLY_RESISTUP_SPLASH_ATTACK, LANCE_TAUNT_ATTACK) with the two plant/magic moves replaced by the chaoshound's own shipped moves: PLANT_ENTANGLE_GROUP_ATTACK -> BITE_ARMOR_RESISTANCEDOWN_ATTACK (same Rolls/Stat/MaxValue-0 control slot, ENEMY/AOE becomes ENEMY/SINGLE -- flagged nerf) and MAGIC_BASIC_AOE_ATTACK -> BITE_CHAOS_ATTACK (same Rolls 3 / MaxValue 0.9, ENEMY/AOE becomes ENEMY/SINGLE -- flagged nerf; the capstone trades board AoE for the chaoshound's signature bite). STATUS_IMMUNITY_FIRE/ICE/SHOCK are copied verbatim from the shipped WOLF_CHAOSHOUND records. WOLF LINE (Ben, 2026-08-26): the GRASS line is three wolves, not four jellies -- a common wolf, then a hellhound, then a chaoshound as the final stage. THREE stages, matching Ben's original 'Chaoshound / Hellhound at Bond 3' partner-line note; the old SKILL_CF_TRAINER_GRASS_4 is deleted and its bond band folded into stage 2 so the top stage still lands at bond 9 exactly as before. SPECIFIC, not RANDOM: CharacterHelper.GetActorsByTags filters every RANDOM candidate through CharacterVisualHelper.GetCharacterTierRecord, a Unity dCharacter index lookup no JSON pack can add to, so a RANDOM summon of pack content resolves to nothing. Every config id is a REAL shipped wolf family stem with a FREE two-digit suffix (WOLF_GRASS / WOLF_HELLHOUND / WOLF_CHAOSHOUND all ship _00.._07, so _08/_09/_10 are the first free slots): GetCharacterTierRecord halves the suffix and lands on WOLF_GRASS_04 / WOLF_HELLHOUND_04 / WOLF_CHAOSHOUND_05, all real prefabs. Authoring the shipped _00.._07 ids directly is NOT an option -- MergePlanner is adds-only against LiveIdSets and would refuse the entry, and overwriting them would rewrite every wild wolf in the game. The chaoshound record deliberately OMITS the shipped QUEEN_CHAOSHOUND and PLAYTHING_CREATURE_ARTIFACT tags: QUEEN_CHAOSHOUND is the RANDOM selector EVILQUEEN_SUMMON_ATTACK draws from, so carrying it would put our partner in the Evil Queen's summon pool. GRASS is still the PROTECT line: ally armour/resistance/defence buffs, PROTECT (STATUS_PROTECT_00), and a self-TAUNT to pull attacks off the party. It is the body the Trainer hides behind -- SKILL_CF_TRAINER_SHIELDED needs a living partner on the tile directly in front. Every buff/protect move is a 1-ROLL move because ADD_STATUS lands only on a PERFECT roll and PERFECT chance is perSlot^rolls. One damage move is kept per stage so a grass-first run can still land a kill and feed cf_bond via GOTTA_TRAIN_EM. No stun anywhere (Ben: 'too broken'). NOTE: the config suffix drives status tier via InteractableHelper.GetTieredStatusName -> ProgressionHelper.GetTierFromLevel (clamped 0-3), so all three wolves apply tier-3 statuses where the jellies applied 0/1/2/3 -- unavoidable, every low wolf suffix is shipped and therefore un-authorable. || POSSESSION GATE (economy, 2026-08-25). This line only fields a partner if the Trainer is CARRYING its own charm -- HAS_ITEM is InventoryHelper.HasItemByName's read over CharacterComponent.Things, and an unreadable inventory is a FALSE before Negate, so the gate fails SHUT. The class grants exactly ONE charm at creation (the Grass starter); the other two are earned. SELF_LEVEL is the tier ceiling on top of the cf_bond band: bond is earned by kills and could otherwise rush the top stage at level 1. Stage 1 deliberately carries NO SELF_LEVEL condition -- SELF_LEVEL reads UNKNOWN for a non-player and short-circuits to false, so a level gate on stage 1 could leave the class with no partner at all. || ONE LINE ONLY (Ben, 2026-08-26): the Trainer is down to a SINGLE partner line -- the three wolves. The FIRE and WATER CREATURE records, their UNARMED_* weapons, their visualfallbacks donors, their ON_COMBAT_START summon recipes and the localization for all of those are DELETED. What deliberately SURVIVES is all three ARM_ORIG_TRAINER_BALL_{GRASS,FIRE,WATER} items, their CF_TRAINER_SUMMON_* abilities, their localization and TrainerCharmProgression: Ben wants three balls, each a persistence slot, and a ball is what ResolveSlot binds a partner to. The FIRE and WATER balls are therefore EMPTY-BUT-VALID -- carried, named, and pointing at no creature -- rather than deleted. The recipe ids SKILL_CF_TRAINER_GRASS_1/2/3 are deliberately NOT renamed even though 'GRASS' now names a wolf line: TrainerPartnerPersistence.ResolveSlot parses SKILL_CF_TRAINER_<LINE>_<STAGE> and binds the result to ARM_ORIG_TRAINER_BALL_<LINE>, so renaming or renumbering these three silently breaks partner HP persistence between fights. The name is wrong and the binding is right; the binding wins. || GATING (2026-08-26): the SELF_LEVEL conditions that used to sit on stages 2 and 3 are REMOVED. With bands of bond 0-2 / 3-8 / 9+ AND a level floor, a Trainer at bond 3 and level 1 had stage 1 already expired and stage 2 not yet legal -- a DEAD BAND with no partner at all, and the same hole again at bond 9 below level 6. cf_bond alone is now the single monotone axis: the three bands are contiguous and mutually exclusive, stage 1 is available from the first fight, and stage 3 lands at 9 kills, which a normal run reaches. cf_bond persists across fights (Persistent: true writes CF_COUNTER_cf_bond to CharacterComponent.CustomData; RecipeEngineHost.SeedPersistentCounters reads it back before ON_COMBAT_START dispatches), so the ladder does not reset every combat."
+  },
+  "SKILL_CF_TRAINER_SHIELDED": {
+    "Conditions": [
+      {
+        "Type": "ALLY_IN_FRONT",
+        "Value": true
+      }
+    ],
+    "DisplayName": "Shielded by his Pokemon",
+    "Effects": [
+      {
+        "MinDelta": 2,
+        "Percent": -35,
+        "Target": "SELF",
+        "Type": "DAMAGE_TAKEN_MULT"
+      }
+    ],
+    "SchemaVersion": "1.4",
+    "Scope": "OWNED",
+    "Trigger": "ON_DAMAGE_PENDING",
+    "VerboseLogTag": "ShieldedByPokemon",
+    "_design": "STRICT cover: the tile DIRECTLY IN FRONT of the Trainer must hold a LIVING ally, not merely 'a partner is alive somewhere'. Uses the v1.4 ALLY_IN_FRONT condition (same TileY, |dTileX| == 1, Row == FRONT, alive, not an opponent - the CombatHelper.cs:2414 adjacency predicate, which is sign-agnostic and therefore correct for both groups and for the wide grid presets). TRAINER-ONLY by construction: Scope OWNED makes the dispatcher fire it only for an owner whose Passives hold this id (RecipeDispatcher.Holds), Target SELF resolves to t.Owner alone, and the plugin additionally discards any planned action whose TargetGuid is not the victim. ON_DAMAGE_PENDING is PHYSICAL-damage-only and validator-enforced RNG-free, which is why there is no chance gate here - the cover is deterministic while the partner stands."
+  },
+  "SKILL_CF_TRAINER_TYPE_ADVANTAGE": {
+    "AiProcChance": 35,
+    "Conditions": [
+      {
         "Comparator": "EQ",
+        "Type": "ROLL_TIER",
         "Value": "PERFECT"
       },
       {
@@ -176,147 +602,127 @@
         "Value": true
       }
     ],
+    "DisplayName": "Type Advantage",
     "Effects": [
       {
-        "Type": "ADD_STATUS",
-        "Target": "TRIGGER_TARGET",
+        "Duration": 2,
         "StatusOneOf": [
           "STATUS_SHOCK_00",
           "STATUS_BLEED_00",
           "STATUS_POISON_00",
           "STATUS_RESISTANCEDOWN_00"
         ],
-        "Duration": 2
+        "Target": "TRIGGER_TARGET",
+        "Type": "ADD_STATUS"
       }
     ],
     "ProcChance": 35,
-    "AiProcChance": 35,
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_ABILITY_USED",
     "VerboseLogTag": "TypeAdvantage",
-    "_design": "Reads the matchup and picks an element. ADD_STATUS only lands on a PERFECT roll in this engine, so this is implicitly an accuracy payoff -- which is why the Trainer's AWR and LCK are high."
+    "_design": "Reads the matchup and picks an element. ADD_STATUS only lands on a PERFECT roll in this engine, so this is implicitly an accuracy payoff -- which is why the Trainer's AWR and LCK are high. PARTNER-ONLY as of 2026-08-26 (Ben). This recipe is no longer in CF_ORIG_TRAINER.Passives; it now sits in the Passives of WOLF_GRASS_08 / WOLF_HELLHOUND_09 / WOLF_CHAOSHOUND_10, so it procs off the POKEMON's attack roll and never off the Trainer's own. That is a deliberate nerf -- the Trainer's personal attacks lose the 35% PERFECT-roll affliction entirely. The id keeps its SKILL_CF_TRAINER_ prefix: renaming it is churn, and TrainerPartnerPersistence.ResolveSlot ignores it either way because the tail 'TYPE_ADVANTAGE' does not parse as a stage number."
   },
-  "SKILL_CF_TRAINER_GOTTA_TRAIN_EM": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Gotta Train 'Em",
-    "Trigger": "ON_KILL",
-    "Effects": [
-      {
-        "Type": "COUNTER_ADD",
-        "Name": "cf_bond",
-        "Delta": 1,
-        "Max": 10
-      }
-    ],
-    "VerboseLogTag": "GottaTrainEm",
-    "_design": "Bond grows with every kill. The bonus it feeds lives in SKILL_CF_TRAINER_BOND_STRENGTH, because ROLL_STAT_BONUS is ON_ABILITY_DECLARED-only -- it replaces the PerformAbility prefix's stat delegates, so under ON_KILL it would never be consulted."
-  },
-  "SKILL_CF_TRAINER_CHAOS_1": {
-    "SchemaVersion": "1.1",
-    "DisplayName": "Chaos Partner (Hatchling)",
-    "Trigger": "ON_COMBAT_START",
+  "SKILL_CF_VAMPIRIC_BAT_SWARM": {
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
     "Conditions": [
       {
-        "Type": "COUNTER",
-        "Name": "cf_bond",
         "Comparator": "GTE",
+        "Name": "cf_gorged",
+        "Type": "COUNTER",
+        "Value": 3
+      }
+    ],
+    "DisplayName": "Bat Swarm",
+    "Effects": [
+      {
+        "CharacterConfig": "BAT_VAMPIRE_01",
+        "Count": 1,
+        "SummonType": "SPECIFIC",
+        "Target": "SELF",
+        "Type": "SUMMON"
+      },
+      {
+        "Name": "cf_gorged",
+        "Type": "COUNTER_SET",
         "Value": 0
-      },
-      {
-        "Type": "COUNTER",
-        "Name": "cf_bond",
-        "Comparator": "LT",
-        "Value": 3
       }
     ],
-    "Effects": [
-      {
-        "Type": "SUMMON",
-        "Target": "SELF",
-        "SummonType": "RANDOM",
-        "CharacterConfig": "WOLF_FOREST",
-        "Count": 1
-      }
-    ],
-    "Budget": {
-      "Scope": "ONCE_PER_COMBAT"
-    },
-    "VerboseLogTag": "Chaos1",
-    "_design": "Stage selection by BOND BAND, not a new evolution engine. cf_bond is already fed by SKILL_CF_TRAINER_GOTTA_TRAIN_EM on every kill, and a band is just two COUNTER conditions (GTE lower, LT upper), so which stage shows up is pure data. The bands are mutually exclusive, so exactly one stage of each line can fire per combat. SummonType RANDOM + a bare family tag (not SPECIFIC + a fixed _NN id) is deliberate: TryCreateSummon's RANDOM branch calls CharacterHelper.GetActorsByTags(tag, pLevel), which filters that family's tier variants down to the one whose Characters.json \"Level\" field equals the caster's current level (capped at 7) -- the exact mechanism the class's own charm items (CF_TRAINER_SUMMON_CHAOS/EMBER/RIME_ATTACK) already use, confirmed working in game. So the partner that answers this call gets stronger as the Trainer levels up over the run, on top of which evolution line answers by Bond."
-  },
-  "SKILL_CF_TRAINER_CHAOS_2": {
     "SchemaVersion": "1.1",
-    "DisplayName": "Chaos Partner (Grown)",
-    "Trigger": "ON_COMBAT_START",
+    "Trigger": "ON_KILL",
+    "VerboseLogTag": "BatSwarm",
+    "_design": "Gorging three times then felling an enemy calls a vampire bat into the corpse's place, and resets the count. SUMMON can only place on a target entity's EXACT tile, and CombatHelper.ApplyAction's ADD_CHARACTER case silently breaks out if any LIVING entity stands there. So the only reliably-empty tile is one an enemy just vacated by dying -- which is why every vanilla summon hangs off a kill. Measured 2026-08-24: SELF (the caster's own tile) and TRIGGER_TARGET_POSITION on a hostile ability (the live enemy's tile) both ran cleanly and placed nothing. || SUMMONTYPE FIX 2026-08-25: the SUMMON effect declared NO SummonType, so it defaulted to eSummonTypes.NONE and resolved nothing. Measured live: the recipe PROC'D twice and consumed cf_gorged (3 -> 0) while the ally count never moved -- a proc line and a counter reset are NOT evidence a summon appeared. The Trainer's CHAOS_1..4 recipes all declare SPECIFIC; this one was missing it. BAT_VAMPIRE_01 is a real shipped config (BAT_VAMPIRE_00..07), so the id was never the problem."
+  },
+  "SKILL_CF_VAMPIRIC_BLOOD_PRICE": {
     "Conditions": [
       {
-        "Type": "COUNTER",
-        "Name": "cf_bond",
-        "Comparator": "GTE",
-        "Value": 3
-      },
-      {
-        "Type": "COUNTER",
-        "Name": "cf_bond",
-        "Comparator": "LT",
-        "Value": 6
+        "Type": "HOSTILE_ACTION",
+        "Value": true
       }
     ],
+    "DisplayName": "Blood Price",
     "Effects": [
       {
-        "Type": "SUMMON",
+        "Blockable": false,
+        "FlatValue": 3,
+        "Stat": "HP",
+        "StatChangeType": "MAGICAL",
         "Target": "SELF",
-        "SummonType": "RANDOM",
-        "CharacterConfig": "WOLF_HELLHOUND",
-        "Count": 1
+        "Type": "STAT_CHANGE"
       }
     ],
-    "Budget": {
-      "Scope": "ONCE_PER_COMBAT"
-    },
-    "VerboseLogTag": "Chaos2",
-    "_design": "Stage 2 of the Chaos line. Bond band 3-6."
-  },
-  "SKILL_CF_TRAINER_CHAOS_3": {
     "SchemaVersion": "1.1",
-    "DisplayName": "Chaos Partner (Apex)",
-    "Trigger": "ON_COMBAT_START",
+    "Trigger": "ON_ABILITY_USED",
+    "VerboseLogTag": "BloodPrice",
+    "_design": "The cost half of the class. Fires on every hostile ability, not on the damage, so a whiff still costs blood -- that is the whole tension. Unblockable so armour cannot make it free. Shape copied from the shipped SKILL_CF_HEXBLADE_BARGAIN. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
+  },
+  "SKILL_CF_VAMPIRIC_CRIMSON_DRAIN": {
+    "DisplayName": "Crimson Drain",
+    "Effects": [
+      {
+        "FlatValueFrom": "DAMAGE_DEALT_PCT",
+        "Percent": -25,
+        "Stat": "HP",
+        "StatChangeType": "REGEN",
+        "Target": "SELF",
+        "Type": "STAT_CHANGE"
+      }
+    ],
+    "SchemaVersion": "1.1",
+    "Trigger": "ON_DAMAGE_DEALT",
+    "VerboseLogTag": "CrimsonDrain",
+    "_design": "The payoff half. Uses the DAMAGE_DEALT_PCT value source added for this class -- before it, damage magnitude was reachable only as a STATE_HASH_CHANCE input, so this had to be a flat number that is far too weak early and far too strong late. Min 1 means a chip hit still returns something. HP SIGN IS INVERTED in InteractableHelper.ApplyStatChange: statDeltaValue > 0 takes the CalculateFinalDamage branch (DAMAGE) and < 0 takes the AddHealth branch (HEAL). Every shipped STAT_CHANGE in CF_PACK_EOR_CLASSES targets FOC, so no recipe in this repo had ever exercised HP and the convention was never discovered. Verified by decompile 2026-08-24."
+  },
+  "SKILL_CF_VAMPIRIC_ENGORGED": {
+    "Budget": {
+      "Scope": "ONCE_PER_ROUND"
+    },
     "Conditions": [
       {
-        "Type": "COUNTER",
-        "Name": "cf_bond",
         "Comparator": "GTE",
-        "Value": 6
+        "Percent": 70,
+        "Type": "HP_THRESHOLD"
       }
     ],
+    "DisplayName": "Engorged",
     "Effects": [
       {
-        "Type": "SUMMON",
+        "Duration": 3,
+        "Status": "STATUS_VIGOR_CF_ENGORGED",
         "Target": "SELF",
-        "SummonType": "RANDOM",
-        "CharacterConfig": "WOLF_CHAOSHOUND",
-        "Count": 1
+        "Type": "ADD_STATUS"
+      },
+      {
+        "Delta": 1,
+        "Max": 3,
+        "Name": "cf_gorged",
+        "Type": "COUNTER_ADD"
       }
     ],
-    "Budget": {
-      "Scope": "ONCE_PER_COMBAT"
-    },
-    "VerboseLogTag": "Chaos3",
-    "_design": "Stage 3 of the Chaos line. Bond band 6-up."
-  },
-  "SKILL_CF_TRAINER_BOND_STRENGTH": {
     "SchemaVersion": "1.1",
-    "DisplayName": "Bond Strength",
-    "Trigger": "ON_ABILITY_DECLARED",
-    "Effects": [
-      {
-        "Type": "ROLL_STAT_BONUS",
-        "Target": "SELF",
-        "Stat": "AWR",
-        "PercentFrom": "COUNTER:cf_bond",
-        "PerUnit": 3,
-        "Max": 30
-      }
-    ],
-    "VerboseLogTag": "BondStrength",
-    "_design": "Spends the Bond counter that Gotta Train 'Em accumulates. ON_ABILITY_DECLARED is the only legal scope for ROLL_STAT_BONUS. Mirrors the shipped STAT_CF_TRAIT_ARCANE_FOCUS_MAG counter-scaling shape, so it is a proven pattern rather than a new one."
+    "Trigger": "ON_DAMAGE_DEALT",
+    "VerboseLogTag": "Engorged",
+    "_design": "Overheal, done the only way the engine allows. AddHealth clamps to max HP, so healing past full is impossible -- instead this RAISES max HP and lets the drain fill it, which lands on the same fantasy from the other side. Gated on already being at full HP so it rewards sustained feeding rather than topping off. ONCE_PER_ROUND so a multi-hit turn cannot stack it into absurdity. RE-AUTHORED 2026-08-25: was ON_HEAL_PENDING, which only CharacterHelper.AddHealth raises, and Crimson Drain's own heal is a recipe effect executed inside RecipeEngineHost.EnterExecution() -- the AddHealth prefix's TryBegin refuses to re-enter that scope, so the heal that was supposed to trip this could never do so; it was DEAD. ON_HEAL (InteractableHelper.ApplyStatChange postfix, delta<0) has the identical problem for the same reason -- Crimson Drain's STAT_CHANGE heal also runs inside that same EnterExecution scope, so ON_HEAL is equally unreachable for THIS heal specifically. Moved to ON_DAMAGE_DEALT instead: that's the trigger Crimson Drain itself already fires on (SPEC-DELTA-v1.1 T3, InteractableHelper.ApplyStatChange postfix, delta>0), so Engorged and Crimson Drain now dispatch off the SAME un-nested hook call instead of one waiting on the other's nested effect. The HP_THRESHOLD gate reads live HP/MXHP via EntityAdapter.GetStat (GameAdapters.cs) before Crimson Drain's heal effect runs, so it still asks 'were you already full when you landed this hit' -- the same overfeeding semantics as before, just asked one step earlier in the same event. || CONFLICT FIX 2026-08-25: the gate was GTE 100 and could NEVER be satisfied, because SKILL_CF_VAMPIRIC_BLOOD_PRICE costs 3 HP on ON_ABILITY_USED, which fires BEFORE this recipe's ON_DAMAGE_DEALT. The Vampiric is therefore never at exactly 100% when it deals damage. Measured live: BloodPrice proc'd 5x and CrimsonDrain 3x while Engorged proc'd 0x and cf_gorged stayed 0. Lowered to 90 so 'overfed' means NEAR full, which is reachable after paying the blood price (3 of 60 hp = 5%). || SELF-BLOCK FIX 2026-08-25: the gate ALSO blocked ITSELF. Each proc adds +8 MAX hp, so after one stack the Vampiric sits at 60/68 = 88%, under a 90 gate, and can never proc again -- cf_gorged froze at 1 and BAT_SWARM (needs 3) was unreachable. Measured live across 5 rounds. The threshold must survive THREE stacks: base 60 with +8 each gives 88% / 79% / 71%, so 70 is the highest value that still permits a full three-stack gorge. Do NOT raise it without redoing that arithmetic against STATUS_VIGOR_CF_ENGORGED's HP bonus."
   }
 }

@@ -122,6 +122,80 @@ namespace Crucible.Plugin
             }
         }
 
+        /// <summary>
+        /// Reproduces exactly the branch in <c>CommandLineHelper.ExecuteCommand</c> that decides
+        /// whether the handler is invoked AT ALL, so an under-supplied call is refused loudly here
+        /// instead of succeeding silently.
+        ///
+        /// <para>THE BUG THIS EXISTS FOR. ExecuteCommand marshals args positionally
+        /// (decompiled, lines 103-289). For a parameter index past the end of <c>pArgs</c> it does:</para>
+        /// <code>
+        /// else if (parameters2[i].DefaultValue != null) { flag3 = false; }
+        /// else { array[i] = parameters2[i].DefaultValue; }
+        /// if (!flag3) break;
+        /// ...
+        /// if (flag2) { ...Invoke... }
+        /// Debug.LogError("Command not found '" + pName + "'");
+        /// </code>
+        /// <para><c>ParameterInfo.DefaultValue</c> for a plain <c>string</c> parameter with no
+        /// default is <c>DBNull.Value</c>, NOT null — so a shortfall sets flag3 false, breaks, and
+        /// SKIPS the invoke entirely. ExecuteCommand returns void either way, so <see cref="Exec"/>
+        /// reported success, RpcServer answered 200 ok=true, and the handler's LastResult was still
+        /// the null RpcServer cleared before dispatch. The caller got an empty string for a command
+        /// that never ran. Confirmed live: Player.log carried
+        /// <c>Command not found 'crucible_map_encounters'</c> for a REGISTERED command, and the
+        /// matching trace line was <c>{"args":[],"durationMs":16}</c> with no result, against
+        /// <c>{"args":["-"],"durationMs":89,"result":"mapId=..."}</c> for the same command.</para>
+        ///
+        /// <para>Note the branch is not simply "fewer args than parameters": a parameter whose
+        /// DefaultValue is genuinely null is filled in and execution continues. So this walks the
+        /// parameters the same way rather than comparing counts, and only reports a shortfall the
+        /// game would actually refuse.</para>
+        /// </summary>
+        internal static bool WouldSkipInvoke(string name, int suppliedArgs, out string detail)
+        {
+            detail = null;
+            if (_tryGet == null || string.IsNullOrEmpty(name)) return false;
+            try
+            {
+                object[] parameters = new object[] { name, null };
+                object found = _tryGet.Invoke(null, parameters);
+                if (!(found is bool) || !(bool)found) return false;
+
+                object entry = parameters[1];
+                if (entry == null) return false;
+
+                // The registry value is a ValueTuple whose Item2 is the handler MethodInfo and
+                // whose Item3 is the arg-hint list. Read them by field name rather than by
+                // casting, so a shape change degrades to "no guard" and never to an exception.
+                FieldInfo methodField = entry.GetType().GetField("Item2");
+                if (methodField == null) return false;
+                MethodInfo handler = methodField.GetValue(entry) as MethodInfo;
+                if (handler == null) return false;
+
+                ParameterInfo[] ps = handler.GetParameters();
+                for (int i = suppliedArgs; i < ps.Length; i++)
+                {
+                    if (ps[i].DefaultValue == null) continue;   // the game fills this one in
+                    List<string> hints = null;
+                    FieldInfo hintField = entry.GetType().GetField("Item3");
+                    if (hintField != null) hints = hintField.GetValue(entry) as List<string>;
+                    detail = "arity_shortfall: '" + name + "' takes " + ps.Length
+                        + " arg(s) and " + suppliedArgs + " were supplied"
+                        + (hints != null && hints.Count > 0 ? " (" + string.Join(", ", hints.ToArray()) + ")" : "")
+                        + ". CommandLineHelper.ExecuteCommand SKIPS the invoke entirely on a shortfall"
+                        + " and logs \"Command not found\", so this would have reported success while"
+                        + " doing nothing. Pass '-' for the arguments you want left at their default.";
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;   // A guard that cannot read the registry must not block the command.
+            }
+        }
+
         /// <summary>Renders a handler's signature so a rejected registration says which shape was refused.</summary>
         private static string DescribeHandler(MethodInfo handler)
         {

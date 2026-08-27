@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ClassForge.Recipes.Abstractions;
 using ClassForge.Recipes.Loot;
@@ -66,7 +66,7 @@ namespace ClassForge.Recipes.Tests
         {
             t.Section("loot: determinism (harness item 1)");
 
-            t.Case("GrantKey: identical inputs -> identical key; guid-list order does not matter", () =>
+            t.Case("GrantKey: identical inputs -> identical key; key-list order does not matter", () =>
             {
                 var enemies = new[] { "E2", "E1" };
                 var owners = new[] { "O2", "O1" };
@@ -78,7 +78,7 @@ namespace ClassForge.Recipes.Tests
                 Check.Eq(16, k1.Length, "GrantKey is 16 hex chars (first 8 bytes)");
 
                 string reordered = LootGrantKey.ComputeGrantKey(100, new[] { "E1", "E2" }, digest, new[] { "O1", "O2" });
-                Check.Eq(k1, reordered, "guid order does not matter (sorted internally)");
+                Check.Eq(k1, reordered, "key order does not matter (sorted internally)");
             });
 
             t.Case("GrantKey: every input dimension perturbing produces a different key", () =>
@@ -139,12 +139,16 @@ namespace ClassForge.Recipes.Tests
                 }
             });
 
-            t.Case("Ops: owner iteration order does not matter (re-sorted ascending ordinal Guid internally)", () =>
+            t.Case("Ops: owner iteration order does not matter (re-sorted ascending ROSTER ORDINAL internally)", () =>
             {
                 var candidates = new FakeCandidateSource().Add("HERB", "COMMON", "HERB_A");
                 var set = RecipeParser.Parse(TreasureSenseJson);
                 var a = Owner("A_FIRST", "SKILL_CF_TRAIT_TREASURE_SENSE_LOOT");
                 var b = Owner("B_SECOND", "SKILL_CF_TRAIT_TREASURE_SENSE_LOOT");
+                // Roster ordinals, NOT guids, are what the computer sorts on -- and they are deliberately
+                // assigned against ordinal-guid order here so the two disagree.
+                a.RosterOrdinalValue = 1;
+                b.RosterOrdinalValue = 0;
 
                 var forward = LootDeltaComputer.Compute(set, new List<ICombatEntity> { a, b }, "GK", new FakeRandom(7), candidates);
                 var backward = LootDeltaComputer.Compute(set, new List<ICombatEntity> { b, a }, "GK", new FakeRandom(7), candidates);
@@ -181,7 +185,10 @@ namespace ClassForge.Recipes.Tests
                 Check.Eq(3, rng.Draws, "proc + pick + gold = 3 draws");
                 Check.True(ops[0].Kind == LootOpKind.ADD_GOLD, "ADD_GOLD emitted");
                 Check.Eq(14, ops[0].Amount, "amount from the scripted draw");
-                Check.Eq("SKILL_CF_TRAIT_SCAVENGER_LOOT|A_HERO", ops[0].Source, "Source is recipe|owner");
+                // "E0" is the owner's PEER-STABLE key (position in the sorted owner list), not its guid.
+                // LootOp.Source is inside ComputeOpsHash, which the CF_SYNC_LOOT_GRANT_V1 audit compares
+                // across peers -- embedding Entity.Guid here made that audit mismatch by construction.
+                Check.Eq("SKILL_CF_TRAIT_SCAVENGER_LOOT|E0", ops[0].Source, "Source is recipe|ownerKey");
             });
 
             t.Case("SCAVENGER: proc -> pick(herb) -> item pick = 3 draws, one ADD_ITEM op with a deterministic id", () =>
@@ -262,6 +269,78 @@ namespace ClassForge.Recipes.Tests
                 var ops = LootDeltaComputer.Compute(set, One(owner), "GK", rng, null);
                 Check.Eq(0, rng.Draws, "flat grant takes zero draws");
                 Check.Eq(10, ops[0].Amount, "flat amount");
+            });
+
+
+            // ------------------------------------------------------------------ W1-E: total candidate order
+            //
+            // The bug: candidates were sorted with `string.Compare(a, b, OrdinalIgnoreCase)` through
+            // List<T>.Sort, and the very next line indexes the result with a grant-stream draw.
+            // OrdinalIgnoreCase is NOT a total order over config names (two names differing only in case
+            // compare EQUAL) and List<T>.Sort is an UNSTABLE introsort, so which of two case-variant names
+            // landed at the lower index was implementation-defined AND dependent on the order
+            // Env.Configs.Things happened to enumerate in on that peer. Same seed, same draw COUNT,
+            // different ITEM -- a divergence no draw-count probe can see. PeerOrder.SortInPlace is a
+            // deliberate stable insertion sort for exactly this reason; this is the same rule applied here.
+
+            t.Case("W1-E: case-variant candidates pick the same item whatever order the seam returns them in", () =>
+            {
+                var set = RecipeParser.Parse(ScholarsHabitJson);
+                var owner = Owner("A_HERO", "SKILL_CF_TRAIT_SCHOLARS_HABIT_LOOT");
+
+                // Every permutation of a pool whose members are pairwise EQUAL under OrdinalIgnoreCase.
+                string[][] enumerations =
+                {
+                    new[] { "scroll_a", "SCROLL_A", "Scroll_A" },
+                    new[] { "SCROLL_A", "Scroll_A", "scroll_a" },
+                    new[] { "Scroll_A", "scroll_a", "SCROLL_A" },
+                    new[] { "SCROLL_A", "scroll_a", "Scroll_A" },
+                    new[] { "scroll_a", "Scroll_A", "SCROLL_A" },
+                    new[] { "Scroll_A", "SCROLL_A", "scroll_a" },
+                };
+
+                for (int index = 0; index < 3; index++)
+                {
+                    string reference = null;
+                    foreach (var enumeration in enumerations)
+                    {
+                        var candidates = new FakeCandidateSource().Add("SCROLL", null, enumeration);
+                        var rng = new FakeRandom(1);
+                        rng.ScriptChance(true);
+                        rng.ScriptInt(index);
+                        var ops = LootDeltaComputer.Compute(set, One(owner), "GK", rng, candidates);
+                        Check.Eq(1, ops.Count, "one ADD_ITEM op");
+                        Check.Eq(2, rng.Draws, "proc + item = 2 draws, whatever the enumeration order");
+                        if (reference == null) reference = ops[0].ConfigName;
+                        Check.Eq(reference, ops[0].ConfigName,
+                            "draw index " + index.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                            ": the candidate seam's enumeration order changed which item was granted. The " +
+                            "sort must be a TOTAL order (Ordinal tiebreak under the OrdinalIgnoreCase " +
+                            "primary key), or two peers pick different loot from the same seed.");
+                    }
+                }
+            });
+
+            t.Case("W1-E: the tiebreak is Ordinal, and the case-insensitive primary key still governs", () =>
+            {
+                var set = RecipeParser.Parse(ScholarsHabitJson);
+                var owner = Owner("A_HERO", "SKILL_CF_TRAIT_SCHOLARS_HABIT_LOOT");
+
+                // Primary key is still OrdinalIgnoreCase: "scroll_a" sorts BEFORE "SCROLL_B", which a
+                // plain Ordinal sort would not do (upper-case letters sort before lower-case ones).
+                // Among the two spellings of the same name, Ordinal decides: 'S' (0x53) < 's' (0x73).
+                var candidates = new FakeCandidateSource().Add("SCROLL", null, "scroll_a", "SCROLL_B", "SCROLL_A");
+
+                var expected = new[] { "SCROLL_A", "scroll_a", "SCROLL_B" };
+                for (int index = 0; index < expected.Length; index++)
+                {
+                    var rng = new FakeRandom(1);
+                    rng.ScriptChance(true);
+                    rng.ScriptInt(index);
+                    var ops = LootDeltaComputer.Compute(set, One(owner), "GK", rng, candidates);
+                    Check.Eq(expected[index], ops[0].ConfigName,
+                        "sorted position " + index.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                }
             });
 
             t.Case("ITEM_TAG_GRANT with no candidates emits nothing and draws nothing", () =>

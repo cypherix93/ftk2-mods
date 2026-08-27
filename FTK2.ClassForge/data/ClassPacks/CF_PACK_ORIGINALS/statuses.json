@@ -1,5 +1,5 @@
 {
-  "STATUS_CF_ENGORGED": {
+  "STATUS_VIGOR_CF_ENGORGED": {
     "Type": "VIGOR",
     "Duration": 3,
     "TickFrequency": 1,
@@ -10,7 +10,39 @@
     "GroupSync": false,
     "Passives": [],
     "AddProperties": [],
-    "Stats": { "HP": 8 },
+    "Stats": {
+      "HP": 8
+    },
+    "CustomStats": {}
+  },
+  "STATUS_CHARGE_CF_FOCUS_FIRE": {
+    "Type": "CHARGE",
+    "Duration": 2,
+    "TickFrequency": 1,
+    "TickOverworld": false,
+    "TickCombat": true,
+    "TickExpire": false,
+    "TileSync": false,
+    "GroupSync": false,
+    "Passives": [],
+    "AddProperties": [],
+    "Stats": {},
+    "CustomStats": {}
+  },
+  "STATUS_EVASIVE_CF_SPREAD_OUT": {
+    "Type": "BUFF",
+    "Duration": 2,
+    "TickFrequency": 1,
+    "TickOverworld": false,
+    "TickCombat": true,
+    "TickExpire": false,
+    "TileSync": false,
+    "GroupSync": false,
+    "Passives": [],
+    "AddProperties": [],
+    "Stats": {
+      "ATK": 5
+    },
     "CustomStats": {}
   }
 }

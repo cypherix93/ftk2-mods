@@ -24,6 +24,7 @@ Usage:
 import argparse
 import os
 import re
+import subprocess
 import sys
 import time
 
@@ -34,11 +35,53 @@ import drive  # noqa: E402
 # every non-combat encounter cleared. Both matter for speed and reliability -- a quest whose
 # objectives are flagged but unresolved re-queues its reward prompt on EVERY load and holds
 # interaction off, and walking anywhere used to trip the Night Merchant or a shop.
-DEFAULT_RUN = "4c0f1f9f-20c8-4bd3-9662-c445f48f677e"
+# REBUILT 2026-08-25. The previous fixture (4c0f1f9f-...) was DESTROYED by this session's own
+# DEFEAT testing: _endAdventure rewrote it to a post-defeat state and it shrank from 5.34 MB to
+# 552 KB, after which it would no longer load into a playable run. It was not recoverable from the
+# 2026-08-23 backup because the fixture post-dates it.
+#
+# THE HAZARD, worth understanding before driving another run to an ending: a run that ENDS -- win
+# OR lose -- rewrites and can delete its own save (SaveGameHelper.DeleteSave). Any suite that
+# drives a run to completion can destroy the fixture every other suite depends on. Save a fresh
+# fixture BEFORE such a run, not after.
+#
+# This one carries the party the trait tests need: Vampiric / Pacifist / Pokemon Trainer, plus an
+# EOR Runemage as a control.
+DEFAULT_RUN = "bdb1596d-86ee-4783-9d8f-fb49934a0770"
+
+
+def restart_game(timeout_seconds=240):
+    """
+    Kills the game by PID and relaunches it by exe path, NOT via drive.restart_game().
+
+    drive.restart_game() launches through 'steam://rungameid/1676840', a fire-and-forget URI
+    handoff to Steam: if Steam is not already up (or ignores the request) the game process never
+    appears, boot() burns its full timeout, and this script reports "game did not come back after
+    restart" -- which then went on to KILL a game that was still running, mid-verification, in a
+    session this same bug was hit live in. class_sweep.py's restart_game() hit the identical
+    problem and fixed it by launching the exe directly instead of the steam: URI; this mirrors
+    that fix. Same narrow PID-scoped kill filter as drive.restart_game() -- deliberately not
+    broadened, and it never matches node.
+    """
+    subprocess.run([
+        "powershell", "-NoProfile", "-Command",
+        "Get-Process | Where-Object { $_.Path -like '*For The King II\\For The King*' } "
+        "| ForEach-Object { Stop-Process -Id $_.Id -Force }; Start-Sleep -Seconds 6; "
+        # Direct exe launch, NOT steam://rungameid/1676840 -- see docstring above.
+        "Start-Process 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\For The King II\\For The King II.exe'",
+    ], capture_output=True)
+    return drive.boot(timeout_seconds=timeout_seconds)
 
 
 def press_fight(timeout_seconds=40):
-    """Presses Fight as soon as the encounter menu offers it. Returns whether it landed."""
+    """Presses Fight as soon as the encounter menu offers it. Returns whether it landed.
+
+    Only the FAST path -- the debug spawn's own menu, which really does put a literal "Fight"
+    button on screen. Everything else (Attempt, Ambush, a bespoke SkillEncounterConfig label,
+    no button at all) belongs to drive.enter_combat(); do not grow this into a second copy of it.
+    """
+    if drive.in_combat():
+        return True
     deadline = time.time() + timeout_seconds
     while time.time() < deadline:
         dump = drive.run("crucible_ui_dump", ["-", "button"])
@@ -46,6 +89,8 @@ def press_fight(timeout_seconds=40):
             if "invoked=True" in drive.run("crucible_ui_click", ["Fight"]):
                 print("pressed Fight")
                 return True
+        if drive.in_combat():
+            return True
         drive.wait_ready(timeout_seconds=20)
     return False
 
@@ -53,6 +98,13 @@ def press_fight(timeout_seconds=40):
 def walk_onto_encounter():
     """
     Steps onto the nearest ROAMING encounter with the encounter menu enabled.
+
+    THE PROVEN PATH. spawn an enemy -> walk onto the roaming encounter it creates -> press Fight
+    reached combat ~8 times in one session from the base fixture. It is the PRIMARY route and is
+    tried before drive.enter_combat(), which is the fallback for when it yields no menu.
+
+    Restored 2026-08-25 after being briefly replaced by a call to drive.enter_combat(). That swap
+    was a regression: a measured-working path was traded for an unexercised one.
 
     Roaming encounters are the ones whose id is a bare GUID; the named ones (TAVERN, CAMP1,
     AF_TOWN_B, ...) are venues and towns, and walking into those opens a shop rather than a fight.
@@ -133,7 +185,11 @@ def wait_for_combat(timeout_seconds=120):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run", dest="run_id", default=DEFAULT_RUN)
+    parser.add_argument("run_id_arg", nargs="?", default=None,
+                        help="run id to drive into combat; falls back to the CRUCIBLE_RUN_ID env "
+                             "var, then the hardcoded default fixture")
+    parser.add_argument("--run", dest="run_id", default=None,
+                        help="same as the positional run id argument")
     parser.add_argument("--enemy", default="BANDIT_RANGED_01")
     parser.add_argument("--godmode", action="store_true")
     parser.add_argument("--active",
@@ -142,6 +198,19 @@ def main():
     parser.add_argument("--skip-load", action="store_true",
                         help="already in a run; just spawn and fight")
     options = parser.parse_args()
+
+    # Run id precedence: positional arg > --run flag > CRUCIBLE_RUN_ID env var > hardcoded
+    # default. A bare `python to_combat.py` hits none of the first three and falls through to
+    # DEFAULT_RUN exactly as before this option was added.
+    if options.run_id_arg:
+        options.run_id, source = options.run_id_arg, "arg"
+    elif options.run_id:
+        source = "--run flag"
+    elif os.environ.get("CRUCIBLE_RUN_ID"):
+        options.run_id, source = os.environ["CRUCIBLE_RUN_ID"], "env CRUCIBLE_RUN_ID"
+    else:
+        options.run_id, source = DEFAULT_RUN, "default"
+    print("run id: %s (source: %s)" % (options.run_id, source))
 
     if not drive.boot():
         print("SKIP: game is not running")
@@ -154,7 +223,7 @@ def main():
             # no-op, and it cannot be cleared from inside the game. Restart once and try again
             # rather than reporting a failure the caller cannot act on.
             print("load refused (%s); restarting once" % transcript.splitlines()[-1])
-            if not drive.restart_game():
+            if not restart_game():
                 print("game did not come back after restart")
                 return 1
             transcript = drive.load_run(options.run_id)
@@ -172,7 +241,7 @@ def main():
         # The stale-overlay state cannot be cleared from inside the game, so restart once and
         # start over rather than reporting a failure the caller cannot act on.
         print("not interactive (%s); restarting once" % ready.get("reason"))
-        if not drive.restart_game():
+        if not restart_game():
             print("game did not come back after restart")
             return 6
         transcript = drive.load_run(options.run_id)
@@ -219,13 +288,21 @@ def main():
     # it never shows, walk onto a roaming encounter instead. Both routes end at the same Fight
     # button; only the way the menu is raised differs.
     if not press_fight(timeout_seconds=40):
+        # PRIMARY: the path that worked ~8 times in one session -- walk onto the roaming encounter
+        # the spawn created and press Fight. Tried FIRST, always.
         print("no menu from the spawn; walking onto a roaming encounter instead")
-        if not walk_onto_encounter():
-            print("could not reach any roaming encounter")
-            return 4
-        if not press_fight(timeout_seconds=60):
-            print("reached an encounter but the Fight button never appeared")
-            return 4
+        reached = walk_onto_encounter() and press_fight(timeout_seconds=60)
+
+        # FALLBACK, only once the proven path has actually failed: drive.enter_combat() rescans,
+        # skips nodes whose ActionList cannot start a fight, retries across several of them, and
+        # recovers interactionEnabled between attempts.
+        if not reached:
+            print("walk + Fight did not reach combat; falling back to drive.enter_combat()")
+            outcome = drive.enter_combat()
+            print("enter_combat ok=%s attempts=%d reason=%s"
+                  % (outcome["ok"], outcome["attempts"], outcome["reason"]))
+            if not outcome["ok"]:
+                return 4
 
     combat = wait_for_combat()
     if combat is None:

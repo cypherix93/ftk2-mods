@@ -160,6 +160,7 @@ namespace Crucible.Plugin
             OverworldCommands.Initialize(_log);
             RunCommands.Initialize(_log);
             RunEndCommands.Initialize(_harmony, _log);
+            RecipeCounterCommands.Initialize(_log);
             DebugVerbCommands.Initialize(_log);
             ChaosCommands.Initialize(_harmony, _log);
             MainThreadPump.Initialize(_harmony, _log);
@@ -232,6 +233,7 @@ namespace Crucible.Plugin
             OverworldCommands.TryRegister();
             RunCommands.TryRegister();
             RunEndCommands.TryRegister();
+            RecipeCounterCommands.TryRegister();
             DebugVerbCommands.TryRegister();
             ChaosCommands.TryRegister();
             InputFocusGateCommands.TryRegister();

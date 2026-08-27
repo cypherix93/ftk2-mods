@@ -76,8 +76,13 @@ function Resolve-GameDir {
     $candidates += 'E:\Games\Steam\steamapps\common\For The King II'
     $candidates += 'C:\Program Files (x86)\Steam\steamapps\common\For The King II'
     $candidates += 'C:\Program Files\Steam\steamapps\common\For The King II'
+    # Join-Path THROWS DriveNotFoundException on a candidate whose drive is absent, which would
+    # abort the sweep on the FIRST dead candidate and never reach a valid later one. A candidate
+    # list exists precisely so unreachable entries are skipped, so each probe is guarded.
     foreach ($c in $candidates) {
-        if (Test-Path (Join-Path $c 'For The King II_Data\Managed\FTK2.dll')) { return $c }
+        $probe = ''
+        try { $probe = Join-Path $c 'For The King II_Data\Managed\FTK2.dll' } catch { continue }
+        if ($probe -and (Test-Path $probe)) { return $c }
     }
     if ($Requested) {
         throw "Game not found at '$Requested' (need For The King II_Data\Managed\FTK2.dll). Pass -GameDir <path to For The King II>."
@@ -168,7 +173,12 @@ function Stage-Payload {
 
     # BepInEx core (bootstrap files + core folder only — never the source package's plugins),
     # staged at its REAL game-relative paths so the zip overlays cleanly.
-    if (Test-Path (Join-Path $BepInExSource 'BepInEx\core\BepInEx.dll')) {
+    # Join-Path THROWS on a path whose drive does not exist (DriveNotFoundException), so a
+    # stale machine-specific default aborts the whole deploy instead of degrading to the
+    # warning below. Resolve defensively: an unreachable source must be a miss, not a crash.
+    $bepInExCore = ''
+    try { $bepInExCore = Join-Path $BepInExSource 'BepInEx\core\BepInEx.dll' } catch { $bepInExCore = '' }
+    if ($bepInExCore -and (Test-Path $bepInExCore)) {
         New-Item -ItemType Directory -Force (Join-Path $PayloadDir 'BepInEx') | Out-Null
         Copy-Item (Join-Path $BepInExSource 'winhttp.dll')          $PayloadDir
         Copy-Item (Join-Path $BepInExSource 'doorstop_config.ini')  $PayloadDir

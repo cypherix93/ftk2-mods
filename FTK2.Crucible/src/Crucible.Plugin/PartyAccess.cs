@@ -115,15 +115,63 @@ namespace Crucible.Plugin
             catch (Exception) { return null; }
         }
 
-        /// <summary>Field first, then property: game types use both, and a field-only read silently misses properties.</summary>
+        /// <summary>
+        /// Instance AND STATIC, public and non-public.
+        ///
+        /// STATIC IS LOAD-BEARING, do not trim it. The version of this method that used
+        /// <c>AccessTools.Field</c> searched <c>AccessTools.all</c>, which includes
+        /// <c>BindingFlags.Static</c>. When that was swapped for <c>Type.GetField</c> to stop
+        /// HarmonyX logging a warning on every property read, the flags were written as
+        /// instance-only and every STATIC member silently stopped resolving. <c>Env.Configs</c> is
+        /// <c>public static</c> (<c>Env.cs:6</c>), so <c>crucible_class_config</c> /
+        /// <c>status_config</c> / <c>thing_config</c> began returning "Env.Configs is null"
+        /// unconditionally -- and a class sweep scored that error string the same as a genuinely
+        /// missing passive, turning a broken instrument into 15 fake content failures.
+        /// A static member read through here ignores the instance argument, which is correct.
+        /// </summary>
+        private const BindingFlags AnyMember =
+            BindingFlags.Instance | BindingFlags.Static |
+            BindingFlags.Public | BindingFlags.NonPublic;
+
+        /// <summary>
+        /// Resolved member per (declaring type, name). Populated once, then reused.
+        /// A null VALUE is a cached negative -- "this type genuinely has no such member" -- so an
+        /// absent member costs one lookup, not one per call.
+        /// </summary>
+        private static readonly Dictionary<string, MemberInfo> _memberCache =
+            new Dictionary<string, MemberInfo>();
+
+        /// <summary>
+        /// Field first, then property: game types use both, and a field-only read silently misses properties.
+        ///
+        /// DELIBERATELY NOT AccessTools.Field/Property. AccessTools LOGS A WARNING every time a
+        /// lookup misses, and the field-then-property order means every PROPERTY read logs one --
+        /// the read still succeeds via the fallback, so this was silent breakage of the LOG, not of
+        /// behaviour. Measured in one soak: ~13,700 warnings, 8,120 of them for Entity.Guid alone
+        /// (Guid is a property). The cost is real twice over: it buries genuine exceptions in noise
+        /// (it did exactly that to an exception sweep in this repo, which is how it was found), and
+        /// it re-runs uncached reflection on a hot path. Type.GetField/GetProperty resolve the same
+        /// members without logging.
+        /// </summary>
         internal static object ReadMember(object instance, string name)
         {
             if (instance == null) return null;
             try
             {
-                FieldInfo f = AccessTools.Field(instance.GetType(), name);
+                Type t = instance.GetType();
+                string key = t.FullName + "|" + name;
+
+                MemberInfo member;
+                if (!_memberCache.TryGetValue(key, out member))
+                {
+                    member = (MemberInfo)t.GetField(name, AnyMember)
+                             ?? (MemberInfo)t.GetProperty(name, AnyMember);
+                    _memberCache[key] = member;
+                }
+
+                FieldInfo f = member as FieldInfo;
                 if (f != null) return f.GetValue(instance);
-                PropertyInfo p = AccessTools.Property(instance.GetType(), name);
+                PropertyInfo p = member as PropertyInfo;
                 return p == null ? null : p.GetValue(instance, null);
             }
             catch (Exception) { return null; }

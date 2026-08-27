@@ -14,26 +14,52 @@ namespace ClassForge.Plugin
     /// </summary>
     internal sealed class EntityAdapter : ICombatEntity
     {
+        /// <summary>The <c>eConfigTags</c> member marking a Thing as a toolbelt item — the slotless class
+        /// of item that can never be equipped (InventoryHelper.cs:975).</summary>
+        private const string ToolbeltTag = "TOOLBELT";
+
+        /// <summary>The one VIRTUAL <c>ENTITY_TAG</c> value: not an <c>eConfigTags</c> member but the
+        /// <see cref="TrainerCaptureRules.CanCapture"/> verdict, so the capture gate can be asked as a
+        /// recipe condition. See <see cref="HasTag"/> for why.</summary>
+        internal const string VirtualTagCapturable = "CF_CAPTURABLE";
+
         internal readonly Entity Native;
         private readonly CombatContextAdapter _ctx;
+        private readonly int _rosterOrdinal;
 
         private IReadOnlyList<string> _statuses;
         private IReadOnlyList<string> _passives;
         private string _weaponClass;
         private bool _weaponClassResolved;
 
-        internal EntityAdapter(Entity native, CombatContextAdapter ctx)
+        internal EntityAdapter(Entity native, CombatContextAdapter ctx, int rosterOrdinal)
         {
             Native = native;
             _ctx = ctx;
+            _rosterOrdinal = rosterOrdinal;
         }
 
         public string Guid
         {
             // Entity.Guid is `public string Guid { get; private set; }` (Entity.cs L16) — a string property,
-            // not a System.Guid. Ordinal sort of it is the universal tiebreak (§5.2 invariant 4).
+            // not a System.Guid. It is PEER-LOCAL: Entity.Create() mints it with System.Guid.NewGuid()
+            // (Entity.cs:119-125), so the same logical combatant carries a different value on every peer.
+            // Legal ONLY as a same-peer round trip - a dictionary key this peer both writes and reads, and
+            // EngineAction.TargetGuid, which NativeByGuid resolves right back on this same peer. It is NOT
+            // the universal tiebreak any more; that clause is withdrawn. See RosterOrdinal below.
             get { try { return Native != null ? (Native.Guid ?? "") : ""; } catch { return ""; } }
         }
+
+        /// <summary>
+        /// Index in <c>CombatState.Entities</c>, captured once when this adapter was created for THIS
+        /// dispatch - see <see cref="ICombatEntity.RosterOrdinal"/>. Captured rather than recomputed on
+        /// every read because the roster mutates during a fight (revives insert mid-list, wave changes
+        /// rebuild it): an ordering opened at one lockstep point must see one consistent ordinal for the
+        /// whole of that point, and this adapter's lifetime IS that point.
+        /// <para><see cref="PeerOrder.Unknown"/> when the entity is not on the roster, or the roster could
+        /// not be read at all.</para>
+        /// </summary>
+        public int RosterOrdinal { get { return _rosterOrdinal; } }
 
         /// <summary><c>CharacterHelper.IsDead</c> is <c>CurrentHealth &lt; 1</c> (CharacterHelper.cs L1469).</summary>
         public bool IsAlive
@@ -52,13 +78,46 @@ namespace ClassForge.Plugin
             get { try { return Native == null || !CharacterHelper.IsFriendly(Native); } catch { return false; } }
         }
 
-        /// <summary><c>CharacterHelper.GetStat(Entity, string, bool)</c> — L396, the one overload
-        /// SPEC-DELTA-v1.1 §3.1 standardises on out of the eight available (PSN "Notable surprises" #6).</summary>
+        /// <summary>
+        /// <c>CharacterHelper.GetStat(Entity, string, bool)</c> — L396, the one overload SPEC-DELTA-v1.1
+        /// §3.1 standardises on out of the eight available (PSN "Notable surprises" #6) — for every stat
+        /// key except <c>HP</c>/<c>MXHP</c>.
+        /// <para>
+        /// <c>HP</c> and <c>MXHP</c> are special-cased onto <b>live combat state</b>:
+        /// <c>CharacterHelper.GetHealth</c> (CharacterHelper.cs L1439, <c>CharacterComponent.CurrentHealth</c>)
+        /// and <c>CharacterHelper.GetMaxHealth</c> (CharacterHelper.cs L1422). The class config's static
+        /// base-stat table (what <c>GetCharacterBaseStat</c> — and therefore the fallback <c>GetStat</c> call
+        /// below — reads) carries an "HP" key but no "MXHP" key, so every HP-percentage recipe token
+        /// (<c>RankValue</c>'s <c>HP_PCT</c>, <c>HP_THRESHOLD.Percent</c>, <c>TARGET_HP_PCT</c>) divided by a
+        /// permanent 0 and always resolved to 0. Fixing it here — once, at the adapter — repairs every
+        /// caller at once and leaves the authored recipe JSON untouched.
+        /// </para>
+        /// <para>
+        /// Both live calls are guarded independently: a non-combat caller (character creation, config
+        /// validation) hands in an <c>Entity</c> that may lack the components <c>GetHealth</c>/<c>GetMaxHealth</c>
+        /// need, or may simply throw inside the game's own health math. On failure this falls back to the
+        /// same static base-stat lookup every other stat key uses — which, for "MXHP", reproduces today's
+        /// safe (if uninformative) 0 rather than throwing out of a Harmony patch.
+        /// </para>
+        /// </summary>
         public int GetStat(string statKey)
         {
             try
             {
                 if (Native == null || string.IsNullOrEmpty(statKey)) return 0;
+
+                if (string.Equals(statKey, "HP", StringComparison.Ordinal))
+                {
+                    try { return CharacterHelper.GetHealth(Native); }
+                    catch { return CharacterHelper.GetStat(Native, statKey, false); }
+                }
+
+                if (string.Equals(statKey, "MXHP", StringComparison.Ordinal))
+                {
+                    try { return CharacterHelper.GetMaxHealth(Native); }
+                    catch { return CharacterHelper.GetStat(Native, statKey, false); }
+                }
+
                 return CharacterHelper.GetStat(Native, statKey, false);
             }
             catch { return 0; }
@@ -117,6 +176,109 @@ namespace ClassForge.Plugin
                 }
                 catch { return EntityRow.UNKNOWN; }
             }
+        }
+
+        /// <summary>
+        /// Board column — <c>VenueComponent.TilePosition.x</c> (VenueComponent.cs, a
+        /// <c>(int x, int y)</c> tuple field). <c>int.MinValue</c> when the character carries no
+        /// VenueComponent or the read throws, per <c>ICombatEntity.TileX</c>; ALLY_IN_FRONT treats the
+        /// sentinel as "unknown position" and evaluates false.
+        /// </summary>
+        public int TileX
+        {
+            get
+            {
+                try
+                {
+                    VenueComponent vc;
+                    if (Native == null || !Native.TryGet<VenueComponent>(out vc) || vc == null) return int.MinValue;
+                    return vc.TilePosition.x;
+                }
+                catch { return int.MinValue; }
+            }
+        }
+
+        /// <summary>Board row-line — <c>VenueComponent.TilePosition.y</c>. Same sentinel contract as
+        /// <see cref="TileX"/>.</summary>
+        public int TileY
+        {
+            get
+            {
+                try
+                {
+                    VenueComponent vc;
+                    if (Native == null || !Native.TryGet<VenueComponent>(out vc) || vc == null) return int.MinValue;
+                    return vc.TilePosition.y;
+                }
+                catch { return int.MinValue; }
+            }
+        }
+
+        /// <summary>
+        /// THIS character's own progression level -- <c>ProgressionHelper.GetEntityLevel</c>
+        /// (ProgressionHelper.cs:565), which derives the level from the entity's "XP" inventory Thing
+        /// (<c>GetEntityXP</c>, ProgressionHelper.cs:554: <c>Things.Find(t =&gt; t.ConfigName == "XP")
+        /// ?.StackCount ?? 0</c>) against PLAYER_XP_LEVELS / COMPANION_XP_LEVELS.
+        ///
+        /// <para>Returns <see cref="EntityReads.UnknownLevel"/> rather than a fabricated 0 whenever a
+        /// real per-entity level is not readable. XP progression is player-side only: an enemy carries
+        /// no "XP" Thing, so <c>GetEntityLevel</c> reports a flat 0 for every one of them while their
+        /// real level lives in the static <c>CharacterConfig.Level</c> -- a DIFFERENT quantity. The
+        /// <c>PlayerComponent</c> guard mirrors the game's own precedent in
+        /// <c>CharacterHelper.GetLevelUpAttackBonusStat</c> (CharacterHelper.cs:878-884), which returns
+        /// 0 for anything without one instead of calling GetEntityLevel.</para>
+        /// </summary>
+        public int Level
+        {
+            get
+            {
+                try
+                {
+                    if (Native == null) return EntityReads.UnknownLevel;
+                    if (!Native.Has<CharacterComponent>()) return EntityReads.UnknownLevel;
+                    if (!Native.Has<PlayerComponent>()) return EntityReads.UnknownLevel;
+                    return ProgressionHelper.GetEntityLevel(Native);
+                }
+                catch { return EntityReads.UnknownLevel; }
+            }
+        }
+
+        /// <summary>
+        /// v1.4 <c>HAS_ITEM</c>: does this character CARRY <paramref name="thingConfigName"/>?
+        /// Ordinal, case-sensitive scan of <c>CharacterComponent.Things</c> -- the read
+        /// <c>InventoryHelper.HasItemByName</c> performs (InventoryHelper.cs:424-427) and the read
+        /// <c>ProgressionHelper.GetEntityXP</c> uses for "XP" (ProgressionHelper.cs:557).
+        ///
+        /// <para>POSSESSION, not equipment. Toolbelt Things (<c>eConfigTags.TOOLBELT</c>,
+        /// InventoryHelper.cs:975) have NO <c>eEquipmentSlots</c> slot and can never be equipped, and
+        /// an equipped Thing is still resolved back out of <c>Things</c>
+        /// (<c>EquipmentHelper.GetEquippedThingBySlot</c>, EquipmentHelper.cs:165-177), so possession
+        /// covers both. <c>ParentId</c> is deliberately NOT filtered: a Thing nested in a container
+        /// is still carried.</para>
+        ///
+        /// <para>Returns <c>null</c> -- the inventory-read "unknown" -- when the inventory cannot be
+        /// read AT ALL. <c>false</c> means the inventory WAS read and genuinely lacks the item. The
+        /// engine turns <c>null</c> into a NON-negatable false, exactly as for
+        /// <see cref="EntityReads.UnknownLevel"/>; never collapse the two by returning false.</para>
+        /// </summary>
+        public bool? HasItem(string thingConfigName)
+        {
+            try
+            {
+                if (Native == null || string.IsNullOrEmpty(thingConfigName)) return null;
+                CharacterComponent cc;
+                if (!Native.TryGet<CharacterComponent>(out cc) || cc == null) return null;
+                var things = cc.Things;
+                if (things == null) return null;
+                for (int i = 0; i < things.Count; i++)
+                {
+                    var thing = things[i];
+                    if (thing != null && string.Equals(thing.ConfigName, thingConfigName, StringComparison.Ordinal))
+                        return true;
+                }
+                return false;
+            }
+            catch { return null; }
         }
 
         /// <summary>Equipped main-hand weapon's <c>ThingConfig.Class</c> (EGT §5 free-string space).</summary>
@@ -221,6 +383,39 @@ namespace ClassForge.Plugin
                                     if (!string.IsNullOrEmpty(tc.Equippable.Passives[i])) set.Add(tc.Equippable.Passives[i]);
                             }
                         }
+
+                        // --- TOOLBELT possession passives (capture spec, v1.5) ---
+                        // A TOOLBELT Thing has NO eEquipmentSlots slot (InventoryHelper.cs:975) and can
+                        // therefore NEVER appear in CharacterComponent.Equipped, so
+                        // EquipmentHelper.GetEquippedThingsNonAlloc (EquipmentHelper.cs:312-339) — which
+                        // admits only TRAIT_-prefixed Things and Things whose Id matches an Equipped slot —
+                        // can never see one. Its Equippable.Passives are, today, unreachable dead data.
+                        //
+                        // That is exactly the hole a class-agnostic item has to fill: the capture ball is
+                        // meant to work for ANY class that carries it, and a recipe is only evaluated for an
+                        // owner whose Passives contain its SKILL_ id (RecipeDispatcher.Holds). Granting the
+                        // ball's passives by POSSESSION is the same rule HAS_ITEM already reasons by, and is
+                        // the ONLY way "any class can capture" is expressible without hardcoding the class
+                        // list (docs/CONVENTIONS.md: the engine hardcodes no content).
+                        //
+                        // Provably inert for everything that shipped before it: measured 2026-08-25, ZERO of
+                        // the 8 TOOLBELT-tagged Things in the game's Things/*.json and ZERO in any pack's
+                        // items.json declare Equippable.Passives at all. The set this adds is empty unless
+                        // an author opts in by writing one.
+                        if (cc.Things != null)
+                        {
+                            for (int i = 0; i < cc.Things.Count; i++)
+                            {
+                                var t = cc.Things[i];
+                                if (t == null || string.IsNullOrEmpty(t.ConfigName)) continue;
+                                var tcfg = GameLookups.ThingConfig(t.ConfigName);
+                                if (tcfg == null || tcfg.Equippable == null || tcfg.Equippable.Passives == null) continue;
+                                if (tcfg.Tags == null || !tcfg.Tags.Contains(ToolbeltTag)) continue;
+                                for (int k = 0; k < tcfg.Equippable.Passives.Count; k++)
+                                    if (!string.IsNullOrEmpty(tcfg.Equippable.Passives[k]))
+                                        set.Add(tcfg.Equippable.Passives[k]);
+                            }
+                        }
                     }
 
                     // Encounter Modifiers spec §4.4 — status-attached SKILL_ passives.
@@ -263,6 +458,30 @@ namespace ClassForge.Plugin
             try
             {
                 if (Native == null || string.IsNullOrEmpty(tagName)) return false;
+
+                // --- the ONE virtual tag: CF_CAPTURABLE (Gary, the capture Trainer) -------------------
+                // "Is this entity capturable?" cannot be written as recipe conditions: the answer is an OR
+                // over the 20-member PLAYTHING_* tag family (conditions are ANDed, there is no OR) plus a
+                // graph walk over the target's own Things -> Interactable.Abilities -> Actions for the
+                // no-stun rule, plus a dCharacter composition lookup. It therefore lived in
+                // TrainerCaptureRules and was only asked INSIDE the CAPTURE effect -- i.e. AFTER
+                // RecipeDispatcher had already spent the recipe's ONCE_PER_COMBAT budget (ConsumeOn.PROC,
+                // RecipeDispatcher.cs:466-467). One throw at an untagged enemy then blocked every further
+                // capture in that fight, silently. Exposing the existing predicate as a tag moves it into
+                // Conditions, which are evaluated BEFORE the budget is touched (RecipeDispatcher.cs:407 vs
+                // :420-467), so a refused target no longer costs the fight's attempt.
+                //
+                // Safe as an extension of this adapter: "CF_CAPTURABLE" is not an eConfigTags member, so
+                // before this branch it parsed as nothing and answered false -- no existing recipe, pack or
+                // generated modifier can change meaning. It reads only replicated state (config Tags,
+                // config kit, CharacterComponent.CharacterType, IsDead) and takes zero random draws, so it
+                // is as parity-safe as the ActorHasTag read below.
+                if (string.Equals(tagName, VirtualTagCapturable, StringComparison.Ordinal))
+                {
+                    string ignored;
+                    return TrainerCaptureRules.CanCapture(Native, out ignored);
+                }
+
                 eConfigTags tag;
                 if (!Enum.TryParse(tagName, out tag)) return false;
                 return CharacterHelper.ActorHasTag(Native, tag);
@@ -290,6 +509,33 @@ namespace ClassForge.Plugin
     /// Adapts the live combat onto <see cref="ICombatContext"/>. One instance is built per hook invocation;
     /// it is a thin view over <c>Env.GameRun.CombatState</c>, not a copy.
     /// </summary>
+    /// <summary>
+    /// Adapts one venue TILE <c>Entity</c> onto <see cref="ICombatTile"/> (v1.4 <c>RANDOM_TILE</c>).
+    /// <para>Coordinates are snapshotted at construction rather than read lazily: the tile list is built
+    /// once per dispatch and the draw index must mean the same square for the whole of that dispatch. A
+    /// tile's <c>VenueComponent.TilePosition</c> never moves anyway (only characters move between tiles),
+    /// so the snapshot is also free of staleness risk.</para>
+    /// </summary>
+    internal sealed class TileAdapter : ICombatTile
+    {
+        internal readonly Entity Native;
+        private readonly int _x;
+        private readonly int _y;
+        private readonly string _guid;
+
+        internal TileAdapter(Entity native, int x, int y, string guid)
+        {
+            Native = native;
+            _x = x;
+            _y = y;
+            _guid = guid ?? "";
+        }
+
+        public int X { get { return _x; } }
+        public int Y { get { return _y; } }
+        public string LocalGuid { get { return _guid; } }
+    }
+
     internal sealed class CombatContextAdapter : ICombatContext
     {
         internal readonly CombatState State;
@@ -298,6 +544,7 @@ namespace ClassForge.Plugin
 
         private readonly Dictionary<string, EntityAdapter> _byGuid = new Dictionary<string, EntityAdapter>(StringComparer.Ordinal);
         private readonly List<ICombatEntity> _entities = new List<ICombatEntity>();
+        private List<ICombatTile> _tiles;
         private readonly string _identity;
 
         /// <summary>Actions the dispatcher streamed out via <see cref="EmitAction"/>, in plan order.</summary>
@@ -320,15 +567,23 @@ namespace ClassForge.Plugin
             {
                 if (state != null && state.Entities != null)
                 {
-                    // Materialise in ascending ordinal Guid order so ICombatContext.Entities is already
-                    // deterministic even though the engine re-sorts defensively (§5.2 invariant 4).
-                    var natives = new List<Entity>(state.Entities);
-                    natives.Sort(CompareByGuid);
+                    // Materialise in COMBAT-ROSTER order: index i here IS roster ordinal i, which is what
+                    // ICombatContext.Entities now promises and what every engine-side ordering keys on.
+                    //
+                    // This used to be `natives.Sort(CompareByGuid)`, and that was a co-op divergence.
+                    // Entity.Guid is minted per peer by Guid.NewGuid(), so sorting on it handed each peer a
+                    // DIFFERENT entity order - and RANK / ALLY_* resolution tie-breaks off exactly that
+                    // order, so two peers could pick two different allies for the same effect. It takes no
+                    // extra RNG draw, so the vendor's GameRandomNextInt probe would never have flagged it.
+                    // The roster's own index is the vendor's own cross-peer identity mechanism (every peer
+                    // appends to CombatState.Entities in the same sequence off the same shared-seed
+                    // stream) - see ClassForge.Core.Rng.EntityKey for the full argument.
+                    var natives = state.Entities;
                     for (int i = 0; i < natives.Count; i++)
                     {
                         var n = natives[i];
                         if (n == null) continue;
-                        var adapter = Wrap(n);
+                        var adapter = Wrap(n, i);
                         if (adapter != null) _entities.Add(adapter);
                     }
                 }
@@ -336,25 +591,49 @@ namespace ClassForge.Plugin
             catch { }
         }
 
-        private static int CompareByGuid(Entity a, Entity b)
-        {
-            string ga = "", gb = "";
-            try { ga = a != null ? (a.Guid ?? "") : ""; } catch { }
-            try { gb = b != null ? (b.Guid ?? "") : ""; } catch { }
-            return string.CompareOrdinal(ga, gb);
-        }
-
-        /// <summary>Stable adapter per Entity guid, so reference equality holds within one dispatch.</summary>
-        internal EntityAdapter Wrap(Entity native)
+        /// <summary>
+        /// Stable adapter per Entity guid, so reference equality holds within one dispatch. The guid is fine
+        /// as the memo key here and ONLY here: it is minted, written and read entirely inside this peer's
+        /// process, which is the one use <see cref="ICombatEntity.Guid"/> is still legal for.
+        /// <para><paramref name="rosterOrdinal"/> is supplied by the roster walk in the constructor.</para>
+        /// </summary>
+        internal EntityAdapter Wrap(Entity native, int rosterOrdinal)
         {
             if (native == null) return null;
             string guid;
             try { guid = native.Guid ?? ""; } catch { return null; }
             EntityAdapter existing;
             if (_byGuid.TryGetValue(guid, out existing)) return existing;
-            var created = new EntityAdapter(native, this);
+            var created = new EntityAdapter(native, this, rosterOrdinal);
             _byGuid[guid] = created;
             return created;
+        }
+
+        /// <summary>
+        /// Wraps an entity whose roster ordinal is not already known - resolved against the live roster, or
+        /// <see cref="PeerOrder.Unknown"/> when there is no roster to resolve against (the loot postfix runs
+        /// after the fight, so its party wraps can legitimately land here). Callers in that position must
+        /// NOT depend on the ordinal for ordering; the loot path deliberately keys on the caller's own list
+        /// position instead - see <c>LootDeltaComputer.EmitEffect</c>.
+        /// </summary>
+        internal EntityAdapter Wrap(Entity native)
+        {
+            return Wrap(native, RosterOrdinalOf(native));
+        }
+
+        /// <summary>Index of <paramref name="native"/> in the live combat roster, by reference identity, or
+        /// <see cref="PeerOrder.Unknown"/>.</summary>
+        private int RosterOrdinalOf(Entity native)
+        {
+            try
+            {
+                if (native == null || State == null || State.Entities == null) return PeerOrder.Unknown;
+                var list = State.Entities;
+                for (int i = 0; i < list.Count; i++)
+                    if (ReferenceEquals(list[i], native)) return i;
+                return PeerOrder.Unknown;
+            }
+            catch { return PeerOrder.Unknown; }
         }
 
         /// <summary>Resolves a planned action's guid back to the native <c>Entity</c>. Only entities present
@@ -382,6 +661,89 @@ namespace ClassForge.Plugin
         }
 
         public IReadOnlyList<ICombatEntity> Entities { get { return _entities; } }
+
+        /// <summary>
+        /// v1.4 <c>RANDOM_TILE</c> — every PLAYABLE board tile, ordered ascending by <c>(Y, X)</c>.
+        ///
+        /// <para><b>Where the tiles come from.</b> Tile entities are created by
+        /// <c>VenueHelper.CreateVenueTileEntities(string[] pMap)</c> (VenueHelper.cs:69), one per character
+        /// of a static venue map string, and are pushed into the combat's own entity list by
+        /// <c>CombatPhase.cs:314</c> (<c>_combatState.Entities.AddRange(_gameObjectMaps.FromTile.Keys)</c>).
+        /// So the tiles are already right here in <c>CombatState.Entities</c> — no new game API, no
+        /// <c>VenueDirector</c> reach-through, and (importantly) no second source of truth that could hold
+        /// a different board than the one the game is actually fighting on.</para>
+        ///
+        /// <para><b>The filter is the game's own.</b> <c>e.Has&lt;VenueTileComponent&gt;() &amp;&amp;
+        /// GroupIndex &gt; -1</c> is copied verbatim from the rain and chaos weather ticks
+        /// (CombatPhase.cs:2009 / :2021), which build exactly this pool before dropping
+        /// <c>STATUS_WATER_00</c> on a random member of it. <c>CreateVenueTileEntities</c> assigns
+        /// <c>GroupIndex = -1</c> to every non-letter map cell (the <c>+ - | .</c> border/floor
+        /// characters), so the predicate keeps precisely the ally- and enemy-side squares.</para>
+        ///
+        /// <para><b>Why the sort is load-bearing.</b> <c>FromTile</c> is a <c>Dictionary&lt;Entity,
+        /// GameObject&gt;</c>; its enumeration order is an implementation detail of the CLR's hash layout
+        /// and is NOT a cross-peer contract. If the engine drew an index into that order, two peers could
+        /// draw the same NUMBER and hit different squares — a desync that no amount of seed discipline
+        /// would catch. Sorting by <c>(Y, X)</c> re-derives the venue map's own reading order, which is a
+        /// pure function of a compiled-in <c>string[]</c> and therefore identical everywhere.</para>
+        ///
+        /// <para><b>Coordinates live on <c>VenueComponent</c>, not <c>VenueTileComponent</c>.</b>
+        /// <c>VenueTileComponent</c> carries only <c>GroupIndex</c>, <c>RowPositionsType</c> and
+        /// <c>AuraStatuses</c>; the <c>(int x, int y) TilePosition</c> is on <c>VenueComponent</c>, the same
+        /// component a CHARACTER uses for its own square (which is how
+        /// <c>VenueHelper.GetTileEntityOfCharacter</c> matches the two, VenueHelper.cs:103).</para>
+        ///
+        /// <para><b>Registration for the executor.</b> Each tile is passed through <see cref="Wrap"/> so its
+        /// guid is in <c>_byGuid</c>. That is what lets <c>RecipeActionExecutor</c> resolve a planned tile
+        /// action with the ordinary <c>NativeByGuid</c> call and hand it to
+        /// <c>InteractableHelper.ApplyStatus</c> — the very call CombatPhase.cs:2013 makes against a tile —
+        /// with no executor change at all. Tiles are normally in <c>State.Entities</c> and therefore already
+        /// wrapped by the constructor; the call here is idempotent and covers the case where they are not.</para>
+        ///
+        /// <para><b>Fail-safe:</b> every failure path yields an EMPTY list, never null and never a throw, so
+        /// a <c>RANDOM_TILE</c> effect degrades to a logged no-op that takes zero draws.</para>
+        /// </summary>
+        public IReadOnlyList<ICombatTile> Tiles
+        {
+            get
+            {
+                if (_tiles != null) return _tiles;
+                var built = new List<ICombatTile>();
+                try
+                {
+                    if (State != null && State.Entities != null)
+                    {
+                        var natives = State.Entities;
+                        for (int i = 0; i < natives.Count; i++)
+                        {
+                            var n = natives[i];
+                            if (n == null) continue;
+                            VenueTileComponent tc;
+                            if (!n.TryGet<VenueTileComponent>(out tc) || tc == null) continue;
+                            if (tc.GroupIndex <= -1) continue;   // border/floor cell, not part of the board
+                            VenueComponent vc;
+                            if (!n.TryGet<VenueComponent>(out vc) || vc == null) continue;
+
+                            string guid;
+                            try { guid = n.Guid ?? ""; } catch { continue; }
+                            if (guid.Length == 0) continue;
+
+                            Wrap(n);   // idempotent; puts the tile's guid in _byGuid for NativeByGuid
+                            built.Add(new TileAdapter(n, vc.TilePosition.x, vc.TilePosition.y, guid));
+                        }
+                    }
+                }
+                catch { built.Clear(); }
+
+                // ONE comparator, shared with the venue-placement sites in SummonVisuals and
+                // RecipeActionExecutor. It used to be a private copy here; two hand-rolled orderings that
+                // are meant to agree is exactly the shape that drifts. See TileOrder for why the ordering
+                // is a replication contract.
+                built.Sort(TileOrder.Compare);
+                _tiles = built;
+                return _tiles;
+            }
+        }
 
         /// <summary><c>CharacterHelper.IsOpponent</c> = differing <c>CharacterComponent.GroupIndex</c> (L1497).</summary>
         public bool AreOpponents(ICombatEntity a, ICombatEntity b)
@@ -523,17 +885,31 @@ namespace ClassForge.Plugin
             }
         }
 
-        /// <summary>STATE_HASH_CHANCE spec §2.1 <c>ENCOUNTER_GUID</c>: <c>GameRun.AdventureState.EncounterGUID</c>.</summary>
+        /// <summary>
+        /// STATE_HASH_CHANCE spec §2.1 <c>ENCOUNTER_GUID</c> — the LAST of the four <c>*_GUID</c> tokens
+        /// to be re-pointed off a raw guid, and the one with no detector at all.
+        ///
+        /// <para>It used to return <c>GameRun.AdventureState.EncounterGUID</c> verbatim. That field is
+        /// assigned an overworld <c>Entity.Guid</c>, which <c>Entity.Create()</c> mints locally with
+        /// <c>Guid.NewGuid()</c> — a joining peer is sent the map SEED, not the entities, and regenerates
+        /// them itself. So the token's value differed on every peer for the same encounter. Because
+        /// STATE_HASH_CHANCE takes ZERO draws by design, that divergence never perturbs the shared
+        /// stream (so the vendor's <c>GameRandomNextInt</c> probe cannot see it) and the vendor's desync
+        /// MD5 rewrites every guid to a first-occurrence ordinal before hashing (so that cannot see it
+        /// either): it would have surfaced only as two players watching different outcomes.</para>
+        ///
+        /// <para>It now resolves to <see cref="ReplicatedEncounterKey.Text"/> — a hash of five
+        /// serialized, MD5'd, non-guid fields — exactly as <c>SELF_GUID</c> /
+        /// <c>TRIGGER_SOURCE_GUID</c> / <c>TRIGGER_TARGET_GUID</c> were re-pointed at
+        /// <c>PeerOrder.KeyOf</c>. The token NAME is unchanged for authored-recipe compatibility. No
+        /// shipped recipe uses it (the one shipped <c>STATE_HASH_CHANCE</c> uses <c>SELF_GUID</c>), so
+        /// this changes no shipped behaviour.</para>
+        /// </summary>
         public string EncounterGuid
         {
             get
             {
-                try
-                {
-                    var run = Env != null ? Env.GameRun : null;
-                    var adv = run != null ? run.AdventureState : null;
-                    return adv != null && adv.EncounterGUID != null ? adv.EncounterGUID : "";
-                }
+                try { return ReplicatedEncounterKey.Text(); }
                 catch { return ""; }
             }
         }

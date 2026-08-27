@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using UnityEngine;
 using HarmonyLib;
+using ClassForge.Recipes.Abstractions;
 using ClassForge.Recipes.Model;
 using ClassForge.Recipes.Runtime;
 
@@ -125,12 +126,24 @@ namespace ClassForge.Plugin
             var summon = action as SummonAction;
             if (summon != null) { ExecSummon(summon, origin, env, party, results); return; }
 
+            var capture = action as CaptureAction;
+            if (capture != null) { ExecCapture(capture, origin, env, results); return; }
+
             var banner = action as EventBannerAction;
             if (banner != null) { ExecEventBanner(banner); return; }
 
+            var counterAdd = action as CounterAddAction;
+            if (counterAdd != null && counterAdd.Persistent)
+                ExecPersistCounter(counterAdd.CounterName, counterAdd.NewValue, origin);
+
+            var counterSet = action as CounterSetAction;
+            if (counterSet != null && counterSet.Persistent)
+                ExecPersistCounter(counterSet.CounterName, counterSet.NewValue, origin);
+
             // RollStatBonusAction / HealModifierAction: handled by their owning prefixes, not here.
-            // CounterAddAction / CounterSetAction / SelectionSetAction: engine already applied the state
-            // write; log only.
+            // CounterAddAction / CounterSetAction / SelectionSetAction: the engine already applied the
+            // in-memory (per-battle) state write; nothing further to do here except, for a Persistent
+            // counter, the CustomData write-through above. Log only.
             if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
                 ClassForgePlugin.Log.LogDebug("[ClassForge] (no native call) " + action.Describe());
         }
@@ -183,6 +196,33 @@ namespace ClassForge.Plugin
             return a.FallbackText;
         }
 
+        // ------------------------------------------------------------------ COUNTER_ADD/COUNTER_SET "Persistent"
+
+        /// <summary>
+        /// Write-through for a <c>Persistent</c> counter (§6 amendment, <see cref="RecipeEngineHost"/> reads
+        /// this back on the next combat's allocation). Reuses the native <c>CoreHelper.SetCustomData</c>
+        /// idiom already used elsewhere for durable per-character mod data — no ThingConfig, no new save
+        /// key, ordinary <c>CharacterComponent</c> replication. Fail-safe: an owner that vanished mid-plan
+        /// (e.g. died from its own recipe's effects earlier in the same plan) just skips the write; the
+        /// in-memory counter value the engine already computed is unaffected either way.
+        /// </summary>
+        private static void ExecPersistCounter(string counterName, int newValue, Entity origin)
+        {
+            try
+            {
+                if (origin == null || string.IsNullOrEmpty(counterName)) return;
+                CharacterComponent cc;
+                if (!origin.TryGet<CharacterComponent>(out cc) || cc == null) return;
+                CoreHelper.SetCustomData(cc, "CF_COUNTER_" + counterName, newValue.ToString(CultureInfo.InvariantCulture));
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogError(
+                    "[ClassForge] Persistent counter write failed (fail-safe, not persisted this proc): " +
+                    counterName + " -> " + ex);
+            }
+        }
+
         // ------------------------------------------------------------------ ADD_STATUS
 
         private static void ExecAddStatus(AddStatusAction a, Entity origin, RecipeExecEnvironment env,
@@ -191,8 +231,21 @@ namespace ClassForge.Plugin
             var target = env.Ctx.NativeByGuid(a.TargetGuid);
             if (target == null || string.IsNullOrEmpty(a.StatusId)) return;
 
+            ApplyAddStatusWithFallback(a, origin, target, env, party, results);
+
+            // PRESENTATION ONLY, and strictly AFTER the status is applied (fallback included). A tile status
+            // that exists in state but draws nothing is, for a class feature, a feature that does not work.
+            // See RegenTileStatusVisual: no draws, no reordering, no state writes.
+            if (a.TargetIsTile) RegenTileStatusVisual(a, target, env);
+        }
+
+        /// <summary>The unchanged ADD_STATUS application path, extracted verbatim so the tile visual refresh
+        /// has exactly ONE place to hook and can never run before the status lands.</summary>
+        private static void ApplyAddStatusWithFallback(AddStatusAction a, Entity origin, Entity target,
+            RecipeExecEnvironment env, List<Entity> party, List<(eAbilityResults, object)> results)
+        {
             int before = results.Count;
-            ApplyStatusOnce(a.StatusId, a.Duration, origin, target, env, party, results, a.RecipeId);
+            ApplyStatusOnce(a.StatusId, a.Duration, origin, target, env, party, results, a.RecipeId, a.TargetIsTile);
 
             if (string.IsNullOrEmpty(a.FallbackStatusId)) return;
 
@@ -207,18 +260,144 @@ namespace ClassForge.Plugin
                     "[ClassForge] '" + a.StatusId + "' did not apply (no STATUS_ADDED result) — emitting FallbackStatus '" +
                     a.FallbackStatusId + "' for recipe " + a.RecipeId + ".");
 
-            ApplyStatusOnce(a.FallbackStatusId, a.Duration, origin, target, env, party, results, a.RecipeId);
+            ApplyStatusOnce(a.FallbackStatusId, a.Duration, origin, target, env, party, results, a.RecipeId, a.TargetIsTile);
         }
 
-        private static void ApplyStatusOnce(string statusId, int? duration, Entity origin, Entity target,
-            RecipeExecEnvironment env, List<Entity> party, List<(eAbilityResults, object)> results, string recipeId)
+        /// <summary>
+        /// Redraws a TILE's status FX after a v1.4 <c>RANDOM_TILE</c> <c>ADD_STATUS</c> lands.
+        ///
+        /// <para><b>Why this exists.</b> <c>InteractableHelper.ApplyStatus</c> writes the status into the
+        /// tile's <c>StatusEffectComponent</c> and stops there — it does not touch Unity at all. Every
+        /// game-side tile-status site therefore refreshes the decal itself immediately afterwards, and a mod
+        /// that skips it produces the exact failure this repo keeps hitting: the mechanic is fully live in
+        /// state, ticks correctly, and is invisible to the player.</para>
+        ///
+        /// <para><b>The call shape is the game's own, verbatim.</b> The precedent is the three tile-status
+        /// sites in <c>CombatPhase</c>, each of which is an <c>ApplyStatus</c> immediately followed by:
+        /// <code>CharacterVisualHelper.RegenStatusVisuals(entity2, base._gameObjectMaps.FromTile[entity2]);</code>
+        /// — <c>CombatPhase.cs:2014</c> (rain), <c>:2028</c> (chaos weather), <c>:2087</c> (Scourge poison
+        /// hexes). Note the value is passed straight through, NOT <c>.gameObject</c>: unlike
+        /// <c>FromCharacter</c> (whose values are <c>ActorGameObjectBase</c>), <c>FromTile</c> already holds
+        /// <c>GameObject</c>.</para>
+        ///
+        /// <para><c>RegenStatusVisuals(Entity, GameObject)</c> is tile-aware by construction — it branches on
+        /// <c>pEntity.Has&lt;VenueTileComponent&gt;()</c> (CharacterVisualHelper.cs:1972) to emit the
+        /// <c>GroundFX</c> decal instead of a character's <c>FollowFX</c>/<c>ImbueFX</c>. There is no
+        /// Entity-only overload that resolves the GameObject itself, which is why the map lookup happens
+        /// here.</para>
+        ///
+        /// <para><b>Reaching the map.</b> The game's <c>_gameObjectMaps</c> is just
+        /// <c>protected VenueGameObjectMaps _gameObjectMaps =&gt; _env.VenueGameObjectMaps;</c>
+        /// (VenueDirectorBase.cs:25) — the same object as the public <c>Env.VenueGameObjectMaps</c> field we
+        /// already hold on the context adapter, and <c>FromTile</c> is a public
+        /// <c>Dictionary&lt;Entity, GameObject&gt;</c> field on it. No reflection, no
+        /// <c>RouterHelper.Env</c> reach-through.</para>
+        ///
+        /// <para><b>Guarded, unlike the game.</b> All three precedent sites index <c>FromTile[...]</c> blind,
+        /// as do ~90 others across <c>CombatViewHelper</c>/<c>CharacterVisualHelper</c>
+        /// (docs/research/coverage/rendering.md) — which is exactly why a stale tile Entity throws
+        /// <c>KeyNotFoundException</c> after a <c>CHANGE_VENUE_GRID</c> boss phase rebuilds the map with
+        /// brand-new keys. ClassForge must never add one more crash site, so this uses <c>TryGetValue</c>: a
+        /// missing entry is a logged no-op, never an exception. The status stays applied and keeps ticking
+        /// either way — only the decal is skipped.</para>
+        ///
+        /// <para><b>Nothing upstream does this for us.</b> Neither <c>InteractableHelper.ApplyStatus</c> nor
+        /// <c>CombatHelper.ApplyAction</c> contains any reference to <c>RegenStatusVisuals</c>.
+        /// <c>ApplyStatus</c> ends by setting <c>AvatarComponent.StatusDirty = true</c>
+        /// (InteractableHelper.cs:1462) — but that is the CHARACTER refresh flag, consumed by
+        /// <c>RegenCharacterStatusVisuals</c>, and tiles carry no <c>AvatarComponent</c>. For a tile the
+        /// dirty-flag mechanism is a no-op, so without this call the decal never appears at all.</para>
+        ///
+        /// <para><b>Presentation only.</b> No RNG (it never touches <c>env.Ctx.Random</c>), no state writes,
+        /// no results appended, no reordering — and it runs only after the status (and any
+        /// <c>FallbackStatus</c>) has been applied. It cannot affect replication.</para>
+        ///
+        /// <para>Logs at Debug with the <c>[ClassForge]</c> prefix, naming the tile as <c>tile(x,y)</c> to
+        /// match <c>EngineAction.Describe()</c>'s convention, so the refresh is assertable from the log.</para>
+        /// </summary>
+        private static void RegenTileStatusVisual(AddStatusAction a, Entity tile, RecipeExecEnvironment env)
         {
-            if (duration.HasValue)
+            string where = "tile(" + a.TargetTileX.ToString(CultureInfo.InvariantCulture) + "," +
+                           a.TargetTileY.ToString(CultureInfo.InvariantCulture) + ")";
+            try
             {
-                // ApplyAction's ADD_STATUS path calls ApplyStatus WITHOUT pDurationOverride, so a Duration
-                // override can only be expressed through the single-target overload directly
-                // (InteractableHelper.cs L1219, `int? pDurationOverride = null`). This is still a native
-                // verb — it is the exact call ApplyAction itself makes one line deeper (CombatHelper.cs L1993).
+                var gameEnv = env.Ctx != null ? env.Ctx.Env : null;
+                var maps = gameEnv != null ? gameEnv.VenueGameObjectMaps : null;
+                var fromTile = maps != null ? maps.FromTile : null;
+
+                GameObject tileGo = null;
+                if (fromTile == null || !fromTile.TryGetValue(tile, out tileGo) || tileGo == null)
+                {
+                    LogTileVisual("[ClassForge] " + where + " has no GameObject in VenueGameObjectMaps.FromTile" +
+                                  " — status '" + a.StatusId + "' IS applied and will tick, but its decal was not " +
+                                  "refreshed (recipe " + a.RecipeId + ").");
+                    return;
+                }
+
+                CharacterVisualHelper.RegenStatusVisuals(tile, tileGo);
+                LogTileVisual("[ClassForge] refreshed tile status visuals on " + where + " after '" +
+                              a.StatusId + "' (recipe " + a.RecipeId + ").");
+            }
+            catch (Exception ex)
+            {
+                // R4 posture: a presentation failure never disturbs applied game state, and never escapes
+                // into the Harmony patch body.
+                LogTileVisual("[ClassForge] tile status visual refresh failed on " + where +
+                              " (status '" + a.StatusId + "' is still applied): " + ex.Message);
+            }
+        }
+
+        private static void LogTileVisual(string message)
+        {
+            if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
+                ClassForgePlugin.Log.LogDebug(message);
+        }
+
+        /// <summary>
+        /// Applies ONE status, choosing between the two native seams.
+        ///
+        /// <para><b>The direct overload is taken when a Duration override is authored</b> - <c>ApplyAction</c>'s
+        /// ADD_STATUS path calls <c>ApplyStatus</c> WITHOUT <c>pDurationOverride</c> (CombatHelper.cs:1993),
+        /// so a duration can only be expressed through the single-target overload (InteractableHelper.cs:1222,
+        /// <c>int? pDurationOverride = null</c>). This is still a native verb - it is the exact call
+        /// <c>ApplyAction</c> itself makes one line deeper.</para>
+        ///
+        /// <para><b>...and ALWAYS when the target is a TILE</b> (v1.4 <c>RANDOM_TILE</c>), Duration or not.
+        /// To be clear about WHY, because it is not a safety fix: <c>ApplyAction</c> was traced and it IS
+        /// tile-safe. Every character-specific read in its ADD_STATUS case is behind a
+        /// <c>Has&lt;CharacterComponent&gt;()</c>/<c>TryGet</c> guard, and
+        /// <c>CharacterHelper.TryHasImmunity</c> is itself tile-aware (CharacterHelper.cs:1204 branches on
+        /// <c>Has&lt;VenueTileComponent&gt;()</c>), so a bare tile falls through to the <c>default:</c> case
+        /// and applies cleanly. The reason for going direct is CONSISTENCY: routing on whether the author
+        /// happened to write a <c>Duration</c> would fork tile behaviour between two seams that do not do
+        /// the same thing (see TileSync below). One seam, always.</para>
+        ///
+        /// <para><b>And the seam chosen is the game's own tile seam.</b> All four game-side tile-status
+        /// sites use THIS overload, not <c>ApplyAction</c>: <c>CombatPhase.cs:2013</c> (rain),
+        /// <c>:2027</c> (chaos weather), <c>:2081</c>/<c>:2085</c> (Scourge poison hexes), each shaped
+        /// <c>InteractableHelper.ApplyStatus(null, tileEntity, null, "", "STATUS_WATER_00", _combatState.Random, null)</c>
+        /// - i.e. this overload with <c>pDurationOverride</c> null and
+        /// <c>pTierStatus</c>/<c>pRenderStatusPopcorn</c> at their <c>true</c> defaults, which is exactly the
+        /// call below. A null <c>pDurationOverride</c> is therefore not a fallback here; it is the game's own
+        /// argument for a tile.</para>
+        ///
+        /// <para><b>Deliberately NOT inherited from ApplyAction: TileSync.</b> <c>ApplyAction</c>'s tile path
+        /// has an extra step (CombatHelper.cs:1994) - when the status config carries <c>TileSync</c> and a
+        /// character is standing on the tile, it applies the status to THAT CHARACTER as well. Going direct
+        /// skips that, which is precisely what the game's own environmental tile statuses do. It is the
+        /// narrower reading of "put a status on a tile" and the one Ben asked for; a tile hazard that also
+        /// silently statuses its occupant is a bigger gameplay claim, and should be an explicit authored
+        /// option if it is ever wanted rather than a side effect of which seam we picked.</para>
+        ///
+        /// <para>The only other difference from the game's tile call is that a non-null <c>pResults</c> is
+        /// passed, which is what lets IMMUNITY_FALLBACK observe whether the status actually landed.</para>
+        /// </summary>
+        private static void ApplyStatusOnce(string statusId, int? duration, Entity origin, Entity target,
+            RecipeExecEnvironment env, List<Entity> party, List<(eAbilityResults, object)> results,
+            string recipeId, bool targetIsTile)
+        {
+            if (duration.HasValue || targetIsTile)
+            {
                 InteractableHelper.ApplyStatus(origin, target, env.Thing, ResolvableAbilityName(), statusId,
                     env.Ctx.Random, results, true, true, duration);
                 return;
@@ -359,7 +538,32 @@ namespace ClassForge.Plugin
             List<Entity> party, List<(eAbilityResults, object)> results)
         {
             var target = env.Ctx.NativeByGuid(a.TargetGuid);
-            if (target == null || string.IsNullOrEmpty(a.CharacterConfig)) return;
+            if (target == null) return;
+
+            // ---- v1.5 dynamic config (CharacterConfigFrom) ----
+            // Resolved HERE and nowhere earlier: the engine plans in pure C# and never sees a game Entity,
+            // so an item's Thing.CustomData is unreadable to it. Every failure is a logged no-op -- the
+            // same fail-safe contract SELF_LEVEL / HAS_ITEM / RANDOM_TILE carry.
+            string configName = a.CharacterConfig;
+            if (!string.IsNullOrEmpty(a.CharacterConfigFrom))
+            {
+                configName = ResolveConfigFromItem(a, origin);
+                if (string.IsNullOrEmpty(configName)) return;
+            }
+            if (string.IsNullOrEmpty(configName)) return;
+
+            // ---- Pokemon Trainer partner persistence (test-checklist L0) ----
+            // Null for every summon that is NOT a Trainer partner -- any other class's SUMMON falls
+            // straight through to the unchanged path below. See TrainerPartnerPersistence.ResolveSlot
+            // for why the ball item in the summoner's own inventory is the whole discriminator.
+            var partnerSlot = TrainerPartnerPersistence.ResolveSlot(origin, a.RecipeId);
+            if (partnerSlot != null && partnerSlot.Downed)
+            {
+                // A DOWNED partner is not lost -- it is simply not sent out. Nothing is deleted, and
+                // the ball keeps its record until a town revives it.
+                TrainerPartnerPersistence.LogDownedSkip(partnerSlot, configName);
+                return;
+            }
 
             // ADD_CHARACTER needs a TILE entity, not a character.
             //
@@ -392,7 +596,7 @@ namespace ClassForge.Plugin
                     if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
                         ClassForgePlugin.Log.LogDebug(
                             "[ClassForge] SUMMON for " + a.RecipeId + ": the summoner's side has no free " +
-                            "tile, so " + a.CharacterConfig + " could not be placed.");
+                            "tile, so " + configName + " could not be placed.");
                     return;
                 }
                 target = tile;
@@ -403,7 +607,7 @@ namespace ClassForge.Plugin
             // Count into N sequential SummonActions (Index 0..Count-1 ascending), each of which becomes its
             // own ApplyAction call with its own freshly-deserialized payload and its own placement draws.
             string json = "{\"Type\":" + JsonString(a.SummonType.ToString()) +
-                          ",\"Value\":" + JsonString(a.CharacterConfig) + "}";
+                          ",\"Value\":" + JsonString(configName) + "}";
             // Note which combatants exist before, so the new one can be found and DRAWN afterwards.
             var before = SnapshotCombatRoster();
 
@@ -412,7 +616,214 @@ namespace ClassForge.Plugin
                 ApplyAction(eCombatActions.ADD_CHARACTER, doc.RootElement, origin, target, env, party, results, a.RecipeId);
             }
 
-            DrawNewSummon(before, a.RecipeId, a.CharacterConfig);
+            var spawned = FindNewSummon(before);
+
+            // Bind BEFORE drawing: the creature's max HP is re-based here, and DrawNewSummon's
+            // placement/animation work has nothing to do with its health. A drawing failure must not
+            // cost the partner its carried-over HP.
+            if (partnerSlot != null && spawned != null)
+                TrainerPartnerPersistence.RegisterSummon(spawned, partnerSlot, configName);
+
+            DrawNewSummon(spawned, a.RecipeId, configName);
+        }
+
+        /// <summary>
+        /// v1.5 <c>SUMMON.CharacterConfigFrom</c>: resolve the creature id at EXECUTION time out of an
+        /// item's <c>Thing.CustomData</c>. Token shape
+        /// <c>ITEM_CUSTOM_DATA:&lt;ThingConfigId&gt;:&lt;Key&gt;</c> (validated for shape at load).
+        ///
+        /// <para>Returns null — a LOGGED NO-OP, never a throw and never a default creature — for every
+        /// unresolvable case: no owner entity, the owner is not carrying that item, the item has no such
+        /// CustomData key, the stored value is empty, the id is not a live <c>Configs.Characters</c> key, or
+        /// the id no longer passes the capture gate.</para>
+        ///
+        /// <para><b>Why the last two matter.</b> A ball's record rides the save file, and a save can outlive
+        /// the content it names — a removed mod, an edited pack, a game patch. Handing a stale id onward
+        /// reaches <c>CharacterHelper</c>'s raw indexer <c>Env.Configs.Characters[name].Things</c>
+        /// (CharacterHelper.cs:1913), which throws <c>KeyNotFoundException</c>; the per-action catch in
+        /// <see cref="Execute"/> would turn that into a LogError on EVERY combat start for the rest of the
+        /// run. Re-running the eligibility gate on the way OUT is the same argument applied to art and to
+        /// the no-stun rule: whatever the record says, only a creature that is still capturable today is
+        /// still summonable today.</para>
+        /// </summary>
+        private static string ResolveConfigFromItem(SummonAction a, Entity origin)
+        {
+            string token = a.CharacterConfigFrom;
+            var parts = token.Split(':');
+            if (parts.Length != 3 || parts[1].Length == 0 || parts[2].Length == 0)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] SUMMON for " + a.RecipeId + ": CharacterConfigFrom '" + token +
+                    "' is not ITEM_CUSTOM_DATA:<ThingConfigId>:<Key> — no-op.");
+                return null;
+            }
+            string itemConfig = parts[1], key = parts[2];
+
+            if (origin == null)
+            {
+                LogSummonSkip(a, "the owner entity could not be resolved");
+                return null;
+            }
+
+            var thing = TrainerCaptureRules.CarriedItem(origin, itemConfig);
+            if (thing == null)
+            {
+                LogSummonSkip(a, "the owner is not carrying " + itemConfig);
+                return null;
+            }
+
+            string stored = TrainerCaptureRules.ReadCustomData(thing, key);
+            if (string.IsNullOrEmpty(stored))
+            {
+                LogSummonSkip(a, itemConfig + " has no " + key + " record yet (nothing captured)");
+                return null;
+            }
+
+            // GUARDED lookup. Never Env.Configs.Characters[stored].
+            if (GameLookups.CharacterConfig(stored) == null)
+            {
+                LogSummonSkip(a, "'" + stored + "' is not a live CharacterConfig (a stale record on " +
+                                 itemConfig + ")");
+                return null;
+            }
+
+            string reason;
+            if (!TrainerCaptureRules.ConfigIsCapturable(stored, null, out reason))
+            {
+                LogSummonSkip(a, "'" + stored + "' no longer passes the capture gate: " + reason);
+                return null;
+            }
+
+            return stored;
+        }
+
+        private static void LogSummonSkip(SummonAction a, string why)
+        {
+            if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
+                ClassForgePlugin.Log.LogDebug(
+                    "[ClassForge] SUMMON for " + a.RecipeId + " resolved no creature — " + why + " (no-op).");
+        }
+
+        // ------------------------------------------------------------------ CAPTURE (v1.5)
+
+        /// <summary>
+        /// <c>CAPTURE</c>: bind the target's character config to the owner's capture item, then take the
+        /// target off the board.
+        ///
+        /// <para><b>Order matters.</b> The record is written FIRST and the removal pushed SECOND. The
+        /// removal is not performed here at all — it is a request that <c>CombatPhase</c> honours later,
+        /// after this Harmony postfix has returned — so if the write failed there would be nothing to undo,
+        /// and if the write succeeds the record stands even if the removal branch is never reached.</para>
+        ///
+        /// <para><b>Removal is a results-list push, not a kill.</b> <c>CharacterHelper.KillCharacter</c>
+        /// leaves a corpse standing on its tile; it is not a removal. The engine's real removal is
+        /// <c>CombatPhase._processCombatResults</c>' LOCAL function <c>removeFromCombat</c>
+        /// (CombatPhase.cs:4362-4398) — unreachable from mod code by design. Pushing
+        /// <c>(eAbilityResults.PLAYTHINGED, entity)</c> into the ability's results list is the only route to
+        /// it (CombatPhase.cs:4329-4338), and it is the RIGHT route because that branch also calls
+        /// <c>_checkChargeRetargets()</c> (CombatPhase.cs:4401): a hand-rolled removal would leave charged
+        /// abilities aimed at an entity that is no longer on the board.</para>
+        ///
+        /// <para><b>The results list has to be the ability's own.</b> <c>CombatPhase._performAbility</c> does
+        /// <c>pResults.AddRange(CombatHelper.PerformAbility(...))</c> (CombatPhase.cs:4025) and hands the
+        /// result to <c>_processCombatResults</c> (CombatPhase.cs:4054). A Harmony postfix on
+        /// <c>PerformAbility</c> runs BEFORE that <c>AddRange</c> copies the list, so an entry appended to
+        /// <c>__result</c> is carried through. Under a trigger whose hook has no results list
+        /// (<c>env.Results == null</c>) nothing can be removed, and the capture is refused rather than
+        /// half-done.</para>
+        ///
+        /// <para><b>Accepted side effect.</b> That same branch adds a <c>DOLL_&lt;TYPE&gt;_01</c> Thing to the
+        /// fight's loot (<c>_additionalDrops</c>). It is the game's own behaviour on this path, it is not
+        /// suppressible from a mod, and it is harmless-to-pleasant: catching a monster also yields a doll of
+        /// its family. All five <c>DOLL_*_01</c> ids exist in shipped <c>Things/Items.json</c>, verified
+        /// 2026-08-25.</para>
+        /// </summary>
+        private static void ExecCapture(CaptureAction a, Entity origin, RecipeExecEnvironment env,
+            List<(eAbilityResults, object)> results)
+        {
+            if (!TrainerCaptureRules.Active)
+            {
+                ClassForgePlugin.Log.LogDebug(
+                    "[ClassForge] CAPTURE for " + a.RecipeId + " is disabled by config — no-op.");
+                return;
+            }
+
+            var target = env.Ctx.NativeByGuid(a.TargetGuid);
+            if (target == null || origin == null) return;
+
+            if (env.Results == null)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] CAPTURE for " + a.RecipeId + " fired under a hook with no results list, " +
+                    "so the target could not be removed from combat. Refused rather than storing a monster " +
+                    "that is still fighting you.");
+                return;
+            }
+
+            // The ball you THREW is the ball it goes into. Without this, any ability from any item would
+            // capture for a character who merely happens to be carrying a ball -- Gary's own staff shares
+            // the vanilla ONLY_RESISTDOWN_ATTACK id with the ball, so this is not hypothetical. Same shape
+            // as TrainerFocusFire.Issue's gate 1 (TrainerFocusFire.cs:131).
+            if (env.Thing == null
+                || !string.Equals(env.Thing.ConfigName, a.IntoItem, StringComparison.Ordinal))
+            {
+                if (ClassForgePlugin.VerboseLogging != null && ClassForgePlugin.VerboseLogging.Value)
+                    ClassForgePlugin.Log.LogDebug(
+                        "[ClassForge] CAPTURE for " + a.RecipeId + ": the acting item is " +
+                        (env.Thing != null ? env.Thing.ConfigName : "none") + ", not " + a.IntoItem +
+                        " -- only the capture item itself captures. No-op.");
+                return;
+            }
+
+            var ball = TrainerCaptureRules.CarriedItem(origin, a.IntoItem);
+            if (ball == null)
+            {
+                ClassForgePlugin.Log.LogDebug(
+                    "[ClassForge] CAPTURE for " + a.RecipeId + ": the thrower is not carrying " +
+                    a.IntoItem + " — no-op.");
+                return;
+            }
+
+            string reason;
+            if (!TrainerCaptureRules.CanCapture(target, out reason))
+            {
+                ClassForgePlugin.Log.LogDebug(
+                    "[ClassForge] CAPTURE for " + a.RecipeId + " refused: " + reason + ".");
+                return;
+            }
+
+            CharacterComponent cc;
+            if (!target.TryGet<CharacterComponent>(out cc) || cc == null) return;
+            string captured = cc.ConfigName;
+
+            // ONE monster per ball. Overwriting the config id and CLEARING the health record is the whole
+            // "capturing again replaces it" rule: TrainerPartnerPersistence.ResolveSlot reads HasRecord off
+            // CF_POKE_HP, so a cleared record makes the next send-out a first summon at FULL health. That
+            // also means a fresh capture is never born wounded or DOWNED because the previous occupant was.
+            CoreHelper.SetCustomData(ball, a.IntoKey, captured);
+            CoreHelper.SetCustomData(ball, TrainerPartnerPersistence.KeyHp, "");
+            CoreHelper.SetCustomData(ball, TrainerPartnerPersistence.KeyMaxHp, "");
+            CoreHelper.SetCustomData(ball, TrainerPartnerPersistence.KeyDowned, "0");
+
+            results.Add((eAbilityResults.PLAYTHINGED, target));
+
+            ClassForgePlugin.Log.LogDebug(
+                "[ClassForge] CAPTURED " + captured + " into " + a.IntoItem + " (" + a.RecipeId +
+                "). It leaves this fight and is sent out at the start of the next one.");
+        }
+
+        /// <summary>The combatant that appeared since <paramref name="before"/> was taken, or null.</summary>
+        private static Entity FindNewSummon(HashSet<Entity> before)
+        {
+            try
+            {
+                var entities = RouterHelper.Env?.GameRun?.CombatState?.Entities;
+                if (entities == null) return null;
+                Entity spawned = null;
+                foreach (var e in entities) if (e != null && !before.Contains(e)) spawned = e;
+                return spawned;
+            }
+            catch (Exception) { return null; }
         }
 
         /// <summary>Identity set of the current combat roster, for diffing after a summon.</summary>
@@ -458,15 +869,10 @@ namespace ClassForge.Plugin
             catch (Exception) { return UnityEngine.Vector3.zero; }
         }
 
-        private static void DrawNewSummon(HashSet<Entity> before, string recipeId, string characterConfig)
+        private static void DrawNewSummon(Entity spawned, string recipeId, string characterConfig)
         {
             try
             {
-                var entities = RouterHelper.Env?.GameRun?.CombatState?.Entities;
-                if (entities == null) return;
-
-                Entity spawned = null;
-                foreach (var e in entities) if (e != null && !before.Contains(e)) spawned = e;
                 if (spawned == null) return;
 
                 // Shared with the modelless sweep so a summon has exactly one drawing path.
@@ -524,7 +930,22 @@ namespace ClassForge.Plugin
                     occupied.Add(venue.TilePosition);
                 }
 
-                Entity fallback = null;
+                // Collect ALL free tiles of the group, then pick by the shared total order rather than
+                // "first FRONT tile the scan happens to reach".
+                //
+                // Correcting an earlier claim: this loop walks CombatState.Entities, which is a List
+                // iterated by index -- it is list-ordered, NOT dictionary-ordered, so it was never
+                // reference-hash unstable. But CombatState.Entities' order is precisely the invariant the
+                // rest of this work exists to protect, and it must not ALSO be load-bearing here: if
+                // ANOTHER change perturbs that list, a scan-order pick silently moves the summon, which
+                // moves GetTargetableTiles' Count, which moves the shared ShuffleList draw count on the
+                // next AI turn (AIHelper.cs:507-511, GameRandom.cs:227-241).
+                //
+                // TileOrder.SelectPlacement is a single MIN scan -- provably independent of the order the
+                // candidates were collected in -- and keeps the FRONT preference as its first key so the
+                // placement behaviour is unchanged for every board where the old code was already stable.
+                var candidateTiles = new List<Entity>();
+                var candidateKeys = new List<TileKey>();
                 for (int i = 0; i < entities.Count; i++)
                 {
                     var candidate = entities[i];
@@ -538,10 +959,12 @@ namespace ClassForge.Plugin
                     if (!candidate.TryGet<VenueComponent>(out venue)) continue;
                     if (occupied.Contains(venue.TilePosition)) continue;
 
-                    if (tile.RowPositionsType == eTileRowPositions.FRONT) return candidate;
-                    if (fallback == null) fallback = candidate;
+                    candidateTiles.Add(candidate);
+                    candidateKeys.Add(VenueTileOrder.KeyOf(candidate));
                 }
-                return fallback;
+
+                int pick = TileOrder.SelectPlacement(candidateKeys, VenueTileOrder.FrontRow);
+                return pick < 0 ? null : candidateTiles[pick];
             }
             catch (Exception)
             {

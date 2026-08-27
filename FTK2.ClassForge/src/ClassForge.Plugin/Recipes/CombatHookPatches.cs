@@ -251,6 +251,24 @@ namespace ClassForge.Plugin
                     Origin = origin, Target = target, AbilityId = abilityId, RollTier = tier
                 });
                 RecipeActionExecutor.Execute(resolved, exec);
+
+                // FOCUS FIRE (test-checklist L1). The one part of the command no recipe effect can do:
+                // pushing the named enemy's GUID into every ally AI's AIComponent.PriorityTargets, the
+                // queue AIHelper.cs:516-537 drains before GetPreferredTarget and without a PRW gate.
+                // Issued LAST so the recipe halves above -- which stamp ARMORDOWN on the target and the
+                // STATUS_CHARGE_CF_FOCUS_FIRE marker on ALLY_ALL -- have already run. Double-gated on the
+                // acting Thing being ARM_ORIG_STARTER_TRAINER_BEAST_WHISTLE and the ability being
+                // ONLY_RESISTDOWN_ATTACK, so it is unreachable from any other class.
+                TrainerFocusFire.Issue(pOrigin, pTarget, pThing, abilityId);
+
+                // CAPTURE FEEDBACK. Same shape and the same reason as Focus Fire above: something the
+                // recipe layer cannot do. SKILL_CF_TRAINER_CAPTURE_CATCH's CF_CAPTURABLE condition makes an
+                // ineligible target a NON-firing recipe -- which is exactly what stops a refusal from
+                // spending the fight's ONCE_PER_COMBAT budget -- but a recipe that does not fire also
+                // produces no player-facing signal. This pushes the game's own POPCORN floater into the
+                // ability's results list so the player is told the target cannot be caught. Gated inside on
+                // the acting Thing being the capture ball.
+                TrainerCaptureRules.AnnounceRefusal(pOrigin, pTarget, pThing, __result);
             }
             catch (Exception ex) { Fail("PerformAbility(postfix)", ex); }
         }

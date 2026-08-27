@@ -258,9 +258,14 @@ namespace ClassForge.Recipes.Tests
         private static bool VerdictFor(Rig rig, string salt, int damage, int percent)
         {
             var ci = System.Globalization.CultureInfo.InvariantCulture;
+            // SELF_GUID resolves to the PEER-STABLE roster key, not to Entity.Guid -- see
+            // StateHashChance.ResolveInput. Reading Ctx.Entities is what stamps the fake's ordinal, exactly
+            // as materialising the roster does in CombatContextAdapter.
+            var roster = rig.Ctx.Entities;
+            Check.True(roster.Count > 0, "roster materialised");
             return StateHashChance.Verdict(salt, new[]
             {
-                rig.Hero.Guid,
+                ClassForge.Recipes.Abstractions.PeerOrder.KeyOf(rig.Hero),
                 rig.Ctx.Round.ToString(ci),
                 rig.Hero.GetStat("HP").ToString(ci),
                 damage.ToString(ci),

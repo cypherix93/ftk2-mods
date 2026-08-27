@@ -1,0 +1,10 @@
+{
+  "author": "ftk2mods",
+  "dependencies": [],
+  "description": "Harness negative fixture: deliberately ships a class whose Passives point at a recipe id that exists nowhere, to prove the reference checker bites. Never deployed, never referenced by any pack root.",
+  "enabled": true,
+  "id": "CF_PACK_HARNESS_DANGLING",
+  "loadOrder": 901,
+  "name": "Harness dangling fixture",
+  "version": "1.0.0"
+}

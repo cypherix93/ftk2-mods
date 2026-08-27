@@ -1,4 +1,366 @@
 {
+  "ARM_ORIG_INVERSE_BLOODRAGE_TALISMAN": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "ATK": 15,
+        "EVD": -35
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 2,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "UNCOMMON",
+      "TRINKET",
+      "DROPPABLE"
+    ],
+    "Value": 45
+  },
+  "ARM_ORIG_INVERSE_CURSED_MILLSTONE": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "DEF": -30
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 1,
+    "MinTier": 0,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "COMMON",
+      "TRINKET",
+      "DROPPABLE"
+    ],
+    "Value": 10
+  },
+  "ARM_ORIG_INVERSE_GAMBLERS_LOCKET": {
+    "Ammo": 0,
+    "Class": "ARMOR_TRINKET",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": 0,
+      "Slots": [
+        "TRINKET"
+      ],
+      "Stats": {
+        "DEF": -25,
+        "LCK": 40
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": null,
+    "Material": "NONE",
+    "MaxTier": 2,
+    "MinTier": 0,
+    "Rarity": "UNCOMMON",
+    "Stacks": false,
+    "Tags": [
+      "UNCOMMON",
+      "TRINKET",
+      "DROPPABLE"
+    ],
+    "Value": 45
+  },
+  "ARM_ORIG_STARTER_CHAOSMAGE_ENTROPY_ROD": {
+    "Ammo": 0,
+    "Class": "STAFF",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "MAGIC_DARK_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.95,
+          "MinValue": 0.3,
+          "Rolls": 2,
+          "Stat": "INT"
+        },
+        "SHEEP_RANDOM_BUFF": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "INT"
+        }
+      },
+      "AbilityBag": [
+        "SHEEP_RANDOM_BUFF",
+        "MAGIC_DARK_ATTACK"
+      ],
+      "AbilityFillBag": [
+        "SHEEP_RANDOM_BUFF",
+        "MAGIC_DARK_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "WOOD",
+    "MaxTier": -1,
+    "MinTier": -1,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "ARM_STARTER_WEAPON",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "DROPPABLE"
+    ],
+    "Value": 5
+  },
+  "ARM_ORIG_STARTER_GARY_RIVAL_ROD": {
+    "Ammo": 0,
+    "Class": "STAFF",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "ONLY_ATTACKUP_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "LCK"
+        },
+        "ONLY_EVADEUP_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "SPD"
+        },
+        "ONLY_RESISTDOWN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "LCK"
+        },
+        "STAFF_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [
+        "STAFF_BASIC_ATTACK",
+        "ONLY_RESISTDOWN_ATTACK",
+        "ONLY_EVADEUP_ATTACK",
+        "ONLY_ATTACKUP_ATTACK"
+      ],
+      "AbilityFillBag": [
+        "STAFF_BASIC_ATTACK",
+        "ONLY_RESISTDOWN_ATTACK",
+        "ONLY_EVADEUP_ATTACK",
+        "ONLY_ATTACKUP_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "WOOD",
+    "MaxTier": -1,
+    "MinTier": -1,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "ARM_STARTER_WEAPON",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "DROPPABLE"
+    ],
+    "Value": 5
+  },
+  "ARM_ORIG_STARTER_PACIFIST_OLIVE_BRANCH": {
+    "Ammo": 0,
+    "Class": "STAFF",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 2
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "ONLY_ARMORUP_OTHER_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "TAL"
+        },
+        "ONLY_ATTACKDOWN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "AWR"
+        },
+        "ONLY_ATTACKUP_OTHER_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [
+        "ONLY_ATTACKDOWN_ATTACK",
+        "ONLY_ARMORUP_OTHER_ATTACK",
+        "ONLY_ATTACKUP_OTHER_ATTACK"
+      ],
+      "AbilityFillBag": [
+        "ONLY_ATTACKDOWN_ATTACK",
+        "ONLY_ARMORUP_OTHER_ATTACK",
+        "ONLY_ATTACKUP_OTHER_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "WOOD",
+    "MaxTier": -1,
+    "MinTier": -1,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "ARM_STARTER_WEAPON",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "DROPPABLE"
+    ],
+    "Value": 5
+  },
+  "ARM_ORIG_STARTER_TRAINER_BEAST_WHISTLE": {
+    "Ammo": 0,
+    "Class": "STAFF",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Slots": [
+        "MAIN_HAND"
+      ],
+      "Stats": {
+        "ATK": 5
+      }
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "ONLY_EVADEUP_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "SPD"
+        },
+        "ONLY_RESISTDOWN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "AWR"
+        },
+        "STAFF_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 1,
+          "MinValue": 0,
+          "Rolls": 2,
+          "Stat": "INT"
+        }
+      },
+      "AbilityBag": [
+        "STAFF_BASIC_ATTACK",
+        "ONLY_RESISTDOWN_ATTACK",
+        "ONLY_EVADEUP_SPLASH_ATTACK"
+      ],
+      "AbilityFillBag": [
+        "STAFF_BASIC_ATTACK",
+        "ONLY_RESISTDOWN_ATTACK",
+        "ONLY_EVADEUP_SPLASH_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "WOOD",
+    "MaxTier": -1,
+    "MinTier": -1,
+    "Rarity": "COMMON",
+    "Stacks": false,
+    "Tags": [
+      "ARM_STARTER_WEAPON",
+      "COMMON",
+      "WEAPON",
+      "HAND_EQUIP",
+      "WEAPON_ONE_HAND",
+      "DROPPABLE"
+    ],
+    "Value": 5
+  },
   "ARM_ORIG_STARTER_VAMPIRIC_BLOODLETTER": {
     "Ammo": 0,
     "Class": "BLADE",
@@ -58,24 +420,152 @@
     ],
     "Value": 5
   },
-  "ARM_ORIG_STARTER_PACIFIST_OLIVE_BRANCH": {
+  "ARM_ORIG_TRAINER_BALL_CAPTURE": {
     "Ammo": 0,
-    "Class": "STAFF",
-    "ConsumableType": "NONE",
+    "Class": "TOOL",
+    "ConsumableType": "ANY",
     "Equippable": {
-      "MaxCharges": -1,
-      "Slots": [
-        "MAIN_HAND"
+      "MaxCharges": 0,
+      "Passives": [
+        "SKILL_CF_TRAINER_CAPTURE_CATCH",
+        "SKILL_CF_TRAINER_CAPTURE_1"
       ],
-      "Stats": {
-        "ATK": 2
-      }
+      "Slots": [],
+      "Stats": {}
     },
     "Expansion": "BASE",
     "Hidden": false,
     "Interactable": {
       "Abilities": {
-        "ONLY_STUN_ATTACK": {
+        "ONLY_RESISTDOWN_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "LCK"
+        }
+      },
+      "AbilityBag": [
+        "ONLY_RESISTDOWN_ATTACK"
+      ],
+      "AbilityFillBag": [
+        "ONLY_RESISTDOWN_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "UNLIMITED",
+      "FIXED",
+      "FAVORITE",
+      "TOOLBELT",
+      "RARE",
+      "TOOL",
+      "USEABLE",
+      "LOOTABLE"
+    ],
+    "Value": 0
+  },
+  "ARM_ORIG_TRAINER_BALL_FIRE": {
+    "Ammo": 0,
+    "Class": "TOOL",
+    "ConsumableType": "ANY",
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {},
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "FIXED",
+      "FAVORITE",
+      "TOOLBELT",
+      "RARE",
+      "TOOL",
+      "USEABLE",
+      "LOOTABLE"
+    ],
+    "Value": 0
+  },
+  "ARM_ORIG_TRAINER_BALL_GRASS": {
+    "Ammo": 0,
+    "Class": "TOOL",
+    "ConsumableType": "ANY",
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "CF_TRAINER_SUMMON_GRASS_T1_ATTACK": null,
+        "CF_TRAINER_SUMMON_GRASS_T2_ATTACK": null,
+        "CF_TRAINER_SUMMON_GRASS_T3_ATTACK": null
+      },
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "FIXED",
+      "FAVORITE",
+      "TOOLBELT",
+      "RARE",
+      "TOOL",
+      "USEABLE",
+      "LOOTABLE"
+    ],
+    "Value": 0
+  },
+  "ARM_ORIG_TRAINER_BALL_WATER": {
+    "Ammo": 0,
+    "Class": "TOOL",
+    "ConsumableType": "ANY",
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {},
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": 3,
+    "MinTier": 0,
+    "Rarity": "RARE",
+    "Stacks": false,
+    "Tags": [
+      "FIXED",
+      "FAVORITE",
+      "TOOLBELT",
+      "RARE",
+      "TOOL",
+      "USEABLE",
+      "LOOTABLE"
+    ],
+    "Value": 0
+  },
+  "UNARMED_WOLF_CHAOSHOUND_10": {
+    "Ammo": 0,
+    "Class": "ETHEREAL_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Stats": {}
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BITE_ARMOR_RESISTANCEDOWN_ATTACK": {
           "ACC": 0,
           "Ammo": 0,
           "MaxValue": 0,
@@ -83,10 +573,92 @@
           "Rolls": 2,
           "Stat": "AWR"
         },
-        "ONLY_ATTACKDOWN_ATTACK": {
+        "BITE_CHAOS_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.9,
+          "MinValue": 0,
+          "Rolls": 3,
+          "Stat": "AWR"
+        },
+        "LANCE_TAUNT_ATTACK": {
           "ACC": 0,
           "Ammo": 0,
           "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "MAGIC_PROTECT_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "ONLY_RESISTUP_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "SKRAEVIN_ARMOR_RES_BUFF": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        }
+      },
+      "AbilityBag": [
+        "MAGIC_PROTECT_SPLASH_ATTACK",
+        "SKRAEVIN_ARMOR_RES_BUFF",
+        "ONLY_RESISTUP_SPLASH_ATTACK",
+        "LANCE_TAUNT_ATTACK",
+        "BITE_ARMOR_RESISTANCEDOWN_ATTACK",
+        "BITE_CHAOS_ATTACK"
+      ],
+      "AbilityFillBag": [
+        "MAGIC_PROTECT_SPLASH_ATTACK",
+        "SKRAEVIN_ARMOR_RES_BUFF",
+        "ONLY_RESISTUP_SPLASH_ATTACK",
+        "LANCE_TAUNT_ATTACK",
+        "BITE_ARMOR_RESISTANCEDOWN_ATTACK",
+        "BITE_CHAOS_ATTACK"
+      ],
+      "ShuffleAbilityBag": false
+    },
+    "Material": "NONE",
+    "MaxTier": -1,
+    "MinTier": -1,
+    "Rarity": "NONE",
+    "Stacks": false,
+    "Tags": [
+      "MELEE",
+      "RANGED"
+    ],
+    "Value": 0
+  },
+  "UNARMED_WOLF_GRASS_08": {
+    "Ammo": 0,
+    "Class": "BEAST_2H",
+    "ConsumableType": "NONE",
+    "Equippable": {
+      "MaxCharges": -1,
+      "Stats": {}
+    },
+    "Expansion": "BASE",
+    "Hidden": false,
+    "Interactable": {
+      "Abilities": {
+        "BITE_BASIC_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0.55,
           "MinValue": 0,
           "Rolls": 2,
           "Stat": "AWR"
@@ -96,198 +668,119 @@
           "Ammo": 0,
           "MaxValue": 0,
           "MinValue": 0,
-          "Rolls": 2,
+          "Rolls": 1,
           "Stat": "TAL"
         },
-        "ONLY_ATTACKUP_OTHER_ATTACK": {
+        "SHIELD_TAUNT_ATTACK": {
           "ACC": 0,
           "Ammo": 0,
           "MaxValue": 0,
           "MinValue": 0,
-          "Rolls": 2,
+          "Rolls": 1,
           "Stat": "TAL"
         }
       },
       "AbilityBag": [
-        "ONLY_STUN_ATTACK",
-        "ONLY_ATTACKDOWN_ATTACK",
         "ONLY_ARMORUP_OTHER_ATTACK",
-        "ONLY_ATTACKUP_OTHER_ATTACK"
+        "SHIELD_TAUNT_ATTACK",
+        "BITE_BASIC_ATTACK"
       ],
       "AbilityFillBag": [
-        "ONLY_STUN_ATTACK",
-        "ONLY_ATTACKDOWN_ATTACK",
         "ONLY_ARMORUP_OTHER_ATTACK",
-        "ONLY_ATTACKUP_OTHER_ATTACK"
+        "SHIELD_TAUNT_ATTACK",
+        "BITE_BASIC_ATTACK"
       ],
       "ShuffleAbilityBag": false
     },
-    "Material": "WOOD",
+    "Material": "NONE",
     "MaxTier": -1,
     "MinTier": -1,
-    "Rarity": "COMMON",
+    "Rarity": "NONE",
     "Stacks": false,
     "Tags": [
-      "ARM_STARTER_WEAPON",
-      "COMMON",
-      "WEAPON",
-      "HAND_EQUIP",
-      "WEAPON_ONE_HAND",
-      "DROPPABLE"
+      "MELEE",
+      "RANGED"
     ],
-    "Value": 5
+    "Value": 0
   },
-  "ARM_ORIG_STARTER_TRAINER_BEAST_WHISTLE": {
+  "UNARMED_WOLF_HELLHOUND_09": {
     "Ammo": 0,
-    "Class": "STAFF",
+    "Class": "BEAST_2H",
     "ConsumableType": "NONE",
     "Equippable": {
       "MaxCharges": -1,
-      "Slots": [
-        "MAIN_HAND"
-      ],
-      "Stats": {
-        "ATK": 5
-      }
+      "Stats": {}
     },
     "Expansion": "BASE",
     "Hidden": false,
     "Interactable": {
       "Abilities": {
-        "STAFF_BASIC_ATTACK": {
+        "HELLHOUND_FIRE_ATTACK": {
           "ACC": 0,
           "Ammo": 0,
-          "MaxValue": 1,
-          "MinValue": 0,
-          "Rolls": 2,
-          "Stat": "INT"
-        },
-        "ONLY_SCARE_ATTACK": {
-          "ACC": 0,
-          "Ammo": 0,
-          "MaxValue": 0,
+          "MaxValue": 0.5,
           "MinValue": 0,
           "Rolls": 2,
           "Stat": "AWR"
         },
-        "ONLY_ATTACKUP_OTHER_ATTACK": {
+        "LANCE_TAUNT_ATTACK": {
           "ACC": 0,
           "Ammo": 0,
           "MaxValue": 0,
           "MinValue": 0,
-          "Rolls": 2,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "MAGIC_PROTECT_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "ONLY_RESISTUP_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
+          "Stat": "TAL"
+        },
+        "WOLF_SPECIAL_ONLY_DEFENSEUP_SPLASH_ATTACK": {
+          "ACC": 0,
+          "Ammo": 0,
+          "MaxValue": 0,
+          "MinValue": 0,
+          "Rolls": 1,
           "Stat": "TAL"
         }
       },
       "AbilityBag": [
-        "STAFF_BASIC_ATTACK",
-        "ONLY_SCARE_ATTACK",
-        "ONLY_ATTACKUP_OTHER_ATTACK"
+        "MAGIC_PROTECT_ATTACK",
+        "ONLY_RESISTUP_SPLASH_ATTACK",
+        "WOLF_SPECIAL_ONLY_DEFENSEUP_SPLASH_ATTACK",
+        "LANCE_TAUNT_ATTACK",
+        "HELLHOUND_FIRE_ATTACK"
       ],
       "AbilityFillBag": [
-        "STAFF_BASIC_ATTACK",
-        "ONLY_SCARE_ATTACK",
-        "ONLY_ATTACKUP_OTHER_ATTACK"
+        "MAGIC_PROTECT_ATTACK",
+        "ONLY_RESISTUP_SPLASH_ATTACK",
+        "WOLF_SPECIAL_ONLY_DEFENSEUP_SPLASH_ATTACK",
+        "LANCE_TAUNT_ATTACK",
+        "HELLHOUND_FIRE_ATTACK"
       ],
       "ShuffleAbilityBag": false
     },
-    "Material": "WOOD",
+    "Material": "NONE",
     "MaxTier": -1,
     "MinTier": -1,
-    "Rarity": "COMMON",
+    "Rarity": "NONE",
     "Stacks": false,
     "Tags": [
-      "ARM_STARTER_WEAPON",
-      "COMMON",
-      "WEAPON",
-      "HAND_EQUIP",
-      "WEAPON_ONE_HAND",
-      "DROPPABLE"
+      "MELEE",
+      "RANGED"
     ],
-    "Value": 5
-  },
-  "ARM_ORIG_TRAINER_BALL_CHAOS": {
-    "ConsumableType": "ANY",
-    "Value": 0,
-    "MinTier": 0,
-    "MaxTier": 3,
-    "Class": "TOOL",
-    "Rarity": "RARE",
-    "Material": "NONE",
-    "Hidden": false,
-    "Stacks": false,
-    "Ammo": 0,
-    "Interactable": {
-      "Abilities": {
-        "CF_TRAINER_SUMMON_CHAOS_ATTACK": null
-      },
-      "ShuffleAbilityBag": false
-    },
-    "Tags": [
-      "FIXED",
-      "FAVORITE",
-      "TOOLBELT",
-      "RARE",
-      "TOOL",
-      "USEABLE",
-      "LOOTABLE"
-    ],
-    "Expansion": "BASE"
-  },
-  "ARM_ORIG_TRAINER_BALL_EMBER": {
-    "ConsumableType": "ANY",
-    "Value": 0,
-    "MinTier": 0,
-    "MaxTier": 3,
-    "Class": "TOOL",
-    "Rarity": "RARE",
-    "Material": "NONE",
-    "Hidden": false,
-    "Stacks": false,
-    "Ammo": 0,
-    "Interactable": {
-      "Abilities": {
-        "CF_TRAINER_SUMMON_EMBER_ATTACK": null
-      },
-      "ShuffleAbilityBag": false
-    },
-    "Tags": [
-      "FIXED",
-      "FAVORITE",
-      "TOOLBELT",
-      "RARE",
-      "TOOL",
-      "USEABLE",
-      "LOOTABLE"
-    ],
-    "Expansion": "BASE"
-  },
-  "ARM_ORIG_TRAINER_BALL_RIME": {
-    "ConsumableType": "ANY",
-    "Value": 0,
-    "MinTier": 0,
-    "MaxTier": 3,
-    "Class": "TOOL",
-    "Rarity": "RARE",
-    "Material": "NONE",
-    "Hidden": false,
-    "Stacks": false,
-    "Ammo": 0,
-    "Interactable": {
-      "Abilities": {
-        "CF_TRAINER_SUMMON_RIME_ATTACK": null
-      },
-      "ShuffleAbilityBag": false
-    },
-    "Tags": [
-      "FIXED",
-      "FAVORITE",
-      "TOOLBELT",
-      "RARE",
-      "TOOL",
-      "USEABLE",
-      "LOOTABLE"
-    ],
-    "Expansion": "BASE"
+    "Value": 0
   }
 }

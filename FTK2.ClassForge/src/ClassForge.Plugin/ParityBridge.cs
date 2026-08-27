@@ -1,9 +1,25 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 using ClassForge.Core;
 
 namespace ClassForge.Plugin
 {
+    /// <summary>docs/MULTIPLAYER.md R1's three <c>OnParityMismatch</c> policies.</summary>
+    internal enum MismatchPolicy
+    {
+        /// <summary>Log/notify only; every feature keeps running. Never the default for any kind.</summary>
+        WarnOnly = 0,
+
+        /// <summary>State-mutating features off for the session, presentation features keep running
+        /// (<see cref="ClassForgePlugin.PresentationActive"/>).</summary>
+        WarnAndSafeMode = 1,
+
+        /// <summary>Every ClassForge runtime feature off for the session.</summary>
+        Block = 2,
+    }
+
     /// <summary>
     /// The FTK2.DevKit <c>ParityService</c> handshake adapter (SPEC.md §3, §6, §9.5, §9.6; docs/MULTIPLAYER.md R1).
     ///
@@ -20,15 +36,21 @@ namespace ClassForge.Plugin
     /// [4]=remotePeerId [5]=message</c>, where <c>kind</c> is a <c>ParityVerdictKind</c> name and
     /// <c>"Match"</c> is the only non-divergent value.</para>
     ///
-    /// <para><b>ClassForge's policy is <c>Block</c></b> (SPEC.md §5, §9.5; SPEC-DELTA-v1.1 §5.3). ClassForge
-    /// decides that for itself rather than inheriting DevKit's session policy: on any non-<c>Match</c> row,
-    /// <see cref="Blocked"/> latches true for the process and <em>every</em> ClassForge feature switches off —
-    /// the merge, the UI injection, the icon fallback, the trait loadout injection and the whole recipe
-    /// engine. SPEC-DELTA-v1.1 §5.3 is explicit that there is no presentation-only subset to keep running:
-    /// every recipe primitive either mutates combat state or feeds something that does, so a partial
-    /// shutdown would produce exactly the asymmetric execution the determinism invariants exist to prevent.</para>
+    /// <para><b>ClassForge's policy is per-kind (P0.5 §4; see <see cref="ResolvePolicy"/>).</b>
+    /// <c>Block</c> — <see cref="Blocked"/> latches and <em>every</em> ClassForge feature switches off — is
+    /// the default for a <c>FeaturesMismatch</c>, because post-P0.5 that kind means a gameplay KNOB
+    /// differs, and a knob like <c>[Combat] VenueGridPreset</c> changes the arena tile count and therefore
+    /// the shared <c>GameRandom</c> draw count on the first AI turn: not "desync likely", a desync.
+    /// <c>VersionMismatch</c>/<c>DataMismatch</c> keep docs/MULTIPLAYER.md R1's <c>WarnAndSafeMode</c>,
+    /// because a pack-content difference may be benign and SafeMode already stops everything that would act
+    /// on it. Under <c>Block</c> there is still no presentation-only subset (SPEC-DELTA-v1.1 §5.3); SafeMode
+    /// is the weaker latch that keeps <see cref="ClassForgePlugin.PresentationActive"/> true.</para>
     ///
-    /// <para>Fail-safe throughout: DevKit absent is a logged no-op, never a hard failure, and nothing here
+    /// <para><b>Fail CLOSED, not fail silent (P0.5 §5).</b> A missing FTK2.DevKit used to be one
+    /// <c>LogInfo</c> line and a full-speed-ahead return, which made every decision above optional in
+    /// practice. It is now a warning, an in-game banner, and — when the session is online multiplayer and
+    /// <c>[Multiplayer] RequireParityService</c> is true — SafeMode. Same for the two shapes of DevKit that
+    /// register successfully but cannot enforce (see <see cref="FailClosedUnenforceable"/>). Nothing here
     /// throws out of a Harmony patch body.</para>
     /// </summary>
     internal static class ParityBridge
@@ -44,8 +66,18 @@ namespace ClassForge.Plugin
 
         private static bool _loggedDevKitAbsent;
         private static bool _blocked;
+        private static bool _safeMode;
         private static bool _verdictCallbackSubscribed;
         private static bool _loggedNoVerdictCallback;
+
+        /// <summary>
+        /// True when ClassForge is running with its state-mutating features off but presentation features
+        /// still on (docs/MULTIPLAYER.md R1's SafeMode). Reached two ways: a
+        /// <see cref="MismatchPolicy.WarnAndSafeMode"/> verdict, or P0.5 §5(b) — an online session with no
+        /// FTK2.DevKit present and <c>[Multiplayer] RequireParityService = true</c>. Cleared at the same
+        /// session boundary as <see cref="Blocked"/>, then immediately re-derived.
+        /// </summary>
+        internal static bool SafeMode { get { return _safeMode; } }
 
         /// <summary>
         /// True once a parity mismatch has been reported for ClassForge THIS SESSION. Latching within a
@@ -72,13 +104,7 @@ namespace ClassForge.Plugin
                 var service = ResolveServiceType();
                 if (service == null)
                 {
-                    if (!_loggedDevKitAbsent)
-                    {
-                        _loggedDevKitAbsent = true;
-                        ClassForgePlugin.Log.LogInfo(
-                            "[ClassForge] FTK2.DevKit not present — skipping ParityService registration (no-op, fail-safe). " +
-                            "Multiplayer parity is UNENFORCED without DevKit; install FTK2.DevKit for the R1 handshake.");
-                    }
+                    HandleDevKitAbsent();
                     return;
                 }
 
@@ -106,11 +132,11 @@ namespace ClassForge.Plugin
 
                 if (plain == null)
                 {
-                    ClassForgePlugin.Log.LogWarning(
-                        "[ClassForge] " + ServiceTypeShortName + " found but exposes neither " +
+                    FailClosedUnenforceable(
+                        ServiceTypeShortName + " was found but exposes neither " +
                         "RegisterWithCallback(string,string,string,string[],Action<string[]>) nor " +
-                        "Register(string,string,string,string[]) — skipping registration (fail-safe). " +
-                        "DevKit version mismatch?");
+                        "Register(string,string,string,string[]) — ClassForge never registered at all, so " +
+                        "the handshake has no ClassForge entry to compare. DevKit version mismatch?");
                     return;
                 }
 
@@ -119,10 +145,17 @@ namespace ClassForge.Plugin
                     payload.Guid, payload.Version, payload.DataHash, payload.EnabledFeatures
                 });
                 LogRegistered(payload, plainResult, "Register");
-                ClassForgePlugin.Log.LogWarning(
-                    "[ClassForge] This DevKit build has no RegisterWithCallback — ClassForge's " +
-                    "[Multiplayer] OnParityMismatch=Block policy cannot be enforced (no ParityFailed callback " +
-                    "to latch on). Features stay ON; verify data parity manually before playing online.");
+
+                // P0.5 §5(c). This combination registers SUCCESSFULLY and then cannot enforce anything:
+                // there is no ParityFailed callback to latch Block on, so a mismatched peer would be
+                // detected by DevKit and ClassForge would keep running every feature anyway. Before P0.5
+                // that was a single warning line. Now that Block is the DEFAULT for a knob divergence, a
+                // registration that structurally cannot Block is a hard failure, not a note.
+                FailClosedUnenforceable(
+                    "FTK2.DevKit is present but this build exposes only Register(...), not " +
+                    "RegisterWithCallback(...). ClassForge would be told nothing when a peer diverges, so " +
+                    "[Multiplayer] OnParityMismatch could never fire — the handshake would be decorative. " +
+                    "Update FTK2.DevKit.");
             }
             catch (Exception ex)
             {
@@ -147,11 +180,21 @@ namespace ClassForge.Plugin
         {
             try
             {
-                if (!_blocked) return;
-                _blocked = false;
-                ClassForgePlugin.Log.LogInfo(
-                    "[ClassForge] New session started (AdventureDirector.Initialize) — clearing the previous " +
-                    "session's parity Block latch. Re-armed: a fresh mismatch this session will block again.");
+                if (_blocked || _safeMode)
+                {
+                    _blocked = false;
+                    _safeMode = false;
+                    ClassForgePlugin.Log.LogInfo(
+                        "[ClassForge] New session started (AdventureDirector.Initialize) — clearing the previous " +
+                        "session's parity Block/SafeMode latches. Re-armed: a fresh mismatch this session will " +
+                        "latch again.");
+                }
+
+                // P0.5 §5(b): re-derive the DevKit-absent decision HERE, not at Awake. Registration runs from
+                // the ConfigsHelper.LoadConfigs postfix, which can fire at the main menu where
+                // PlayingOnlineMultiplayer is still false — so the "DevKit missing + online" combination only
+                // becomes knowable at the session-start boundary. This is the one place that sees both.
+                if (ResolveServiceType() == null) HandleDevKitAbsent();
             }
             catch (Exception ex)
             {
@@ -159,6 +202,149 @@ namespace ClassForge.Plugin
                 // one more session, which is the pre-M1 behavior, not a regression.
                 ClassForgePlugin.Log.LogWarning("[ClassForge] Session-start parity reset failed (non-fatal): " + ex);
             }
+        }
+
+        /// <summary>
+        /// P0.5 §5(a)+(b) — the hole that made every parity decision optional in practice. Before this,
+        /// a missing FTK2.DevKit logged ONE <c>LogInfo</c> line ("parity is UNENFORCED without DevKit") and
+        /// returned, leaving ClassForge fully enabled: a mismatched peer joined an online session and
+        /// desynced with nothing to stop it and nothing visible to the player.
+        ///
+        /// <para>(a) The log line is a WARNING, and is mirrored to an in-game banner when the session is
+        /// online multiplayer — a line in the BepInEx console is not a failure UX.
+        /// (b) With <c>[Multiplayer] RequireParityService = true</c> (default) an ONLINE session fails
+        /// CLOSED into SafeMode: presentation features only. Offline is unaffected, because with no peers
+        /// there is nothing parity could protect.</para>
+        /// </summary>
+        private static void HandleDevKitAbsent()
+        {
+            FailClosedUnenforceable(
+                "FTK2.DevKit is not installed, so the R1 parity handshake never runs at all: a peer with " +
+                "different packs, a different ClassForge version or a different gameplay knob cannot be " +
+                "detected, let alone refused. Install FTK2.DevKit.");
+        }
+
+        /// <summary>
+        /// The shared "parity cannot be enforced this session" path: DevKit absent (<see cref="HandleDevKitAbsent"/>)
+        /// or present-but-callback-less (§5(c)). Online + <c>RequireParityService</c> ⇒ SafeMode. Offline, or
+        /// with the knob deliberately turned off, ⇒ a warning and nothing else.
+        /// </summary>
+        private static void FailClosedUnenforceable(string reason)
+        {
+            bool online = NetworkSessionState.IsOnlineMultiplayer();
+            bool require = ClassForgePlugin.RequireParityService == null
+                           || ClassForgePlugin.RequireParityService.Value; // null ⇒ fail closed.
+
+            if (online && require)
+            {
+                EnterSafeMode("PARITY UNENFORCEABLE — " + reason);
+                return;
+            }
+
+            if (_loggedDevKitAbsent) return;
+            _loggedDevKitAbsent = true;
+
+            string text = "[ClassForge] Multiplayer parity is UNENFORCED this session. " + reason;
+            ClassForgePlugin.Log.LogWarning(
+                text + (online
+                    ? " [Multiplayer] RequireParityService is FALSE, so ClassForge is running fully enabled " +
+                      "anyway — this is an explicitly unenforced online session."
+                    : " This session is not online multiplayer, so nothing is at risk right now."));
+            if (online) ShowBanner("ClassForge: multiplayer parity is UNENFORCED (no FTK2.DevKit)");
+        }
+
+        /// <summary>
+        /// Latches SafeMode: <see cref="ClassForgePlugin.FeaturesActive"/> goes false (recipe engine, trait
+        /// injection, stat modifiers, every Trainer feature) while
+        /// <see cref="ClassForgePlugin.PresentationActive"/> stays true (icon fallback, class-select list).
+        /// Idempotent — one banner per session.
+        /// </summary>
+        private static void EnterSafeMode(string reason)
+        {
+            if (_safeMode || _blocked) return;
+            _safeMode = true;
+
+            ClassForgePlugin.Log.LogWarning(
+                "==================================================================\n" +
+                "  ClassForge SAFE MODE — state-mutating features OFF this session\n" +
+                "==================================================================\n" +
+                "  " + reason + "\n" +
+                "------------------------------------------------------------------\n" +
+                "  ON  : icon/portrait fallback, the character-creation class list.\n" +
+                "  OFF : the skill-recipe engine, trait loadout injection, conditional\n" +
+                "        stat modifiers and every Trainer partner feature.\n" +
+                "  The content merge itself is untouched — merged Configs entries are\n" +
+                "  inert DATA and nothing above exercises them while features are off.\n" +
+                "==================================================================");
+            ShowBanner("ClassForge: SAFE MODE (multiplayer parity could not be verified)");
+            AnnounceUnilateralDegrade("SAFE MODE", reason);
+        }
+
+        /// <summary>
+        /// The correction to "graceful degradation", which in deterministic lockstep is not graceful.
+        ///
+        /// <para><b>The hazard.</b> Every ClassForge latch — <see cref="EnterSafeMode"/>,
+        /// <see cref="_blocked"/>, <c>LootGrantPatches</c>'s loot SafeMode,
+        /// <see cref="AiDrawNeutrality.HardDisable"/> — is decided from LOCAL evidence and takes effect
+        /// on THIS peer only. There is no broadcast: ClassForge has no channel of its own to force a
+        /// latch onto a peer (the DevKit handshake reports verdicts, it does not carry commands), and
+        /// inventing one is out of scope here. So the reachable case is real and asymmetric: one peer
+        /// alone lacks FTK2.DevKit, enters SafeMode, stops firing recipes AND stops taking
+        /// <see cref="AiDrawNeutrality"/>'s compensating draw, while its partner keeps doing both. In
+        /// lockstep that is not "reduced features on one machine", it is a permanent shared-stream
+        /// offset from the first AI turn, and — because <c>CombatState</c> is <c>[JsonIgnore]</c> — the
+        /// vendor's own desync MD5 cannot see it.</para>
+        ///
+        /// <para><b>So the honest thing is to say so.</b> Offline, a latch IS graceful and this says
+        /// nothing. ONLINE, it is an error-level report plus a banner telling the player the session is
+        /// now expected to diverge and to leave and fix it, rather than a reassuring "features off"
+        /// notice that reads like the mod handled it. Refusing harder than this — force-quitting the
+        /// session — is not ClassForge's call to make and would be a worse failure than the one it
+        /// prevents.</para>
+        /// </summary>
+        internal static void AnnounceUnilateralDegrade(string what, string reason)
+        {
+            try
+            {
+                if (!NetworkSessionState.IsOnlineMultiplayer()) return;
+
+                ClassForgePlugin.Log.LogError(
+                    "==================================================================\n" +
+                    "  ClassForge DEGRADED ON THIS PEER ONLY — LEAVE THIS ONLINE SESSION\n" +
+                    "==================================================================\n" +
+                    "  latch  : " + what + "\n" +
+                    "  reason : " + reason + "\n" +
+                    "------------------------------------------------------------------\n" +
+                    "  This decision was made from LOCAL evidence and applies to THIS peer\n" +
+                    "  only; ClassForge cannot broadcast it. Your partners are still running\n" +
+                    "  the features just switched off here.\n" +
+                    "  FTK2 co-op is deterministic lockstep: what breaks a session is not two\n" +
+                    "  peers rolling different VALUES, it is two peers taking a different\n" +
+                    "  NUMBER of draws from the shared GameRandom. A one-sided feature switch\n" +
+                    "  is exactly that, from the first AI turn onward. Worse, CombatState is\n" +
+                    "  [JsonIgnore] on GameRunData, so combat-side divergence is NOT in the\n" +
+                    "  game's own desync MD5 -- nothing will tell you it happened.\n" +
+                    "  This is NOT graceful degradation. Leave the session, fix the cause\n" +
+                    "  named above on every machine, and start a new one.\n" +
+                    "==================================================================");
+                ShowBanner("ClassForge is degraded on YOUR machine only — leave this online session (" + what + ")");
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning("[ClassForge] degrade announcement failed (non-fatal): " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Mirrors a parity decision into the game itself. The BepInEx console is not where a player finds
+        /// out their session is about to desync. Best-effort and fully swallowed: the UI may not exist yet
+        /// (registration can run before any view is up), and a missing banner must never change the
+        /// enforcement decision that was already latched by the caller.
+        /// </summary>
+        private static void ShowBanner(string text)
+        {
+            try { GameplayDialogViewHelper.ShowEventTitle(text, 8000); }
+            catch { /* presentation only — the latch above is the actual enforcement. */ }
         }
 
         /// <summary>
@@ -170,7 +356,7 @@ namespace ClassForge.Plugin
         /// </summary>
         internal static bool HasVerifiedMatch()
         {
-            if (_blocked) return false;
+            if (_blocked || _safeMode) return false;
 
             try
             {
@@ -250,7 +436,9 @@ namespace ClassForge.Plugin
         /// DevKit's verdict-arrival callback: <c>[remotePeerId, "Match"|"Mismatch"]</c>. Runs on the Unity
         /// main thread (dispatched synchronously from the network-action receive path — see
         /// <see cref="TraitLoadoutRefresh"/>'s threading note). Mismatch needs no action here:
-        /// <see cref="OnParityFailed"/> already latches Block, and a blocked session injects nothing.
+        /// <see cref="OnParityFailed"/> has already latched Block or SafeMode by then, and neither state
+        /// injects anything (trait injection reads <see cref="ClassForgePlugin.FeaturesActive"/>, false in
+        /// both).
         /// </summary>
         private static void OnVerdict(string[] args)
         {
@@ -287,37 +475,62 @@ namespace ClassForge.Plugin
                 if (string.Equals(kind, KindMatch, StringComparison.Ordinal))
                     return; // not a divergence — nothing to do.
 
+                var policy = ResolvePolicy(kind);
+                string knobReport = DescribeKnobDivergence(kind, local, remote);
+
+                if (policy == MismatchPolicy.WarnAndSafeMode)
+                {
+                    EnterSafeMode(
+                        "PARITY MISMATCH (" + kind + ") against peer '" + peer + "'.\n" +
+                        knobReport + "\n  detail : " + message);
+                    return;
+                }
+
+                if (policy == MismatchPolicy.WarnOnly)
+                {
+                    ClassForgePlugin.Log.LogWarning(
+                        "[ClassForge] PARITY MISMATCH (" + kind + ") against peer '" + peer + "' — " +
+                        "[Multiplayer] OnParityMismatch=WarnOnly, so NOTHING is being disabled and this " +
+                        "session is expected to desync.\n" + knobReport + "\n  detail : " + message);
+                    ShowBanner("ClassForge: parity mismatch (" + kind + ") — desync likely");
+                    return;
+                }
+
                 bool first = !_blocked;
                 _blocked = true;
+                _safeMode = false; // Block supersedes SafeMode; nothing runs, so the weaker latch is moot.
 
                 if (!first) return; // one banner per session; the flag is already latched.
 
                 ClassForgePlugin.Log.LogError(
                     "==================================================================\n" +
-                    "  ClassForge PARITY MISMATCH — RUNTIME FEATURES DISABLED FOR THIS SESSION\n" +
+                    "  ClassForge PARITY MISMATCH — JOIN REFUSED, FEATURES OFF THIS SESSION\n" +
                     "==================================================================\n" +
                     "  kind   : " + kind + "\n" +
                     "  peer   : " + peer + "\n" +
-                    "  local  : " + local + "\n" +
-                    "  remote : " + remote + "\n" +
+                    knobReport + "\n" +
                     "  detail : " + message + "\n" +
                     "------------------------------------------------------------------\n" +
-                    "  [Multiplayer] OnParityMismatch = Block (SPEC.md §9.5).\n" +
-                    "  Honest scope of what 'Block' does (MP review M2): the class-select\n" +
-                    "  injection, icon/portrait fallback, trait loadout injection and the\n" +
-                    "  ENTIRE skill-recipe engine are off for the rest of THIS SESSION\n" +
-                    "  (see AdventureDirectorInitialize_Postfix -- this clears at the start\n" +
-                    "  of the NEXT session). There is no partial/presentation-only runtime\n" +
-                    "  mode by design (SPEC-DELTA-v1.1 §5.3) -- a half-running recipe engine\n" +
-                    "  is exactly the asymmetric execution the determinism invariants exist\n" +
-                    "  to prevent. This does NOT unmerge or block the content merge itself:\n" +
-                    "  merged Configs entries (classes/traits/items/abilities/localization/\n" +
-                    "  icons/portraits) are inert DATA and stay merged, exactly like every\n" +
-                    "  other config divergence between peers -- nothing above exercises that\n" +
-                    "  data while runtime features are off. FIX: make every peer's\n" +
-                    "  ClassPacks/ folder byte-identical (and matching [Skills]/[Traits]\n" +
-                    "  knobs), then start a new session.\n" +
+                    "  Policy: BLOCK. This is the DEFAULT for a gameplay-knob divergence\n" +
+                    "  because such a divergence is not 'desync likely', it is a desync:\n" +
+                    "  e.g. [Combat] VenueGridPreset substitutes the combat arena map, so\n" +
+                    "  the two peers have a different tile count, so AIHelper's ShuffleList\n" +
+                    "  takes a different number of draws from the SHARED GameRandom stream\n" +
+                    "  on the very first AI turn. ([Multiplayer] OnParityMismatch=WarnOnly\n" +
+                    "  or WarnAndSafeMode override this, at your own risk.)\n" +
+                    "  Scope (MP review M2): the class-select injection, icon/portrait\n" +
+                    "  fallback, trait loadout injection and the ENTIRE skill-recipe engine\n" +
+                    "  are off for the rest of THIS SESSION (see\n" +
+                    "  AdventureDirectorInitialize_Postfix -- this clears at the start of\n" +
+                    "  the NEXT session). There is no partial/presentation-only runtime mode\n" +
+                    "  under Block by design (SPEC-DELTA-v1.1 §5.3). This does NOT unmerge\n" +
+                    "  the content merge itself: merged Configs entries are inert DATA and\n" +
+                    "  stay merged -- nothing above exercises that data while features are\n" +
+                    "  off. FIX: change the knob(s) named above so both peers agree (or make\n" +
+                    "  every peer's ClassPacks/ folder byte-identical for a data mismatch),\n" +
+                    "  then start a new session.\n" +
                     "==================================================================");
+                ShowBanner("ClassForge BLOCKED this session — " + FirstKnobLine(kind, local, remote));
             }
             catch (Exception ex)
             {
@@ -326,7 +539,168 @@ namespace ClassForge.Plugin
                 _blocked = true;
                 ClassForgePlugin.Log.LogError(
                     "[ClassForge] ParityFailed callback threw; failing CLOSED (all features disabled): " + ex);
+                // Unlike the policy Block above -- which DevKit hands to both sides of the mismatch, so
+                // both latch together -- this one is a local parse failure. The other peer has no reason
+                // to latch anything, so this latch is one-sided by construction.
+                AnnounceUnilateralDegrade("BLOCK (ParityFailed row unreadable)", ex.Message);
             }
+        }
+
+        /// <summary>
+        /// docs/MULTIPLAYER.md R1's <c>OnParityMismatch</c>, resolved per verdict kind.
+        ///
+        /// <para><c>"Default"</c> (the shipped value) is deliberately NOT one policy for everything:</para>
+        /// <list type="bullet">
+        /// <item><b>FeaturesMismatch ⇒ Block.</b> A gameplay KNOB differs. Post-P0.5 the payload carries
+        /// every Gameplay-classified knob, so this kind now means something specific and always fatal —
+        /// <c>[Combat] VenueGridPreset</c> alone changes the arena tile count and therefore the shared
+        /// <c>GameRandom</c> draw count on the first AI turn. "Multiplayer desync likely" is EOR's failure
+        /// mode; a guaranteed desync deserves a refusal.</item>
+        /// <item><b>MissingLocal / MissingRemote ⇒ Block.</b> One peer has the merged content and the other
+        /// has none of it. Not a difference of degree.</item>
+        /// <item><b>VersionMismatch / DataMismatch ⇒ WarnAndSafeMode.</b> A pack-content or build
+        /// difference MAY be benign (a localization-only pack edit, a version bump with no data change),
+        /// and SafeMode already stops everything that would act on the difference.</item>
+        /// </list>
+        /// An explicit <c>Block</c>/<c>WarnAndSafeMode</c>/<c>WarnOnly</c> forces one policy for all kinds.
+        /// An unrecognised value falls back to Default rather than to the most permissive option.
+        /// </summary>
+        internal static MismatchPolicy ResolvePolicy(string kind)
+        {
+            string configured = ClassForgePlugin.OnParityMismatch != null
+                ? (ClassForgePlugin.OnParityMismatch.Value ?? "").Trim()
+                : "";
+
+            if (string.Equals(configured, "Block", StringComparison.OrdinalIgnoreCase))
+                return MismatchPolicy.Block;
+            if (string.Equals(configured, "WarnOnly", StringComparison.OrdinalIgnoreCase))
+                return MismatchPolicy.WarnOnly;
+            if (string.Equals(configured, "WarnAndSafeMode", StringComparison.OrdinalIgnoreCase))
+                return MismatchPolicy.WarnAndSafeMode;
+
+            if (string.Equals(kind, "FeaturesMismatch", StringComparison.Ordinal) ||
+                string.Equals(kind, "MissingLocal", StringComparison.Ordinal) ||
+                string.Equals(kind, "MissingRemote", StringComparison.Ordinal))
+                return MismatchPolicy.Block;
+
+            return MismatchPolicy.WarnAndSafeMode;
+        }
+
+        /// <summary>
+        /// The failure UX P0.5 §4 asks for: name the exact <c>Section.Key</c> and BOTH values.
+        ///
+        /// <para>DevKit hands a <c>FeaturesMismatch</c> row the two full feature lists in
+        /// <c>ParityVerdict.LocalValue</c>/<c>RemoteValue</c>, rendered by <c>FeaturesToString()</c> as
+        /// <c>[a, b, c]</c>. That is everything needed to say "<c>Combat.VenueGridPreset</c>: you have
+        /// <c>large</c>, they have <c>off</c>" instead of "Multiplayer desync likely" — which is precisely
+        /// the EOR failure mode this work exists to improve on. Entries are diffed on the
+        /// <c>feature:&lt;Section.Key&gt;=</c> prefix, so a pack id present on one side only is reported
+        /// too. For non-feature kinds the two raw values are printed instead.</para>
+        /// </summary>
+        internal static string DescribeKnobDivergence(string kind, string local, string remote)
+        {
+            try
+            {
+                if (!string.Equals(kind, "FeaturesMismatch", StringComparison.Ordinal))
+                    return "  local  : " + local + "\n  remote : " + remote;
+
+                var lines = DiffFeatureLists(local, remote);
+                if (lines.Count == 0)
+                    return "  local  : " + local + "\n  remote : " + remote;
+
+                var sb = new StringBuilder();
+                sb.Append("  DIVERGED (").Append(lines.Count).Append("):");
+                for (int i = 0; i < lines.Count; i++) sb.Append("\n    ").Append(lines[i]);
+                return sb.ToString();
+            }
+            catch
+            {
+                return "  local  : " + local + "\n  remote : " + remote;
+            }
+        }
+
+        /// <summary>The single most important diverged knob, for the one-line in-game banner.</summary>
+        private static string FirstKnobLine(string kind, string local, string remote)
+        {
+            try
+            {
+                var lines = DiffFeatureLists(local, remote);
+                if (lines.Count == 0) return kind;
+                return lines.Count == 1 ? lines[0] : lines[0] + " (+" + (lines.Count - 1) + " more)";
+            }
+            catch { return kind; }
+        }
+
+        /// <summary>
+        /// Diffs two <c>FeaturesToString()</c> renderings into human lines. Values can never contain a
+        /// comma — <c>ParityValue.Format</c> maps <c>,</c> to <c>;</c> on both peers before the value is
+        /// ever emitted — so splitting on <c>", "</c> is unambiguous.
+        /// </summary>
+        private static List<string> DiffFeatureLists(string local, string remote)
+        {
+            var l = ParseFeatures(local);
+            var r = ParseFeatures(remote);
+
+            var names = new List<string>();
+            foreach (var name in l.Keys) if (!names.Contains(name)) names.Add(name);
+            foreach (var name in r.Keys) if (!names.Contains(name)) names.Add(name);
+            names.Sort(StringComparer.Ordinal);
+
+            var lines = new List<string>();
+            foreach (var name in names)
+            {
+                string lv, rv;
+                bool hasL = l.TryGetValue(name, out lv);
+                bool hasR = r.TryGetValue(name, out rv);
+                if (hasL && hasR)
+                {
+                    if (string.Equals(lv, rv, StringComparison.Ordinal)) continue;
+                    lines.Add(name + ": you have '" + lv + "', the peer has '" + rv + "'");
+                }
+                else if (hasL)
+                {
+                    lines.Add(name + ": you have '" + lv + "', the peer does NOT have this entry");
+                }
+                else
+                {
+                    lines.Add(name + ": the peer has '" + rv + "', you do NOT have this entry");
+                }
+            }
+            return lines;
+        }
+
+        /// <summary>
+        /// <c>"[CF_PACK_X, feature:Combat.VenueGridPreset=large]"</c> ⇒
+        /// <c>{ "CF_PACK_X" -> "(present)", "Combat.VenueGridPreset" -> "large" }</c>.
+        /// </summary>
+        private static Dictionary<string, string> ParseFeatures(string rendered)
+        {
+            var map = new Dictionary<string, string>(StringComparer.Ordinal);
+            if (string.IsNullOrEmpty(rendered)) return map;
+
+            string body = rendered.Trim();
+            if (body.Length >= 2 && body[0] == '[' && body[body.Length - 1] == ']')
+                body = body.Substring(1, body.Length - 2);
+            if (body.Length == 0) return map;
+
+            foreach (var raw in body.Split(','))
+            {
+                string entry = raw.Trim();
+                if (entry.Length == 0) continue;
+
+                if (entry.StartsWith(ParityRegistrationBuilder.FeaturePrefix, StringComparison.Ordinal))
+                {
+                    string rest = entry.Substring(ParityRegistrationBuilder.FeaturePrefix.Length);
+                    int eq = rest.IndexOf('=');
+                    if (eq >= 0) map[rest.Substring(0, eq)] = rest.Substring(eq + 1);
+                    else map[rest] = "(present)";
+                }
+                else
+                {
+                    map["pack " + entry] = "(enabled)";
+                }
+            }
+            return map;
         }
 
         /// <summary>

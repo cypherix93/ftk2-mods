@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using ClassForge.Recipes.Abstractions;
 using ClassForge.Recipes.Model;
 
@@ -577,7 +578,7 @@ namespace ClassForge.Recipes.Runtime
                     plan.Add(new CounterAddAction
                     {
                         RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
-                        CounterName = e.Name, Delta = e.Delta, NewValue = v
+                        CounterName = e.Name, Delta = e.Delta, NewValue = v, Persistent = e.Persistent
                     });
                     return;
                 }
@@ -587,7 +588,7 @@ namespace ClassForge.Recipes.Runtime
                     plan.Add(new CounterSetAction
                     {
                         RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
-                        CounterName = e.Name, NewValue = e.Value
+                        CounterName = e.Name, NewValue = e.Value, Persistent = e.Persistent
                     });
                     return;
                 }
@@ -621,6 +622,14 @@ namespace ClassForge.Recipes.Runtime
                     });
                     return;
                 }
+            }
+
+            // --- v1.4 RANDOM_TILE (SchemaVersionCover). A tile is not an ICombatEntity, so it never goes
+            //     through TargetResolver; it gets its own branch here, BEFORE any target resolution. ---
+            if (e.Target == TargetKind.RANDOM_TILE)
+            {
+                PlanRandomTileEffect(r, e, index, t, ownerGuid, plan);
+                return;
             }
 
             var targets = TargetResolver.Resolve(e, t);
@@ -690,8 +699,22 @@ namespace ClassForge.Recipes.Runtime
                             {
                                 RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
                                 TargetGuid = targets[i].Guid, UseTargetPosition = usePos,
-                                SummonType = e.SummonType, CharacterConfig = e.CharacterConfig, Index = k
+                                SummonType = e.SummonType, CharacterConfig = e.CharacterConfig,
+                                CharacterConfigFrom = e.CharacterConfigFrom, Index = k
                             });
+                    break;
+                }
+                case EffectKind.CAPTURE:
+                {
+                    // One action per resolved target. The engine plans only: it cannot read an item's
+                    // CustomData (no game Entity in scope) and it must not decide eligibility, which is a
+                    // read of live Configs. Both live in the Plugin's capture-rules unit.
+                    for (int i = 0; i < targets.Count; i++)
+                        plan.Add(new CaptureAction
+                        {
+                            RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
+                            TargetGuid = targets[i].Guid, IntoItem = e.IntoItem, IntoKey = e.IntoKey
+                        });
                     break;
                 }
                 case EffectKind.ROLL_STAT_BONUS:
@@ -739,6 +762,118 @@ namespace ClassForge.Recipes.Runtime
                     break;
                 }
             }
+        }
+
+        /// <summary>
+        /// v1.4 <c>ADD_STATUS</c> aimed at <c>RANDOM_TILE</c> - the random-TARGET half of "drop a random
+        /// status on a random tile" (<c>StatusOneOf</c> was always the random-STATUS half).
+        ///
+        /// <para><b>RNG source and replication.</b> The tile is drawn with a single
+        /// <c>IRandomSource.NextInt(0, tiles.Count)</c> - the SAME call <c>StatusOneOf</c> makes, backed by
+        /// the same <c>GameRandom</c>, which the Plugin binds to <c>CombatState.Random</c> and nothing else
+        /// (SPEC-DELTA-v1.1 5.2 invariant 1). <c>GameRandom</c> is a seeded <c>System.Random</c> whose
+        /// <c>Seed</c> is forced to <c>NetworkDebuggingHelper.MultiplayerSeed</c> in an online session
+        /// (GameRandom.cs ctors), so every peer walks one identical stream. This is the same stream the
+        /// game's own random-tile weather ticks draw from (<c>CombatPhase.cs:2009-2031</c>:
+        /// <c>shuffleBag.Pull(_combatState.Random)</c>).</para>
+        ///
+        /// <para><b>Why an INDEX and not a guid.</b> Drawing the same NUMBER on every peer is only useful if
+        /// that number names the same board square everywhere. <c>ICombatContext.Tiles</c> is contracted to
+        /// be ordered ascending by <c>(Y, X)</c>, which is a pure function of the static venue map string -
+        /// NOT of <c>VenueGameObjectMaps.FromTile</c>'s Dictionary enumeration order, and NOT of any entity
+        /// Guid. The draw is therefore peer-identical in both the number drawn and what it means.</para>
+        ///
+        /// <para><b>Draw discipline (pinned by test).</b> Zero draws when no tile resolves - the empty-board
+        /// no-op must never advance the shared stream, or the peer that CAN see the board and the peer that
+        /// cannot immediately disagree about every subsequent roll in the combat. Otherwise exactly one draw
+        /// for the tile, then <c>ResolveStatus</c>'s usual zero-or-one for <c>StatusOneOf</c> - tile first,
+        /// status second, always in that order.</para>
+        ///
+        /// <para><b>Tile-illegal statuses.</b> After the status resolves, its real
+        /// <c>StatusEffectConfig.Type</c> is checked against <see cref="Vocabulary.TileIllegalStatusTypes"/>
+        /// (the game's own <c>InteractableHelper.CHARACTER_ONLY_STATUS</c>, whose first member is
+        /// <c>STUN</c>). A tile-illegal draw is a logged no-op: the draws are already spent identically on
+        /// every peer, so skipping the ACTION keeps every peer in step. The validator rejects the statically
+        /// visible cases at load time, so this path is the residual belt, not the primary defence.</para>
+        ///
+        /// <para><b>Fail-safe contract</b> (mirrors SELF_LEVEL / HAS_ITEM): every unresolvable case is a
+        /// no-op that logs at Debug with the <c>[ClassForge]</c> prefix - never an exception, never a
+        /// silent success. <c>IRecipeLog.Info</c> IS the Debug channel (the Plugin's adapter maps it to
+        /// <c>LogDebug</c>).</para>
+        /// </summary>
+        private void PlanRandomTileEffect(SkillRecipe r, RecipeEffect e, int index, TriggerContext t,
+            string ownerGuid, List<EngineAction> plan)
+        {
+            var tiles = t.Ctx != null ? t.Ctx.Tiles : null;
+            if (tiles == null || tiles.Count == 0)
+            {
+                // NO DRAW. See "Draw discipline" above.
+                if (_log != null)
+                    _log.Info("[ClassForge] RANDOM_TILE resolved no tile for " + r.Id + " effect[" +
+                              index.ToString(CultureInfo.InvariantCulture) + "] - no-op (0 draws). The venue " +
+                              "exposed no playable tiles (no combat, or every tile is a border cell).");
+                return;
+            }
+
+            int idx = _rng.NextInt(0, tiles.Count);
+            if (idx < 0) idx = 0;
+            if (idx >= tiles.Count) idx = tiles.Count - 1;
+            var tile = tiles[idx];
+            if (tile == null)
+            {
+                if (_log != null)
+                    _log.Info("[ClassForge] RANDOM_TILE drew a null tile at index " +
+                              idx.ToString(CultureInfo.InvariantCulture) + " for " + r.Id + " - no-op. " +
+                              "The draw is spent, so peers stay in step.");
+                return;
+            }
+
+            string status = ResolveStatus(e, t);
+            if (string.IsNullOrEmpty(status))
+            {
+                if (_log != null)
+                    _log.Info("[ClassForge] RANDOM_TILE for " + r.Id + " resolved no status - no-op.");
+                return;
+            }
+
+            if (IsTileIllegalStatus(t.Ctx, status))
+            {
+                if (_log != null)
+                    _log.Info("[ClassForge] RANDOM_TILE for " + r.Id + " resolved '" + status +
+                              "', whose type is character-only (InteractableHelper.CHARACTER_ONLY_STATUS) " +
+                              "and can never sit on a tile - no-op. STUN is a member of that set.");
+                return;
+            }
+
+            plan.Add(new AddStatusAction
+            {
+                RecipeId = r.Id, OwnerGuid = ownerGuid, EffectIndex = index,
+                TargetGuid = tile.LocalGuid, TargetIsTile = true,
+                TargetTileX = tile.X, TargetTileY = tile.Y,
+                StatusId = status, FallbackStatusId = e.FallbackStatus, Duration = e.Duration
+            });
+        }
+
+        /// <summary>
+        /// Authoritative tile-legality check: reads the status's REAL <c>StatusEffectConfig.Type</c> through
+        /// <c>ICombatContext.GetStatus</c> and tests it against the game's own
+        /// <c>CHARACTER_ONLY_STATUS</c> list. Independent of the id-naming convention the validator leans on.
+        /// <para>An UNKNOWN status id (<c>GetStatus</c> returns null) is treated as LEGAL here and left to
+        /// the native call - refusing it would silently swallow every status a caller has not registered a
+        /// config for, and <c>ApplyStatus</c> already fails safe on an id absent from
+        /// <c>Env.Configs.StatusEffects</c>.</para>
+        /// </summary>
+        private static bool IsTileIllegalStatus(ICombatContext ctx, string statusId)
+        {
+            if (ctx == null || string.IsNullOrEmpty(statusId)) return false;
+            IStatusInfo info;
+            try { info = ctx.GetStatus(statusId); }
+            catch { return false; }
+            if (info == null || string.IsNullOrEmpty(info.Type)) return false;
+            var banned = Vocabulary.TileIllegalStatusTypes;
+            for (int i = 0; i < banned.Count; i++)
+                if (string.Equals(banned[i], info.Type, StringComparison.Ordinal)) return true;
+            return false;
         }
 
         /// <summary>

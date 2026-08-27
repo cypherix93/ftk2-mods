@@ -28,6 +28,9 @@ namespace ClassForge.Recipes.Tests
             StatModifierTests.Run(runner);
             StateHashTests.Run(runner);
             DamageShareTests.Run(runner);
+            RandomTileTests.Run(runner);
+            TileOrderTests.Run(runner);
+            CaptureTests.Run(runner);
             return runner.Report();
         }
     }

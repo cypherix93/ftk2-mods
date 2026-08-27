@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -186,7 +187,162 @@ namespace ClassForge.Plugin
                 }
                 catch (Exception ex) { LogApplyFailed("status", op, ex); }
             }
+
+            // Order matters: the tripwire produces the blocklist the registration must honour.
+            var auraUnsafe = FindStatusPassivesThatBreakTheAuraWalk(configs, plan);
+            RegisterSkillConfigs(configs, plan, auraUnsafe);
         }
+
+        /// <summary>
+        /// Registers every merged, localized pack passive as an (empty) <c>Configs.SkillConfigs</c> entry so
+        /// the game's own SKILLS encyclopedia page lists it — no new UI, no new copy.
+        ///
+        /// <para><b>What this unlocks.</b> <c>EncyclopediaHelper._SKILLS</c> enumerates the LIVE merged
+        /// dictionary (<c>EncyclopediaHelper.cs:279</c> — <c>Env.Configs.SkillConfigs.Keys</c>), titles each
+        /// bullet with <c>Lang.__t(id)</c> (<c>:302</c>) and describes it with
+        /// <c>UIHelper.GetSkillText(id, 1)</c> (<c>:298</c>), which reads <c>UI_ENCYCLOPEDIA_&lt;id&gt;</c>
+        /// (<c>UIHelper.cs:1115-1119</c>). Both keys already ship in the packs' localization, so every
+        /// registered id becomes a fully-written encyclopedia bullet for free. The page's exclude list
+        /// (<c>EncyclopediaHelper.cs:280-294</c>, plus <c>SkillHelper.HiddenSkills</c>) is
+        /// <c>List&lt;eSkills&gt;</c> compared by <c>e.ToString() == x</c>, so a non-enum pack id can never
+        /// be excluded.</para>
+        ///
+        /// <para><b>Why an empty <c>Properties</c> is inert.</b> <c>SkillConfig</c> is nothing but
+        /// <c>public List&lt;SerializedSortedDictionary&lt;string, object&gt;&gt; Properties</c>. Only three
+        /// call sites read a config out of the dictionary and all three key it by an <c>eSkills</c> member,
+        /// which a pack id is not: <c>SkillHelper.GetSkillConfigDictionary</c> (<c>SkillHelper.cs:109</c>,
+        /// the single reader behind every <c>GetSkillConfigInt/Bool/Enum</c>) and
+        /// <c>UIHelper.GetSystemKeywordValue</c> (<c>UIHelper.cs:831</c> / <c>:847</c>, both behind the
+        /// <c>Enum.TryParse&lt;eSkills&gt;</c> at <c>UIHelper.cs:820</c>). <c>SkillHelper.IsHidden(string)</c>
+        /// (<c>SkillHelper.cs:97-100</c>) is a pure string compare against <c>HiddenSkills</c> and never
+        /// indexes the dictionary. So the extra keys are read by exactly one thing: the encyclopedia walk.</para>
+        ///
+        /// <para><b>The one real hazard, and why it does not fire.</b>
+        /// <c>VenueHelper.EvaluateGridStateAuras</c> (<c>VenueHelper.cs:503-508</c>, called every combat turn
+        /// from <c>CombatPhase.cs:1638</c>) filters a character's passives with
+        /// <c>Env.Configs.SkillConfigs.ContainsKey(s)</c> and then runs an UNGUARDED
+        /// <c>Enum.Parse&lt;eSkills&gt;(s)</c>. Registering a pack id widens that filter. It is still safe
+        /// because every branch that feeds it is already enum-filtered:
+        /// <c>CharacterHelper.GetPassiveSkills(string)</c> filters both the Inanimates and Characters
+        /// branches with <c>Enum.TryParse&lt;eSkills&gt;</c> (<c>CharacterHelper.cs:988-1001</c>), and the
+        /// equipment branch does the same (<c>CharacterHelper.cs:946-953</c>). The ONE unfiltered branch is
+        /// status-granted passives (<c>CharacterHelper.cs:955-970</c>: <c>Passives.Where(x =&gt;
+        /// x.StartsWith("SKILL_"))</c>) — which is why
+        /// <see cref="FindStatusPassivesThatBreakTheAuraWalk"/> runs first and hands us a blocklist.</para>
+        ///
+        /// <para>Gated on the existing <c>EnableSkillDisplay</c> knob: same feature (make pack passives
+        /// legible), same off-switch.</para>
+        /// </summary>
+        private static void RegisterSkillConfigs(Configs configs, MergePlan plan, HashSet<string> auraUnsafe)
+        {
+            try
+            {
+                if (configs == null || configs.SkillConfigs == null || configs.Characters == null || plan == null) return;
+                if (ClassForgePlugin.EnableSkillDisplay != null && !ClassForgePlugin.EnableSkillDisplay.Value) return;
+
+                var added = new List<string>();
+                var skippedNoLoc = new List<string>();
+
+                foreach (var op in plan.Characters)
+                {
+                    CharacterConfig characterConfig;
+                    if (!configs.Characters.TryGetValue(op.Id, out characterConfig)) continue;
+                    if (characterConfig == null || characterConfig.Passives == null) continue;
+
+                    foreach (var passive in characterConfig.Passives)
+                    {
+                        if (string.IsNullOrEmpty(passive)) continue;
+                        if (!passive.StartsWith("SKILL_", StringComparison.Ordinal)) continue;
+
+                        eSkills vanilla;
+                        if (Enum.TryParse<eSkills>(passive, out vanilla)) continue;   // vanilla already lists it
+                        if (configs.SkillConfigs.ContainsKey(passive)) continue;
+                        if (auraUnsafe != null && auraUnsafe.Contains(passive)) continue;   // would crash the aura walk
+
+                        // Both keys or nothing: a bullet with no title renders the raw id, and a bullet with
+                        // no UI_ENCYCLOPEDIA_ body renders an empty description. Neither is worth shipping.
+                        if (!plan.Localization.ContainsKey(passive) ||
+                            !plan.Localization.ContainsKey("UI_ENCYCLOPEDIA_" + passive))
+                        {
+                            if (!skippedNoLoc.Contains(passive)) skippedNoLoc.Add(passive);
+                            continue;
+                        }
+
+                        configs.SkillConfigs[passive] = new SkillConfig
+                        {
+                            Properties = new List<SerializedSortedDictionary<string, object>>()
+                        };
+                        added.Add(passive);
+                    }
+                }
+
+                if (added.Count > 0)
+                    ClassForgePlugin.Log.LogInfo(
+                        "[ClassForge] Registered " + added.Count + " pack passive(s) in Configs.SkillConfigs — " +
+                        "they now appear as SKILLS encyclopedia bullets (EncyclopediaHelper.cs:279).");
+
+                if (skippedNoLoc.Count > 0)
+                    ClassForgePlugin.Log.LogWarning(
+                        "[ClassForge] " + skippedNoLoc.Count + " pack passive(s) stay out of the encyclopedia " +
+                        "because they are missing a title and/or a UI_ENCYCLOPEDIA_ description key: " +
+                        string.Join(", ", skippedNoLoc) + ".");
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogError(
+                    "[ClassForge] SkillConfigs registration failed (fail-safe, encyclopedia stays vanilla): " + ex);
+            }
+        }
+
+        /// <summary>
+        /// Shouts if a merged status grants a non-<c>eSkills</c> <c>SKILL_</c> passive.
+        ///
+        /// <para>That combination — and only that combination — turns
+        /// <see cref="RegisterSkillConfigs"/> into a crash: <c>CharacterHelper.GetPassiveSkills(Entity)</c>
+        /// copies status <c>Passives</c> through with only a <c>StartsWith("SKILL_")</c> filter
+        /// (<c>CharacterHelper.cs:955-970</c>), and <c>VenueHelper.EvaluateGridStateAuras</c> then admits
+        /// anything present in <c>SkillConfigs</c> and calls <c>Enum.Parse&lt;eSkills&gt;</c> on it
+        /// unguarded (<c>VenueHelper.cs:503-508</c>), once per combat turn (<c>CombatPhase.cs:1638</c>).
+        /// No shipped pack does this today (every <c>statuses.json</c> entry has <c>"Passives": []</c>),
+        /// so this is a tripwire for future data, not a live condition.</para>
+        /// </summary>
+        private static HashSet<string> FindStatusPassivesThatBreakTheAuraWalk(Configs configs, MergePlan plan)
+        {
+            var unsafeIds = new HashSet<string>(StringComparer.Ordinal);
+            try
+            {
+                if (configs == null || configs.StatusEffects == null || plan == null) return unsafeIds;
+
+                foreach (var op in plan.StatusEffects)
+                {
+                    StatusEffectConfig statusConfig;
+                    if (!configs.StatusEffects.TryGetValue(op.Id, out statusConfig)) continue;
+                    if (statusConfig == null || statusConfig.Passives == null) continue;
+
+                    foreach (var passive in statusConfig.Passives)
+                    {
+                        if (string.IsNullOrEmpty(passive)) continue;
+                        if (!passive.StartsWith("SKILL_", StringComparison.Ordinal)) continue;
+                        eSkills vanilla;
+                        if (Enum.TryParse<eSkills>(passive, out vanilla)) continue;
+                        if (!unsafeIds.Add(passive)) continue;
+
+                        ClassForgePlugin.Log.LogError(
+                            "[ClassForge] Status '" + op.Id + "' (pack '" + op.SourcePackId + "') grants non-vanilla " +
+                            "passive '" + passive + "'. It is therefore held OUT of Configs.SkillConfigs (no " +
+                            "encyclopedia bullet): registering it would make VenueHelper.EvaluateGridStateAuras " +
+                            "(VenueHelper.cs:508) throw on Enum.Parse<eSkills> every combat turn. Move the skill " +
+                            "onto a class's Passives instead of a status's.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogError("[ClassForge] Status-passive aura-walk check failed: " + ex);
+            }
+            return unsafeIds;
+        }
+
 
         /// <summary>
         /// Game config classes are field-based (public fields, no properties), so they MUST be

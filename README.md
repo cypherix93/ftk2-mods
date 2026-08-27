@@ -39,6 +39,7 @@ JSON data files and BepInEx config knobs so behavior can be changed without reco
 - [docs/research/eor-behavior-matrix.md](docs/research/eor-behavior-matrix.md) — exact gameplay semantics of every EOR class skill, trait, and affix, line-cited
 - [docs/research/eor-trait-mechanism.md](docs/research/eor-trait-mechanism.md) — how EOR grants custom traits without the `eTraits` enum (ClassForge's no-bridge design source)
 - [docs/research/build-template-notes.md](docs/research/build-template-notes.md) — reference-assembly snapshot, build commands, and project-layout conventions for new engines
+- [FTK2.DevKit/sandbox/LiveDataHarness](FTK2.DevKit/sandbox/LiveDataHarness/README.md) — runs every mod's `.Core` logic against the real game's `Configs`, loaded out-of-process with no Unity/BepInEx/running game (`pwsh -File tools/run-harness.ps1`)
 - [tools/README.md](tools/README.md) — content-generation pipelines (vocab extractor, iconforge, itemforge, validator)
 
 ## Environment

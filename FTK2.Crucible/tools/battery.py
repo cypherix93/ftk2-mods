@@ -216,9 +216,9 @@ def main():
         check("vampiric: has a damaging attack to pay Blood Price with",
               any(a.endswith("_ATTACK") and not a.startswith("ONLY_") for a in ab),
               str(sorted(a for a in ab if a.endswith("_ATTACK"))))
-        drive.run("crucible_status_add", ["0", "STATUS_CF_ENGORGED", "3"])
+        drive.run("crucible_status_add", ["0", "STATUS_VIGOR_CF_ENGORGED", "3"])
         after = combatants().get(vguid, {})
-        check("vampiric: the pack's custom STATUS_CF_ENGORGED resolves and applies",
+        check("vampiric: the pack's custom STATUS_VIGOR_CF_ENGORGED resolves and applies",
               "ENGORGED" in after.get("statuses", ""),
               "statuses=[%s]" % after.get("statuses", ""))
     else:

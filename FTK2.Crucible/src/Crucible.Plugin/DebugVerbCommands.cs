@@ -211,7 +211,32 @@ namespace Crucible.Plugin
         /// ReflectionCommands.TryInvoke (the same CONFIRMED-LIVE machinery behind crucible_invoke).
         /// Verifies via RouterHelper.GetCurrentRoute() before/after: COMBAT/ENCOUNTER/REST/TREASURE/
         /// TRAP/WHEEL/FORTUNE are themselves live eRoutes values, so ending a phase should move the
-        /// route.</summary>
+        /// route.
+        ///
+        /// <para><b>combat's own _debugEndPhase() used to hang forever, live.</b> Verified by reading
+        /// CombatPhase.cs: <c>_debugEndPhase()</c> removes the living enemies and calls
+        /// <c>_endCombatAsync()</c> with its DEFAULT args -- <c>pIsImmediate=false</c>, and it never
+        /// touches <c>CombatState.EndCombatEarly</c>. Reading <c>_endCombatAsync</c> shows the entire
+        /// win/lose ceremony -- including, when there is any loot, an
+        /// <c>await _distributeRewardsAsync(...)</c> -- lives inside
+        /// <c>if (!_combatState.EndCombatEarly) { ... }</c>. That reward panel needs a REAL player
+        /// click to resolve; a headless caller never clicks it, so the fire-and-forget Task
+        /// <c>_debugEndPhase()</c> starts (its own call site does not await it either) parks on that
+        /// panel forever. CombatPhase never raises its OnClose route-change event, the route never
+        /// leaves COMBAT, and crucible_combat_snapshot's Entities list (still holding the party and
+        /// every tile) keeps reading combat.active=True no matter how long anything waits.
+        ///
+        /// The game's OWN code has a "force it, no ceremony" path for exactly this: boss-phase event
+        /// END_COMBAT_IMMEDIATE (CombatPhase.cs, the <c>_handleBossPhaseEvent</c> switch) sets
+        /// <c>_combatState.EndCombatEarly = true</c> immediately before ending combat. This verb now
+        /// does the same for the "combat" phase only, one step before dispatching
+        /// <c>_debugEndPhase()</c>: it flips <c>GameRunData.CombatState.EndCombatEarly</c> to true
+        /// first. That skips the entire ceremony block -- loot panel included -- while leaving the
+        /// actual win/loss determination (computed earlier and unconditionally, from
+        /// aliveEnemies/alivePlayers) untouched: still a real win, the party just never has to click
+        /// anything to collect it. Every other phase (encounter/fortune/treasure/trap/wheel/rest) has
+        /// no such flag and is untouched by this.</para>
+        /// </summary>
         public static void CrucibleEndPhaseNamed(string pPhase)
         {
             LastResult = null;
@@ -227,6 +252,34 @@ namespace Crucible.Plugin
                 MethodInfo getRoute = ResolveGetCurrentRoute();
                 object before = SafeInvokeStatic(getRoute);
 
+                string earlyFlagNote;
+                if (string.Equals(typeName, "CombatPhase", StringComparison.Ordinal))
+                {
+                    object combatState = RunAccess.GetCombatState();
+                    if (combatState == null)
+                    {
+                        earlyFlagNote = " earlyFlag=(skipped: GameRunData.CombatState is null -- no fight in progress)";
+                    }
+                    else
+                    {
+                        FieldInfo earlyField = AccessTools.Field(combatState.GetType(), "EndCombatEarly");
+                        if (earlyField == null)
+                        {
+                            earlyFlagNote = " earlyFlag=(skipped: CombatState.EndCombatEarly field not found -- game update?)";
+                        }
+                        else
+                        {
+                            object wasEarly = earlyField.GetValue(combatState);
+                            earlyField.SetValue(combatState, true);
+                            earlyFlagNote = " earlyFlag=(CombatState.EndCombatEarly " + wasEarly + "->True, so _debugEndPhase skips the loot-panel await)";
+                        }
+                    }
+                }
+                else
+                {
+                    earlyFlagNote = "";
+                }
+
                 string[] args = needsOption ? new string[] { "0" } : new string[0];
                 object returnValue; string strategy; string invokeError;
                 bool ok = ReflectionCommands.TryInvoke(typeName, "_debugEndPhase", args, out returnValue, out strategy, out invokeError);
@@ -235,9 +288,15 @@ namespace Crucible.Plugin
 
                 LastResult = "api=" + typeName + "._debugEndPhase(" + (needsOption ? "0" : "") + ") instance=" + strategy
                     + " dispatched=" + ok + (ok ? "" : " error=" + invokeError)
+                    + earlyFlagNote
                     + " observable=RouterHelper.GetCurrentRoute()"
                     + " routeBefore=" + Describe(before) + " routeAfter=" + Describe(after)
-                    + " changed=" + !object.Equals(before, after);
+                    + " changed=" + !object.Equals(before, after)
+                    + "\nNOTE: _debugEndPhase's own _endCombatAsync() call is fire-and-forget, matching"
+                    + "\n      the game's own call site -- it is not awaited here either -- and it still"
+                    + "\n      runs a short settle delay (Task.Delay ~2.5s) before raising the route"
+                    + "\n      change. Re-read crucible_combat_snapshot or /state after a couple of"
+                    + "\n      seconds to see combat.active flip to False.";
             }
             catch (Exception ex) { LastResult = "error: crucible_end_phase threw: " + ex.Message; }
         }
@@ -505,17 +564,48 @@ namespace Crucible.Plugin
             catch (Exception ex) { LastResult = "error: crucible_pin_seed threw: " + ex.Message; }
         }
 
+        /// <summary>
+        /// Re-seeds one live GameRandom so that SUBSEQUENT DRAWS actually change.
+        ///
+        /// WHY THIS DOES MORE THAN WRITE `Seed`. The decompile is:
+        ///     public readonly int Seed;              // a RECORD of the seed
+        ///     private readonly System.Random random; // the ACTUAL generator
+        /// `random` is built once in the ctor from `Seed`, and `Seed` is never read again.
+        /// The original implementation wrote only `Seed`, so it changed a label and did not
+        /// affect a single future draw -- a pinned-seed test built on it would have been
+        /// reproducible in name only, which is the worst kind of broken test instrument.
+        /// So we replace `random` itself, and write `Seed` too so the recorded value matches.
+        ///
+        /// `_nextCount` is also reset. Note it only increments while `LogCalls(true)` is on
+        /// (`if (_logCalls) { ...; _nextCount++; }`), which is why NextCount is documented
+        /// elsewhere in this repo as an unreliable draw counter unless logging is enabled.
+        /// </summary>
         private static int PinScope(StringBuilder sb, string label, object gameRandom, int seed, ref int scopesFound)
         {
             if (gameRandom == null) return 0;
             scopesFound++;
             int before = ReadInt(gameRandom, "Seed");
-            string setError;
-            bool set = TrySetField(gameRandom, "Seed", seed, out setError);
+
+            // The label. Readonly, so this is best-effort and is NOT what makes pinning work.
+            string seedError;
+            bool seedSet = TrySetField(gameRandom, "Seed", seed, out seedError);
+
+            // The generator. THIS is what makes future draws deterministic.
+            string randomError;
+            bool randomSet = TrySetField(gameRandom, "random", new System.Random(seed), out randomError);
+
+            string countError;
+            TrySetField(gameRandom, "_nextCount", 0, out countError);
+
             int after = ReadInt(gameRandom, "Seed");
-            bool changed = set && after == seed;
-            sb.Append(" | ").Append(label).Append(": before=").Append(before).Append(" after=").Append(after).Append(" changed=").Append(changed);
-            return changed ? 1 : 0;
+            sb.Append(" | ").Append(label)
+              .Append(": before=").Append(before).Append(" after=").Append(after)
+              .Append(" seedField=").Append(seedSet)
+              .Append(" generator=").Append(randomSet);
+            if (!randomSet) sb.Append(" GENERATOR-NOT-REPLACED(").Append(randomError).Append(")");
+
+            // Only a replaced generator counts as pinned. A written Seed field alone is a no-op.
+            return randomSet ? 1 : 0;
         }
 
         private static object ResolveDirectorInstance(string typeName)

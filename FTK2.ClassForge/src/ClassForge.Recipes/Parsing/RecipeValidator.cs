@@ -113,12 +113,15 @@ namespace ClassForge.Recipes.Parsing
             bool isV10 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionLegacy, StringComparison.Ordinal);
             bool isV12 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionLoot, StringComparison.Ordinal);
             bool isV13 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionStateHash, StringComparison.Ordinal);
-            if (!isV11 && !isV10 && !isV12 && !isV13)
+            bool isV14 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionCover, StringComparison.Ordinal);
+            bool isV15 = string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionCapture, StringComparison.Ordinal);
+            if (!isV11 && !isV10 && !isV12 && !isV13 && !isV14 && !isV15)
             {
                 RecipeParser.Err(set, r, "SchemaVersion", "E_SCHEMA_UNSUPPORTED",
                     "SchemaVersion '" + r.SchemaVersion + "' cannot be run by this engine (supported: " +
                     Vocabulary.SchemaVersionLegacy + ", " + Vocabulary.SchemaVersionCurrent + ", " +
-                    Vocabulary.SchemaVersionLoot + ", " + Vocabulary.SchemaVersionStateHash + ")");
+                    Vocabulary.SchemaVersionLoot + ", " + Vocabulary.SchemaVersionStateHash + ", " +
+                    Vocabulary.SchemaVersionCover + ", " + Vocabulary.SchemaVersionCapture + ")");
                 return; // nothing else is meaningful once the vocabulary version is unknown
             }
 
@@ -128,6 +131,26 @@ namespace ClassForge.Recipes.Parsing
                 RecipeParser.Err(set, r, "AiProcChance", "E_RANGE", "AiProcChance must be 0..100, saw " + r.AiProcChance.ToString(CultureInfo.InvariantCulture));
             if (r.Cooldown < 0)
                 RecipeParser.Err(set, r, "Cooldown", "E_RANGE", "Cooldown must be >= 0");
+
+            // --- draw-count fork on the proc gate (docs/MULTIPLAYER.md R2) ---
+            // RecipeDispatcher.EvaluateRecipe short-circuits `chance >= 100` to proc:true WITHOUT drawing,
+            // so a pair that straddles 100 makes the number of draws this recipe takes depend on
+            // ICombatEntity.IsAiControlled -- a per-unit property. That property is CharacterComponent
+            // .GroupIndex (adapter: !CharacterHelper.IsFriendly), which IS replicated combat state, so the
+            // fork resolves the same way on every peer and this is a WARNING, not an error. It is worth
+            // warning about anyway because it is exactly the shape the brief flags: a balance tweak that
+            // moves ONE of the two numbers across 100 turns a tuning change into a draw-count change, and
+            // the property it then keys on is one nudge (a companion changing sides at
+            // CombatHelper.cs:2219, a follower at AdventureHelper.cs:748) away from being mid-combat
+            // mutable. Keep the pair on the same side of 100 and the recipe's draw cost is a constant.
+            if ((r.ProcChance >= 100) != (r.AiProcChance >= 100))
+                RecipeParser.Warn(set, r, "AiProcChance", "W_PROC_CHANCE_DRAW_FORK",
+                    "ProcChance " + r.ProcChance.ToString(CultureInfo.InvariantCulture) + " and AiProcChance " +
+                    r.AiProcChance.ToString(CultureInfo.InvariantCulture) + " straddle 100, so this recipe " +
+                    "costs a different NUMBER of shared-stream draws for an AI-controlled owner than for a " +
+                    "player-controlled one (chance >= 100 skips the roll entirely). Safe today because the " +
+                    "AI/player discriminator is replicated GroupIndex, but keep the pair on the same side " +
+                    "of 100 so draw cost stays a constant of the recipe.");
 
             // --- SchemaVersion gate on v1.1-only tokens (§5.1) ---
             if (isV10)
@@ -148,8 +171,9 @@ namespace ClassForge.Recipes.Parsing
                         "trigger " + r.Trigger + " requires SchemaVersion " + Vocabulary.SchemaVersionLoot);
             }
 
-            // --- SchemaVersion gate on v1.3-only tokens (state-hash-chance spec) ---
-            if (!isV13)
+            // --- SchemaVersion gate on v1.3-only tokens (state-hash-chance spec). 1.4 is additive over
+            //     1.3, so it clears this gate too — a cover recipe still rides ON_DAMAGE_PENDING. ---
+            if (!isV13 && !isV14 && !isV15)
             {
                 if (Contains(Vocabulary.V13OnlyTriggers, r.Trigger))
                     RecipeParser.Err(set, r, "Trigger", "E_SCHEMA_GATE",
@@ -223,6 +247,20 @@ namespace ClassForge.Recipes.Parsing
                         RecipeParser.Err(set, r, path + ".Type", "E_SCHEMA_GATE",
                             "effect " + e.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionLoot);
                 }
+                // --- SchemaVersion gate on v1.4-only targets (RANDOM_TILE). Unlike the v1.1 target gate
+                //     above, which only has to fence off 1.0, this one is an ALLOW-list: every schema
+                //     BELOW 1.4 must reject it, 1.3 included. ---
+                if (!isV14 && !isV15 && Contains(Vocabulary.V14OnlyTargets, e.Target))
+                    RecipeParser.Err(set, r, path + ".Target", "E_SCHEMA_GATE",
+                        "target " + e.Target + " requires SchemaVersion " + Vocabulary.SchemaVersionCover);
+                // --- SchemaVersion gate on v1.5-only effects (CAPTURE). ALLOW-list, like the 1.4 target
+                //     gate above: every schema BELOW 1.5 must reject it. ---
+                if (!isV15 && Contains(Vocabulary.V15OnlyEffects, e.Type))
+                    RecipeParser.Err(set, r, path + ".Type", "E_SCHEMA_GATE",
+                        "effect " + e.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionCapture);
+                if (!isV15 && !string.IsNullOrEmpty(e.CharacterConfigFrom))
+                    RecipeParser.Err(set, r, path + ".CharacterConfigFrom", "E_SCHEMA_GATE",
+                        "SUMMON.CharacterConfigFrom requires SchemaVersion " + Vocabulary.SchemaVersionCapture);
                 ValidateConditionList(set, r, e.Conditions, path + ".Conditions", isV10);
                 if (r.Trigger == TriggerKind.ON_COMBAT_LOOT)
                     ValidateLootConditionScope(set, r, e.Conditions, path + ".Conditions");
@@ -325,6 +363,61 @@ namespace ClassForge.Recipes.Parsing
             }
         }
 
+        /// <summary>
+        /// v1.4 <c>RANDOM_TILE</c> target rules.
+        ///
+        /// <para><b>ADD_STATUS only.</b> A board tile has no stats to change, no heal to modify, no rank to
+        /// sort by and no allegiance to summon under. The one thing the game itself does to a tile is put a
+        /// status on it (<c>CombatPhase.cs:2013</c> / <c>:2081</c>), so that is the one thing an author may
+        /// aim at one. Every other effect kind resolves nothing and would be a silent no-op - exactly the
+        /// mistake class this validator exists to make loud.</para>
+        ///
+        /// <para><b>STUN is banned, and so is the rest of CHARACTER_ONLY_STATUS.</b> The game's own
+        /// <c>InteractableHelper.CHARACTER_ONLY_STATUS</c> (InteractableHelper.cs:261-269) is
+        /// <c>{STUN, DAZE, GRAB, BLEED, DEATHMARK, DEATHSAVE}</c>, and <c>ApplyStatus</c>'s <c>"CHAOS"</c>
+        /// branch strips exactly that set out of <c>CHAOS_STATUS_NAMES</c> whenever the target carries a
+        /// <c>VenueTileComponent</c>. Nothing in the game stops a DIRECT call from attaching STUN to a
+        /// tile's <c>StatusEffectComponent</c> anyway, so the refusal lives here. Matching is by authored-id
+        /// PREFIX (<see cref="Vocabulary.TileIllegalStatusPrefixes"/>) because this assembly is pure C# and
+        /// cannot read <c>StatusEffectConfig.Type</c>; the dispatcher re-checks the REAL type at plan time,
+        /// which is what catches an id that does not follow the <c>STATUS_&lt;TYPE&gt;_NN</c> convention.</para>
+        ///
+        /// <para>ClassForge never draws from <c>CHAOS_STATUS_NAMES</c> at all - an author enumerates the
+        /// pool explicitly in <c>StatusOneOf</c> - so there is no path by which the stun-bearing native pool
+        /// can leak in.</para>
+        /// </summary>
+        private static void ValidateRandomTileTarget(RecipeSet set, SkillRecipe r, RecipeEffect e, string path)
+        {
+            if (e.Type != EffectKind.ADD_STATUS)
+            {
+                RecipeParser.Err(set, r, path + ".Target", "E_TILE_EFFECT_SCOPE",
+                    "RANDOM_TILE is only valid on ADD_STATUS - a board tile is not a combatant, so " +
+                    e.Type + " would resolve nothing against one");
+                return;
+            }
+
+            CheckTileStatusLegal(set, r, e.Status, path + ".Status");
+            if (e.StatusOneOf != null)
+                for (int i = 0; i < e.StatusOneOf.Count; i++)
+                    CheckTileStatusLegal(set, r, e.StatusOneOf[i],
+                        path + ".StatusOneOf[" + i.ToString(CultureInfo.InvariantCulture) + "]");
+        }
+
+        private static void CheckTileStatusLegal(RecipeSet set, SkillRecipe r, string statusId, string path)
+        {
+            if (string.IsNullOrEmpty(statusId)) return;
+            var prefixes = Vocabulary.TileIllegalStatusPrefixes;
+            for (int i = 0; i < prefixes.Count; i++)
+            {
+                if (!statusId.StartsWith(prefixes[i], StringComparison.Ordinal)) continue;
+                RecipeParser.Err(set, r, path, "E_TILE_STATUS_ILLEGAL",
+                    "'" + statusId + "' is a character-only status type (the game's own " +
+                    "InteractableHelper.CHARACTER_ONLY_STATUS: STUN, DAZE, GRAB, BLEED, DEATHMARK, " +
+                    "DEATHSAVE) and can never sit on a board tile");
+                return;
+            }
+        }
+
         private static void ValidateEffect(RecipeSet set, SkillRecipe r, RecipeEffect e, string path)
         {
             // --- target/trigger compatibility ---
@@ -346,6 +439,9 @@ namespace ClassForge.Recipes.Parsing
             if (e.Target == TargetKind.ALLY_BY_RANK && e.Rank == null)
                 RecipeParser.Err(set, r, path + ".Rank", "E_RANK_MISSING", "ALLY_BY_RANK requires a Rank block");
 
+            // --- v1.4 RANDOM_TILE: a board tile is not a combatant. ---
+            if (e.Target == TargetKind.RANDOM_TILE) ValidateRandomTileTarget(set, r, e, path);
+
             // --- loot-grant effect scope (verb spec §6.1/§6.2): grant effects only fire ON_COMBAT_LOOT,
             //     and ON_COMBAT_LOOT accepts only grant effects. AFFIX_ROLL is further always reserved. ---
             bool isGrantEffect = Contains(LootGrantEffects, e.Type);
@@ -364,6 +460,11 @@ namespace ClassForge.Recipes.Parsing
             if (e.Type == EffectKind.AFFIX_ROLL)
                 RecipeParser.Err(set, r, path, "E_LOOT_RESERVED",
                     "AFFIX_ROLL is reserved; the v1 validator rejects it until M-LG4");
+
+            // Persistent (§6 run-persistence escape hatch) is only meaningful on COUNTER_ADD/COUNTER_SET.
+            if (e.Persistent && e.Type != EffectKind.COUNTER_ADD && e.Type != EffectKind.COUNTER_SET)
+                RecipeParser.Err(set, r, path + ".Persistent", "E_PERSISTENT_SCOPE",
+                    "Persistent is only valid on COUNTER_ADD/COUNTER_SET");
 
             switch (e.Type)
             {
@@ -477,15 +578,58 @@ namespace ClassForge.Recipes.Parsing
                             "no target, so no summon action is emitted at all. Use SELF, or a trigger " +
                             "that carries a target.");
 
-                    if (e.SummonType == SummonType.SPECIFIC && string.IsNullOrEmpty(e.CharacterConfig))
+                    // --- v1.5 dynamic config source. Mutually exclusive with the static field: two
+                    //     sources for one value is an authoring bug, and silently preferring one would
+                    //     make the other invisible. ---
+                    bool hasStatic = !string.IsNullOrEmpty(e.CharacterConfig);
+                    bool hasDynamic = !string.IsNullOrEmpty(e.CharacterConfigFrom);
+                    if (hasStatic && hasDynamic)
+                        RecipeParser.Err(set, r, path + ".CharacterConfigFrom", "E_SUMMON_CONFIG_MUTEX",
+                            "SUMMON takes CharacterConfig OR CharacterConfigFrom, never both");
+                    if (hasDynamic)
+                    {
+                        if (e.SummonType != SummonType.SPECIFIC)
+                            RecipeParser.Err(set, r, path + ".CharacterConfigFrom", "E_SUMMON_CONFIG_FROM_TYPE",
+                                "CharacterConfigFrom names ONE creature and is therefore SummonType SPECIFIC " +
+                                "only (RANDOM/PLAYTHING pick their own config from a weighted pool, " +
+                                "CombatHelper.cs:120-197, and would ignore it)");
+                        ValidateItemCustomDataToken(set, r, e.CharacterConfigFrom, path + ".CharacterConfigFrom");
+                    }
+                    if (e.SummonType == SummonType.SPECIFIC && !hasStatic && !hasDynamic)
                         RecipeParser.Err(set, r, path + ".CharacterConfig", "E_SUMMON_CONFIG",
-                            "SUMMON with SummonType SPECIFIC requires CharacterConfig");
+                            "SUMMON with SummonType SPECIFIC requires CharacterConfig or CharacterConfigFrom");
                     if (e.Count < 1)
                         RecipeParser.Err(set, r, path + ".Count", "E_RANGE", "SUMMON Count must be >= 1");
                     if (e.Count > Vocabulary.SummonCountCap)
                         RecipeParser.Err(set, r, path + ".Count", "E_SUMMON_CAP",
                             "SUMMON Count is capped at " + Vocabulary.SummonCountCap.ToString(CultureInfo.InvariantCulture) +
                             " (OQ#4: each iteration takes its own placement/pool draws from CombatState.Random)");
+                    break;
+                }
+                case EffectKind.CAPTURE:
+                {
+                    // A capture needs something to capture. Every CAPTURE target token resolves off the
+                    // trigger, so a trigger that carries no target makes the whole effect a guaranteed
+                    // no-op -- the ROLL_TIER{EQ FAIL} mistake class this repo has shipped before.
+                    if (!Contains(TriggersWithTarget, r.Trigger))
+                        RecipeParser.Err(set, r, path, "E_EFFECT_TRIGGER_SCOPE",
+                            "CAPTURE under '" + r.Trigger + "' resolves no target to capture. Use a trigger " +
+                            "that carries one (ON_ABILITY_USED, ON_DAMAGE_DEALT, ...).");
+                    if (e.Target == TargetKind.SELF || e.Target == TargetKind.CASTER)
+                        RecipeParser.Err(set, r, path + ".Target", "E_CAPTURE_TARGET",
+                            "CAPTURE aimed at " + e.Target + " would capture the caster. Aim it at " +
+                            "TRIGGER_TARGET.");
+                    if (e.Target == TargetKind.RANDOM_TILE || e.Target == TargetKind.TRIGGER_TARGET_POSITION)
+                        RecipeParser.Err(set, r, path + ".Target", "E_CAPTURE_TARGET",
+                            "CAPTURE needs a COMBATANT; " + e.Target + " resolves a board tile, which has no " +
+                            "CharacterComponent.ConfigName to store and cannot be removed from combat");
+                    if (string.IsNullOrEmpty(e.IntoItem))
+                        RecipeParser.Err(set, r, path + ".IntoItem", "E_CAPTURE_ITEM",
+                            "CAPTURE requires IntoItem (the ThingConfig id of the carried item whose " +
+                            "Thing.CustomData stores the captured config)");
+                    if (string.IsNullOrEmpty(e.IntoKey))
+                        RecipeParser.Err(set, r, path + ".IntoKey", "E_CAPTURE_KEY",
+                            "CAPTURE requires IntoKey (the Thing.CustomData key to write)");
                     break;
                 }
                 case EffectKind.ROLL_STAT_BONUS:
@@ -531,6 +675,9 @@ namespace ClassForge.Recipes.Parsing
                 {
                     if (string.IsNullOrEmpty(e.Name))
                         RecipeParser.Err(set, r, path + ".Name", "E_COUNTER_NAME", e.Type + " requires Name");
+                    if (e.Persistent && r.Scope != RecipeScope.OWNED)
+                        RecipeParser.Err(set, r, path + ".Persistent", "E_PERSISTENT_SCOPE",
+                            e.Type + " Persistent requires an OWNED-scope recipe (a per-character store needs an owner)");
                     break;
                 }
                 case EffectKind.GOLD_GRANT:
@@ -568,6 +715,42 @@ namespace ClassForge.Recipes.Parsing
             }
         }
 
+        /// <summary>
+        /// v1.5 <c>SUMMON.CharacterConfigFrom</c> token shape:
+        /// <c>ITEM_CUSTOM_DATA:&lt;ThingConfigId&gt;:&lt;Key&gt;</c>, exactly three colon-separated parts with
+        /// no empty part. Caught at LOAD time because the runtime failure is silent — an unparseable token
+        /// resolves nothing and the summon simply never appears, which is the invisible-content failure this
+        /// repo keeps re-shipping (docs/research/reuse-before-authoring.md).
+        /// <para>Only the SHAPE is checkable here: this is the pure-C# core and it has no access to
+        /// <c>Env.Configs.Things</c>. Whether the named Thing exists is answered by the LiveDataHarness's
+        /// reference-integrity pass and, at runtime, by the executor's guarded lookup.</para>
+        /// </summary>
+        private static void ValidateItemCustomDataToken(RecipeSet set, SkillRecipe r, string token, string path)
+        {
+            if (!token.StartsWith(Vocabulary.SourceItemCustomDataPrefix, StringComparison.Ordinal))
+            {
+                RecipeParser.Err(set, r, path, "E_CONFIG_FROM_TOKEN",
+                    "unknown CharacterConfigFrom token '" + token + "' (the only supported form is " +
+                    Vocabulary.SourceItemCustomDataPrefix + "<ThingConfigId>:<Key>)");
+                return;
+            }
+            var parts = token.Split(':');
+            if (parts.Length != 3)
+            {
+                RecipeParser.Err(set, r, path, "E_CONFIG_FROM_TOKEN",
+                    "CharacterConfigFrom must be exactly " + Vocabulary.SourceItemCustomDataPrefix +
+                    "<ThingConfigId>:<Key> (3 colon-separated parts, got " +
+                    parts.Length.ToString(CultureInfo.InvariantCulture) + ")");
+                return;
+            }
+            if (parts[1].Length == 0)
+                RecipeParser.Err(set, r, path, "E_CONFIG_FROM_TOKEN",
+                    "CharacterConfigFrom names no ThingConfig id");
+            if (parts[2].Length == 0)
+                RecipeParser.Err(set, r, path, "E_CONFIG_FROM_TOKEN",
+                    "CharacterConfigFrom names no CustomData key");
+        }
+
         private static void ValidateConditionList(RecipeSet set, SkillRecipe r, List<RecipeCondition> list, string path, bool isV10)
         {
             if (list == null) return;
@@ -579,9 +762,16 @@ namespace ClassForge.Recipes.Parsing
                     RecipeParser.Err(set, r, p + ".Type", "E_COND_CONTEXT",
                         "PARTY_HAS_FOLLOWER is legal only in statmodifiers.json (the combat dispatcher has no evaluator for it)");
                 if (Contains(Vocabulary.V13OnlyConditions, c.Type) &&
-                    !string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionStateHash, StringComparison.Ordinal))
+                    !string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionStateHash, StringComparison.Ordinal) &&
+                    !string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionCover, StringComparison.Ordinal) &&
+                    !string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionCapture, StringComparison.Ordinal))
                     RecipeParser.Err(set, r, p + ".Type", "E_SCHEMA_GATE",
                         "condition " + c.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionStateHash);
+                if (Contains(Vocabulary.V14OnlyConditions, c.Type) &&
+                    !string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionCover, StringComparison.Ordinal) &&
+                    !string.Equals(r.SchemaVersion, Vocabulary.SchemaVersionCapture, StringComparison.Ordinal))
+                    RecipeParser.Err(set, r, p + ".Type", "E_SCHEMA_GATE",
+                        "condition " + c.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionCover);
                 if (isV10 && Contains(Vocabulary.V11OnlyConditions, c.Type))
                     RecipeParser.Err(set, r, p + ".Type", "E_SCHEMA_GATE",
                         "condition " + c.Type + " requires SchemaVersion " + Vocabulary.SchemaVersionCurrent);
@@ -728,6 +918,36 @@ namespace ClassForge.Recipes.Parsing
                 case ConditionKind.IS_ENEMY:
                     if (!c.ValueBool.HasValue)
                         RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING", "IS_ENEMY requires a boolean Value");
+                    break;
+
+                // --- v1.4 ---
+                case ConditionKind.SELF_LEVEL:
+                    // Value must be present AND an integer: the parser only fills ValueInt for a JSON
+                    // number, so "3" / "three" / true / a missing Value all land here as E_VALUE_MISSING
+                    // rather than silently comparing against 0 (the ROLL_TIER{EQ FAIL} mistake class).
+                    if (!c.ValueInt.HasValue)
+                        RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING",
+                            "SELF_LEVEL requires an integer Value (the level to compare against)");
+                    if (!c.HasComparator)
+                        RecipeParser.Err(set, r, p + ".Comparator", "E_CMP_MISSING",
+                            "SELF_LEVEL requires a Comparator (EQ, NE, LT, LTE, GT, GTE)");
+                    break;
+
+                case ConditionKind.HAS_ITEM:
+                    // Value must be present AND a JSON string: the parser fills ValueInt for a number and
+                    // ValueBool for a bool while ALSO stringifying both into Value, so a bare
+                    // string.IsNullOrEmpty(c.Value) check would silently accept 7 / true as the Thing
+                    // config name "7" / "true". A Thing id is a string key into Env.Configs.Things.
+                    if (string.IsNullOrEmpty(c.Value) || c.ValueInt.HasValue || c.ValueBool.HasValue)
+                        RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING",
+                            "HAS_ITEM requires a string Value (the Thing ConfigName to look for, " +
+                            "matched case-sensitively)");
+                    break;
+
+                // --- v1.4, cover spec ---
+                case ConditionKind.ALLY_IN_FRONT:
+                    if (!c.ValueBool.HasValue)
+                        RecipeParser.Err(set, r, p + ".Value", "E_VALUE_MISSING", "ALLY_IN_FRONT requires a boolean Value");
                     break;
 
                 // --- v1.3, state-hash-chance spec §2 ---

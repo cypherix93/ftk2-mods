@@ -157,7 +157,40 @@ namespace ClassForge.Recipes.Tests
 
                 var setRig = Rig.Build(J.Effect("ON_KILL", "{\"Type\":\"COUNTER_SET\",\"Name\":\"STACK\",\"Value\":7}"), 5);
                 Check.PlanIs(setRig.Fire(TriggerKind.ON_KILL),
-                    "0: CounterSet{recipe=SKILL_T,owner=A_HERO,name=STACK,value=7}", "COUNTER_SET plan");
+                    "0: CounterSet{recipe=SKILL_T,owner=A_HERO,name=STACK,value=7,persistent=False}", "COUNTER_SET plan");
+            });
+
+            t.Case("effect COUNTER_ADD / COUNTER_SET: Persistent flag flows through onto the emitted action", () =>
+            {
+                var addRig = Rig.Build(J.Effect("ON_KILL",
+                    "{\"Type\":\"COUNTER_ADD\",\"Name\":\"cf_bond\",\"Delta\":1,\"Max\":10,\"Persistent\":true}"), 5);
+                var addAction = (CounterAddAction)addRig.Fire(TriggerKind.ON_KILL)[0];
+                Check.Eq(1, addAction.NewValue, "add still applies in-memory as usual");
+                Check.True(addAction.Persistent, "Persistent carried onto the CounterAddAction");
+
+                var setRig = Rig.Build(J.Effect("ON_KILL",
+                    "{\"Type\":\"COUNTER_SET\",\"Name\":\"cf_bond\",\"Value\":3,\"Persistent\":true}"), 5);
+                var setAction = (CounterSetAction)setRig.Fire(TriggerKind.ON_KILL)[0];
+                Check.True(setAction.Persistent, "Persistent carried onto the CounterSetAction");
+
+                var plainRig = Rig.Build(J.Effect("ON_KILL", "{\"Type\":\"COUNTER_ADD\",\"Name\":\"n\",\"Delta\":1}"), 5);
+                var plainAction = (CounterAddAction)plainRig.Fire(TriggerKind.ON_KILL)[0];
+                Check.True(!plainAction.Persistent, "Persistent defaults to false when not authored");
+            });
+
+            t.Case("effect COUNTER_ADD Persistent=true still resets to 0 in the bare engine on a new CombatKey " +
+                   "(negative control: the pure engine never seeds from a persistent store on its own -- only " +
+                   "the Plugin's RecipeEngineHost.SeedPersistentCounters does, using the owner's CustomData, " +
+                   "before the first hook of a fresh battle runs)", () =>
+            {
+                var rig = Rig.Build(J.Effect("ON_KILL",
+                    "{\"Type\":\"COUNTER_ADD\",\"Name\":\"cf_bond\",\"Delta\":1,\"Max\":10,\"Persistent\":true}"), 5);
+                Check.Eq(1, ((CounterAddAction)rig.Fire(TriggerKind.ON_KILL)[0]).NewValue, "1 after first kill");
+                Check.Eq(2, ((CounterAddAction)rig.Fire(TriggerKind.ON_KILL)[0]).NewValue, "2 after second kill");
+                rig.Ctx.Identity = "COMBAT_NEXT";
+                Check.Eq(1, ((CounterAddAction)rig.Fire(TriggerKind.ON_KILL)[0]).NewValue,
+                    "new CombatKey -> fresh CombatRuntime -> counter starts at 0 again in the bare engine, " +
+                    "Persistent flag notwithstanding");
             });
 
             t.Section("target tokens (9)");
@@ -229,6 +262,21 @@ namespace ClassForge.Recipes.Tests
                 highest.Ally.With("SPD", 9);
                 Check.Eq("B_ALLY", ((AddStatusAction)highest.Fire(TriggerKind.ON_ABILITY_USED)[0]).TargetGuid,
                     "HIGHEST SPD, ExcludeSelf false");
+            });
+
+            t.Case("target ALLY_BY_RANK: HP_PCT with no Where filter picks the wounded ally, not the ordinal-first one (SKILL_CF_PACIFIST_FIELD_MEDIC regression: GameAdapters.GetStat used to route HP/MXHP through the static base-stat table, which has no MXHP key, so HP_PCT was always 0 for every candidate and ResolveByRank kept whichever ally sorted first by Guid)", () =>
+            {
+                string rank =
+                    "{\"Type\":\"ADD_STATUS\",\"Target\":\"ALLY_BY_RANK\",\"Status\":\"S\"," +
+                    "\"Rank\":{\"Stat\":\"HP_PCT\",\"Order\":\"LOWEST\",\"ExcludeSelf\":false,\"Where\":[]}}";
+
+                // A_HERO sorts before B_ALLY by ordinal Guid, so the pre-fix bug (every HP_PCT tied at 0)
+                // always kept A_HERO regardless of who was actually wounded.
+                var rig = Rig.Build(J.Effect("ON_ABILITY_USED", rank), 5);
+                rig.Hero.With("HP", 100).With("MXHP", 100);
+                rig.Ally.With("HP", 14).With("MXHP", 100);
+                Check.Eq("B_ALLY", ((AddStatusAction)rig.Fire(TriggerKind.ON_ABILITY_USED)[0]).TargetGuid,
+                    "the vampiric at 14 HP is picked over the ordinal-first, full-HP hero");
             });
 
             t.Case("target ALLY_BY_RANK: zero draws (fully deterministic selector)", () =>

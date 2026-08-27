@@ -342,8 +342,25 @@ namespace Crucible.Plugin
             object env = GameBridge.GetEnv();
             if (env == null) { error = "Env unavailable"; return false; }
 
-            object configs = PartyAccess.ReadMember(env, "Configs");
-            if (configs == null) { error = "Env.Configs is null"; return false; }
+            // Env.Configs is `public static Configs Configs` (Env.cs:6) -- a STATIC field on the Env
+            // TYPE, not an instance member of the Env object. PartyAccess.ReadMember binds with
+            // instance-only flags, so it could never see this and every caller of this helper
+            // reported "Env.Configs is null" no matter what the game was doing. That made
+            // crucible_class_config permanently non-functional, which in turn made class_sweep's
+            // config_present / passives_declared / loc_key checks permanently FAIL -- three
+            // apparent failures per class, all one bug, and indistinguishable from a class whose
+            // data genuinely had not loaded. Measured 2026-08-26 against a fully loaded run.
+            // The static read is tried FIRST because that is where the field really lives; the
+            // instance read is kept as a fallback so a future game version that makes it an
+            // instance member still resolves.
+            object configs = ReadStatic(env.GetType(), "Configs")
+                             ?? PartyAccess.ReadMember(env, "Configs");
+            if (configs == null)
+            {
+                error = "Env.Configs is null (tried both the static field on "
+                        + env.GetType().Name + " and an instance member)";
+                return false;
+            }
 
             map = PartyAccess.ReadMember(configs, mapName);
             if (map == null) { error = "Configs." + mapName + " is null"; return false; }
@@ -468,21 +485,33 @@ namespace Crucible.Plugin
                 StringBuilder sb = new StringBuilder();
                 sb.Append("totalKeys=").Append(translations.Count);
 
-                if (key.EndsWith("*", StringComparison.Ordinal))
+                if (key.IndexOf('*') >= 0)
                 {
-                    string prefix = key.Substring(0, key.Length - 1);
                     int found = 0;
                     foreach (DictionaryEntry entry in translations)
                     {
                         string k = entry.Key as string;
-                        if (k == null || !k.StartsWith(prefix, StringComparison.Ordinal)) continue;
+                        if (k == null || !GlobMatches(k, key)) continue;
                         found++;
                         sb.Append("\n  ").Append(k).Append(" = ").Append(Preview(entry.Value));
                     }
                     sb.Append("\nmatched=").Append(found);
                     if (found == 0)
-                        sb.Append("  <-- NOTHING matched '").Append(prefix)
-                          .Append("'; the pack's localization file is not loaded");
+                    {
+                        // The old text asserted a CAUSE ("the pack's localization file is not
+                        // loaded") that this command never established. totalKeys is right there and
+                        // settles it: a loaded table with thousands of keys and zero matches is a
+                        // pattern problem, not a loading problem. Misreporting one as the other cost
+                        // an agent most of a session.
+                        sb.Append("  <-- NOTHING matched the pattern '").Append(key).Append("'.");
+                        if (translations.Count > 0)
+                            sb.Append(" Lang.__translations HOLDS ").Append(translations.Count)
+                              .Append(" keys, so the table IS loaded -- this is a pattern miss, not a")
+                              .Append(" missing localization file. '*' matches any run of characters")
+                              .Append(" anywhere in the key, so try widening it (e.g. *BALL*).");
+                        else
+                            sb.Append(" Lang.__translations is EMPTY, so nothing is loaded yet.");
+                    }
                 }
                 else
                 {
@@ -498,6 +527,42 @@ namespace Crucible.Plugin
             {
                 LastResult = "error: crucible_loc threw: " + ex.Message;
             }
+        }
+
+        /// <summary>
+        /// Ordinal glob over a localization key. '*' matches any run of characters (including none)
+        /// in ANY position — leading, infix or trailing — so <c>*BALL*</c>, <c>*_DESC</c> and
+        /// <c>SKILL_CF_*</c> all work. Anything that is not a '*' must match literally.
+        ///
+        /// Written as a scan rather than a Regex on purpose: a localization key can legitimately
+        /// contain regex metacharacters, and translating one into a pattern would need escaping that
+        /// is easier to get wrong than this loop.
+        /// </summary>
+        private static bool GlobMatches(string text, string pattern)
+        {
+            string[] parts = pattern.Split('*');
+            // No '*' at all: exact match. (CrucibleLoc never routes here in that case, but a helper
+            // that quietly means something else when called differently is a trap.)
+            if (parts.Length == 1) return string.Equals(text, pattern, StringComparison.Ordinal);
+
+            int pos = 0;
+            // A non-empty first segment is anchored to the start; likewise the last to the end.
+            if (parts[0].Length > 0)
+            {
+                if (!text.StartsWith(parts[0], StringComparison.Ordinal)) return false;
+                pos = parts[0].Length;
+            }
+            string tail = parts[parts.Length - 1];
+            for (int i = 1; i < parts.Length - 1; i++)
+            {
+                if (parts[i].Length == 0) continue;
+                int at = text.IndexOf(parts[i], pos, StringComparison.Ordinal);
+                if (at < 0) return false;
+                pos = at + parts[i].Length;
+            }
+            if (tail.Length == 0) return true;
+            return text.Length - tail.Length >= pos
+                && text.EndsWith(tail, StringComparison.Ordinal);
         }
 
         private static string Preview(object value)

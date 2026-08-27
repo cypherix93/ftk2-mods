@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using BepInEx.Logging;
 using FTK2Mods.Crucible;
 using HarmonyLib;
@@ -47,7 +48,7 @@ namespace Crucible.Plugin
         internal static void TryRegister()
         {
             Register("crucible_combat_wipe_enemies", "CrucibleCombatWipeEnemies",
-                new List<string> { "group (default 1 = enemies)" });
+                new List<string> { "group (default 1 = enemies)", "keepAlive (default 0 = kill them all)" });
             Register("crucible_godmode", "CrucibleGodmode", new List<string> { "on|off|status" });
             Register("crucible_combat_restore_actions", "CrucibleCombatRestoreActions",
                 new List<string> { "group (default 0 = party)" });
@@ -60,6 +61,10 @@ namespace Crucible.Plugin
             Register("crucible_use_ability_auto", "CrucibleUseAbilityAuto", new List<string>());
             Register("crucible_win_combat", "CrucibleWinCombat", new List<string>());
             Register("crucible_combat_end_turn", "CrucibleCombatEndTurn", new List<string>());
+            Register("crucible_kill_target", "CrucibleKillTarget",
+                new List<string> { "targetGuidOrIndex", "killerGuid (optional, auto-picks a living opposing-group combatant)" });
+            Register("crucible_use_item", "CrucibleUseItem",
+                new List<string> { "itemConfigNameOrThingId", "x", "y", "abilityName (optional, default the item's first ability)" });
         }
 
         private static void Register(string command, string method, List<string> hints)
@@ -325,10 +330,26 @@ namespace Crucible.Plugin
         }
 
         /// <summary>
-        /// crucible_use_ability_auto — let the game pick both ability and target, then fire.
+        /// crucible_use_ability_auto — pick a real ability and target, then fire.
         ///
         /// The zero-argument smoke test: if this cannot fire, nothing else will, and it separates
         /// "my targeting is wrong" from "combat is not driveable at all".
+        ///
+        /// <c>CombatHelper.GetFirstEntityDecision</c> itself resolves the candidate ability with a
+        /// bare LINQ <c>.First(a =&gt; IsUsableAbility(...))</c> over whatever order GetAbilities
+        /// returned -- FLEE is usable whenever combat allows fleeing at all, so calling it unfiltered
+        /// mostly just flees, which is useless for a verb every caller expects to DO something. This
+        /// verb runs the SAME <c>IsUsableAbility</c> check itself, over every candidate, excludes
+        /// FLEE/SKIP_TURN and the three built-in reposition/reconfigure verbs BASIC_MOVE/EQUIP_WEAPON/
+        /// BASIC_RELOAD (each spends MOV, not PA/SA, and carries no damage payload -- see
+        /// docs/research/coverage/ability-catalog.md:461-481), ranks what remains by
+        /// <c>CharacterHelper.GetMinAndMaxDamageOfAbilityForCharacter</c> (same helper crucible_kill_target
+        /// uses), and hands GetFirstEntityDecision a single-element list containing only the winner so
+        /// its own targeting logic still picks the position. Falls back to the first usable *_ATTACK-named
+        /// ability (vanilla offensive-ability naming convention) when none provably deals damage, then to
+        /// any other usable non-excluded ability, and only then reports nothing chosen -- naming every
+        /// ability considered with its usable flag and damage range, instead of a one-line LINQ "Sequence
+        /// contains no matching element" exception.
         /// </summary>
         public static void CrucibleUseAbilityAuto()
         {
@@ -341,25 +362,196 @@ namespace Crucible.Plugin
 
                 List<object> abilities;
                 if (!TryGetAbilities(entity, out abilities, out error)) { LastResult = "error: " + error; return; }
+                if (abilities.Count == 0) { LastResult = "error: CombatHelper.GetAbilities returned zero abilities for this entity -- nothing to auto-fire"; return; }
 
-                Type combatHelper = AccessTools.TypeByName("CombatHelper");
-                MethodInfo getFirst = combatHelper == null ? null : AccessTools.Method(combatHelper, "GetFirstEntityDecision");
+                object gameRun = GameRun();
+                Type combatHelperType = AccessTools.TypeByName("CombatHelper");
+                Type characterHelperType = AccessTools.TypeByName("CharacterHelper");
+                MethodInfo isUsable = combatHelperType == null ? null : AccessTools.Method(combatHelperType, "IsUsableAbility");
+
+                // Measured 2026-08-24/25: CombatHelper.GetFirstEntityDecision itself just takes the
+                // FIRST usable ability in whatever order GetAbilities returned them -- FLEE is
+                // usable whenever combat allows fleeing at all, so an unfiltered "auto" verb mostly
+                // just flees, which is useless for testing (every caller wants this to DO something).
+                // Rank every usable, non-FLEE/SKIP_TURN candidate by
+                // CharacterHelper.GetMinAndMaxDamageOfAbilityForCharacter's maxDamage -- same helper
+                // crucible_kill_target already uses for exactly this judgment -- and prefer the
+                // highest; fall back to any other usable non-FLEE/SKIP_TURN ability; only then to
+                // nothing. Considered-but-rejected list is built regardless of outcome so a "nothing
+                // usable" error names every ability this entity actually has, with its damage range,
+                // matching crucible_list_abilities' own usable= column rather than inventing a fresh
+                // judgment.
+                MethodInfo getCharacterAbilityThing = null;
+                if (combatHelperType != null)
+                {
+                    foreach (MethodInfo m in combatHelperType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                    {
+                        if (!string.Equals(m.Name, "GetCharacterAbilityThing", StringComparison.Ordinal)) continue;
+                        if (m.GetParameters().Length == 2) { getCharacterAbilityThing = m; break; }
+                    }
+                }
+                MethodInfo getMinMaxDamage = null;
+                if (characterHelperType != null)
+                {
+                    foreach (MethodInfo m in characterHelperType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                    {
+                        if (!string.Equals(m.Name, "GetMinAndMaxDamageOfAbilityForCharacter", StringComparison.Ordinal)) continue;
+                        if (m.GetParameters().Length == 5) { getMinMaxDamage = m; break; }
+                    }
+                }
+                bool canVerifyDamage = getCharacterAbilityThing != null && getMinMaxDamage != null;
+
+                StringBuilder considered = new StringBuilder();
+                object chosenAbility = null;
+                object fallbackAbility = null;
+                object fallbackAttackAbility = null; // preferred fallback: name ends in _ATTACK (vanilla offensive-ability convention)
+                string chosenReason = null;
+                int bestDamage = -1;
+                foreach (object candidate in abilities)
+                {
+                    string candidateName = Str(PartyAccess.ReadMember(candidate, "AbilityName"));
+                    object usableResult = null;
+                    if (isUsable != null && gameRun != null)
+                    {
+                        try { usableResult = isUsable.Invoke(null, new object[] { gameRun, entity, candidateName, true }); }
+                        catch (TargetInvocationException ex)
+                        {
+                            Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                            usableResult = "threw " + root.GetType().Name + ": " + root.Message;
+                        }
+                    }
+                    bool usableBool = usableResult is bool && (bool)usableResult;
+                    if (!usableBool)
+                    {
+                        considered.Append("\n  ").Append(candidateName).Append(" usable=").Append(usableResult == null ? "(unknown)" : usableResult.ToString());
+                        continue;
+                    }
+
+                    // Measured 2026-08-25: excluding only FLEE/SKIP_TURN still let a run auto-choose
+                    // BASIC_MOVE -- it spends MOV, not PA/SA, so "the verb fired" looked like nothing
+                    // happened (pa/sa before==after). Per docs/research/coverage/ability-catalog.md:461-481,
+                    // BASIC_MOVE/EQUIP_WEAPON/BASIC_RELOAD are the game's three built-in reposition/
+                    // reconfigure verbs -- each is a single-action `{"Item1":"MOVE"}` with no damage
+                    // payload (Target: SELF or SELF_PICK), so none of them can ever be "the ability
+                    // that spends an action" this verb is supposed to pick. GATHER_FOCUS does not
+                    // appear anywhere in this repo's ability data (checked via grep) so it is not a
+                    // real built-in here and is not excluded on a guess.
+                    bool isNonAction = string.Equals(candidateName, "FLEE", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(candidateName, "SKIP_TURN", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(candidateName, "BASIC_MOVE", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(candidateName, "EQUIP_WEAPON", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(candidateName, "BASIC_RELOAD", StringComparison.OrdinalIgnoreCase);
+                    if (isNonAction)
+                    {
+                        considered.Append("\n  ").Append(candidateName).Append(" usable=true damage=(n/a, non-action, excluded)");
+                        continue;
+                    }
+                    if (fallbackAbility == null) fallbackAbility = candidate;
+                    // Vanilla offensive abilities are named *_ATTACK (see the ONLY_*_ATTACK family
+                    // documented in docs/research/coverage/ability-catalog.md) -- when the damage
+                    // lookup below can't crown a winner, prefer one of these over an arbitrary
+                    // non-excluded ability before giving up.
+                    if (fallbackAttackAbility == null && candidateName.EndsWith("_ATTACK", StringComparison.OrdinalIgnoreCase))
+                    {
+                        fallbackAttackAbility = candidate;
+                    }
+
+                    int maxDamage = -1; // -1 = "could not verify", not zero
+                    string damageNote;
+                    if (!canVerifyDamage)
+                    {
+                        damageNote = "damage=(unverifiable -- CharacterHelper.GetMinAndMaxDamageOfAbilityForCharacter/CombatHelper.GetCharacterAbilityThing not found)";
+                    }
+                    else
+                    {
+                        object thing = null;
+                        try { thing = getCharacterAbilityThing.Invoke(null, new object[] { entity, candidate }); }
+                        catch (TargetInvocationException) { thing = null; }
+                        if (thing == null)
+                        {
+                            damageNote = "damage=(unverifiable -- GetCharacterAbilityThing returned null)";
+                        }
+                        else
+                        {
+                            string thingConfigName = Str(PartyAccess.ReadMember(thing, "ConfigName"));
+                            try
+                            {
+                                object dmg = getMinMaxDamage.Invoke(null, new object[] { entity, thingConfigName, candidateName, 1m, 0 });
+                                FieldInfo maxField = dmg.GetType().GetField("Item2");
+                                maxDamage = maxField == null ? -1 : Convert.ToInt32(maxField.GetValue(dmg));
+                                damageNote = "damage=" + maxDamage;
+                            }
+                            catch (TargetInvocationException)
+                            {
+                                damageNote = "damage=(unverifiable -- no roll/damage data for this ability on " + thingConfigName + ")";
+                            }
+                        }
+                    }
+
+                    considered.Append("\n  ").Append(candidateName).Append(" usable=true ").Append(damageNote);
+
+                    if (maxDamage > bestDamage)
+                    {
+                        bestDamage = maxDamage;
+                        chosenAbility = candidate;
+                        chosenReason = maxDamage > 0
+                            ? ("deals damage (maxDamage=" + maxDamage + ", highest of the usable non-FLEE/SKIP_TURN candidates)")
+                            : null;
+                    }
+                }
+
+                if (bestDamage <= 0) chosenAbility = null; // only trust the damage ranking when something actually deals damage
+                if (chosenAbility == null && fallbackAttackAbility != null)
+                {
+                    chosenAbility = fallbackAttackAbility;
+                    chosenReason = "no usable ability provably deals damage -- fell back to the first usable *_ATTACK-named ability (vanilla offensive-ability naming convention)";
+                }
+                if (chosenAbility == null && fallbackAbility != null)
+                {
+                    chosenAbility = fallbackAbility;
+                    chosenReason = "no usable ability provably deals damage and none is *_ATTACK-named -- fell back to the first usable non-excluded ability";
+                }
+
+                if (chosenAbility == null)
+                {
+                    LastResult = "error: no usable ability other than FLEE/SKIP_TURN/BASIC_MOVE/EQUIP_WEAPON/BASIC_RELOAD for this entity right now. Considered:" + considered;
+                    return;
+                }
+
+                MethodInfo getFirst = combatHelperType == null ? null : AccessTools.Method(combatHelperType, "GetFirstEntityDecision");
                 if (getFirst == null) { LastResult = "error: CombatHelper.GetFirstEntityDecision not found"; return; }
 
-                object typedAbilities = BuildTypedList(getFirst.GetParameters()[2].ParameterType, abilities);
-                object decision = getFirst.Invoke(null, new object[] { entity, GameRun(), typedAbilities });
-                if (decision == null) { LastResult = "error: GetFirstEntityDecision returned null"; return; }
+                // Pass a single-element list so GetFirstEntityDecision's own targeting logic
+                // (VenueHelper.GetTargetableTiles + AIHelper.GetPreferredTarget) still resolves the
+                // position, but ability selection is OURS above, not its bare "first usable ability"
+                // LINQ (CombatHelper.cs:313).
+                List<object> chosenOnly = new List<object> { chosenAbility };
+                object typedAbilities = BuildTypedList(getFirst.GetParameters()[2].ParameterType, chosenOnly);
+                object decision = getFirst.Invoke(null, new object[] { entity, gameRun, typedAbilities });
+                if (decision == null) { LastResult = "error: GetFirstEntityDecision returned null for chosen ability. Considered:" + considered; return; }
 
                 object ability = PartyAccess.ReadMember(decision, "Item1");
                 object position = PartyAccess.ReadMember(decision, "Item2");
-                if (ability == null) { LastResult = "error: no ability chosen (decision=" + decision + ")"; return; }
+                if (ability == null) { LastResult = "error: no ability chosen (decision=" + decision + "). Considered:" + considered; return; }
 
                 string name = Str(PartyAccess.ReadMember(ability, "AbilityName"));
                 object px = PartyAccess.ReadMember(position, "Item1");
                 object py = PartyAccess.ReadMember(position, "Item2");
 
+                // Read the actor's OWN actions right now, synchronously, so the result carries a real
+                // "before" figure -- _performAiDecision's actual spend happens on an un-awaited Task
+                // (see FireAbility's NOTE), so an "after" figure from THIS call would be a lie; the
+                // caller has to re-read crucible_combat_snapshot for that, same as crucible_use_ability.
+                object combat = PartyAccess.FindComponent(entity, "CombatComponent");
+                string actionsBefore = combat == null ? "(unknown)"
+                    : ("pa=" + Str(PartyAccess.ReadMember(combat, "PrimaryActions")) + " sa=" + Str(PartyAccess.ReadMember(combat, "SecondaryActions")));
+
                 FireAbility(name, Convert.ToInt32(px), Convert.ToInt32(py), ability);
-                LastResult = "auto-chose ability=" + name + " target=(" + px + ", " + py + ")\n" + LastResult;
+                LastResult = "auto-chose ability=" + name + " because " + chosenReason
+                    + " target=(" + px + ", " + py + ")"
+                    + " actor=" + Str(PartyAccess.ReadMember(entity, "Guid")) + " actionsBefore: " + actionsBefore
+                    + "\nconsidered:" + considered
+                    + "\n" + LastResult;
             }
             catch (TargetInvocationException ex)
             {
@@ -431,9 +623,10 @@ namespace Crucible.Plugin
             object results = Activator.CreateInstance(perform.GetParameters()[2].ParameterType);
             string before = SnapshotHealth();
 
+            object fireTask;
             try
             {
-                perform.Invoke(combatPhase, new object[] { entity, decision, results });
+                fireTask = perform.Invoke(combatPhase, new object[] { entity, decision, results });
             }
             catch (TargetInvocationException ex)
             {
@@ -442,19 +635,274 @@ namespace Crucible.Plugin
                 return;
             }
 
+            // _performAiDecision's Task is deliberately not awaited here (awaiting on the game thread
+            // would deadlock the pump -- see the NOTE below), but an UNOBSERVED faulted Task is
+            // silently swallowed: nothing before this fix ever looked at it again, so an exception
+            // thrown after the method's first `await` (e.g. a null tile/thing deep in
+            // CombatHelper.PerformAbility) vanished with no trace at all -- the exact "reported
+            // success while doing nothing" shape this file's header warns about. This attaches a
+            // continuation on the default (non-Unity) scheduler purely to OBSERVE the fault and log
+            // it, so a fire that dies mid-flight leaves a line in the BepInEx log instead of nothing.
+            Task asTask = fireTask as Task;
+            if (asTask != null)
+            {
+                asTask.ContinueWith(delegate(Task t)
+                {
+                    if (!t.IsFaulted) return;
+                    Exception root = t.Exception; while (root.InnerException != null) root = root.InnerException;
+                    if (_log != null) _log.LogWarning("crucible_use_ability/_auto: _performAiDecision faulted asynchronously (ability=" + abilityName + "): " + root);
+                }, TaskScheduler.Default);
+            }
+
             ICollection resultList = results as ICollection;
             LastResult = "ability=" + abilityName + " target=(" + tileX + ", " + tileY + ")"
                 + " origin=" + Str(PartyAccess.ReadMember(entity, "Guid"))
                 + "\nresultCount=" + (resultList == null ? -1 : resultList.Count)
                 + "\nhealthBefore: " + before
+                + "\nasyncFireMonitored=" + (asTask != null)
                 + "\nNOTE: _performAiDecision returns a Task that is NOT awaited (blocking the game"
                 + "\n      thread would deadlock the pump). Re-read crucible_combat_snapshot after a"
-                + "\n      moment to observe the effect.";
+                + "\n      moment to observe the effect; if pa/sa never drop, check the BepInEx log for"
+                + "\n      a 'faulted asynchronously' warning before assuming this verb did nothing.";
+        }
+
+        // ============================================================== crucible_use_item
+
+        /// <summary>
+        /// crucible_use_item &lt;itemConfigNameOrThingId&gt; &lt;x&gt; &lt;y&gt; [abilityName] — make the
+        /// active combatant THROW/USE a toolbelt item at a tile, with the ITEM as the acting Thing.
+        ///
+        /// <para><b>Why crucible_use_ability could not do this.</b> Every fire path ends at
+        /// <c>CombatPhase._performAiDecision</c> (CombatPhase.cs:1449), which does NOT take a Thing —
+        /// it derives one at CombatPhase.cs:1479 with
+        /// <c>CombatHelper.GetCharacterAbilityThing(pCharacter, pDecision.Ability)</c>, and that
+        /// helper (CombatHelper.cs:1833) resolves purely off <c>AbilityAction.ThingId</c>. So the
+        /// acting Thing is a property of the ABILITY ACTION, not of the call. crucible_use_ability
+        /// selects its AbilityAction from <c>CombatHelper.GetAbilities</c> by AbilityName and takes
+        /// the FIRST match, and abilities ids are shared across items — Gary's rod and the capture
+        /// ball both carry <c>ONLY_RESISTDOWN_ATTACK</c> — so the equipped weapon always won and the
+        /// ball could never be the acting item.
+        /// </para>
+        ///
+        /// <para><b>The real toolbelt route, followed here.</b> The combat HUD's toolbelt handler is
+        /// <c>CombatPhase._showCombatHudBar</c>'s local <c>onUseItem</c> (CombatPhase.cs:5444), which
+        /// calls <c>_characterSelectConsumableThing</c> (CombatPhase.cs:3225) →
+        /// <c>_onSelectConsumableThing</c> (CombatPhase.cs:3290). That method's FIRST act is
+        /// <c>CharacterHelper.GetCharacterUseItemAbilities(pCharacter, pItem)</c>
+        /// (CombatPhase.cs:3293 → CharacterHelper.cs:288), whose final branch stamps
+        /// <c>ThingConfigName</c> and <c>ThingId</c> from the item itself (CharacterHelper.cs:320-327).
+        /// That is the only place in the game that mints an item-owned AbilityAction. From there the
+        /// SELF-target branch fires it directly (CombatPhase.cs:3310) and the non-SELF branch parks
+        /// it as <c>_uiSelectedThing</c> for the player to aim, ending at the same
+        /// <c>_performAbility</c>. This verb mints the AbilityAction the same way and then hands it to
+        /// the existing <c>_performAiDecision</c> path with the caller's tile, which covers both
+        /// branches without needing <c>pMenuContext.Layout</c> or any other real-UI-only state.
+        /// </para>
+        ///
+        /// <para><b>The ThingId guard is not optional.</b> Two of
+        /// <c>GetCharacterUseItemAbilities</c>' three branches return an AbilityAction with NO
+        /// ThingId — the logic-ability branch (CharacterHelper.cs:291-303, only reachable with
+        /// pPrioritizeLogicAbility, which this verb never passes) and the
+        /// <c>_itemToSkillAbility</c> branch (CharacterHelper.cs:305-319, reachable whenever the
+        /// item's config name parses as an <c>eItemNames</c> and the character has the matching
+        /// skill). An AbilityAction with a null ThingId makes GetCharacterAbilityThing return null,
+        /// which is the silent form of exactly the bug this verb exists to fix. So the chosen action
+        /// is run back through GetCharacterAbilityThing before firing and the call is REFUSED, loudly,
+        /// unless the Thing that comes back is the very Thing the caller named.
+        /// </para>
+        /// </summary>
+        public static void CrucibleUseItem(string item, string x, string y, string abilityName)
+        {
+            LastResult = null;
+            try
+            {
+                int tileX, tileY;
+                if (string.IsNullOrEmpty(item)
+                    || !int.TryParse((x ?? "").Trim(), out tileX)
+                    || !int.TryParse((y ?? "").Trim(), out tileY))
+                {
+                    LastResult = "error: usage: crucible_use_item <itemConfigNameOrThingId> <x> <y> [abilityName]";
+                    return;
+                }
+                string wantedItem = item.Trim();
+                string wantedAbility = (abilityName ?? "").Trim();
+                if (wantedAbility == "-") wantedAbility = "";
+
+                object entity;
+                string error;
+                if (!ResolveEntity(null, out entity, out error)) { LastResult = "error: " + error; return; }
+
+                object character = PartyAccess.FindComponent(entity, "CharacterComponent");
+                if (character == null) { LastResult = "error: active combatant has no CharacterComponent"; return; }
+
+                // CharacterComponent.Things is the character's whole carried inventory; the toolbelt
+                // is a FILTERED VIEW of it (InventoryHelper.GetCharacterBeltItems, InventoryHelper.cs:973).
+                // Matching over Things rather than the belt view on purpose: the belt filter drops
+                // HIDE_TOOLBAR items and is render-mode dependent, and "the item is carried but the
+                // toolbelt chose not to draw it" must not read as "you do not have that item".
+                IEnumerable things = PartyAccess.ReadMember(character, "Things") as IEnumerable;
+                if (things == null) { LastResult = "error: CharacterComponent.Things is not enumerable"; return; }
+
+                object thing = null;
+                StringBuilder carried = new StringBuilder();
+                foreach (object candidate in things)
+                {
+                    if (candidate == null) continue;
+                    string cfg = Str(PartyAccess.ReadMember(candidate, "ConfigName"));
+                    string id = Str(PartyAccess.ReadMember(candidate, "Id"));
+                    carried.Append("\n  ").Append(cfg).Append(" id=").Append(id);
+                    if (thing != null) continue;
+                    if (string.Equals(cfg, wantedItem, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(id, wantedItem, StringComparison.Ordinal))
+                    {
+                        thing = candidate;
+                    }
+                }
+                if (thing == null)
+                {
+                    LastResult = "error: the active combatant is not carrying '" + wantedItem
+                        + "' (matched against Thing.ConfigName and Thing.Id). Carried:" + carried;
+                    return;
+                }
+
+                string thingConfig = Str(PartyAccess.ReadMember(thing, "ConfigName"));
+                string thingId = Str(PartyAccess.ReadMember(thing, "Id"));
+
+                // CharacterHelper.GetCharacterUseItemAbilities(Entity, Thing, bool) -- bound by
+                // parameter COUNT because the third argument has a compiler default that reflection
+                // does not supply. pPrioritizeLogicAbility is passed FALSE deliberately: true returns
+                // a bare AbilityAction with no ThingId (CharacterHelper.cs:291-303), which is the
+                // overworld/feeding shape, not the combat-throw shape.
+                Type characterHelper = AccessTools.TypeByName("CharacterHelper");
+                if (characterHelper == null) { LastResult = "error: CharacterHelper not found"; return; }
+                MethodInfo getUseItem = null;
+                foreach (MethodInfo m in characterHelper.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                {
+                    if (!string.Equals(m.Name, "GetCharacterUseItemAbilities", StringComparison.Ordinal)) continue;
+                    if (m.GetParameters().Length == 3) { getUseItem = m; break; }
+                }
+                if (getUseItem == null) { LastResult = "error: CharacterHelper.GetCharacterUseItemAbilities(Entity, Thing, bool) not found"; return; }
+
+                List<object> itemAbilities = new List<object>();
+                try
+                {
+                    IEnumerable raw = getUseItem.Invoke(null, new object[] { entity, thing, false }) as IEnumerable;
+                    if (raw == null) { LastResult = "error: GetCharacterUseItemAbilities returned a non-enumerable for " + thingConfig; return; }
+                    foreach (object a in raw) if (a != null) itemAbilities.Add(a);
+                }
+                catch (TargetInvocationException ex)
+                {
+                    Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                    LastResult = "error: GetCharacterUseItemAbilities threw for " + thingConfig + ": " + root.GetType().Name + ": " + root.Message;
+                    return;
+                }
+                if (itemAbilities.Count == 0)
+                {
+                    LastResult = "error: " + thingConfig + " has no use-item abilities (InventoryHelper.GetInteractable(\""
+                        + thingConfig + "\").Abilities is empty) -- it is not a usable item.";
+                    return;
+                }
+
+                object chosen = null;
+                StringBuilder offered = new StringBuilder();
+                foreach (object a in itemAbilities)
+                {
+                    string an = Str(PartyAccess.ReadMember(a, "AbilityName"));
+                    offered.Append("\n  ").Append(an)
+                           .Append(" thingConfigName=").Append(Str(PartyAccess.ReadMember(a, "ThingConfigName")))
+                           .Append(" thingId=").Append(Str(PartyAccess.ReadMember(a, "ThingId")));
+                    if (chosen != null) continue;
+                    if (wantedAbility.Length == 0 || string.Equals(an, wantedAbility, StringComparison.OrdinalIgnoreCase)) chosen = a;
+                }
+                if (chosen == null)
+                {
+                    LastResult = "error: '" + wantedAbility + "' is not an ability of " + thingConfig + ". Offered:" + offered;
+                    return;
+                }
+                string chosenName = Str(PartyAccess.ReadMember(chosen, "AbilityName"));
+
+                // The acceptance guard. This is the exact call _performAiDecision will make at
+                // CombatPhase.cs:1479 to decide what the acting Thing is, so running it HERE is the
+                // difference between proving the item acts and hoping it does.
+                Type combatHelper = AccessTools.TypeByName("CombatHelper");
+                MethodInfo getAbilityThing = combatHelper == null ? null : AccessTools.Method(combatHelper, "GetCharacterAbilityThing");
+                if (getAbilityThing == null) { LastResult = "error: CombatHelper.GetCharacterAbilityThing not found -- cannot verify the acting Thing, refusing to fire blind"; return; }
+
+                object actingThing;
+                try { actingThing = getAbilityThing.Invoke(null, new object[] { entity, chosen }); }
+                catch (TargetInvocationException ex)
+                {
+                    Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                    LastResult = "error: GetCharacterAbilityThing threw while verifying the acting Thing: " + root.GetType().Name + ": " + root.Message;
+                    return;
+                }
+                string actingId = actingThing == null ? null : Str(PartyAccess.ReadMember(actingThing, "Id"));
+                if (actingThing == null || !string.Equals(actingId, thingId, StringComparison.Ordinal))
+                {
+                    LastResult = "error: REFUSED -- ability '" + chosenName + "' would act with "
+                        + (actingThing == null ? "NO Thing (its AbilityAction carries no ThingId)"
+                                               : ("Thing " + Str(PartyAccess.ReadMember(actingThing, "ConfigName")) + " id=" + actingId))
+                        + ", not " + thingConfig + " id=" + thingId + "."
+                        + "\nThis is the branch of CharacterHelper.GetCharacterUseItemAbilities that does not stamp"
+                        + "\nThingId (CharacterHelper.cs:291-319). Firing anyway would reproduce the silent wrong-item"
+                        + "\nbug this verb exists to fix. Offered abilities:" + offered;
+                    return;
+                }
+
+                object combat = PartyAccess.FindComponent(entity, "CombatComponent");
+                string actionsBefore = combat == null ? "(unknown)"
+                    : ("pa=" + Str(PartyAccess.ReadMember(combat, "PrimaryActions")) + " sa=" + Str(PartyAccess.ReadMember(combat, "SecondaryActions")));
+
+                FireAbility(chosenName, tileX, tileY, chosen);
+                LastResult = "item=" + thingConfig + " thingId=" + thingId
+                    + " ability=" + chosenName
+                    + " actingThingVerified=" + thingConfig + " (GetCharacterAbilityThing agrees)"
+                    + " actionsBefore: " + actionsBefore
+                    + "\nofferedAbilities:" + offered
+                    + "\n" + LastResult;
+            }
+            catch (TargetInvocationException ex)
+            {
+                Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                LastResult = "error: crucible_use_item threw: " + root.GetType().Name + ": " + root.Message;
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_use_item threw: " + ex.Message;
+            }
         }
 
         // ============================================================== end turn / win
 
-        /// <summary>crucible_combat_end_turn — advance to the next turn through CombatPhase._nextTurn.</summary>
+        /// <summary>
+        /// crucible_combat_end_turn — end the ACTIVE entity's turn the way the game itself ends it,
+        /// so ON_TURN_END skill procs actually fire.
+        ///
+        /// Verified in CombatPhase.cs (decompile): _nextTurn (line ~1957) is what runs AFTER a turn
+        /// has ended — it starts the next one, and the only eSkillEventProcs it raises is START_TURN
+        /// (line ~2105, gated on the entity not being charged). END_TURN is raised twice, only inside
+        /// _tryProceedAsync (line ~4770): once at line ~4855 in the wave-advance branch, and once at
+        /// line ~4861 in the RoundEntities/IsTurnOver branch, which is the normal "this character is
+        /// done" path. Both branches raise END_TURN and THEN call _nextTurn themselves (line ~4906).
+        /// So _nextTurn is the consequence of a turn ending, not the cause — the procs live in the
+        /// cause. Calling _nextTurn directly (the old implementation) jumps straight to the
+        /// consequence and skips the cause, which is why every ON_TURN_END recipe in the pack has
+        /// been silent all session: the proc call was never reached.
+        ///
+        /// CombatHelper.IsTurnOver (CombatHelper.cs:762) is exactly `PrimaryActions == 0` (or the
+        /// entity is dead) — verified by reading the method body. So to make the game take the
+        /// IsTurnOver branch of _tryProceedAsync itself, this zeroes the active entity's
+        /// CombatComponent.PrimaryActions and SecondaryActions first, then invokes _tryProceedAsync()
+        /// with its own defaults (pIsScripted=false, pIsFirstTurn=false, pIsStartTurn=false,
+        /// pIsNextRound=false, pWaitEngageTime=0f — read off the declaration at CombatPhase.cs:4770).
+        /// _tryProceedAsync then runs the real end-of-turn results, raises END_TURN for the active
+        /// entity, and calls _nextTurn on its own — so this verb no longer touches _nextTurn at all.
+        ///
+        /// Do NOT call crucible_combat_restore_actions immediately before this verb: restore_actions
+        /// refills PrimaryActions/SecondaryActions to the character's PA/SA stat, which is exactly
+        /// what this verb must zero to make IsTurnOver report true. Calling them back to back is
+        /// self-defeating and will make the turn look like it never ended.
+        /// </summary>
         public static void CrucibleCombatEndTurn()
         {
             LastResult = null;
@@ -463,27 +911,46 @@ namespace Crucible.Plugin
                 object combatPhase = FindCombatPhase();
                 if (combatPhase == null) { LastResult = "error: CombatPhase unavailable (is a fight in progress?)"; return; }
 
-                MethodInfo nextTurn = null;
+                object activeEntity = PartyAccess.ReadMember(combatPhase, "_activeCharacterEntity");
+                if (activeEntity == null) { LastResult = "error: CombatPhase._activeCharacterEntity unavailable"; return; }
+
+                object combat = PartyAccess.FindComponent(activeEntity, "CombatComponent");
+                if (combat == null) { LastResult = "error: active entity has no CombatComponent"; return; }
+
+                FieldInfo primary = AccessTools.Field(combat.GetType(), "PrimaryActions");
+                FieldInfo secondary = AccessTools.Field(combat.GetType(), "SecondaryActions");
+                if (primary == null || secondary == null) { LastResult = "error: CombatComponent.PrimaryActions/SecondaryActions not found"; return; }
+
+                MethodInfo tryProceed = null;
                 foreach (MethodInfo m in combatPhase.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
                 {
-                    if (!string.Equals(m.Name, "_nextTurn", StringComparison.Ordinal)) continue;
-                    if (m.GetParameters().Length == 1) { nextTurn = m; break; }
+                    if (!string.Equals(m.Name, "_tryProceedAsync", StringComparison.Ordinal)) continue;
+                    if (m.GetParameters().Length == 5) { tryProceed = m; break; }
                 }
-                if (nextTurn == null) { LastResult = "error: CombatPhase._nextTurn(Boolean) not found"; return; }
+                if (tryProceed == null) { LastResult = "error: CombatPhase._tryProceedAsync(5 args) not found"; return; }
 
-                string activeBefore = ActiveEntityGuid(null);
-                // Driven through CombatPhase, not CombatHelper.NextTurn: the helper mutates turn
-                // order without the timeline refresh, engage and camera work that wraps it, which
-                // leaves the UI showing a different active character than the state does.
-                nextTurn.Invoke(combatPhase, new object[] { false });
+                string activeGuid = Str(PartyAccess.ReadMember(activeEntity, "Guid"));
+                string activeName = Str(PartyAccess.ReadMember(PartyAccess.FindComponent(activeEntity, "CharacterComponent"), "ConfigName"));
+                object beforeP = primary.GetValue(combat);
+                object beforeS = secondary.GetValue(combat);
 
-                LastResult = "activeBefore=" + activeBefore + " activeAfter=" + ActiveEntityGuid(null)
-                    + "\nNOTE: _nextTurn returns a Task that is not awaited; re-read the snapshot.";
+                primary.SetValue(combat, 0);
+                secondary.SetValue(combat, 0);
+
+                // Defaults read off the CombatPhase.cs:4770 declaration:
+                // _tryProceedAsync(pIsScripted=false, pIsFirstTurn=false, pIsStartTurn=false, pIsNextRound=false, pWaitEngageTime=0f)
+                tryProceed.Invoke(combatPhase, new object[] { false, false, false, false, 0f });
+
+                LastResult = "endedTurnFor=" + activeName + " guid=" + activeGuid
+                    + " primaryActions " + Str(beforeP) + "->0 secondaryActions " + Str(beforeS) + "->0"
+                    + "\nactiveAfter=" + ActiveEntityGuid(null)
+                    + "\nNOTE: _tryProceedAsync returns a Task that is not awaited; re-read the"
+                    + "\n      snapshot after a beat to observe END_TURN procs and the next turn.";
             }
             catch (TargetInvocationException ex)
             {
                 Exception root = ex; while (root.InnerException != null) root = root.InnerException;
-                LastResult = "error: _nextTurn threw: " + root.GetType().Name + ": " + root.Message;
+                LastResult = "error: _tryProceedAsync threw: " + root.GetType().Name + ": " + root.Message;
             }
             catch (Exception ex)
             {
@@ -521,6 +988,411 @@ namespace Crucible.Plugin
             }
         }
 
+        // ============================================================== crucible_kill_target
+
+        /// <summary>
+        /// crucible_kill_target &lt;targetGuidOrIndex&gt; [killerGuid] — land a REAL killing blow,
+        /// through the game's own damage pipeline, so kill-gated traits get a fair shot to fire.
+        ///
+        /// crucible_combat_wipe_enemies and crucible_kill_all both end a life by writing
+        /// CurrentHealth directly and/or calling CharacterHelper.KillCharacter. Read cold in the
+        /// decompile, neither of those touches the only place a kill trait is checked. The chain,
+        /// confirmed by opening every file:line below, not inferred:
+        ///   CombatPhase._performAiDecision(Entity, CombatDecisionData, results)   CombatPhase.cs:1449
+        ///     -> _performAbility(pCharacter, ...)                                CombatPhase.cs:1523
+        ///       -> CombatHelper.PerformAbility(...)                              CombatPhase.cs:4025
+        ///         -> _applyActions(...)                                         CombatHelper.cs:1153,1391
+        ///           -> CombatHelper.ApplyAction(...), case CHANGE_STAT           CombatHelper.cs:1592,2034
+        ///             -> InteractableHelper.ApplyStatChange(...)                 InteractableHelper.cs:627
+        ///               -> CharacterHelper.TryKillCharacter(...)                 InteractableHelper.cs:857
+        ///               -> if killed: CombatHelper.TryCombatOnKillSkillCondition(SKILL_PLAYTHING, ...)
+        ///                                                                        InteractableHelper.cs:859
+        ///               -> unconditionally: TryProcDiscipline(...)               InteractableHelper.cs:849,862
+        /// CharacterHelper.TryKillCharacter and .KillCharacter themselves (CharacterHelper.cs:2130,
+        /// 2166) do neither call -- both bodies were read in full and contain no reference to
+        /// TryCombatOnKillSkillCondition or any *_performSkillAbilityProcs-style dispatch. The proc
+        /// check lives only in ApplyStatChange, the CALLER, which is why any verb that ends a life
+        /// by writing state instead of dealing damage through this pipeline can never reach it.
+        ///
+        /// So this verb drops the target to 1 HP by direct write -- same technique
+        /// crucible_combat_wipe_enemies already uses, but to 1, never 0 -- and then fires a real
+        /// ability from the killer at the target's tile through CombatPhase._performAiDecision, the
+        /// same entry point crucible_use_ability already drives. _performAiDecision takes the acting
+        /// Entity as an explicit parameter rather than always reading _activeCharacterEntity
+        /// (CombatPhase.cs:1449), so the killer does not have to be whoever's turn it currently is.
+        /// The actual HP 1-&gt;0 transition, and everything gated on it, happens inside the verified
+        /// pipeline above -- not in this verb's direct write.
+        ///
+        /// "killTriggerPathInvoked" in the result is a claim about which CODE PATH ran, not about
+        /// whether a trait actually procced: a proc is only externally observable if the killer
+        /// happens to carry SKILL_PLAYTHING or SKILL_DISCIPLINE. What this verb CAN verify is
+        /// whether the target flipped dead across the one call that reaches ApplyStatChange, which
+        /// is the only place either check runs -- if the target is still alive afterward, the check
+        /// never ran, and the result says so plainly instead of guessing why the swing missed.
+        /// </summary>
+        public static void CrucibleKillTarget(string targetGuidOrIndex, string killerGuid)
+        {
+            LastResult = null;
+            try
+            {
+                if (string.IsNullOrEmpty(targetGuidOrIndex))
+                {
+                    LastResult = "error: usage: crucible_kill_target <targetGuidOrIndex> [killerGuid]";
+                    return;
+                }
+
+                object combatState;
+                string error;
+                if (!TryGetCombatState(out combatState, out error)) { LastResult = "error: " + error; return; }
+
+                object entities = PartyAccess.ReadMember(combatState, "Entities");
+                IEnumerable entitiesEnum = entities as IEnumerable;
+                if (entitiesEnum == null) { LastResult = "error: CombatState.Entities is not enumerable"; return; }
+
+                // Index is 0-based position in this same enumeration order, restricted to actual
+                // combatants -- the same order crucible_combat_snapshot lists them in -- so a guid
+                // copied from that snapshot always works, and so does its position in the list.
+                List<object> combatants = new List<object>();
+                foreach (object e in entitiesEnum)
+                {
+                    if (e == null) continue;
+                    if (PartyAccess.FindComponent(e, "CharacterComponent") != null && PartyAccess.FindComponent(e, "CombatComponent") != null)
+                        combatants.Add(e);
+                }
+
+                object target = ResolveCombatant(combatants, targetGuidOrIndex.Trim());
+                if (target == null)
+                {
+                    LastResult = "error: no combatant matches target '" + targetGuidOrIndex
+                        + "' (guid, or 0-based index into the combatant list crucible_combat_snapshot shows)";
+                    return;
+                }
+
+                object targetCharacter = PartyAccess.FindComponent(target, "CharacterComponent");
+                string targetLabel = Str(PartyAccess.ReadMember(target, "Guid")) + "/" + Str(PartyAccess.ReadMember(targetCharacter, "ConfigName"));
+
+                if (IsDead(target))
+                {
+                    LastResult = "target=" + targetLabel + " is already dead -- nothing to kill, no trigger to observe.";
+                    return;
+                }
+
+                object killer;
+                string killerError;
+                if (!ResolveKiller(combatants, target, targetCharacter, killerGuid, out killer, out killerError))
+                {
+                    LastResult = "error: " + killerError;
+                    return;
+                }
+
+                object killerCharacter = PartyAccess.FindComponent(killer, "CharacterComponent");
+                string killerLabel = Str(PartyAccess.ReadMember(killer, "Guid")) + "/" + Str(PartyAccess.ReadMember(killerCharacter, "ConfigName"));
+
+                // Find one of the killer's abilities whose legal target tiles include the target's
+                // tile, using the SAME enumeration crucible_list_targets uses (VenueHelper's 4-arg
+                // CombatAbilityConfig overload), so the choice is legal by construction, not assumed.
+                List<object> abilities;
+                if (!TryGetAbilities(killer, out abilities, out error)) { LastResult = "error: " + error; return; }
+
+                Type interactableHelper = AccessTools.TypeByName("InteractableHelper");
+                MethodInfo getAbilityConfig = interactableHelper == null ? null : AccessTools.Method(interactableHelper, "GetAbilityConfig");
+                Type venueHelper = AccessTools.TypeByName("VenueHelper");
+                MethodInfo getTargetable = null;
+                if (venueHelper != null)
+                {
+                    foreach (MethodInfo m in venueHelper.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                    {
+                        if (!string.Equals(m.Name, "GetTargetableTiles", StringComparison.Ordinal)) continue;
+                        ParameterInfo[] ps = m.GetParameters();
+                        if (ps.Length == 4 && ps[2].ParameterType.Name == "CombatAbilityConfig") { getTargetable = m; break; }
+                    }
+                }
+                if (getAbilityConfig == null || getTargetable == null)
+                {
+                    LastResult = "error: InteractableHelper.GetAbilityConfig or VenueHelper.GetTargetableTiles(4-arg) not found";
+                    return;
+                }
+
+                object targetVenue = PartyAccess.FindComponent(target, "VenueComponent");
+                object targetTile = targetVenue == null ? null : PartyAccess.ReadMember(targetVenue, "TilePosition");
+                if (targetTile == null) { LastResult = "error: target has no VenueComponent.TilePosition"; return; }
+
+                // Measured 2026-08-24/25: firing the first tile-legal ability is not enough -- a
+                // weapon can carry multiple abilities that all legally reach the same enemy tile,
+                // and some of them are zero-damage by design (e.g. the Trainer's starter weapon
+                // ARM_ORIG_STARTER_TRAINER_BEAST_WHISTLE ships STAFF_BASIC_ATTACK, MinValue=0
+                // MaxValue=1, alongside ONLY_SCARE_ATTACK and ONLY_ATTACKUP_OTHER_ATTACK, both
+                // MinValue=0 MaxValue=0 -- see items.json). Those two are still legitimate hostile
+                // actions (they proc ON_ABILITY_USED / HOSTILE_ACTION recipes and can roll PERFECT),
+                // so "the ability fired" is not evidence it can deal damage. Rank every tile-legal
+                // candidate by CharacterHelper.GetMinAndMaxDamageOfAbilityForCharacter's maxDamage
+                // and only fire one whose max is provably > 0.
+                Type combatHelperType = AccessTools.TypeByName("CombatHelper");
+                Type characterHelperType = AccessTools.TypeByName("CharacterHelper");
+                MethodInfo getCharacterAbilityThing = null;
+                if (combatHelperType != null)
+                {
+                    foreach (MethodInfo m in combatHelperType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                    {
+                        if (!string.Equals(m.Name, "GetCharacterAbilityThing", StringComparison.Ordinal)) continue;
+                        if (m.GetParameters().Length == 2) { getCharacterAbilityThing = m; break; }
+                    }
+                }
+                MethodInfo getMinMaxDamage = null;
+                if (characterHelperType != null)
+                {
+                    foreach (MethodInfo m in characterHelperType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                    {
+                        if (!string.Equals(m.Name, "GetMinAndMaxDamageOfAbilityForCharacter", StringComparison.Ordinal)) continue;
+                        if (m.GetParameters().Length == 5) { getMinMaxDamage = m; break; }
+                    }
+                }
+
+                // Only trust the damage filter below when BOTH helper methods actually resolved --
+                // otherwise fall back to "first tile-legal ability" (the prior behavior) rather than
+                // rejecting every candidate because reflection, not the ability, came up empty.
+                bool canVerifyDamage = getCharacterAbilityThing != null && getMinMaxDamage != null;
+
+                object chosenAbility = null;
+                string chosenAbilityName = null;
+                int chosenMaxDamage = -1;
+                StringBuilder consideredAbilities = new StringBuilder();
+                foreach (object ability in abilities)
+                {
+                    if (chosenAbility != null && !canVerifyDamage) break;
+                    string name = Str(PartyAccess.ReadMember(ability, "AbilityName"));
+                    object abilityConfig;
+                    try { abilityConfig = getAbilityConfig.Invoke(null, new object[] { name, false }); }
+                    catch (TargetInvocationException) { continue; }
+                    if (abilityConfig == null) continue;
+
+                    object tilesResult;
+                    try { tilesResult = getTargetable.Invoke(null, new object[] { killer, entities, abilityConfig, null }); }
+                    catch (TargetInvocationException) { continue; }
+                    IEnumerable tileEntities = tilesResult as IEnumerable;
+                    if (tileEntities == null) continue;
+
+                    bool reachesTarget = false;
+                    foreach (object tileEntity in tileEntities)
+                    {
+                        object venue = PartyAccess.FindComponent(tileEntity, "VenueComponent");
+                        if (venue == null) continue;
+                        object pos = PartyAccess.ReadMember(venue, "TilePosition");
+                        if (pos != null && pos.ToString() == targetTile.ToString()) { reachesTarget = true; break; }
+                    }
+                    if (!reachesTarget) continue;
+
+                    if (!canVerifyDamage)
+                    {
+                        // Reflection couldn't find one of the helper methods -- can't judge damage,
+                        // so fall back to the original "first tile-legal ability" behavior rather
+                        // than reject every candidate on a lookup failure that isn't the ability's fault.
+                        chosenAbility = ability;
+                        chosenAbilityName = name;
+                        break;
+                    }
+
+                    // Legal-by-tile. Now check it can actually hurt: resolve the weapon/Thing behind
+                    // it exactly the way _performAiDecision will, then ask for its damage range.
+                    int maxDamage = -1; // -1 = "could not verify" (missing thing/roll data), not zero
+                    string skipReason;
+                    object thing;
+                    try { thing = getCharacterAbilityThing.Invoke(null, new object[] { killer, ability }); }
+                    catch (TargetInvocationException) { thing = null; }
+
+                    if (thing == null)
+                    {
+                        skipReason = "GetCharacterAbilityThing returned null (would silently fail if fired)";
+                    }
+                    else
+                    {
+                        string thingConfigName = Str(PartyAccess.ReadMember(thing, "ConfigName"));
+                        try
+                        {
+                            object dmg = getMinMaxDamage.Invoke(null, new object[] { killer, thingConfigName, name, 1m, 0 });
+                            FieldInfo maxField = dmg.GetType().GetField("Item2");
+                            maxDamage = maxField == null ? -1 : Convert.ToInt32(maxField.GetValue(dmg));
+                            skipReason = maxDamage <= 0 ? "maxDamage=" + maxDamage + " (zero-damage utility ability)" : null;
+                        }
+                        catch (TargetInvocationException)
+                        {
+                            skipReason = "no roll/damage data for this ability on " + thingConfigName;
+                        }
+                    }
+
+                    consideredAbilities.Append("\n  ").Append(name)
+                        .Append(" maxDamage=").Append(maxDamage)
+                        .Append(skipReason == null ? " (candidate)" : " -- skipped: " + skipReason);
+
+                    if (skipReason == null && maxDamage > chosenMaxDamage)
+                    {
+                        chosenAbility = ability;
+                        chosenAbilityName = name;
+                        chosenMaxDamage = maxDamage;
+                    }
+                }
+
+                if (chosenAbility == null)
+                {
+                    LastResult = "target=" + targetLabel + " killer=" + killerLabel
+                        + " deadAfter=(unattempted) killTriggerPathInvoked=false"
+                        + (consideredAbilities.Length == 0
+                            ? "\nerror: none of " + killerLabel + "'s " + abilities.Count
+                              + " abilities can legally target " + targetLabel + "'s tile " + Str(targetTile) + " -- no ability was fired."
+                            : "\nerror: " + killerLabel + "'s abilities that legally reach " + targetLabel + "'s tile " + Str(targetTile)
+                              + " all deal zero verifiable damage -- no ability was fired. Considered:" + consideredAbilities);
+                    return;
+                }
+
+                // Drop the target to 1 HP by direct write -- exactly what crucible_combat_wipe_enemies
+                // already does, but to 1, never 0. Any nonzero damage from the chosen ability then
+                // lands the kill; the HP 1->0 transition and the on-kill check gated on it still run
+                // inside the real pipeline documented above, not here.
+                FieldInfo hpField = AccessTools.Field(targetCharacter.GetType(), "CurrentHealth");
+                object hpBefore = hpField == null ? null : hpField.GetValue(targetCharacter);
+                if (hpField != null)
+                {
+                    int currentHp = Convert.ToInt32(hpField.GetValue(targetCharacter));
+                    if (currentHp > 1) hpField.SetValue(targetCharacter, 1);
+                }
+
+                object combatPhase = FindCombatPhase();
+                if (combatPhase == null) { LastResult = "error: CombatPhase unavailable (is a fight in progress?)"; return; }
+
+                Type decisionType = AccessTools.TypeByName("CombatDecisionData");
+                if (decisionType == null) { LastResult = "error: CombatDecisionData type not found"; return; }
+                object decision = Activator.CreateInstance(decisionType);
+
+                FieldInfo abilityField = AccessTools.Field(decisionType, "Ability");
+                FieldInfo positionField = AccessTools.Field(decisionType, "Position");
+                FieldInfo focusField = AccessTools.Field(decisionType, "FocusUsed");
+                if (abilityField == null || positionField == null) { LastResult = "error: CombatDecisionData shape changed"; return; }
+
+                abilityField.SetValue(decision, chosenAbility);
+                positionField.SetValue(decision, targetTile);
+                if (focusField != null) focusField.SetValue(decision, 0);
+
+                MethodInfo perform = null;
+                foreach (MethodInfo m in combatPhase.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    if (!string.Equals(m.Name, "_performAiDecision", StringComparison.Ordinal)) continue;
+                    if (m.GetParameters().Length == 3) { perform = m; break; }
+                }
+                if (perform == null) { LastResult = "error: CombatPhase._performAiDecision(3 args) not found"; return; }
+
+                object results = Activator.CreateInstance(perform.GetParameters()[2].ParameterType);
+                bool deadBefore = IsDead(target);
+
+                try
+                {
+                    // Killer is passed explicitly, not "whoever's active" -- _performAiDecision takes
+                    // pCharacter as a parameter (CombatPhase.cs:1449) instead of always reading
+                    // _activeCharacterEntity, so this works outside the killer's own turn. Whether the
+                    // game enforces turn order anywhere else this call doesn't touch is unverified;
+                    // report what happened, not what should have happened.
+                    perform.Invoke(combatPhase, new object[] { killer, decision, results });
+                }
+                catch (TargetInvocationException ex)
+                {
+                    Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                    LastResult = "target=" + targetLabel + " killer=" + killerLabel + " ability=" + chosenAbilityName
+                        + " deadBefore=" + deadBefore + " deadAfter=(unattempted) killTriggerPathInvoked=false"
+                        + "\nerror: _performAiDecision threw: " + root.GetType().Name + ": " + root.Message;
+                    return;
+                }
+
+                bool deadAfter = IsDead(target);
+                ICollection resultList = results as ICollection;
+
+                // Only claim the trigger's CODE PATH ran when the target actually flipped dead across
+                // this single call -- see the class doc comment for why that is the honest boundary of
+                // what this verb can observe.
+                bool killTriggerPathInvoked = !deadBefore && deadAfter;
+
+                LastResult = "target=" + targetLabel + " killer=" + killerLabel + " ability=" + chosenAbilityName
+                    + " tile=" + Str(targetTile)
+                    + " hpBefore=" + Str(hpBefore) + "->1(forced)"
+                    + " deadBefore=" + deadBefore + " deadAfter=" + deadAfter
+                    + " killTriggerPathInvoked=" + killTriggerPathInvoked
+                    + " resultCount=" + (resultList == null ? -1 : resultList.Count)
+                    + (deadAfter ? "" : "\nNOTE: target is still alive -- the ability did not land a killing blow; no on-kill trigger check ran.")
+                    + "\nNOTE: _performAiDecision returns a Task that is NOT awaited; re-read crucible_combat_snapshot"
+                    + "\n      after a moment to confirm the death and any secondary effects (bond counters, etc).";
+                if (_log != null) _log.LogInfo("crucible_kill_target: " + LastResult);
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_kill_target threw: " + ex.Message;
+            }
+        }
+
+        /// <summary>Guid match (case-insensitive) or 0-based index into <paramref name="combatants"/>.</summary>
+        private static object ResolveCombatant(List<object> combatants, string guidOrIndex)
+        {
+            int index;
+            if (int.TryParse(guidOrIndex, out index))
+            {
+                return (index >= 0 && index < combatants.Count) ? combatants[index] : null;
+            }
+            foreach (object candidate in combatants)
+            {
+                object guid = PartyAccess.ReadMember(candidate, "Guid");
+                if (guid != null && string.Equals(guid.ToString(), guidOrIndex, StringComparison.OrdinalIgnoreCase))
+                    return candidate;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Explicit killerGuid if given; otherwise the active combatant if it qualifies, otherwise
+        /// the first living combatant outside the target's group. Never the target itself.
+        /// </summary>
+        private static bool ResolveKiller(List<object> combatants, object target, object targetCharacter, string killerGuid, out object killer, out string error)
+        {
+            killer = null;
+            error = null;
+
+            if (!string.IsNullOrEmpty(killerGuid) && killerGuid.Trim() != "-")
+            {
+                object explicitKiller = ResolveCombatant(combatants, killerGuid.Trim());
+                if (explicitKiller == null) { error = "no combatant matches killer '" + killerGuid + "'"; return false; }
+                if (ReferenceEquals(explicitKiller, target)) { error = "killer and target are the same entity"; return false; }
+                killer = explicitKiller;
+                return true;
+            }
+
+            object targetGroup = PartyAccess.ReadMember(targetCharacter, "GroupIndex");
+            int targetGroupIdx = targetGroup == null ? -1 : Convert.ToInt32(targetGroup);
+
+            object combatPhase = FindCombatPhase();
+            object active = combatPhase == null ? null : PartyAccess.ReadMember(combatPhase, "_activeCharacterEntity");
+            if (active != null && !ReferenceEquals(active, target) && !IsDead(active))
+            {
+                object activeCharacter = PartyAccess.FindComponent(active, "CharacterComponent");
+                object activeGroup = activeCharacter == null ? null : PartyAccess.ReadMember(activeCharacter, "GroupIndex");
+                if (activeCharacter != null && (activeGroup == null || Convert.ToInt32(activeGroup) != targetGroupIdx))
+                {
+                    killer = active;
+                    return true;
+                }
+            }
+
+            foreach (object candidate in combatants)
+            {
+                if (ReferenceEquals(candidate, target) || IsDead(candidate)) continue;
+                object candidateCharacter = PartyAccess.FindComponent(candidate, "CharacterComponent");
+                object candidateGroup = candidateCharacter == null ? null : PartyAccess.ReadMember(candidateCharacter, "GroupIndex");
+                if (candidateCharacter != null && (candidateGroup == null || Convert.ToInt32(candidateGroup) != targetGroupIdx))
+                {
+                    killer = candidate;
+                    return true;
+                }
+            }
+
+            error = "no living combatant outside target's group to act as killer -- pass [killerGuid] explicitly";
+            return false;
+        }
+
         // ============================================================== helpers
 
         // ============================================================== crucible_combat_wipe_enemies
@@ -543,7 +1415,7 @@ namespace Crucible.Plugin
         /// Group 0 is the player party, so the default of 1 is deliberate: the obvious typo should
         /// not wipe the party being tested.
         /// </summary>
-        public static void CrucibleCombatWipeEnemies(string group)
+        public static void CrucibleCombatWipeEnemies(string group, string keepAlive)
         {
             LastResult = null;
             try
@@ -551,55 +1423,123 @@ namespace Crucible.Plugin
                 int wanted;
                 if (!int.TryParse((group ?? "1").Trim(), out wanted)) wanted = 1;
 
+                // keepAlive: leave the FIRST N living members of the group standing. An isolation
+                // scenario needs a REAL encounter monster to test against -- a body made by
+                // crucible_combat_spawn has no StatusEffectComponent and so cannot carry or report
+                // a status at all (measured 2026-08-26: the identical FOCUS FIRE proc stamped
+                // ARMORDOWN on an encounter rat and left a spawned jelly at statuses=[]) -- but the
+                // encounter the party walks into brings four of them, which killed the HP-16
+                // Trainer partner before it could take its turn in two runs out of three. Thinning
+                // to one real monster is the only way to get an isolation fight that is both
+                // status-capable and survivable. Empty/absent means keep none: the old behaviour.
+                int keep;
+                if (!int.TryParse((keepAlive ?? "").Trim(), out keep) || keep < 0) keep = 0;
+
                 object combatState;
                 string error;
                 if (!TryGetCombatState(out combatState, out error)) { LastResult = "error: " + error; return; }
 
-                IEnumerable entities = PartyAccess.ReadMember(combatState, "Entities") as IEnumerable;
-                if (entities == null) { LastResult = "error: CombatState.Entities is not enumerable"; return; }
+                IEnumerable entitiesLive = PartyAccess.ReadMember(combatState, "Entities") as IEnumerable;
+                if (entitiesLive == null) { LastResult = "error: CombatState.Entities is not enumerable"; return; }
+
+                // Snapshot BEFORE killing anything -- same fix as crucible_kill_all's own snapshot
+                // (see CrucibleKillAll above). Killing a GROUP 0 (party) combatant can trigger the
+                // game's own defeat/teardown handling synchronously, which mutates CombatState.Entities
+                // out from under a live enumerator. Measured: wiping group 0 killed only the first
+                // combatant in enumeration order and then threw InvalidOperationException ("Collection
+                // was modified") on the next MoveNext(), aborting the loop silently into LastResult's
+                // error branch -- three of four party members were never touched. Enumerating a
+                // List<object> snapshot instead means the mutation of the live collection can't affect
+                // the iteration.
+                List<object> entities = new List<object>();
+                foreach (object e in entitiesLive) entities.Add(e);
 
                 Type helper = AccessTools.TypeByName("CharacterHelper");
-                MethodInfo tryKill = helper == null ? null : AccessTools.Method(helper, "TryKillCharacter");
                 MethodInfo isDead = helper == null ? null : AccessTools.Method(helper, "IsDead");
 
-                int seen = 0, killed = 0, alreadyDead = 0, skippedGroup = 0;
+                // KillCharacter, NOT TryKillCharacter. TryKillCharacter's real signature is
+                //     TryKillCharacter(Entity, int, StatChangedResultsData, Env, GameRandom,
+                //                      List<(eAbilityResults, object)>)
+                // -- six parameters (CharacterHelper.cs:2130). Invoking it with one argument threw
+                // TargetParameterCountException, which derives from TargetException and NOT from
+                // TargetInvocationException, so it sailed past the narrow inner catch, was swallowed
+                // by the per-entity catch BEFORE `killed++`, and the verb reported
+                // `killed=0 changed=False` on every call -- while the CurrentHealth=0 write just
+                // above had already landed. A verb that half-worked and reported total failure.
+                // KillCharacter(Entity, List<(eAbilityResults,object)>, bool) is the method
+                // TryKillCharacter itself calls to do the actual killing; everything else in
+                // TryKillCharacter is deathsave/necro/revive logic a test wipe does not want.
+                // The results list must be a REAL list, not null: KillCharacter only appends the
+                // DIED result (which is what downstream turn-order/summary bookkeeping reads) when
+                // pResults is non-null.
+                Type abilityResults = AccessTools.TypeByName("eAbilityResults");
+                MethodInfo killChar = null;
+                Type resultListType = null;
+                if (helper != null && abilityResults != null)
+                {
+                    killChar = AccessTools.Method(helper, "KillCharacter");
+                    resultListType = typeof(List<>).MakeGenericType(
+                        typeof(ValueTuple<,>).MakeGenericType(abilityResults, typeof(object)));
+                }
+                if (killChar == null)
+                {
+                    LastResult = "error: CharacterHelper.KillCharacter could not be resolved; refusing "
+                        + "to half-kill anything by writing CurrentHealth without death bookkeeping";
+                    return;
+                }
+
+                int seen = 0, killed = 0, alreadyDead = 0, skippedGroup = 0, kept = 0;
                 StringBuilder detail = new StringBuilder();
+                string firstFailure = null;
 
                 foreach (object entity in entities)
                 {
-                    if (entity == null) continue;
-                    object character = PartyAccess.FindComponent(entity, "CharacterComponent");
-                    object combat = PartyAccess.FindComponent(entity, "CombatComponent");
-                    if (character == null || combat == null) continue;
-
-                    object groupIndex = PartyAccess.ReadMember(character, "GroupIndex");
-                    if (groupIndex == null || Convert.ToInt32(groupIndex) != wanted) { skippedGroup++; continue; }
-                    seen++;
-
-                    bool dead = false;
-                    if (isDead != null)
+                    // Per-entity try/catch: killing an earlier GROUP 0 combatant can trigger the
+                    // game's own defeat handling mid-loop (see the snapshot note above), which can
+                    // leave a LATER entity in this same snapshot stale (component lookups throwing)
+                    // even though the collection itself is now safe to enumerate. One bad entity must
+                    // not stop the rest of the party from being killed.
+                    try
                     {
-                        try { object d = isDead.Invoke(null, new object[] { entity }); dead = d is bool && (bool)d; }
-                        catch (Exception) { }
+                        if (entity == null) continue;
+                        object character = PartyAccess.FindComponent(entity, "CharacterComponent");
+                        object combat = PartyAccess.FindComponent(entity, "CombatComponent");
+                        if (character == null || combat == null) continue;
+
+                        object groupIndex = PartyAccess.ReadMember(character, "GroupIndex");
+                        if (groupIndex == null || Convert.ToInt32(groupIndex) != wanted) { skippedGroup++; continue; }
+                        seen++;
+
+                        bool dead = false;
+                        if (isDead != null)
+                        {
+                            try { object d = isDead.Invoke(null, new object[] { entity }); dead = d is bool && (bool)d; }
+                            catch (Exception) { }
+                        }
+                        if (dead) { alreadyDead++; continue; }
+                        if (kept < keep) { kept++; continue; }
+
+                        FieldInfo hp = AccessTools.Field(character.GetType(), "CurrentHealth");
+                        if (hp != null) hp.SetValue(character, 0);
+
+                        object results = Activator.CreateInstance(resultListType);
+                        killChar.Invoke(null, new object[] { entity, results, false });
+                        killed++;
+                        if (detail.Length < 400)
+                            detail.Append("\n  ").Append(Str(PartyAccess.ReadMember(character, "ConfigName")));
                     }
-                    if (dead) { alreadyDead++; continue; }
-
-                    FieldInfo hp = AccessTools.Field(character.GetType(), "CurrentHealth");
-                    if (hp != null) hp.SetValue(character, 0);
-
-                    if (tryKill != null)
+                    catch (Exception ex)
                     {
-                        try { tryKill.Invoke(null, new object[] { entity }); }
-                        catch (TargetInvocationException) { }
+                        Exception root = ex; while (root.InnerException != null) root = root.InnerException;
+                        firstFailure = firstFailure ?? (root.GetType().Name + ": " + root.Message);
                     }
-                    killed++;
-                    if (detail.Length < 400)
-                        detail.Append("\n  ").Append(Str(PartyAccess.ReadMember(character, "ConfigName")));
                 }
 
                 LastResult = "group=" + wanted + " inGroup=" + seen + " killed=" + killed
+                    + " keptAlive=" + kept
                     + " alreadyDead=" + alreadyDead + " otherGroups=" + skippedGroup
                     + " changed=" + (killed > 0) + detail
+                    + (firstFailure == null ? "" : ("\nfirst per-entity failure (loop continued past it): " + firstFailure))
                     + "\nNOTE: death bookkeeping is asynchronous. Re-read crucible_combat_snapshot;"
                     + "\n      the wave may advance rather than the fight ending outright.";
                 if (_log != null) _log.LogInfo("crucible_combat_wipe_enemies: " + LastResult);

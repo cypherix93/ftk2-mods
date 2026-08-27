@@ -1,0 +1,344 @@
+{
+  "schema": "crucible.scenario.v1",
+  "name": "iso-vampiric-batswarm",
+  "kind": "isolation",
+  "checklist_item": "G. Classes / CF_PACK_ORIGINALS / Vampiric -- Engorged stacking + Bat Swarm summon",
+  "description": "Stack cf_gorged to its cap of 3 over three rounds, then land a KILL so Bat Swarm summons BAT_VAMPIRE_01 and resets the counter.",
+  "notes": [
+    "THE BRIEF ASKED FOR A FIXTURE WITH cf_gorged 'near 3'. THAT IS NOT SETTABLE. Only a counter marked Persistent:true is written into CharacterComponent.CustomData as CF_COUNTER_<name> (RecipeEngineHost.cs:164 PersistentCounterKeyPrefix, written at RecipeActionExecutor.cs:216 ExecPersistCounter). SKILL_CF_VAMPIRIC_ENGORGED's cf_gorged counter is NOT persistent -- it lives only in the in-memory CombatRuntime._counters -- so there is no customData key to pre-set and no state assert that can read it. cf_bond on SKILL_CF_TRAINER_GOTTA_TRAIN_EM is the ONLY persistent counter in the pack.",
+    "So the counter is EARNED in-scenario instead: Engorged is Budget ONCE_PER_ROUND with condition HP_THRESHOLD GTE 70%, capped at Max 3, so three hits across three separate rounds take it to its cap. The advance-only steps between the hits exist purely to re-arm that budget.",
+    "THE HP ARITHMETIC IS TIGHT AND DELIBERATE. The recipe's own _design block records that the HP_THRESHOLD was lowered to 70 precisely so three stacks are reachable: base 60 HP, +8 max per Engorged stack -> 88% / 79% / 71%. Blood Price costs 3 HP per hostile ability and Crimson Drain heals 25% of damage dealt, so the two roughly cancel. Do not raise the threshold, and do not run this scenario with godmode on -- either breaks the gate.",
+    "Bat Swarm is ON_KILL, ONCE_PER_ROUND, gated on COUNTER cf_gorged GTE 3, and summons exactly one BAT_VAMPIRE_01 before COUNTER_SET resets cf_gorged to 0. Since the counter is unreadable in state, the summon IS the only observable proof the gate passed -- which makes the screen half of the pair load-bearing here rather than corroborative.",
+    "The end_turn counts in the advance steps are a guess at the roster size. If a step reports the actor is not the ACTIVE entity, adjust them -- bench.py refuses to fire in that case rather than firing as whoever is up.",
+    "RESULT 2026-08-26 (seed 20260826, shared batch-4class bed): Engorged fires ONCE (SKILL_CF_VAMPIRIC_ENGORGED + BLOOD_PRICE + CRIMSON_DRAIN all proc on s1, status present) and then does NOT re-proc on s2 or s3 -- s2's PASS was only the s1 status still running its duration down, and by s3 it had expired with no second proc. Bat Swarm therefore never armed and SKILL_CF_VAMPIRIC_BAT_SWARM never appeared. Also note engorged_dur_1 read duration=2 where the manifest expects 3. UNRESOLVED: whether the ONCE_PER_ROUND budget failed to re-arm because the `advance` steps end TURNS and never crossed a round boundary, or whether Blood Price's self-damage closed the HP>=70% gate. Do not report Bat Swarm as broken until that is separated."
+  ],
+  "seed": 20260826,
+  "fixture": {
+    "run_id": "63d7d316-0134-4efa-b462-f3a24dc46922",
+    "backup": "batch-4class.ftk2",
+    "status": "built",
+    "notes": "REUSES THE batch-4class BED (built 2026-08-26 through real CHARACTER CREATION: Vampiric / Pacifist / Pokemon Trainer / Gary, confirmed on screen and by crucible_party_list). A dedicated bed was not built for this scenario: that party already satisfies this manifest's expect_classes and min_size, and README says extra party members do not invalidate an identity tell that names the subject. bench.py always loads a COPY, so sharing one backup across scenarios is safe as long as they run SERIALLY. Original build recipe for a dedicated bed is kept below.\n\nORIGINAL: BUILD RECIPE. New campaign -> CHARACTER CREATION (never crucible_party_set_class: it rewrites ConfigName but NOT the display name, so every screenshot shows a stale vanilla name and proves nothing). Slot 1 = Vampiric. Save, then copy the .ftk2 out of GameRuns\\ into %USERPROFILE%\\Backups\ftk2-fixtures as this file and set status to 'built'. Candidate starting point: bdb1596d-86ee-4783-9d8f-fb49934a0770.ftk2 already in the backup folder -- but its party is UNVERIFIED and the AGENT-BRIEF records that a Gary test party was autosaved over it mid-combat, so confirm with crucible_party_list."
+  },
+  "party": {
+    "expect_classes": [
+      "Vampiric"
+    ],
+    "min_size": 1,
+    "forbid_names": [
+      "Shepherd",
+      "Thief",
+      "Corsair",
+      "Bladedancer"
+    ]
+  },
+  "setup": [
+    {
+      "op": "godmode",
+      "value": "off",
+      "why": "godmode ON tops HP up every tick and masks every HP effect -- Blood Price, Crimson Drain and the HP_THRESHOLD GTE 70 gate would all read wrong."
+    },
+    {
+      "op": "wipe_enemies"
+    }
+  ],
+  "enemies": [
+    {
+      "config": "WOLF_GRASS_08",
+      "count": 3,
+      "group": 1,
+      "role": "killable",
+      "why": "HP 16 / ATK 10 / DEF 5 -- the weakest config with a full stat block in CF_PACK_ORIGINALS/classes.json. Three of them: two to feed Engorged stacks without dying, one to KILL on the last step so ON_KILL fires."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s1",
+      "label": "Vampiric attacks -- Engorged stack 1 (ON_DAMAGE_DEALT, HP >= 70%)",
+      "actor": "class:CF_ORIG_VAMPIRIC",
+      "ability": "BLADE_BASIC_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_VAMPIRIC_ENGORGED",
+          "SKILL_CF_VAMPIRIC_BLOOD_PRICE",
+          "SKILL_CF_VAMPIRIC_CRIMSON_DRAIN"
+        ],
+        "forbid": [
+          "Recipe effect failed",
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "engorged_1",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "status": "STATUS_VIGOR_CF_ENGORGED"
+        },
+        {
+          "id": "engorged_dur_1",
+          "kind": "status_duration",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "status": "STATUS_VIGOR_CF_ENGORGED",
+          "op": "eq",
+          "value": 3
+        },
+        {
+          "id": "jelly0_hurt",
+          "kind": "hp_delta",
+          "selector": "enemy:0",
+          "op": "lt",
+          "value": 0
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_vampiric",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Vampiric\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "engorged_icon",
+          "kind": "effect",
+          "region": "portraits",
+          "expect": "an \"Engorged\" status icon on the Vampiric portrait with a duration of 3"
+        },
+        {
+          "id": "jelly_hp",
+          "kind": "effect",
+          "region": "board",
+          "expect": "the target jelly's HP bar and hp/maxHp number are lower than before"
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "label": "advance to round 2 so the ONCE_PER_ROUND budget re-arms",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 8
+      }
+    },
+    {
+      "id": "s2",
+      "label": "Engorged stack 2",
+      "actor": "class:CF_ORIG_VAMPIRIC",
+      "ability": "BLADE_BASIC_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_VAMPIRIC_ENGORGED"
+        ],
+        "forbid": [
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "engorged_2",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "status": "STATUS_VIGOR_CF_ENGORGED"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_vampiric",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Vampiric\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "engorged_icon_2",
+          "kind": "effect",
+          "region": "portraits",
+          "expect": "the Engorged icon is still on the Vampiric portrait, refreshed to 3"
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "label": "advance to round 3",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 8
+      }
+    },
+    {
+      "id": "s3",
+      "label": "Engorged stack 3 -- cf_gorged reaches its Max of 3, arming Bat Swarm",
+      "actor": "class:CF_ORIG_VAMPIRIC",
+      "ability": "BLADE_BASIC_ATTACK",
+      "target": {
+        "select": "enemy:1"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_VAMPIRIC_ENGORGED"
+        ],
+        "forbid": [
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "engorged_3",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "status": "STATUS_VIGOR_CF_ENGORGED"
+        },
+        {
+          "id": "s3_hp_above_engorged_gate",
+          "kind": "hp",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "op": "gte",
+          "value": 29,
+          "why": "DIAGNOSTIC, not a claim about the class. SKILL_CF_VAMPIRIC_ENGORGED is gated on SELF HP_THRESHOLD GTE 70% (skillrecipes.json), and the Vampiric's max is 41, so 29 is the gate. Engorged was measured firing ONCE and never again -- in THIS scenario and in iso-vampiric-batswarm, both on seed 20260826 -- and the two candidate explanations are (a) the ONCE_PER_ROUND budget never re-arming and (b) Blood Price's own self-damage plus enemy hits dropping the caster under 70% so the gate is simply shut. Recording HP at the moment of the missing proc separates them. bench only heals when the actor is DOWNED, so nothing in the harness hides case (b)."
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_vampiric",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Vampiric\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "maxhp_grew",
+          "kind": "effect",
+          "region": "party",
+          "expect": "the Vampiric card's maxHP is higher than at the start of the fight (STATUS_VIGOR_CF_ENGORGED carries HP:8)"
+        }
+      ]
+    },
+    {
+      "id": "r4",
+      "label": "advance to round 4",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 8
+      }
+    },
+    {
+      "id": "s4",
+      "label": "KILL a jelly -- ON_KILL with cf_gorged GTE 3 summons BAT_VAMPIRE_01",
+      "actor": "class:CF_ORIG_VAMPIRIC",
+      "ability": "BLADE_BASIC_ATTACK",
+      "target": {
+        "select": "enemy:2"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_VAMPIRIC_BAT_SWARM"
+        ],
+        "forbid": [
+          "Recipe effect failed",
+          "NullReferenceException",
+          "KeyNotFoundException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "bat_summoned",
+          "kind": "count",
+          "selector": "name:Bat",
+          "op": "gte",
+          "value": 1,
+          "why": "Named, not `summon:*`. This bed is SHARED with batch-4class, so it also holds a Pokemon Trainer whose ON_COMBAT_START partner is itself an ally summon -- measured 2026-08-26, `count(summon:*)=1` PASSED on a run where Bat Swarm never fired at all and the one summon on the board was the Trainer's jelly. An assert that passes for the wrong reason is worse than one that fails."
+        },
+        {
+          "id": "bat_is_ally",
+          "kind": "count",
+          "selector": "name:Bat",
+          "op": "gte",
+          "value": 1
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_vampiric",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Vampiric\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "bat_on_board",
+          "kind": "effect",
+          "region": "board",
+          "expect": "a bat body is now standing on a PLAYER-side tile that was empty before"
+        },
+        {
+          "id": "bat_card",
+          "kind": "effect",
+          "region": "portraits",
+          "expect": "a card for the summoned bat in the ally/minion HUD -- a summon in state with no card and no body is the invisible-mechanic FAIL, not a pass"
+        }
+      ]
+    }
+  ],
+  "tells": [
+    {
+      "id": "identity_vampiric",
+      "kind": "identity",
+      "region": "party",
+      "expect": "the party HUD card reads \"Vampiric\" -- our class, not a vanilla one",
+      "invalidated_by": [
+        "Shepherd",
+        "Thief",
+        "Corsair",
+        "Bladedancer"
+      ]
+    },
+    {
+      "id": "final_board",
+      "kind": "effect",
+      "region": "board",
+      "expect": "the summoned bat and the Vampiric are both on the player side of the board"
+    }
+  ],
+  "asserts": [
+    {
+      "id": "vampiric_alive",
+      "kind": "alive",
+      "selector": "class:CF_ORIG_VAMPIRIC",
+      "op": "eq",
+      "value": true
+    },
+    {
+      "id": "summon_persisted",
+      "kind": "count",
+      "selector": "summon:*",
+      "op": "gte",
+      "value": 1
+    }
+  ]
+}

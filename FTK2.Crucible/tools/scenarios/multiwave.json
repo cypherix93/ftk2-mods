@@ -1,0 +1,198 @@
+{
+  "schema": "crucible.scenario.v1",
+  "name": "multiwave",
+  "kind": "batch",
+  "checklist_item": "D. Combat -- multi-wave fights; wave segmentation and the non-monotonic round counter",
+  "description": "Prove the classes and the observation surface both survive a WAVE change: state keeps reporting, budgets re-arm, and nothing throws when CombatState.TotalRounds rewinds.",
+  "seed": 20260826,
+  "notes": [
+    "THE TRAP THIS SCENARIO ENCODES: combat.round is NOT monotonic. CombatState.TotalRounds initialises to -1 and is reset to -1 again PER WAVE, so a multi-wave fight rewinds it. Never assert that round increases. Assert on turn (monotonic within an episode) and use wave to segment. There is no round assert in this manifest for exactly that reason.",
+    "The second wave is produced with crucible_combat_spawn rather than by finding a real multi-wave encounter, because crucible_force_combat is a guaranteed wedge and the spawn-and-walk path cannot choose an encounter's wave count. That means this is a wave-SHAPED test, not a genuine WaveIndex increment -- if combat.wave does not move, report the wave half UNVERIFIED rather than reading the spawn as a wave.",
+    "A ONCE_PER_ROUND budget re-arming across the boundary is the class-side thing worth watching: Engorged is ONCE_PER_ROUND, so it must be able to fire again after the rewind."
+  ],
+  "fixture": {
+    "run_id": "63d7d316-0134-4efa-b462-f3a24dc46922",
+    "backup": "batch-4class.ftk2",
+    "status": "built",
+    "notes": "REUSES THE batch-4class BED (built 2026-08-26 through real CHARACTER CREATION: Vampiric / Pacifist / Pokemon Trainer / Gary, confirmed on screen and by crucible_party_list). A dedicated bed was not built for this scenario: that party already satisfies this manifest's expect_classes and min_size, and README says extra party members do not invalidate an identity tell that names the subject. bench.py always loads a COPY, so sharing one backup across scenarios is safe as long as they run SERIALLY. Original build recipe for a dedicated bed is kept below.\n\nORIGINAL: Reuses the batch-4class bed deliberately -- a multi-wave test wants the same party, not a new one. Build batch-4class first."
+  },
+  "party": {
+    "expect_classes": [
+      "Vampiric",
+      "Pacifist",
+      "Pokemon Trainer",
+      "Gary"
+    ],
+    "min_size": 4,
+    "forbid_names": [
+      "Shepherd",
+      "Thief",
+      "Corsair",
+      "Bladedancer"
+    ]
+  },
+  "setup": [
+    {
+      "op": "godmode",
+      "value": "off",
+      "why": "godmode ON tops HP up every tick and masks every HP effect."
+    },
+    {
+      "op": "wipe_enemies"
+    }
+  ],
+  "enemies": [
+    {
+      "config": "WOLF_GRASS_08",
+      "count": 2,
+      "group": 1,
+      "role": "wave-1"
+    }
+  ],
+  "steps": [
+    {
+      "id": "w1",
+      "label": "wave 1 -- Vampiric acts and Engorged fires",
+      "actor": "class:CF_ORIG_VAMPIRIC",
+      "ability": "BLADE_BASIC_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_VAMPIRIC_ENGORGED"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "w1_engorged",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "status": "STATUS_VIGOR_CF_ENGORGED"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_vampiric",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Vampiric\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "w1_board",
+          "kind": "effect",
+          "region": "board",
+          "expect": "wave-1 enemies on the board and the grid drawn normally"
+        }
+      ]
+    },
+    {
+      "id": "wx",
+      "label": "clear wave 1 and introduce the next set of bodies",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 8
+      }
+    },
+    {
+      "id": "w2",
+      "label": "wave 2 -- Engorged's ONCE_PER_ROUND budget re-armed after the round counter rewound",
+      "actor": "class:CF_ORIG_VAMPIRIC",
+      "ability": "BLADE_BASIC_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_VAMPIRIC_ENGORGED"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "w2_engorged_again",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "status": "STATUS_VIGOR_CF_ENGORGED"
+        },
+        {
+          "id": "w2_party_intact",
+          "kind": "count",
+          "selector": "ally:*",
+          "op": "gte",
+          "value": 4
+        },
+        {
+          "id": "w2_hp_above_engorged_gate",
+          "kind": "hp",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "op": "gte",
+          "value": 29,
+          "why": "DIAGNOSTIC, not a claim about the class. SKILL_CF_VAMPIRIC_ENGORGED is gated on SELF HP_THRESHOLD GTE 70% (skillrecipes.json), and the Vampiric's max is 41, so 29 is the gate. Engorged was measured firing ONCE and never again -- in THIS scenario and in iso-vampiric-batswarm, both on seed 20260826 -- and the two candidate explanations are (a) the ONCE_PER_ROUND budget never re-arming and (b) Blood Price's own self-damage plus enemy hits dropping the caster under 70% so the gate is simply shut. Recording HP at the moment of the missing proc separates them. bench only heals when the actor is DOWNED, so nothing in the harness hides case (b)."
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_vampiric_w2",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Vampiric\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "w2_board",
+          "kind": "effect",
+          "region": "board",
+          "expect": "the grid is still drawn and the new bodies are on it -- a missing tile grid or action menu is the _clearTileRenderState KeyNotFoundException regressing"
+        }
+      ]
+    }
+  ],
+  "tells": [
+    {
+      "id": "identity_vampiric_final",
+      "kind": "identity",
+      "region": "party",
+      "expect": "the party HUD card reads \"Vampiric\" -- our class, not a vanilla one",
+      "invalidated_by": [
+        "Shepherd",
+        "Thief",
+        "Corsair",
+        "Bladedancer"
+      ]
+    },
+    {
+      "id": "final_hud",
+      "kind": "effect",
+      "region": "party",
+      "expect": "all four party cards still rendered after the wave change"
+    }
+  ],
+  "asserts": [
+    {
+      "id": "combat_still_live",
+      "kind": "count",
+      "selector": "ally:*",
+      "op": "gte",
+      "value": 4
+    }
+  ]
+}

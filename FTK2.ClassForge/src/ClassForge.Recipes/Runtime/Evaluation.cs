@@ -69,8 +69,47 @@ namespace ClassForge.Recipes.Runtime
 
         public static bool Evaluate(RecipeCondition c, TriggerContext t, ICombatEntity selfOverride)
         {
+            // SELF_LEVEL and HAS_ITEM are the conditions whose fail-safe false is NOT negatable. Every
+            // other token returns false for "I could not read that" and lets Negate legitimately invert
+            // it; a level gate that inverts an unreadable level would silently OPEN on exactly the
+            // entities whose level the adapter cannot resolve, and a possession gate that inverts an
+            // unreadable inventory would open on exactly the characters whose inventory it cannot see.
+            // Short-circuit before Negate.
+            if (c.Type == ConditionKind.SELF_LEVEL && SelfLevel(t, selfOverride) == EntityReads.UnknownLevel)
+                return false;
+            if (c.Type == ConditionKind.HAS_ITEM && !SelfHasItem(c, t, selfOverride).HasValue)
+                return false;
             bool raw = EvaluateRaw(c, t, selfOverride);
             return c.Negate ? !raw : raw;
+        }
+
+        /// <summary>The level of the entity SELF_LEVEL reads: the ALLY_BY_RANK ranking candidate when one
+        /// is bound (§4.3), otherwise the recipe owner. The <c>Of</c> selector is deliberately not honoured
+        /// — the token is SELF_LEVEL, and the validator warns W_OF_IGNORED for any other Of.
+        /// Returns <see cref="EntityReads.UnknownLevel"/> when there is no entity or the adapter cannot
+        /// resolve one.</summary>
+        private static int SelfLevel(TriggerContext t, ICombatEntity selfOverride)
+        {
+            var self = selfOverride ?? (t != null ? t.Owner : null);
+            if (self == null) return EntityReads.UnknownLevel;
+            try { return self.Level; }
+            catch { return EntityReads.UnknownLevel; }
+        }
+
+        /// <summary>Whether the entity HAS_ITEM reads carries the condition's <c>Value</c> Thing: the
+        /// ALLY_BY_RANK ranking candidate when one is bound (§4.3), otherwise the recipe owner — the same
+        /// entity <see cref="SelfLevel"/> reads, and likewise not subject to <c>Of</c> (the validator
+        /// warns W_OF_IGNORED for any other Of).
+        /// <para>Returns <c>null</c> — the inventory-read "unknown", see <c>ICombatEntity.HasItem</c> —
+        /// when there is no entity, no authored Value, or the adapter cannot read the inventory at all.
+        /// <c>false</c> means the inventory was read and genuinely lacks the item.</para></summary>
+        private static bool? SelfHasItem(RecipeCondition c, TriggerContext t, ICombatEntity selfOverride)
+        {
+            if (string.IsNullOrEmpty(c.Value)) return null;
+            var self = selfOverride ?? (t != null ? t.Owner : null);
+            if (self == null) return null;
+            try { return self.HasItem(c.Value); }
+            catch { return null; }
         }
 
         private static ICombatEntity Resolve(OfSelector of, TriggerContext t, ICombatEntity selfOverride)
@@ -263,6 +302,52 @@ namespace ClassForge.Recipes.Runtime
                 case ConditionKind.STATE_HASH_CHANCE:
                     return StateHashChance.Evaluate(c, t);
 
+                // v1.4 — cover spec: is the tile DIRECTLY IN FRONT of the owner held by a living ally?
+                // Not Of-capable, so the owner is read directly (as ALL_ALLIES_ACTED does). The predicate
+                // mirrors CombatHelper.cs:2414 — same y, |dx| == 1, wanted row on the OTHER tile — which
+                // is why no direction is assumed: group 0's FRONT sits at x+1 and group 1's at x-1 on the
+                // stock "|..Aa.bB..|" board. EntitySets.Allies already drops the dead and the opponents,
+                // so "same group" and "living" come for free. Pure read; consumes no RNG.
+                case ConditionKind.ALLY_IN_FRONT:
+                {
+                    if (t.Owner == null) return false == Want(c);
+                    bool found = false;
+                    int sx = t.Owner.TileX, sy = t.Owner.TileY;
+                    if (sx != int.MinValue && sy != int.MinValue)
+                    {
+                        var allies = EntitySets.Allies(t.Ctx, t.Owner, false);
+                        for (int i = 0; i < allies.Count; i++)
+                        {
+                            var a = allies[i];
+                            int ax = a.TileX, ay = a.TileY;
+                            if (ax == int.MinValue || ay == int.MinValue) continue;
+                            if (ay == sy && Math.Abs(ax - sx) == 1 && a.Row == EntityRow.FRONT) { found = true; break; }
+                        }
+                    }
+                    return found == Want(c);
+                }
+
+                // v1.4 — THIS character's own progression level (ProgressionHelper.GetEntityLevel, derived
+                // from the "XP" inventory Thing), NOT the party average. Pure read; consumes no RNG.
+                // An UNKNOWN level never reaches here: Evaluate short-circuits it to false before Negate.
+                case ConditionKind.SELF_LEVEL:
+                {
+                    int lvl = SelfLevel(t, selfOverride);
+                    if (lvl == EntityReads.UnknownLevel) return false;
+                    return Vocabulary.Compare(c.Comparator, lvl, c.ValueInt.HasValue ? c.ValueInt.Value : 0);
+                }
+
+                // v1.4 — does the owner CARRY this Thing (InventoryHelper.HasItemByName's read over
+                // CharacterComponent.Things, InventoryHelper.cs:424)? Possession, not equipment; ordinal,
+                // case-sensitive. Unlike ITEM_CLASS/ITEM_CONSUMABLE this ignores the triggering ability's
+                // Thing entirely. Pure read; consumes no RNG. An UNREADABLE inventory never reaches here:
+                // Evaluate short-circuits it to false before Negate.
+                case ConditionKind.HAS_ITEM:
+                {
+                    var has = SelfHasItem(c, t, selfOverride);
+                    return has.HasValue && has.Value;
+                }
+
                 default:
                     return false;
             }
@@ -337,15 +422,23 @@ namespace ClassForge.Recipes.Runtime
     }
 
     /// <summary>
-    /// Deterministic entity-set helpers. Every list returned here is sorted by ordinal
-    /// <see cref="ICombatEntity.Guid"/> — SPEC-DELTA-v1.1 §5.2 invariant 4: "Never Dictionary/HashSet
-    /// enumeration order, never filesystem order."
+    /// Deterministic entity-set helpers. Every list returned here is sorted ascending by
+    /// <see cref="ICombatEntity.RosterOrdinal"/> — SPEC-DELTA-v1.1 §5.2 invariant 4: "Never
+    /// Dictionary/HashSet enumeration order, never filesystem order."
+    ///
+    /// <para><b>Changed 2026-08-26: this used to sort on ordinal <c>Guid</c>, which was a co-op
+    /// divergence.</b> <c>Entity.Guid</c> is minted per peer by <c>Guid.NewGuid()</c>, so the "deterministic"
+    /// order was deterministic only within one process. Anything that tie-breaks off this order — most
+    /// visibly <see cref="ValueSources"/>' RANK resolution, whose comment says "ties keep the earlier
+    /// candidate, and candidates is already ordinal-Guid ascending" — therefore picked a DIFFERENT
+    /// combatant on each peer. It takes no extra RNG draw, so it is invisible to the vendor's draw-order
+    /// desync probe; it shows up only as two players watching different things happen.</para>
     /// </summary>
     public static class EntitySets
     {
-        private static int ByGuid(ICombatEntity a, ICombatEntity b)
+        private static void Order(List<ICombatEntity> list)
         {
-            return string.CompareOrdinal(a.Guid, b.Guid);
+            PeerOrder.SortInPlace(list);
         }
 
         public static List<ICombatEntity> Allies(ICombatContext ctx, ICombatEntity of, bool includeSelf)
@@ -361,7 +454,7 @@ namespace ClassForge.Recipes.Runtime
                 if (!includeSelf && string.Equals(e.Guid, of.Guid, StringComparison.Ordinal)) continue;
                 result.Add(e);
             }
-            result.Sort(ByGuid);
+            Order(result);
             return result;
         }
 
@@ -377,14 +470,16 @@ namespace ClassForge.Recipes.Runtime
                 if (!ctx.AreOpponents(of, e)) continue;
                 result.Add(e);
             }
-            result.Sort(ByGuid);
+            Order(result);
             return result;
         }
 
-        public static List<ICombatEntity> SortedByGuid(IEnumerable<ICombatEntity> source)
+        /// <summary>A copy of <paramref name="source"/> in ascending <see cref="ICombatEntity.RosterOrdinal"/>
+        /// order. (Named <c>SortedByGuid</c> until 2026-08-26 — see the type remarks for why that was wrong.)</summary>
+        public static List<ICombatEntity> SortedByRosterOrdinal(IEnumerable<ICombatEntity> source)
         {
             var result = new List<ICombatEntity>(source);
-            result.Sort(ByGuid);
+            Order(result);
             return result;
         }
     }
@@ -457,8 +552,9 @@ namespace ClassForge.Recipes.Runtime
                     best = cand;
                     bestValue = v;
                 }
-                // Ties keep the earlier candidate, and `candidates` is already ordinal-Guid ascending —
-                // that is the "then by Entity.Guid ordinal ascending" tiebreak.
+                // Ties keep the earlier candidate, and `candidates` is already ascending by roster
+                // ordinal — that is the tiebreak. It used to read "then by Entity.Guid ordinal ascending",
+                // which resolved ties differently on every peer because Entity.Guid is minted locally.
             }
             return best;
         }

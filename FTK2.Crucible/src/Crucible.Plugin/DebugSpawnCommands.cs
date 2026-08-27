@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using BepInEx.Logging;
 using FTK2Mods.Crucible;
 using HarmonyLib;
@@ -55,11 +56,49 @@ namespace Crucible.Plugin
         }
 
         /// <summary>
+        /// The debug menu dictionary is keyed by DebugHelper._addDebugButton as
+        /// <c>"{" + pContainer + "}" + pTitle</c> (DebugHelper.cs:364), and the title carries rich
+        /// text markup (e.g. "&lt;color=#d05151&gt;Spawn All Market&lt;/color&gt;"). A flat substring
+        /// search over the raw key string therefore has to get lucky: it is comparing against
+        /// "{F6.ENCOUNTERS.MARKET}&lt;color=#d05151&gt;Spawn All Market&lt;/color&gt;", not against
+        /// "Spawn All Market". Parsing container and title apart makes matching (and listing)
+        /// container-aware instead of a coincidence.
+        /// </summary>
+        private sealed class MenuEntry
+        {
+            internal object RawKey;
+            internal string Container;
+            internal string TitleClean;
+            internal object Value;
+        }
+
+        private static readonly Regex KeyPattern = new Regex(@"^\{(.*?)\}(.*)$", RegexOptions.Singleline);
+        private static readonly Regex TagPattern = new Regex("<[^>]+>");
+
+        private static string StripMarkup(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s ?? "";
+            string noTags = TagPattern.Replace(s, "");
+            return noTags.Replace("\n", " ").Trim();
+        }
+
+        /// <summary>
         /// crucible_debug_spawn &lt;enemies|encounters&gt; &lt;selector|-&gt;
         ///
-        /// With "-" it lists the available buttons and does nothing, so the catalogue can be read
-        /// before anything is spawned. With a selector it invokes the first button whose name
-        /// contains it, preferring an exact match.
+        /// With "-" it lists every SPAWNABLE entry (container -&gt; clean title) and does nothing,
+        /// so the catalogue can be read before anything is spawned. With a selector it invokes the
+        /// first spawnable entry whose clean title contains it, preferring an exact match.
+        ///
+        /// "Spawnable" excludes two kinds of entries that a flat search can't tell apart from a real
+        /// spawn action: separator rows (DebugHelper adds these with a null callback, e.g.
+        /// "---- Categories ----") and navigation-only headers that live directly in the root
+        /// container (e.g. "{F6.ENCOUNTERS}Market", DebugHelper.cs:743-746) whose callback only opens
+        /// a submenu via DebugHelper.TryShowDebugMenu -- itself a no-op in this build
+        /// (DebugHelper.cs:281-284, "return false"). Invoking either "succeeds" (no exception, no
+        /// error) while spawning nothing, which is exactly the silent no-op this command used to
+        /// produce. The real spawn actions -- both "Spawn All &lt;Category&gt;" and each individual
+        /// encounter/enemy -- live one level deeper, in a per-category container such as
+        /// "F6.ENCOUNTERS.MARKET" (DebugHelper.cs:743-798).
         /// </summary>
         public static void CrucibleDebugSpawn(string kind, string selector)
         {
@@ -69,8 +108,9 @@ namespace Crucible.Plugin
                 kind = string.IsNullOrEmpty(kind) ? "enemies" : kind.Trim().ToLowerInvariant();
 
                 string methodName;
-                if (kind == "enemies") methodName = "GenerateSpawnEnemiesDebugMenuButtons";
-                else if (kind == "encounters") methodName = "GenerateSpawnEncountersDebugMenuButtons";
+                string rootContainer;
+                if (kind == "enemies") { methodName = "GenerateSpawnEnemiesDebugMenuButtons"; rootContainer = "F6.ENEMIES"; }
+                else if (kind == "encounters") { methodName = "GenerateSpawnEncountersDebugMenuButtons"; rootContainer = "F6.ENCOUNTERS"; }
                 else { LastResult = "error: unknown kind '" + kind + "' (expected enemies or encounters)"; return; }
 
                 Type debugHelper = AccessTools.TypeByName("DebugHelper");
@@ -94,54 +134,77 @@ namespace Crucible.Plugin
                 IDictionary map = buttons as IDictionary;
                 if (map == null) { LastResult = "error: debug button container is not an IDictionary"; return; }
 
-                List<string> names = new List<string>();
-                foreach (object key in map.Keys) names.Add(key == null ? "(null)" : key.ToString());
-                names.Sort(StringComparer.Ordinal);
+                List<MenuEntry> entries = new List<MenuEntry>();
+                foreach (object key in map.Keys)
+                {
+                    string raw = key == null ? "" : key.ToString();
+                    Match parsed = KeyPattern.Match(raw);
+                    string container = parsed.Success ? parsed.Groups[1].Value : "";
+                    string titleRaw = parsed.Success ? parsed.Groups[2].Value : raw;
+                    entries.Add(new MenuEntry
+                    {
+                        RawKey = key,
+                        Container = container,
+                        TitleClean = StripMarkup(titleRaw),
+                        Value = map[key]
+                    });
+                }
+
+                List<MenuEntry> spawnable = entries.FindAll(e =>
+                    e.Value != null &&
+                    e.Container.Length > rootContainer.Length &&
+                    e.Container.StartsWith(rootContainer + ".", StringComparison.Ordinal));
 
                 StringBuilder sb = new StringBuilder();
-                sb.Append("kind=").Append(kind).Append(" buttonCount=").Append(names.Count);
-
-                if (names.Count > 0)
-                {
-                    object sampleValue = null;
-                    foreach (object value in map.Values) { sampleValue = value; break; }
-                    sb.Append(" valueType=").Append(sampleValue == null ? "(null)" : sampleValue.GetType().Name);
-                }
+                sb.Append("kind=").Append(kind)
+                  .Append(" buttonCount=").Append(entries.Count)
+                  .Append(" spawnableCount=").Append(spawnable.Count);
 
                 bool listOnly = string.IsNullOrEmpty(selector) || selector.Trim() == "-";
                 if (listOnly)
                 {
-                    sb.Append("\nbuttons:");
-                    for (int i = 0; i < names.Count; i++) sb.Append("\n  [").Append(i).Append("] ").Append(names[i]);
+                    sb.Append("\nspawnable entries (container -> title):");
+                    for (int i = 0; i < spawnable.Count; i++)
+                    {
+                        sb.Append("\n  [").Append(i).Append("] ").Append(spawnable[i].Container)
+                          .Append(" -> ").Append(spawnable[i].TitleClean);
+                    }
                     sb.Append("\n(list only; nothing was spawned)");
                     LastResult = sb.ToString();
                     return;
                 }
 
                 string wanted = selector.Trim();
-                object chosenKey = null;
-                foreach (object key in map.Keys)
+                MenuEntry chosen = null;
+                foreach (MenuEntry e in spawnable)
                 {
-                    if (key != null && string.Equals(key.ToString(), wanted, StringComparison.OrdinalIgnoreCase)) { chosenKey = key; break; }
+                    if (string.Equals(e.TitleClean, wanted, StringComparison.OrdinalIgnoreCase)) { chosen = e; break; }
                 }
-                if (chosenKey == null)
+                if (chosen == null)
                 {
-                    foreach (object key in map.Keys)
+                    foreach (MenuEntry e in spawnable)
                     {
-                        if (key != null && key.ToString().IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0) { chosenKey = key; break; }
+                        if (e.TitleClean.IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0) { chosen = e; break; }
                     }
                 }
-                if (chosenKey == null)
+                if (chosen == null)
                 {
-                    sb.Append("\nno button matches '").Append(wanted).Append("'. Available:");
-                    for (int i = 0; i < names.Count && i < 60; i++) sb.Append("\n  ").Append(names[i]);
+                    sb.Append("\nno spawnable entry matches '").Append(wanted).Append("'. Candidates:");
+                    for (int i = 0; i < spawnable.Count && i < 60; i++)
+                    {
+                        sb.Append("\n  ").Append(spawnable[i].Container).Append(" -> ").Append(spawnable[i].TitleClean);
+                    }
+                    if (spawnable.Count > 60) sb.Append("\n  ... (" + (spawnable.Count - 60) + " more; pass '-' to list all)");
                     LastResult = sb.ToString();
                     return;
                 }
 
-                sb.Append("\nchosen=").Append(chosenKey.ToString());
+                sb.Append("\nchosen container=").Append(chosen.Container)
+                  .Append(" entry=").Append(chosen.TitleClean)
+                  .Append(" valueType=").Append(chosen.Value.GetType().Name);
+
                 string invokeError;
-                bool invoked = TryInvokeButton(map[chosenKey], out invokeError);
+                bool invoked = TryInvokeButton(chosen.Value, out invokeError);
                 sb.Append(" invoked=").Append(invoked);
                 if (!invoked) sb.Append(" invokeError=").Append(invokeError);
                 sb.Append("\nrouteAfter=").Append(ReadRoute());

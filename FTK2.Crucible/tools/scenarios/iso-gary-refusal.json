@@ -1,0 +1,206 @@
+{
+  "schema": "crucible.scenario.v1",
+  "name": "iso-gary-refusal",
+  "kind": "isolation",
+  "checklist_item": "G. Classes / CF_PACK_ORIGINALS / Gary -- capture refusal on an ineligible target",
+  "description": "Prove SKILL_CF_TRAINER_CAPTURE_CATCH REFUSES an ineligible target rather than throwing, and tells the player why. Luck-gated on ROLL_TIER EQ PERFECT, so the seed is searched once and pinned forever.",
+  "seed": null,
+  "seed_search": {
+    "candidates": {
+      "start": 1,
+      "count": 400
+    },
+    "success_assert": "capture_refused",
+    "found_note": "the seed that lands a PERFECT roll on the capture throw"
+  },
+  "notes": [
+    "Gary carries the capture recipes through ARM_ORIG_TRAINER_BALL_CAPTURE.Equippable.Passives, NOT through his class Passives. The thrown ability is the vanilla ONLY_RESISTDOWN_ATTACK on that ball; the capture rides it as a recipe.",
+    "SKILL_CF_TRAINER_CAPTURE_CATCH conditions, in file order: HAS_ITEM the ball; ROLL_TIER EQ PERFECT; IS_ENEMY; NOT ENTITY_TAG 'BOSS'; NOT ENTITY_TAG 'SCOURGE'; NOT CHARACTER_TYPE 'BOSS'; ENTITY_TAG 'CF_CAPTURABLE'. The PERFECT gate is exactly why this scenario is seed-searched -- waiting on the roll is not a test.",
+    "THE BOSS HALF IS NOT BUILDABLE FROM THIS REPO. The three BOSS_* configs the pack ships (BOSS_WOLF_00, BOSS_WOLF_00, BOSS_WOLF_01) carry neither a 'BOSS' nor a 'SCOURGE' config tag, and crucible_combat_spawn places them as ordinary combatants so CharacterComponent.CharacterType reads STANDARD -- they sail through both boss guards. No id whose Tags actually contain BOSS/SCOURGE is enumerable from this repo; there is no vanilla monster catalog in it. So what this scenario proves is the CF_CAPTURABLE half. The boss-guard half stays UNVERIFIED.",
+    "WOLF_GRASS_08 is the negative control on purpose: the pack overrides its Tags to [CF_PACK_ORIGINALS, CF_TRAINER_PARTNER, CF_LINE_*, MELEE, RANGED] with NO PLAYTHING_* tag, so the virtual CF_CAPTURABLE tag resolves false and the throw must be refused."
+  ],
+  "fixture": {
+    "run_id": "63d7d316-0134-4efa-b462-f3a24dc46922",
+    "backup": "batch-4class.ftk2",
+    "status": "built",
+    "notes": "REUSES THE batch-4class BED (built 2026-08-26 through real CHARACTER CREATION: Vampiric / Pacifist / Pokemon Trainer / Gary, confirmed on screen and by crucible_party_list). A dedicated bed was not built for this scenario: that party already satisfies this manifest's expect_classes and min_size, and README says extra party members do not invalidate an identity tell that names the subject. bench.py always loads a COPY, so sharing one backup across scenarios is safe as long as they run SERIALLY. Original build recipe for a dedicated bed is kept below.\n\nORIGINAL: BUILD RECIPE. New campaign -> CHARACTER CREATION for every slot. NEVER crucible_party_set_class: it rewrites ConfigName but not the display name, so the class is right in state and every screenshot shows a stale vanilla name -- that voided a whole verification run here. Save, copy the .ftk2 out of GameRuns\\ into %USERPROFILE%\\Backups\\ftk2-fixtures under this name, then set status to 'built'. Slot 1 = Gary. He must still carry ARM_ORIG_TRAINER_BALL_CAPTURE (a class starting Thing, tagged UNLIMITED so it is never consumed) and that ball must hold NO CF_POKE_CONFIG yet, or SKILL_CF_TRAINER_CAPTURE_1 sends the previous catch out at ON_COMBAT_START and the board is not clean. The existing gary-captured-bat.ftk2 backup is the OPPOSITE of what this needs -- its ball already holds BAT_CAVE_00."
+  },
+  "party": {
+    "expect_classes": [
+      "Gary"
+    ],
+    "min_size": 1,
+    "forbid_names": [
+      "Shepherd",
+      "Thief",
+      "Corsair",
+      "Bladedancer"
+    ]
+  },
+  "setup": [
+    {
+      "op": "godmode",
+      "value": "off",
+      "why": "godmode ON tops HP up every tick and masks every HP effect."
+    },
+    {
+      "op": "wipe_enemies"
+    }
+  ],
+  "enemies": [
+    {
+      "config": "WOLF_GRASS_08",
+      "count": 1,
+      "group": 1,
+      "role": "untagged-ineligible",
+      "why": "no PLAYTHING_* config tag -> CF_CAPTURABLE false -> must be refused"
+    },
+    {
+      "config": "BOSS_WOLF_00",
+      "count": 1,
+      "group": 1,
+      "role": "boss-shaped",
+      "why": "the closest thing to a boss enumerable from this repo. See notes -- it does NOT carry a BOSS tag, so it does not exercise the boss guard."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s1",
+      "label": "Gary throws the Capture Ball at the untagged jelly -- must REFUSE",
+      "actor": "class:CF_ORIG_GARY",
+      "ability": "ONLY_RESISTDOWN_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_TRAINER_CAPTURE_CATCH"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "capture_refused",
+          "kind": "count",
+          "selector": "enemy:*",
+          "op": "gte",
+          "value": 2,
+          "why": "a successful capture removes the target from the enemy side; both spawns still being there is the refusal"
+        },
+        {
+          "id": "ball_still_empty",
+          "kind": "thing_custom_data",
+          "selector": "class:CF_ORIG_GARY",
+          "thing_config": "ARM_ORIG_TRAINER_BALL_CAPTURE",
+          "key": "CF_POKE_CONFIG",
+          "op": "ne",
+          "value": "WOLF_GRASS_08",
+          "why": "the ball must NOT have swallowed an ineligible target"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_gary",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Gary\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "refusal_message",
+          "kind": "effect",
+          "region": "board",
+          "expect": "the on-screen refusal text \"CAN\u2019T BE CAUGHT!\" (loc key CF_ORIG_CAPTURE_REFUSED)"
+        },
+        {
+          "id": "jelly_still_there",
+          "kind": "effect",
+          "region": "enemy",
+          "expect": "the jelly is still on the ENEMY side and absent from the ally HUD"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "label": "Gary kills something -- Smell Ya Later grants EVADE UP",
+      "actor": "class:CF_ORIG_GARY",
+      "ability": "STAFF_BASIC_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_GARY_SMELL_YA_LATER"
+        ],
+        "forbid": [
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "gary_evadeup",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_GARY",
+          "status": "STATUS_EVADEUP_02"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_gary_2",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Gary\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "evadeup_icon",
+          "kind": "effect",
+          "region": "portraits",
+          "expect": "an Evade Up icon on Gary's portrait, duration 2"
+        }
+      ]
+    }
+  ],
+  "tells": [
+    {
+      "id": "identity_gary_final",
+      "kind": "identity",
+      "region": "party",
+      "expect": "the party HUD card reads \"Gary\" -- our class, not a vanilla one",
+      "invalidated_by": [
+        "Shepherd",
+        "Thief",
+        "Corsair",
+        "Bladedancer"
+      ]
+    },
+    {
+      "id": "final_enemy_side",
+      "kind": "effect",
+      "region": "enemy",
+      "expect": "nothing that was refused has moved to the player side"
+    }
+  ],
+  "asserts": [
+    {
+      "id": "gary_alive",
+      "kind": "alive",
+      "selector": "class:CF_ORIG_GARY",
+      "op": "eq",
+      "value": true
+    }
+  ]
+}

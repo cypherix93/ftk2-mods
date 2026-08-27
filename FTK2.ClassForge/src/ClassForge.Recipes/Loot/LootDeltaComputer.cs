@@ -35,7 +35,9 @@ namespace ClassForge.Recipes.Loot
         /// <param name="recipes">The loaded, validated recipe book. Only live <c>ON_COMBAT_LOOT</c>
         /// recipes held by an owner are evaluated; everything else is ignored.</param>
         /// <param name="owners">Alive players in the postfix's <c>pParty</c> — re-sorted ascending
-        /// ordinal <c>Guid</c> internally regardless of input order (verb spec §4.3 item 1).</param>
+        /// <see cref="ICombatEntity.RosterOrdinal"/> internally, stably, so a peer-stable order is imposed
+        /// regardless of input order (verb spec §4.3 item 1). It must NOT be sorted on <c>Guid</c>: that
+        /// value is minted per peer and gave each peer a different draw order off the grant stream.</param>
         /// <param name="grantKey">This combat's <see cref="LootGrantKey.ComputeGrantKey"/> output —
         /// needed only to mint deterministic <c>ADD_ITEM</c> Thing ids (§3.3).</param>
         /// <param name="grantRandom">The private grant stream. See the GATE A note above.</param>
@@ -71,12 +73,18 @@ namespace ClassForge.Recipes.Loot
             List<LootOp> ops = new List<LootOp>();
             if (recipes == null || owners == null || owners.Count == 0 || grantRandom == null) return ops;
 
+            // Owner iteration order decides the ORDER OF DRAWS off the private grant stream, so it has to be
+            // the same on every peer or two players end up with different loot. Until 2026-08-26 this sorted
+            // on ordinal Entity.Guid, which Entity.Create() mints locally with Guid.NewGuid() — i.e. the
+            // "deterministic" order was a per-peer shuffle. It now sorts on the replicated roster ordinal,
+            // stably, so equal/unresolved ordinals fall back to the caller's own (replicated) list order
+            // rather than to an unstable introsort's whim.
             List<ICombatEntity> sortedOwners = new List<ICombatEntity>(owners);
-            sortedOwners.Sort((a, b) => string.CompareOrdinal(a == null ? "" : a.Guid, b == null ? "" : b.Guid));
+            PeerOrder.SortInPlace(sortedOwners);
 
             IReadOnlyList<SkillRecipe> orderedRecipes = recipes.Ordered; // already (Priority, ordinal id)
 
-            for (int oi = 0; oi < sortedOwners.Count; oi++) // owners: ascending ordinal Guid (§4.3 item 1)
+            for (int oi = 0; oi < sortedOwners.Count; oi++) // owners: ascending roster ordinal (§4.3 item 1)
             {
                 ICombatEntity owner = sortedOwners[oi];
                 if (owner == null) continue;
@@ -86,7 +94,7 @@ namespace ClassForge.Recipes.Loot
                     if (r.Trigger != TriggerKind.ON_COMBAT_LOOT) continue;
                     if (!r.IsLive) continue; // Enabled + validator gate
                     if (!Holds(owner, r.Id)) continue;
-                    EvaluateRecipe(r, owner, grantKey, grantRandom, candidateSource, ops);
+                    EvaluateRecipe(r, owner, oi, grantKey, grantRandom, candidateSource, ops);
                 }
             }
 
@@ -173,7 +181,7 @@ namespace ClassForge.Recipes.Loot
         /// <summary>Evaluation order per recipe — §4.3 item 2: <c>Enabled → trigger match → Conditions →
         /// proc roll → (PickOneEffect roll) → per-effect draws</c>. <c>ProcChance == 100</c> takes ZERO
         /// draws. A failed proc takes no further draws for this recipe.</summary>
-        private static void EvaluateRecipe(SkillRecipe r, ICombatEntity owner, string grantKey,
+        private static void EvaluateRecipe(SkillRecipe r, ICombatEntity owner, int ownerIndex, string grantKey,
             IRandomSource grantRandom, IItemCandidateSource candidateSource, List<LootOp> ops)
         {
             // Conditions: restricted to HP_THRESHOLD / CHARACTER_TYPE (Of:SELF) / Negate by the
@@ -192,19 +200,51 @@ namespace ClassForge.Recipes.Loot
                 int idx = grantRandom.NextInt(0, r.Effects.Count);
                 if (idx < 0) idx = 0;
                 if (idx >= r.Effects.Count) idx = r.Effects.Count - 1;
-                EmitEffect(r, r.Effects[idx], owner, grantKey, grantRandom, candidateSource, ops);
+                EmitEffect(r, r.Effects[idx], owner, ownerIndex, grantKey, grantRandom, candidateSource, ops);
             }
             else
             {
                 for (int i = 0; i < r.Effects.Count; i++)
-                    EmitEffect(r, r.Effects[i], owner, grantKey, grantRandom, candidateSource, ops);
+                    EmitEffect(r, r.Effects[i], owner, ownerIndex, grantKey, grantRandom, candidateSource, ops);
             }
         }
 
-        private static void EmitEffect(SkillRecipe r, RecipeEffect e, ICombatEntity owner, string grantKey,
-            IRandomSource grantRandom, IItemCandidateSource candidateSource, List<LootOp> ops)
+        /// <summary>
+        /// The TOTAL order <c>ITEM_TAG_GRANT</c> candidates are sorted into before the grant-stream draw
+        /// indexes them.
+        ///
+        /// <para><b>Why the ordinal-ignore-case compare alone was not enough.</b>
+        /// <c>List&lt;T&gt;.Sort</c> is an UNSTABLE introsort, and <c>OrdinalIgnoreCase</c> is not a total
+        /// order over config names: two names differing only in case (<c>"IRON_SWORD"</c> vs
+        /// <c>"Iron_Sword"</c>) compare EQUAL, so which of them lands at the lower index is
+        /// implementation-defined — and the very next line indexes that list with a draw. Two peers
+        /// enumerating <c>Env.Configs.Things</c> in a different order would then pick a different item
+        /// from the same seed, with the same draw count, which is a divergence no draw-count probe can
+        /// see. An Ordinal tiebreak makes the comparator total, so the result no longer depends on the
+        /// sort's stability or on the caller's enumeration order at all.</para>
+        ///
+        /// <para>The case-insensitive PRIMARY key is deliberately kept: it is the ordering the verb spec
+        /// §4.3 item 3 pins and the one the shipped grant behaviour was verified against. This follows
+        /// <c>PeerOrder.SortInPlace</c>'s precedent — an ordering that feeds an RNG index must not be
+        /// allowed to depend on ties.</para>
+        /// </summary>
+        private static readonly Comparison<string> CandidateOrder = (a, b) =>
         {
-            string source = (r.Id ?? "") + "|" + (owner.Guid ?? "");
+            int c = string.Compare(a, b, StringComparison.OrdinalIgnoreCase);
+            return c != 0 ? c : string.CompareOrdinal(a, b);
+        };
+
+        private static void EmitEffect(SkillRecipe r, RecipeEffect e, ICombatEntity owner, int ownerIndex,
+            string grantKey, IRandomSource grantRandom, IItemCandidateSource candidateSource, List<LootOp> ops)
+        {
+            // Attribution string. It rides LootOp.Source, which is inside ComputeOpsHash, so it is compared
+            // ACROSS PEERS by the CF_SYNC_LOOT_GRANT_V1 audit — it must therefore be peer-identical. It used
+            // to embed owner.Guid, which is minted per peer, so the audit was guaranteed to mismatch and
+            // would have latched loot-grant SafeMode on the first won combat of every online session. The
+            // owner's position in the already-peer-stably-sorted owner list is the identity here; it is used
+            // in preference to owner.RosterOrdinal because the combat roster may already have been torn
+            // down by the time the loot postfix runs, whereas this index always resolves.
+            string source = (r.Id ?? "") + "|" + PeerOrder.KeyOf(ownerIndex);
             switch (e.Type)
             {
                 case EffectKind.GOLD_GRANT:
@@ -221,7 +261,7 @@ namespace ClassForge.Recipes.Loot
                     IReadOnlyList<string> raw = candidateSource != null ? candidateSource.GetCandidates(e.Tag, e.Rarity) : null;
                     if (raw == null || raw.Count == 0) return; // no candidates: no draw, no op
                     List<string> sorted = new List<string>(raw);
-                    sorted.Sort((a, b) => string.Compare(a, b, StringComparison.OrdinalIgnoreCase));
+                    sorted.Sort(CandidateOrder);
                     int idx = grantRandom.NextInt(0, sorted.Count);
                     if (idx < 0) idx = 0;
                     if (idx >= sorted.Count) idx = sorted.Count - 1;

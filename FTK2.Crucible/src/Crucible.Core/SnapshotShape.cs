@@ -79,6 +79,7 @@ namespace FTK2Mods.Crucible
             d["activeId"] = c.ActiveEntityId;
             d["episode"] = c.Episode;
             d["combatants"] = c.CombatantsAvailable ? (object)BuildCombatants(c.Combatants) : null;
+            d["tiles"] = c.TilesAvailable ? (object)BuildTiles(c.Tiles) : null;
             return d;
         }
 
@@ -99,8 +100,152 @@ namespace FTK2Mods.Crucible
                 d["alive"] = Box(c.Alive);
                 d["statuses"] = c.StatusesAvailable ? (object)BuildStatuses(c.Statuses) : null;
                 d["stats"] = c.StatsAvailable ? (object)BuildStats(c.Stats) : null;
+                d["tile"] = BuildPosition(c.TileX, c.TileY);
+                d["groupIndex"] = Box(c.GroupIndex);
+                d["ordinal"] = c.RosterOrdinal == CombatantView.NoOrdinal ? null : (object)c.RosterOrdinal;
+                d["isSummon"] = Box(c.IsSummon);
+                d["isTile"] = c.IsTile;
+                d["customData"] = c.CustomDataAvailable ? (object)BuildCustomData(c.CustomData) : null;
+                d["things"] = c.ThingsAvailable ? (object)BuildThings(c.Things) : null;
                 result.Add(d);
             }
+            return result;
+        }
+
+        /// <summary>
+        /// Named axes, never a bare tuple. <c>x</c> is the ROW/DEPTH axis and <c>y</c> is lateral
+        /// (<c>VenueHelper.cs:988/998</c>); emitting a two-element array would leave that to be
+        /// re-derived by every reader, and it has already been got backwards once.
+        /// Null (not a half-filled object) when neither axis could be read.
+        /// </summary>
+        private static object BuildPosition(int? x, int? y)
+        {
+            if (!x.HasValue && !y.HasValue) return null;
+            Dictionary<string, object> d = new Dictionary<string, object>();
+            d["x"] = Box(x);
+            d["y"] = Box(y);
+            return d;
+        }
+
+        /// <summary>
+        /// Emit-all, not allow-listed. MiniJson writes object keys ordinal-sorted, so a dictionary's
+        /// emission order is already deterministic and a newly added <c>CF_*</c> key shows up with no
+        /// harness change.
+        /// </summary>
+        private static Dictionary<string, object> BuildCustomData(Dictionary<string, string> data)
+        {
+            Dictionary<string, object> d = new Dictionary<string, object>();
+            foreach (KeyValuePair<string, string> kv in data)
+            {
+                if (kv.Key == null) continue;
+                d[kv.Key] = kv.Value;
+            }
+            return d;
+        }
+
+        /// <summary>
+        /// Sorted by (configName, custom-data content, id). Id is LAST and only a tiebreak: it is a
+        /// locally generated GUID (<c>InventoryHelper.cs:83</c>), so sorting on it first could give
+        /// two peers different array orders for identical state.
+        /// </summary>
+        private static List<object> BuildThings(List<ThingView> things)
+        {
+            List<ThingView> sorted = new List<ThingView>(things);
+            sorted.Sort(CompareThing);
+
+            List<object> result = new List<object>();
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                ThingView t = sorted[i];
+                if (t == null) continue;
+                Dictionary<string, object> d = new Dictionary<string, object>();
+                d["id"] = t.Id;
+                d["configName"] = t.ConfigName;
+                d["customData"] = BuildCustomData(t.CustomData);
+                result.Add(d);
+            }
+            return result;
+        }
+
+        private static int CompareThing(ThingView a, ThingView b)
+        {
+            if (a == null || b == null) return (a == null ? 0 : 1) - (b == null ? 0 : 1);
+            int byConfig = string.CompareOrdinal(Text(a.ConfigName), Text(b.ConfigName));
+            if (byConfig != 0) return byConfig;
+            int byData = string.CompareOrdinal(CustomDataKey(a.CustomData), CustomDataKey(b.CustomData));
+            if (byData != 0) return byData;
+            return string.CompareOrdinal(Text(a.Id), Text(b.Id));
+        }
+
+        /// <summary>Content-derived, id-free sort key: sorted "k=v" pairs joined by a unit separator.</summary>
+        private static string CustomDataKey(Dictionary<string, string> data)
+        {
+            if (data == null || data.Count == 0) return string.Empty;
+            List<string> keys = new List<string>(data.Keys);
+            keys.Sort(StringComparer.Ordinal);
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                if (i > 0) sb.Append('\u001f');
+                sb.Append(keys[i]).Append('=').Append(Text(data[keys[i]]));
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Sorted by (x, y, groupIndex): the roster's tile block is seeded from <c>Dictionary</c> key
+        /// enumeration order (<c>CombatPhase.cs:314</c>) - stable in fact, not by contract. Sorting on
+        /// the coordinates makes the array order contractual.
+        /// </summary>
+        private static List<object> BuildTiles(List<TileView> tiles)
+        {
+            List<TileView> sorted = new List<TileView>(tiles);
+            sorted.Sort(CompareTile);
+
+            List<object> result = new List<object>();
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                TileView t = sorted[i];
+                if (t == null) continue;
+                Dictionary<string, object> d = new Dictionary<string, object>();
+                d["x"] = Box(t.X);
+                d["y"] = Box(t.Y);
+                d["groupIndex"] = Box(t.GroupIndex);
+                d["rowPositionsType"] = t.RowPositionsType;
+                d["auraStatuses"] = t.AuraStatusesAvailable ? (object)BuildAuraStatuses(t.AuraStatuses) : null;
+                d["ordinal"] = t.RosterOrdinal == CombatantView.NoOrdinal ? null : (object)t.RosterOrdinal;
+                d["occupantId"] = t.OccupantId;
+                d["occupantOrdinal"] = Box(t.OccupantOrdinal);
+                result.Add(d);
+            }
+            return result;
+        }
+
+        private static int CompareTile(TileView a, TileView b)
+        {
+            if (a == null || b == null) return (a == null ? 0 : 1) - (b == null ? 0 : 1);
+            int byX = Rank(a.X).CompareTo(Rank(b.X));
+            if (byX != 0) return byX;
+            int byY = Rank(a.Y).CompareTo(Rank(b.Y));
+            if (byY != 0) return byY;
+            return Rank(a.GroupIndex).CompareTo(Rank(b.GroupIndex));
+        }
+
+        /// <summary>Unread axes sort first and together, instead of comparing as 0 against a real 0.</summary>
+        private static long Rank(int? v) { return v.HasValue ? v.Value : long.MinValue; }
+
+        private static string Text(string v) { return v == null ? string.Empty : v; }
+
+        /// <summary>
+        /// Sorted ordinally. <c>VenueTileComponent.AuraStatuses</c> is a bare <c>List&lt;string&gt;</c>
+        /// whose order nothing in the game guarantees.
+        /// </summary>
+        private static List<object> BuildAuraStatuses(List<string> statuses)
+        {
+            List<string> sorted = new List<string>(statuses);
+            sorted.Sort(StringComparer.Ordinal);
+            List<object> result = new List<object>();
+            for (int i = 0; i < sorted.Count; i++) result.Add(sorted[i]);
             return result;
         }
 

@@ -1,43 +1,84 @@
 {
-  "CF_ORIG_VAMPIRIC": {
+  "CF_ORIG_CHAOSMAGE": {
     "BaseType": "HUMAN",
-    "DefaultBodyType": "M",
+    "DefaultBodyType": "F",
     "Expansion": "BASE",
     "Level": -1,
-    "LocKey": "CF_ORIG_VAMPIRIC",
+    "LocKey": "CF_ORIG_CHAOSMAGE",
     "Passives": [
-      "SKILL_CF_VAMPIRIC_BLOOD_PRICE",
-      "SKILL_CF_VAMPIRIC_CRIMSON_DRAIN",
-      "SKILL_CF_VAMPIRIC_ENGORGED",
-      "SKILL_CF_VAMPIRIC_BAT_SWARM"
+      "SKILL_CF_CHAOSMAGE_ENTROPY",
+      "SKILL_CF_CHAOSMAGE_WILD_MAGIC_SURGE",
+      "SKILL_CF_CHAOSMAGE_BACKLASH",
+      "SKILL_CF_CHAOSMAGE_RESONANCE"
     ],
     "Rarity": "COMMON",
     "Stats": {
-      "AWR": 66,
-      "CRT": 6,
-      "DEF": 1,
-      "EVD": 2,
+      "AWR": 60,
+      "CRT": 5,
+      "DEF": 0,
+      "EVD": 3,
       "FOC": 4,
-      "HP": 38,
-      "INT": 72,
-      "LCK": 54,
+      "HP": 30,
+      "INT": 75,
+      "LCK": 80,
       "PA": 1,
       "RES": 1,
       "SA": 1,
       "SPD": 66,
-      "STR": 74,
-      "TAL": 60,
-      "VIT": 78
+      "STR": 54,
+      "TAL": 58,
+      "VIT": 63
     },
     "Tags": [
       "PLAYER",
-      "MELEE",
+      "RANGED",
       "CF_PACK_ORIGINALS"
     ],
     "Things": {
-      "ARM_ORIG_STARTER_VAMPIRIC_BLOODLETTER": 1,
-      "TRINKET_BUFF_RESIST": 1,
-      "HERB_GOLDENROOT_01": 1
+      "ARM_ORIG_STARTER_CHAOSMAGE_ENTROPY_ROD": 1,
+      "HERB_GOLDENROOT_01": 1,
+      "TRINKET_BUFF_RESIST": 1
+    },
+    "Threat": 0
+  },
+  "CF_ORIG_GARY": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_ORIG_GARY",
+    "Passives": [
+      "SKILL_CF_GARY_RIVALS_EDGE",
+      "SKILL_CF_GARY_SMELL_YA_LATER"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 66,
+      "CRT": 7,
+      "DEF": 1,
+      "EVD": 4,
+      "FOC": 4,
+      "HP": 30,
+      "INT": 58,
+      "LCK": 84,
+      "PA": 1,
+      "RES": 2,
+      "SA": 1,
+      "SPD": 70,
+      "STR": 54,
+      "TAL": 74,
+      "VIT": 56
+    },
+    "Tags": [
+      "PLAYER",
+      "RANGED",
+      "CF_PACK_ORIGINALS"
+    ],
+    "Things": {
+      "ARM_ORIG_STARTER_GARY_RIVAL_ROD": 1,
+      "ARM_ORIG_TRAINER_BALL_CAPTURE": 1,
+      "HERB_GOLDENROOT_01": 1,
+      "TRINKET_BUFF_RESIST": 1
     },
     "Threat": 0
   },
@@ -77,8 +118,8 @@
     ],
     "Things": {
       "ARM_ORIG_STARTER_PACIFIST_OLIVE_BRANCH": 1,
-      "TRINKET_BUFF_RESIST": 1,
-      "HERB_GOLDENROOT_01": 1
+      "HERB_GOLDENROOT_01": 1,
+      "TRINKET_BUFF_RESIST": 1
     },
     "Threat": 0
   },
@@ -89,12 +130,14 @@
     "Level": -1,
     "LocKey": "CF_ORIG_TRAINER",
     "Passives": [
-      "SKILL_CF_TRAINER_TYPE_ADVANTAGE",
       "SKILL_CF_TRAINER_GOTTA_TRAIN_EM",
       "SKILL_CF_TRAINER_BOND_STRENGTH",
-      "SKILL_CF_TRAINER_CHAOS_1",
-      "SKILL_CF_TRAINER_CHAOS_2",
-      "SKILL_CF_TRAINER_CHAOS_3"
+      "SKILL_CF_TRAINER_SHIELDED",
+      "SKILL_CF_TRAINER_GRASS_1",
+      "SKILL_CF_TRAINER_GRASS_2",
+      "SKILL_CF_TRAINER_GRASS_3",
+      "SKILL_CF_TRAINER_CMD_FOCUS_FIRE",
+      "SKILL_CF_TRAINER_CMD_SPREAD_OUT"
     ],
     "Rarity": "COMMON",
     "Stats": {
@@ -103,7 +146,7 @@
       "DEF": 0,
       "EVD": 3,
       "FOC": 5,
-      "HP": 32,
+      "HP": 30,
       "INT": 70,
       "LCK": 72,
       "PA": 1,
@@ -121,12 +164,158 @@
     ],
     "Things": {
       "ARM_ORIG_STARTER_TRAINER_BEAST_WHISTLE": 1,
-      "ARM_ORIG_TRAINER_BALL_CHAOS": 1,
-      "ARM_ORIG_TRAINER_BALL_EMBER": 1,
-      "ARM_ORIG_TRAINER_BALL_RIME": 1,
-      "TRINKET_BUFF_RESIST": 1,
-      "HERB_GOLDENROOT_01": 1
+      "ARM_ORIG_TRAINER_BALL_GRASS": 1,
+      "HERB_GOLDENROOT_01": 1,
+      "TRINKET_BUFF_RESIST": 1
     },
     "Threat": 0
+  },
+  "CF_ORIG_VAMPIRIC": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_ORIG_VAMPIRIC",
+    "Passives": [
+      "SKILL_CF_VAMPIRIC_BLOOD_PRICE",
+      "SKILL_CF_VAMPIRIC_CRIMSON_DRAIN",
+      "SKILL_CF_VAMPIRIC_ENGORGED",
+      "SKILL_CF_VAMPIRIC_BAT_SWARM"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "AWR": 66,
+      "CRT": 6,
+      "DEF": 1,
+      "EVD": 2,
+      "FOC": 4,
+      "HP": 38,
+      "INT": 72,
+      "LCK": 54,
+      "PA": 1,
+      "RES": 1,
+      "SA": 1,
+      "SPD": 66,
+      "STR": 74,
+      "TAL": 60,
+      "VIT": 78
+    },
+    "Tags": [
+      "PLAYER",
+      "MELEE",
+      "CF_PACK_ORIGINALS"
+    ],
+    "Things": {
+      "ARM_ORIG_STARTER_VAMPIRIC_BLOODLETTER": 1,
+      "HERB_GOLDENROOT_01": 1,
+      "TRINKET_BUFF_RESIST": 1
+    },
+    "Threat": 0
+  },
+  "WOLF_CHAOSHOUND_10": {
+    "BaseType": "CHAOS",
+    "Expansion": "BASE",
+    "Level": 10,
+    "LocKey": "WOLF_CHAOSHOUND_10",
+    "Passives": [
+      "SKILL_CF_TRAINER_TYPE_ADVANTAGE",
+      "STATUS_IMMUNITY_FIRE",
+      "STATUS_IMMUNITY_ICE",
+      "STATUS_IMMUNITY_SHOCK",
+      "SKILL_CF_PARTNER_CMD_FOCUS_FIRE",
+      "SKILL_CF_PARTNER_CMD_SPREAD_OUT"
+    ],
+    "Rarity": "RARE",
+    "Stats": {
+      "ACC": 90,
+      "ATK": 33,
+      "CRT": 5,
+      "DEF": 18,
+      "EVD": 16,
+      "HP": 48,
+      "PA": 1,
+      "PRW": 75,
+      "RES": 18,
+      "SA": 1,
+      "SPD": 74
+    },
+    "Tags": [
+      "CF_PACK_ORIGINALS",
+      "CF_TRAINER_PARTNER",
+      "CF_LINE_GRASS",
+      "MELEE",
+      "RANGED"
+    ],
+    "Things": {},
+    "Threat": 2
+  },
+  "WOLF_GRASS_08": {
+    "BaseType": "WOLF",
+    "Expansion": "BASE",
+    "Level": 8,
+    "LocKey": "WOLF_GRASS_08",
+    "Passives": [
+      "SKILL_CF_TRAINER_TYPE_ADVANTAGE",
+      "SKILL_CF_PARTNER_CMD_FOCUS_FIRE",
+      "SKILL_CF_PARTNER_CMD_SPREAD_OUT"
+    ],
+    "Rarity": "COMMON",
+    "Stats": {
+      "ACC": 84,
+      "ATK": 10,
+      "CRT": 5,
+      "DEF": 5,
+      "EVD": 12,
+      "HP": 16,
+      "PA": 1,
+      "PRW": 45,
+      "RES": 5,
+      "SA": 1,
+      "SPD": 68
+    },
+    "Tags": [
+      "CF_PACK_ORIGINALS",
+      "CF_TRAINER_PARTNER",
+      "CF_LINE_GRASS",
+      "MELEE",
+      "RANGED"
+    ],
+    "Things": {},
+    "Threat": 2
+  },
+  "WOLF_HELLHOUND_09": {
+    "BaseType": "HELLHOUND",
+    "Expansion": "BASE",
+    "Level": 9,
+    "LocKey": "WOLF_HELLHOUND_09",
+    "Passives": [
+      "SKILL_CF_TRAINER_TYPE_ADVANTAGE",
+      "STATUS_IMMUNITY_FIRE",
+      "SKILL_CF_PARTNER_CMD_FOCUS_FIRE",
+      "SKILL_CF_PARTNER_CMD_SPREAD_OUT"
+    ],
+    "Rarity": "RARE",
+    "Stats": {
+      "ACC": 87,
+      "ATK": 21,
+      "CRT": 5,
+      "DEF": 10,
+      "EVD": 13,
+      "HP": 32,
+      "PA": 1,
+      "PRW": 60,
+      "RES": 12,
+      "SA": 1,
+      "SPD": 70
+    },
+    "Tags": [
+      "CF_PACK_ORIGINALS",
+      "CF_TRAINER_PARTNER",
+      "CF_LINE_GRASS",
+      "MELEE",
+      "RANGED"
+    ],
+    "Things": {},
+    "Threat": 2
   }
 }

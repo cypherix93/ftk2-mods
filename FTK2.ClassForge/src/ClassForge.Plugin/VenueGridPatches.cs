@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -124,113 +124,336 @@ namespace ClassForge.Plugin
         internal static ConfigEntry<float> TileBorderOpacity;
         internal static ConfigEntry<float> ClearFoliage;
         internal static ConfigEntry<string> RotateDioramas;
+        internal static ConfigEntry<bool> RotateInDungeons;
 
         internal static void Bind(ConfigFile config)
         {
-            CameraRig = config.Bind("Combat", "VenueCameraRig", "",
+            CameraRig = CFConfig.Bind(config, "Combat", "VenueCameraRig", "",
                 "Camera rig to switch to when a grid preset is active. Empty leaves the camera alone. "
                 + "The game pairs its own grid change with a rig change, and without one a bigger "
                 + "arena is framed for the small board -- zoomed in, with the outer tiles off screen. "
                 + "Valid: OutdoorCameraRig, IndoorCameraRig, KrakenCameraRig, SpiderQueenCameraRig, "
                 + "QueenCameraRig, HarazuelRoofRig, HarazuelFlyingRoofRig, OmusCameraRig, "
-                + "OutdoorCondensedCameraRig. The boss rigs are the ones framing the big arenas.");
+                + "OutdoorCondensedCameraRig. The boss rigs are the ones framing the big arenas.", ClassForge.Core.ParityClass.Presentation);
 
-            TileBorderOpacity = config.Bind("Combat", "VenueTileBorderOpacity", 0f,
+            TileBorderOpacity = CFConfig.Bind(config, "Combat", "VenueTileBorderOpacity", 0f,
                 "Opacity of the resting tile BORDERS, 0 to leave the game's own value. A resting "
                 + "tile draws only its border -- TileRender.Default disables the fill renderer and "
                 + "enables the shadow one -- so this is the knob that makes the grid readable "
                 + "without filling every square in. Raising the tiles' emissive instead brightens "
-                + "the highlight FILLS, which is the wrong look entirely. Try 0.3-0.6.");
+                + "the highlight FILLS, which is the wrong look entirely. Try 0.3-0.6.", ClassForge.Core.ParityClass.Presentation);
 
-            RotateDioramas = config.Bind("Combat", "RotateDioramas", "",
-                "Comma-separated diorama names to cycle through, one per combat. Empty keeps each "
-                + "venue's own battlefield. The three that SHIP with the Extended grid are "
-                + "CASTLETHRONE, HARAZUEL_ROOF, OMUS_CASTLE_BOSS -- all interiors, so their floors "
-                + "show tiles cleanly and no grass stands on the board. Using these makes every "
-                + "fight happen in one of three places regardless of where you are on the map, "
-                + "which is the trade. When rotating onto an Extended venue, leave VenueGridPreset "
-                + "off: those venues already have the bigger grid AND a camera framed for it.");
+            RotateDioramas = CFConfig.Bind(config, "Combat", "RotateDioramas", DefaultRotation,
+                "Comma-separated diorama names to choose from, one per fight. Which one a fight gets is "
+                + "a pure function of REPLICATED encounter identity (map seed, overworld round, map/biome/"
+                + "dungeon, the venue's own diorama name), never a process-local counter -- so every peer "
+                + "loads the same battlefield, and therefore the same tile count, whether it booted with "
+                + "the session or joined an hour in. Set this to empty "
+                + "to give every fight its own venue back. "
+                + "The three shipped defaults are the game's boss arenas: CASTLETHRONE (Powerstone "
+                + "Castle), HARAZUEL_ROOF and OMUS_CASTLE_BOSS. All three are interiors with hard "
+                + "floors, which is the point -- an outdoor venue stands tall grass on the board "
+                + "between the camera and the tiles, and culling it was not enough. Each also "
+                + "carries a camera framed for a deep arena. "
+                + "The trade is that every fight happens in one of three places regardless of "
+                + "where you are on the map. The overworld biome name still shows in the header.", ClassForge.Core.ParityClass.Gameplay);
 
-            ClearFoliage = config.Bind("Combat", "ClearFoliageOverGrid", 0f,
+            RotateInDungeons = CFConfig.Bind(config, "Combat", "RotateDioramasInDungeons", false,
+                "Also swap the battlefield for fights INSIDE a dungeon. Off by default, and the "
+                + "reason is not caution for its own sake. "
+                + "A dungeon room is not a standalone arena the way an overworld venue is. The "
+                + "rooms on a floor are chained together by corridors that VenueViewHelper "
+                + "generates from each diorama's OWN attach points, and opening a door indexes "
+                + "that diorama's door parts directly -- a room swapped for one the corridor "
+                + "generator cannot connect breaks the floor rather than merely looking wrong. "
+                + "It is also written to the SAVE. DungeonState.OngoingVenues is the whole "
+                + "remaining floor, generated ahead of the player and serialised, so a swap here "
+                + "lands in the save file for rooms not yet reached -- unlike the overworld, where "
+                + "the venue is rebuilt per encounter and nothing persists. "
+                + "Turn it on only if you are willing to lose a dungeon run. Dungeon fights are "
+                + "already indoors on hard floors, so this buys far less than the overworld swap "
+                + "does.", ClassForge.Core.ParityClass.Gameplay);
+
+            ClearFoliage = CFConfig.Bind(config, "Combat", "ClearFoliageOverGrid", 0f,
                 "Hide venue scenery standing ON the battle grid, so tall grass and props stop "
                 + "occluding the tiles. The value is a margin in world units around the grid's "
                 + "footprint; 0 disables it, 1-3 is a sensible range. Only scenery inside that "
                 + "footprint is touched -- the surrounding venue is left alone, so the fight still "
-                + "looks like it is happening somewhere.");
+                + "looks like it is happening somewhere.", ClassForge.Core.ParityClass.Presentation);
 
-            ZoomOut = config.Bind("Combat", "VenueCameraZoomOut", 0f,
+            ZoomOut = CFConfig.Bind(config, "Combat", "VenueCameraZoomOut", 0f,
                 "Degrees of extra camera field of view during combat, so a larger arena fits on "
                 + "screen. 0 leaves the camera as the game sets it; 10-25 is a reasonable range for "
                 + "the wider grid presets. This is applied on top of whatever zoom the game chose, "
-                + "and re-applied whenever the game resets it.");
+                + "and re-applied whenever the game resets it.", ClassForge.Core.ParityClass.Presentation);
 
-            Preset = config.Bind("Combat", "VenueGridPreset", "off",
+            Preset = CFConfig.Bind(config, "Combat", "VenueGridPreset", "large",
                 "Combat arena size. 'off' leaves every fight as the game ships it. 'kraken' uses the "
                 + "shipped Kraken boss map verbatim (ally 8, enemy 32). 'extended' uses "
                 + "the game's own deeper board. 'large' and 'huge' are custom maps that also widen "
                 + "'large' is 6 rows x 2 columns a side (12 tiles each) and 'huge' is 6 x 4 (24 each). "
                 + "Both are unpadded, so every tile draws -- the shipped maps pad with '.' cells "
                 + "that are never rendered. The camera is not re-framed for the bigger arenas, so "
-                + "they sit loosely in view on some venues.");
+                + "they sit loosely in view on some venues.", ClassForge.Core.ParityClass.Gameplay);
         }
 
 
 
 
-        private static int _dioramaTurn;
+        /// <summary>
+        /// The battlefields every fight is played on, shipped ON by default.
+        ///
+        /// <para>These are the game's own boss arenas. They are used rather than the venue the
+        /// encounter would otherwise pick because all three are interiors: nothing grows on the
+        /// board, so the grid is readable, and each carries a camera framed for a deep arena.
+        /// Widening an outdoor venue instead leaves its grass standing between the camera and the
+        /// tiles, and culling that scenery was tried and was not enough.</para>
+        ///
+        /// <para>Two of the three do NOT lay out the bigger grid on their own, whatever an asset
+        /// inventory reports -- measured live, HARAZUEL_ROOF and OMUS_CASTLE_BOSS both came up
+        /// 8 tiles a side. That is why <c>VenueGridPreset</c> also defaults to <c>large</c>: the
+        /// map is substituted at build time so all three lay out identically.</para>
+        /// </summary>
+        private const string DefaultRotation = "CASTLETHRONE,HARAZUEL_ROOF,OMUS_CASTLE_BOSS";
 
         /// <summary>
-        /// Prefix on <c>RouterMono.Route</c> — picks the battlefield the next combat is fought on.
+        /// How many battlefields this process has chosen. DIAGNOSTIC ONLY — read by the log line and by
+        /// nothing else.
         ///
-        /// <para>This is the last moment the choice can be made. <c>VenueState.Venue.DioramaName</c>
-        /// is what the venue loads from, and the load happens inside this call, so writing it here
-        /// lands in time. The obvious earlier seam, <c>AdventureDirector._performVenueAction</c>, is
-        /// <c>async void</c> — a postfix there fires when the state machine STARTS, not when the
-        /// VenueState is finished.</para>
-        ///
-        /// <para>Why rotate at all: only three of the game's 98 dioramas ship with the Extended grid,
-        /// and all three are interiors. Widening an ordinary outdoor venue leaves its tall grass
-        /// standing on the board, between the camera and the tiles. Borrowing an interior sidesteps
-        /// that entirely — the floor is stone and nothing grows on it — at the cost of every fight
-        /// happening in one of three places.</para>
+        /// <para><b>It used to pick the battlefield</b> (<c>names[_dioramaTurn++ % names.Count]</c>) and
+        /// that was a live, default-ON co-op desync. The counter is process-lifetime: it is not reset at
+        /// run start, session start or join, and the overworld and dungeon paths shared it. Two peers
+        /// whose process-local fight counts differed — anyone who played solo first, rejoined after a
+        /// crash, or joined mid-session — loaded a DIFFERENT diorama, hence a different
+        /// <c>VenueGrid</c>, hence a different tile count, hence a different
+        /// <c>GetTargetableTiles().Count</c>, hence a different <c>ShuffleList</c> draw count off the
+        /// SHARED stream on the very first AI turn (<c>AIHelper.cs:507-511</c>,
+        /// <c>GameRandom.ShuffleList</c> takes exactly <c>list.Count</c> draws). Resetting it would not
+        /// have been enough: a peer joining mid-session starts at 0 while the host is at 7.
+        /// The choice now comes from <see cref="ReplicatedEncounterKey"/> instead — see there for why
+        /// those inputs are peer-identical and this one never could be.</para>
         /// </summary>
-        public static void Route_Prefix(eRoutes pTargetRoute)
+        private static int _dioramaChoices;
+
+        /// <summary>
+        /// The battlefield for one fight: a pure function of REPLICATED encounter identity plus the
+        /// venue's own diorama name (and, in a dungeon, the room's index in <c>OngoingVenues</c>) — so
+        /// every peer picks the same one, first fight or hundredth, fresh boot or mid-session join.
+        /// </summary>
+        private static string ChooseBattlefield(List<string> names, string wasDioramaName, int roomIndex)
+        {
+            int i = ReplicatedEncounterKey.IndexOf(names.Count, "CF_BATTLEFIELD_ROTATION_V1", wasDioramaName, roomIndex);
+            _dioramaChoices++;
+            return names[i];
+        }
+
+        /// <summary>
+        /// Prefix on <c>VenueDirector.Initialize</c> — picks the battlefield the combat is fought on.
+        ///
+        /// <para><b>Why here and nowhere earlier.</b> <c>VenueDirector.Initialize</c> is the single
+        /// place that turns <c>VenueState.Venue.DioramaName</c> into an actual arena, and it does the
+        /// whole job in one call: it loads the diorama's assets
+        /// (<c>MemoryManagementHelper.GetVenueDioramaAssets</c>), instantiates it, builds the tile
+        /// entities from <c>_diorama.VenueGrid</c>, places the party, and then frames the shot with
+        /// <c>VenueViewHelper.FindCameraRig(pScene, DioramaName)</c>. Writing the name in a prefix
+        /// means every one of those steps — assets, grid AND camera — agrees on the new venue.</para>
+        ///
+        /// <para>The previous attempt hooked <c>RouterMono.Route</c> and looked for
+        /// <c>eRoutes.COMBAT</c>. It never fired for an ordinary fight: an overworld encounter routes
+        /// to <c>eRoutes.VENUE</c>, and the VenueDirector then runs the combat phase inside it. The
+        /// log line reported the swap because the venue had ALREADY been built by the time the COMBAT
+        /// route came round, so the write landed on a VenueState nobody read again.</para>
+        ///
+        /// <para><b>Why swap the venue rather than widen the grid.</b> The shipped
+        /// <c>ExtendedVenueMap1</c> is exactly six rows with a back and a front column a side — the
+        /// 6x2 board — and the three dioramas that declare <c>eVenueGrids.Extended</c> ship a camera
+        /// rig framed for it. Borrowing one of those gets the bigger board and its framing for free,
+        /// with no map substitution at all. Widening an outdoor venue instead leaves its tall grass
+        /// standing on the board between the camera and the tiles, which culling did not fix.</para>
+        ///
+        /// <para>Boss arenas are left alone: they are authored as grid, diorama and camera together,
+        /// and the ocean/Kraken ones are shaped around a vehicle.</para>
+        /// </summary>
+        public static void VenueDirector_Initialize_Prefix(object __instance)
         {
             try
             {
                 if (RotateDioramas == null) return;
                 string raw = (RotateDioramas.Value ?? "").Trim();
                 if (raw.Length == 0) return;
-                if (pTargetRoute != eRoutes.COMBAT) return;
 
-                var names = new List<string>();
-                foreach (var part in raw.Split(','))
-                {
-                    string n = part.Trim();
-                    if (n.Length > 0) names.Add(n);
-                }
+                var names = ParseNames(raw);
                 if (names.Count == 0) return;
+
+                // Initialize runs once per PHASE. The venue is only built on the pass where
+                // _diorama is still null; on later passes it returns early and the name is never
+                // read again, so rotating there would burn a turn of the cycle for nothing.
+                // The venue is only BUILT on the pass where _diorama is empty; on later passes
+                // Initialize returns early and the name is never read again.
+                //
+                // The comparison has to be Unity's, not C#'s. Deinitialize calls
+                // Object.Destroy(_diorama.gameObject) but never assigns null, so on every venue
+                // after the first the field holds a DESTROYED Diorama -- which `!= null` on
+                // `object` reports as present, while Unity's own overload reports it as gone.
+                // Reflection hands back `object`, so the plain check silently skipped every fight
+                // but the first: rotation fired once, then quietly never again, with no log line
+                // to say why.
+                var priorDiorama = Field(__instance, "_diorama") as UnityEngine.Object;
+                if (priorDiorama != null) return;
 
                 var venueState = RouterHelper.Env?.GameRun?.VenueState;
                 var venue = venueState == null ? null : venueState.Venue;
-                if (venue == null) return;
+                if (venue == null || venue.PhasesData == null)
+                {
+                    ClassForgePlugin.Log.LogInfo(
+                        "[ClassForge] battlefield: no venue to choose for (venue="
+                        + (venue == null ? "null" : "phasesData null") + ").");
+                    return;
+                }
 
-                string chosen = names[_dioramaTurn % names.Count];
-                _dioramaTurn++;
+                // Only fights. Rest, treasure, trap, fortune and plain encounters keep their venue --
+                // teleporting the party into a throne room to open a chest would be nonsense.
+                bool isCombat = false;
+                var phaseNames = new List<string>();
+                foreach (var phase in venue.PhasesData)
+                {
+                    phaseNames.Add(phase.Type.ToString());
+                    if (phase.Type == ePhases.COMBAT || phase.Type == ePhases.BOSS) isCombat = true;
+                }
 
-                string was = venue.DioramaName;
-                if (string.Equals(was, chosen, StringComparison.OrdinalIgnoreCase)) return;
+                string was = venue.DioramaName ?? "";
+
+                // Report every outcome, including the ones that change nothing. Returning quietly
+                // on a skip branch is indistinguishable from the patch never running, and that
+                // exact ambiguity already cost this feature one wrong diagnosis.
+                if (!isCombat || SkipVenue(was, names))
+                {
+                    ClassForgePlugin.Log.LogInfo(
+                        "[ClassForge] battlefield: keeping " + was + " (phases="
+                        + string.Join("+", phaseNames.ToArray())
+                        + (isCombat ? ", venue is exempt" : ", not a fight") + ").");
+                    return;
+                }
+
+                string chosen = ChooseBattlefield(names, was, -1);
                 venue.DioramaName = chosen;
 
                 ClassForgePlugin.Log.LogInfo(
                     "[ClassForge] battlefield " + was + " -> " + chosen
-                    + " (rotation " + (((_dioramaTurn - 1) % names.Count) + 1) + "/" + names.Count + ").");
+                    + " (1 of " + names.Count + ", chosen from replicated encounter identity; this "
+                    + "process has now chosen " + _dioramaChoices + ").");
             }
             catch (Exception ex)
             {
                 ClassForgePlugin.Log.LogWarning(
                     "[ClassForge] could not choose a battlefield; the venue keeps its own: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Prefix on <c>DungeonDirector._loadNextDioramas</c> — the dungeon counterpart of
+        /// <see cref="VenueDirector_Initialize_Prefix"/>. OFF unless
+        /// <c>RotateDioramasInDungeons</c> is set, and that default is deliberate.
+        ///
+        /// <para>This is the right HOOK: <c>_loadNextDioramas</c> is the single call that reads
+        /// <c>DungeonState.OngoingVenues</c>, loads their assets through
+        /// <c>GetVenueDioramaAssets</c>, and instantiates them through <c>CreateVenueDioramas</c>,
+        /// which is where <c>Diorama.VenueGrid</c> is taken from the named record. The camera rig
+        /// is looked up from <c>_venueState.Venue.DioramaName</c> after this returns. So a write
+        /// here reaches assets, grid and camera, exactly as on the overworld.</para>
+        ///
+        /// <para><b>Two things make it riskier than the overworld swap, and both are why it ships
+        /// off.</b></para>
+        /// <list type="number">
+        /// <item><b>It is written to the save.</b> <c>OngoingVenues</c> is a plain field on
+        /// <c>DungeonState</c> holding the WHOLE remaining floor, generated ahead of the player and
+        /// serialised. The overworld's <c>VenueState.Venue</c> is one object rebuilt per encounter
+        /// and persists nothing; this list persists, so a swap lands in the save for rooms the
+        /// player has not reached.</item>
+        /// <item><b>Rooms are chained, not standalone.</b> The floor's corridors are generated from
+        /// each diorama's own attach points, and opening a door indexes that diorama's door parts
+        /// by junction. A room swapped for one the generator cannot connect does not merely look
+        /// wrong — it breaks the floor.</item>
+        /// </list>
+        ///
+        /// <para>The swap is idempotent by way of <see cref="SkipVenue"/>'s "already one of ours"
+        /// test, which matters here in a way it does not on the overworld: reloading mid-floor
+        /// re-enters this method over rooms that were already rewritten, and without that test they
+        /// would be re-rolled every time.</para>
+        /// </summary>
+        public static void DungeonDirector_LoadNextDioramas_Prefix()
+        {
+            try
+            {
+                if (RotateInDungeons == null || !RotateInDungeons.Value) return;
+                if (RotateDioramas == null) return;
+
+                var names = ParseNames(RotateDioramas.Value);
+                if (names.Count == 0) return;
+
+                var dungeon = RouterHelper.Env?.GameRun?.DungeonState;
+                if (dungeon == null || dungeon.OngoingVenues == null) return;
+
+                // roomIndex is the room's position in OngoingVenues -- the whole remaining floor,
+                // generated ahead of the player and SERIALISED into DungeonState, so the list and the
+                // index into it are replicated state. It is what keeps two rooms on one floor from
+                // getting the same battlefield now that the choice is identity-derived rather than a
+                // counter.
+                int roomIndex = -1;
+                foreach (var venueData in dungeon.OngoingVenues)
+                {
+                    roomIndex++;
+                    if (venueData == null || venueData.PhasesData == null) continue;
+
+                    // Fights only. A BLACKOUT room -- the end-of-floor stairs sentinel -- carries
+                    // only an EXIT phase and falls out here without needing its own special case.
+                    bool isCombat = false;
+                    foreach (var phase in venueData.PhasesData)
+                        if (phase.Type == ePhases.COMBAT || phase.Type == ePhases.BOSS)
+                        { isCombat = true; break; }
+
+                    string was = venueData.DioramaName ?? "";
+                    if (!isCombat || SkipVenue(was, names)) continue;
+
+                    string chosen = ChooseBattlefield(names, was, roomIndex);
+                    venueData.DioramaName = chosen;
+
+                    ClassForgePlugin.Log.LogInfo(
+                        "[ClassForge] dungeon battlefield " + was + " -> " + chosen + ".");
+                }
+            }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] could not choose a dungeon battlefield; the rooms keep their "
+                    + "own: " + ex.Message);
+            }
+        }
+
+        /// <summary>Splits the configured rotation into names, dropping blanks.</summary>
+        private static List<string> ParseNames(string raw)
+        {
+            var names = new List<string>();
+            foreach (var part in (raw ?? "").Split(','))
+            {
+                string n = part.Trim();
+                if (n.Length > 0) names.Add(n);
+            }
+            return names;
+        }
+
+        /// <summary>Venues that must keep their own diorama.</summary>
+        private static bool SkipVenue(string name, List<string> rotation)
+        {
+            // Already one of ours -- nothing to do, and rotating would double-count the turn.
+            foreach (var n in rotation)
+                if (string.Equals(name, n, StringComparison.OrdinalIgnoreCase)) return true;
+
+            // Ocean fights are staged on the party's boat: the arena, the grid and the camera are
+            // all built around that vehicle, and KrakenMap1 additionally has a hard-coded
+            // travel-animation clamp in CombatViewHelper.
+            string upper = name.ToUpperInvariant();
+            return upper.Contains("KRAKEN") || upper.StartsWith("OCEAN");
         }
 
         /// <summary>

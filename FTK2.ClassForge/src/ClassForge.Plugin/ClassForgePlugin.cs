@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,6 +9,7 @@ using BepInEx.Logging;
 using ClassForge.Core;
 using ClassForge.Core.IO;
 using HarmonyLib;
+using IOG.dObjects;
 
 namespace ClassForge.Plugin
 {
@@ -91,6 +92,14 @@ namespace ClassForge.Plugin
         /// </summary>
         internal static ConfigEntry<int> DebugEncounterModifierChance;
 
+        /// <summary>docs/MULTIPLAYER.md R1's <c>OnParityMismatch</c> knob. See
+        /// <see cref="ParityBridge.ResolvePolicy"/> for how <c>"Default"</c> maps kind -> policy.</summary>
+        internal static ConfigEntry<string> OnParityMismatch;
+
+        /// <summary>P0.5 §5(b). When true (default) an online session with no FTK2.DevKit present puts
+        /// ClassForge into SafeMode rather than running fully enabled with parity unenforced.</summary>
+        internal static ConfigEntry<bool> RequireParityService;
+
         /// <summary>
         /// The one gate every patch body consults. False when the master switch is off <b>or</b> when a
         /// multiplayer parity mismatch has latched ClassForge's <c>Block</c> policy
@@ -98,6 +107,21 @@ namespace ClassForge.Plugin
         /// there is no presentation-only subset).
         /// </summary>
         internal static bool FeaturesActive
+        {
+            get { return Enabled != null && Enabled.Value && !ParityBridge.Blocked && !ParityBridge.SafeMode; }
+        }
+
+        /// <summary>
+        /// The gate for features that only ever change what the LOCAL player sees (icon/portrait fallback,
+        /// the character-creation class list) — i.e. everything classified
+        /// <see cref="ParityClass.Presentation"/>. Differs from <see cref="FeaturesActive"/> in exactly one
+        /// state: <b>SafeMode</b>, which docs/MULTIPLAYER.md R1 defines as "disables its state-mutating
+        /// features for the session but keeps presentation-only features". <c>Block</c> still turns
+        /// everything off, and SPEC-DELTA-v1.1 §5.3's "no partial recipe engine" rule is untouched — the
+        /// recipe engine, trait injection, stat modifiers and every Trainer feature read
+        /// <see cref="FeaturesActive"/>, which is false in SafeMode too.
+        /// </summary>
+        internal static bool PresentationActive
         {
             get { return Enabled != null && Enabled.Value && !ParityBridge.Blocked; }
         }
@@ -113,62 +137,105 @@ namespace ClassForge.Plugin
             Instance = this;
             Log = Logger;
 
-            Enabled = Config.Bind("General", "Enabled", true,
-                "Master switch; if false, no pack is scanned and vanilla behavior is untouched.");
+            Enabled = CFConfig.Bind(Config, "General", "Enabled", true,
+                "Master switch; if false, no pack is scanned and vanilla behavior is untouched.", ClassForge.Core.ParityClass.Gameplay);
             VenueGridPatches.Bind(Config);
+            TrainerPartnerPersistence.Bind(Config);
+            TrainerPartnerNicknames.Bind(Config);
+            TrainerPartnerPanel.Bind(Config);
+            TrainerPartnerAutonomy.Bind(Config);
+            TrainerCharmProgression.Bind(Config);
+            TrainerFocusFire.Bind(Config);
+            AiDrawNeutrality.Bind(Config);
+            TrainerCaptureRules.Bind(Config);
 
-            VerboseLogging = Config.Bind("General", "VerboseLogging", false,
-                "Pack discovery/merge decisions at Debug level.");
-            AdditionalRoots = Config.Bind("Packs", "AdditionalRoots", "",
-                "Comma-separated absolute paths to additional directories to scan for ClassPacks/<PackName>/ folders.");
-            EnableClassSelectInjection = Config.Bind("UI", "EnableClassSelectInjection", true,
+            VerboseLogging = CFConfig.Bind(Config, "General", "VerboseLogging", false,
+                "Pack discovery/merge decisions at Debug level.", ClassForge.Core.ParityClass.Presentation);
+            AdditionalRoots = CFConfig.BindWithParityValue(Config, "Packs", "AdditionalRoots", "",
+                "Comma-separated absolute paths to additional directories to scan for ClassPacks/<PackName>/ folders. "
+                + "Multiplayer parity compares the SET OF PACKS these roots contribute, not the paths themselves, "
+                + "so two players with identical packs on different drives are not refused at join.",
+                ClassForge.Core.ParityClass.Gameplay,
+                AdditionalRootsParityValue);
+            EnableClassSelectInjection = CFConfig.Bind(Config, "UI", "EnableClassSelectInjection", true,
                 "Inject PLAYER-tagged pack classes into the character-creation class list " +
                 "(CharacterCustomizationViewHelper.RenderClassList). Turn off to keep pack classes usable via " +
-                "console/dev tools and LoadOuts.json only.");
-            EnableIconFallback = Config.Bind("UI", "EnableIconFallback", true,
+                "console/dev tools and LoadOuts.json only.", ClassForge.Core.ParityClass.Presentation);
+            EnableIconFallback = CFConfig.Bind(Config, "UI", "EnableIconFallback", true,
                 "Serve pack icons/portraits from the pack's icons//portraits/ folders via " +
                 "AssetLoader.GetImage/GetRender. Purely presentational: with this off, pack content shows the " +
-                "vanilla missing-asset result (a blank icon), nothing breaks.");
-            EnableSkillDisplay = Config.Bind("UI", "EnableSkillDisplay", true,
+                "vanilla missing-asset result (a blank icon), nothing breaks.", ClassForge.Core.ParityClass.Presentation);
+            EnableSkillDisplay = CFConfig.Bind(Config, "UI", "EnableSkillDisplay", true,
                 "Render pack-granted class skills (SKILL_CF_*) as extra rows in the character-creation " +
                 "and in-game party-summary skill lists. The vanilla panels only show passives that exist " +
                 "in the compiled eSkills enum, so without this, pack skills work in combat but are " +
-                "invisible in the UI. Purely presentational: off = vanilla panels, skills still function.");
-            EnableTraitLoadoutInjection = Config.Bind("Traits", "EnableTraitLoadoutInjection", true,
+                "invisible in the UI. Purely presentational: off = vanilla panels, skills still function.", ClassForge.Core.ParityClass.Presentation);
+            EnableTraitLoadoutInjection = CFConfig.Bind(Config, "Traits", "EnableTraitLoadoutInjection", true,
                 "Append pack TRAIT_-prefixed traits to the adventure loadout pool " +
                 "(LootDropHelper.GetAdventureLoadOut), so they can be picked on the party-setup screen. " +
                 "Only ids that literally start with 'TRAIT_' are injected — that prefix IS the native trait " +
-                "mechanism, not a naming convention.");
-            EnableStatModifiers = Config.Bind("Skills", "EnableStatModifiers", true,
+                "mechanism, not a naming convention.", ClassForge.Core.ParityClass.Gameplay);
+            EnableStatModifiers = CFConfig.Bind(Config, "Skills", "EnableStatModifiers", true,
                 "CONDITIONAL_STAT_MODIFIER read path (statmodifiers.json): re-tunes the 10 rebalanced " +
                 "selectable traits to EOR 0.7.0.62's percentage-of-computed-stat behavior (e.g. Light-Footed " +
                 "EVD +20% instead of flat +10). Gameplay-relevant: ALL multiplayer peers must use the same " +
-                "value — it is part of the parity registration.");
-            EnableRecipeEngine = Config.Bind("Skills", "EnableRecipeEngine", true,
+                "value — it is part of the parity registration.", ClassForge.Core.ParityClass.Gameplay);
+            EnableRecipeEngine = CFConfig.Bind(Config, "Skills", "EnableRecipeEngine", true,
                 "Master switch for the skill-recipe engine (skillrecipes.json). All-or-nothing by design: " +
                 "SPEC-DELTA-v1.1 §5.3 forbids running a subset, because every recipe primitive either mutates " +
-                "combat state or feeds something that does.");
-            EnableLootGrants = Config.Bind("Skills", "EnableLootGrants", false,
+                "combat state or feeds something that does.", ClassForge.Core.ParityClass.Gameplay);
+            EnableLootGrants = CFConfig.Bind(Config, "Skills", "EnableLootGrants", false,
                 "Master switch for the loot-grant sync verb (ON_COMBAT_LOOT recipes: SCAVENGER/TREASURE_SENSE/" +
                 "SCHOLARS_HABIT/OF_SCAVENGING loot halves) AND its MP host-send/receive/verify path. Ships DARK " +
                 "(default false). The compute+apply path, the MP transport wire-up and the full failure-mode " +
                 "matrix are all offline-verified as of M-LG3, but this default deliberately stays false: the " +
                 "flip to true is gated on an in-game V-1 measurement (real 2-peer DrawMark/ListDigest agreement) " +
                 "that is OPERATOR scope, not part of any milestone's automated work. Requires EnableRecipeEngine " +
-                "= true as well.");
-            DebugLogCombatRandomDraws = Config.Bind("Skills", "DebugLogCombatRandomDraws", false,
+                "= true as well.", ClassForge.Core.ParityClass.Gameplay);
+            DebugLogCombatRandomDraws = CFConfig.Bind(Config, "Skills", "DebugLogCombatRandomDraws", false,
                 "DIAGNOSTIC ONLY -- do not enable outside a debugging session. When true, the loot-grant postfix " +
                 "calls GameRandom.LogCalls(true) on the SHARED combat stream so its per-call log can be inspected " +
                 "to confirm zero draws were taken on the loot-grant path. Produces per-draw log spam for the rest " +
-                "of the session once enabled.");
-            DebugEncounterModifierChance = Config.Bind("Skills", "DebugEncounterModifierChance", -1,
+                "of the session once enabled. CLASSIFIED PRESENTATION, AND THAT IS DECOMPILE-VERIFIED, NOT " +
+                "ASSUMED (W1-I, re-checked 2026-08-26): GameRandom.LogCalls(bool) is `_logCalls = pDoLog; " +
+                "_log = new StringBuilder();` and NOTHING else (GameRandom.cs:25-29) -- it never touches the " +
+                "private `random` field, so it cannot advance the shared stream and cannot be a draw-count " +
+                "fork even though only one peer enables it. (What it DOES change is GameRandom.NextCount, " +
+                "which only increments while _logCalls is on -- which is exactly why NextCount is documented " +
+                "everywhere here as an unreliable draw counter.) Do not re-open this as a parity concern.",
+                ClassForge.Core.ParityClass.Presentation);
+            DebugEncounterModifierChance = CFConfig.Bind(Config, "Skills", "DebugEncounterModifierChance", -1,
                 "DIAGNOSTIC ONLY -- do not enable outside a debugging/SP-smoke session (Encounter Modifiers spec " +
                 "§12.6). -1 = off (default): the ProcChanceFormula's own conditions decide, exactly as shipped. " +
                 "0..100 forces every eligible encounter's modifier-selection roll to this fixed chance instead -- " +
                 "e.g. 100 makes every eligible fight roll a modifier, for visually confirming the banner/status/ " +
                 "MXHP delta without waiting on the real 10-30% base chance. Requires EnableRecipeEngine = true; " +
                 "affects only ProcChanceFormula-bearing recipes (today: the generated encounter-modifier " +
-                "selection recipe), never plain ProcChance recipes.");
+                "selection recipe), never plain ProcChance recipes.", ClassForge.Core.ParityClass.Gameplay);
+
+            OnParityMismatch = CFConfig.Bind(Config, "Multiplayer", "OnParityMismatch", "Default",
+                "What ClassForge does when FTK2.DevKit's parity handshake reports a divergence " +
+                "(docs/MULTIPLAYER.md R1). 'Default' (recommended) is policy-per-kind: BLOCK on a " +
+                "FeaturesMismatch -- a gameplay KNOB differs, e.g. [Combat] VenueGridPreset, which changes " +
+                "the arena tile count and therefore AIHelper's ShuffleList draw count, a guaranteed desync " +
+                "on the first AI turn -- and WarnAndSafeMode on a VersionMismatch/DataMismatch, where a " +
+                "pack-content difference may still be benign. 'Block', 'WarnAndSafeMode' and 'WarnOnly' " +
+                "force one policy for every kind. Gameplay-classified: if two peers disagree here, one " +
+                "shuts its features off and the other does not, which is itself the asymmetric execution " +
+                "parity exists to prevent.", ParityClass.Gameplay);
+
+            RequireParityService = CFConfig.Bind(Config, "Multiplayer", "RequireParityService", true,
+                "Fail CLOSED when FTK2.DevKit is not installed. With DevKit absent there is no handshake at " +
+                "all, so every parity decision above is unenforceable and a mismatched peer is simply never " +
+                "detected. When this is true (default) and the session is online multiplayer, ClassForge " +
+                "enters SafeMode: every state-mutating feature is off and only presentation features run. " +
+                "Set false ONLY for a single-player-only install or a deliberately unenforced session.",
+                ParityClass.Gameplay);
+
+            // P0.5: post-bind sweep. Adopts the [Trainer] knobs bound by the TrainerPartner* files (which
+            // do not route through CFConfig) and fails CLOSED on any knob nobody classified. Must run after
+            // every *.Bind(Config) above.
+            CFConfig.Reconcile(Config);
 
             ApplyPatches();
 
@@ -240,6 +307,44 @@ namespace ClassForge.Plugin
             // Finalizer registered unconditionally — a crash guard must not be toggleable off into a freeze.
             Patch(harmony, typeof(CharacterVisualHelper), "VisualReEquip",
                 finalizer: M(typeof(EquipmentVisualPatches), nameof(EquipmentVisualPatches.VisualReEquip_Finalizer)));
+
+            // ---- missing-dAbility crash guards (see CombatVisualNullGuards header) ----
+            // dObjectIndexers.GetRecordByName returns null for an unknown ability id and the combat view
+            // dereferences it unguarded, so any id without an art record — CF_RECIPE_EFFECT included —
+            // takes the fight down mid-click. Registered unconditionally: a crash guard must not be
+            // toggleable off. Each degrades to missing FX and names the offending id once at Warning.
+            Patch(harmony, typeof(CharacterVisualHelper), "GetCharacterAbilityRecord",
+                postfix: M(typeof(CombatVisualNullGuards),
+                    nameof(CombatVisualNullGuards.GetCharacterAbilityRecord_Postfix)));
+            Patch(harmony, typeof(CombatViewHelper), "JoinAbilityHitEffectNode",
+                prefix: M(typeof(CombatVisualNullGuards),
+                    nameof(CombatVisualNullGuards.JoinAbilityHitEffectNode_Prefix)));
+            Patch(harmony, typeof(CombatViewHelper), "EnqueueReactionAnimations",
+                finalizer: M(typeof(CombatVisualNullGuards),
+                    nameof(CombatVisualNullGuards.EnqueueReactionAnimations_Finalizer)));
+
+            // ---- missing-dStatusEffect HARD FREEZE guard (see CombatVisualNullGuards.AddStatusIcon_Prefix) ----
+            // Same hazard shape as the dAbility guards above, one store over: the timeline portrait strip
+            // dereferences dStatusEffect.IconTexture unguarded for EVERY status a combatant carries, and the
+            // NRE escapes the scheduled _progressRound callback — the round never finishes progressing and
+            // the callback is retried every frame. Registered unconditionally, like the other crash guards.
+            // The target is a compiler-generated local function; its name and closure class carry ordinals
+            // that drift on any edit to the game file, so it is RESOLVED BY SCAN, never hard-coded.
+            var addStatusIcon = CombatVisualNullGuards.ResolveAddStatusIcon();
+            if (addStatusIcon != null)
+                Patch(harmony, addStatusIcon, "CombatTimelineViewHelper2._refreshPortraitVisuals/_addStatusIcon",
+                    prefix: M(typeof(CombatVisualNullGuards),
+                        nameof(CombatVisualNullGuards.AddStatusIcon_Prefix)));
+
+            // ---- status icon donor fallback (see StatusVisualPatches header) ----
+            // A pack status (statuses.json) has no dStatusEffect ScriptableObject/icon asset; without
+            // these, STATUS_VIGOR_CF_ENGORGED is fully live in state but renders no HUD icon and no world FX.
+            Patch(harmony, typeof(dStatusEffectIndex), "GetRecordByName",
+                prefix: M(typeof(StatusVisualPatches), nameof(StatusVisualPatches.GetRecordByName_Prefix)),
+                argumentTypes: new[] { typeof(string) });
+            Patch(harmony, typeof(dStatusEffectIndex), "TryGetRecordByName",
+                prefix: M(typeof(StatusVisualPatches), nameof(StatusVisualPatches.TryGetRecordByName_Prefix)),
+                argumentTypes: new[] { typeof(string), typeof(dStatusEffect).MakeByRefType() });
 
             // ---- icon / portrait fallback ----
             // `out Color` MUST be declared as MakeByRefType() or AccessTools returns null and the patch
@@ -384,10 +489,19 @@ namespace ClassForge.Plugin
             // A resting tile draws only its BORDER: TileRender.Default disables the fill renderer
             // and enables the shadow one. Emissive lives on the fill, so brightening that lights up
             // the highlights and leaves the grid itself faint -- the border opacity is the knob.
-            // Choose the battlefield just before the venue loads. Only 3 of 98 dioramas ship
-            // with the Extended grid, and all three are interiors with clean stone floors.
-            Patch(harmony, typeof(RouterMono), "Route",
-                prefix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.Route_Prefix)));
+            // Choose the battlefield. VenueDirector.Initialize is the one place that turns
+            // DioramaName into an arena -- assets, tile grid and camera rig all come out of that
+            // single call -- so a prefix here is the last moment the choice still reaches all three.
+            // RouterMono.Route was tried first and never fired: an ordinary fight routes to
+            // eRoutes.VENUE, not COMBAT.
+            Patch(harmony, typeof(VenueDirector), "Initialize",
+                prefix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.VenueDirector_Initialize_Prefix)));
+
+            // The dungeon counterpart, OFF by default. DungeonState.OngoingVenues is the whole
+            // remaining floor AND is written to the save, and the rooms are corridor-chained
+            // rather than standalone, so a swap there can break a floor. See the method.
+            Patch(harmony, typeof(DungeonDirector), "_loadNextDioramas",
+                prefix: M(typeof(VenueGridPatches), nameof(VenueGridPatches.DungeonDirector_LoadNextDioramas_Prefix)));
 
             // Cull scenery standing ON the board; outdoor grass occludes the tiles badly.
             Patch(harmony, typeof(VenueViewHelper), "CreateVenueTileGameObjects",
@@ -401,8 +515,173 @@ namespace ClassForge.Plugin
             // so any combatant lacking a 3D model takes the method down -- and the rest of Initialize
             // with it. This prefix sweeps those out of the roster first, whatever their provenance,
             // which is what makes the fix independent of how the creature got there.
+            // ...and a finalizer behind it, for the combatant the prefix's sweep cannot save (P0 "never
+            // delete a combatant"). _clearTileRenderState only RESETS per-tile render state and returns
+            // void, so suppressing a throw here costs stale highlight state on one screen while
+            // Initialize still completes -- grid, action menu and targeting all come up. Deliberately NOT
+            // applied to GetTargetHighlights, which returns its collection: suppressing there would hand
+            // callers a null. Same idiom as EnqueueReactionAnimations_Finalizer (shared LoggedSuppressed
+            // dedup set, returns null).
             Patch(harmony, typeof(CombatPhase), "_clearTileRenderState",
-                prefix: M(typeof(SummonLeakPatches), nameof(SummonLeakPatches.ClearTileRenderState_Prefix)));
+                prefix: M(typeof(SummonLeakPatches), nameof(SummonLeakPatches.ClearTileRenderState_Prefix)),
+                finalizer: M(typeof(CombatVisualNullGuards),
+                    nameof(CombatVisualNullGuards.ClearTileRenderState_Finalizer)));
+
+            // The same defect a third time. CombatViewHelper.GetTargetHighlights (CombatViewHelper.cs:3202)
+            // walks EVERY tile with GroupIndex > -1 on the whole board and indexes
+            // _gameObjectMaps.FromCharacter for whoever occupies each one (CombatViewHelper.cs:3252) with
+            // no membership check -- so ANY combatant anywhere missing a 3D model takes down EVERY
+            // targeted ability, not just ones aimed at it. Measured live: _performAiDecision faulted on
+            // ability FLEE with a KeyNotFoundException for a Hobgoblin that was not even the flee target,
+            // in a fight that had gone through a wave advance. See SummonLeakPatches.GetTargetHighlights_Prefix.
+            if (!Patch(harmony, typeof(CombatViewHelper), "GetTargetHighlights",
+                    prefix: M(typeof(SummonLeakPatches), nameof(SummonLeakPatches.GetTargetHighlights_Prefix))))
+            {
+                Log.LogWarning(
+                    "[ClassForge] GetTargetHighlights patch target not found; the modelless-combatant " +
+                    "targeting crash is unguarded this session.");
+            }
+
+            // ---- Pokemon Trainer partner persistence (test-checklist L0, see TrainerPartnerPatches) ----
+            // A partner's current HP carries between fights on its ball item's Thing.CustomData, and a
+            // partner at 0 HP is DOWNED rather than deleted. These four hooks keep that record in step;
+            // each body fast-outs on "nothing tracked", which is true for every character that does not
+            // hold an ARM_ORIG_TRAINER_BALL_* item -- i.e. every character of every other class.
+            //
+            // AddHealth's terminal overload is the same target CombatHookPatches prefixes for
+            // ON_HEAL_PENDING; Harmony composes the two and the trigger prefix is unaffected. The two
+            // direct CurrentHealth writes that bypass it entirely (KillCharacter's `= 0` at
+            // CharacterHelper.cs:2178, SetToMaxHealth at :1261) need their own hooks -- without the
+            // first, the very event the DOWNED state exists for would be the one event never recorded.
+            Patch(harmony, typeof(CharacterHelper), "AddHealth",
+                postfix: M(typeof(TrainerPartnerPatches), nameof(TrainerPartnerPatches.AddHealth_Postfix)),
+                argumentTypes: new[]
+                {
+                    typeof(Entity), typeof(int).MakeByRefType(), typeof(bool), resultsList,
+                    typeof(StatChangedResultsData), typeof(bool)
+                });
+            Patch(harmony, typeof(CharacterHelper), "KillCharacter",
+                postfix: M(typeof(TrainerPartnerPatches), nameof(TrainerPartnerPatches.KillCharacter_Postfix)));
+            Patch(harmony, typeof(CharacterHelper), "SetToMaxHealth",
+                postfix: M(typeof(TrainerPartnerPatches), nameof(TrainerPartnerPatches.SetToMaxHealth_Postfix)));
+
+            // The ONLY restore path: a town's service revives downed partners and heals hurt ones.
+            // Town-ness is asserted on the encounter (EncounterComponent.Type == eEncounterTypes.TOWN),
+            // not on the screen, so this cannot fire anywhere else.
+            //
+            // The target is AdventureDirector._onUseService -- the networked service ACTION -- and NOT
+            // ServiceMenuViewHelper.Show, which was the original hook and was wrong: Show is pure UI, and
+            // AdventureDirector.cs:10294 SKIPS it for remote players, so only the owning peer revived. That
+            // left the peers with different partner rosters, hence a different CombatState.Entities.Count,
+            // hence a different shared-GameRandom draw count -- a desync produced by the fix meant to
+            // prevent one. _onUseService is a compiler-generated local function
+            // (<_performEncounterAction>g___onUseService|22 on AdventureDirector+<>c__DisplayClass219_5), so
+            // TryPatchUseService resolves it by scanning nested types for the name fragment instead of
+            // hard-coding compiler ordinals that a game rebuild would renumber. Ambiguous match => it
+            // refuses and logs; not found => logs and degrades (partners never revive). Never desyncs.
+            TrainerPartnerPatches.TryPatchUseService(harmony);
+
+            // The MANUAL send-out route. The charm's own CF_TRAINER_SUMMON_<LINE>_T<N>_ATTACK ability is a
+            // plain vendor ADD_CHARACTER run by CombatPhase._performAbility -- it never reaches the recipe
+            // engine, so ExecSummon's DOWNED gate could not see it, and using a charm whose partner was
+            // DOWNED threw NullReferenceException at CombatPhase._performAbility and ate the action.
+            // Refusing at the CONFIRM CLICK (rather than inside PerformAbility) is what keeps this
+            // draw-count neutral: the ability is never declared, so no slot roll is taken and the action is
+            // never sent to the network, on any peer. See ConfirmLeftClickVenueTile_Prefix.
+            Patch(harmony, typeof(CombatPhase), "_onConfirmLeftClickVenueTile",
+                prefix: M(typeof(TrainerPartnerPersistence),
+                    nameof(TrainerPartnerPersistence.ConfirmLeftClickVenueTile_Prefix)));
+
+            // ---- Pokemon Trainer partner NICKNAMES (test-checklist L, see TrainerNicknamePatches) ----
+            // CharacterHelper.GetDisplayName(CharacterComponent, bool) (CharacterHelper.cs:1653) is the one
+            // resolver every visible name funnels through -- GetDisplayNameForUI computes its result by
+            // calling it (CharacterHelper.cs:1695), and nothing caches it, so a postfix here reaches the
+            // combat nameplate, the inspect panel, the turn-order tooltip and the party HUD alike.
+            // argumentTypes is REQUIRED: there are three GetDisplayName overloads and AccessTools.Method
+            // returns null on an ambiguous name.
+            Patch(harmony, typeof(CharacterHelper), "GetDisplayName",
+                postfix: M(typeof(TrainerNicknamePatches), nameof(TrainerNicknamePatches.GetDisplayName_Postfix)),
+                argumentTypes: new[] { typeof(CharacterComponent), typeof(bool) });
+
+            // ---- Pokemon Trainer partner PANEL (test-checklist L, see TrainerPartnerPanel) ----
+            // A SECOND postfix on the method SkillDisplayPatches already postfixes; Harmony composes them.
+            Patch(harmony, typeof(CharacterCustomizationViewHelper), "RenderStatsContainer",
+                postfix: M(typeof(TrainerPartnerPanel), nameof(TrainerPartnerPanel.RenderStatsContainer_Postfix)));
+
+            // ---- Pokemon Trainer partner AUTONOMY (test-checklist L1, see TrainerPartnerAutonomy) ----
+            // Partners already take their own turns: CombatPhase.cs:1918 routes on Has<AIComponent>()
+            // alone, and TryCreateSummon builds every summon via CreateCharacterEntity(pIsNpc: true),
+            // which attaches one at CharacterHelper.cs:1877 BEFORE TryCreateSummon overwrites GroupIndex
+            // at CombatHelper.cs:243. §L1's reading of CombatHelper.cs:2238 as "ally summons get no
+            // AIComponent" is wrong; that line is a net that never fires. These three hooks supply what
+            // was actually missing: direction, proof, and a fail-safe. All three fast-out on
+            // TrainerPartnerAutonomy.NoPartners, which only a resolved ARM_ORIG_TRAINER_BALL_* summon
+            // can make false.
+
+            // DIRECTION. GetPreferredTarget's pTendency comes from the ABILITY config
+            // (AIHelper.cs:481), and partners reuse shipped ability ids, so this is the only place a
+            // partner LINE's role can be expressed. Rewrites the tendency ONLY when the ability
+            // authored NONE.
+            // Registered on AiDrawNeutrality, not on TrainerPartnerAutonomy: the shaping and the
+            // compensating draw that keeps the gate at exactly one shared-stream draw have to happen in
+            // that order, inside one method, and ONLY inside a ForceAiDecision frame. See
+            // AiDrawNeutrality's remarks and TrainerPartnerAutonomy.ApplyTendencyShaping's.
+            AiDrawNeutrality.PreferredTargetHookInstalled =
+                Patch(harmony, typeof(AIHelper), "GetPreferredTarget",
+                    prefix: M(typeof(AiDrawNeutrality),
+                        nameof(AiDrawNeutrality.GetPreferredTarget_Prefix)));
+
+            // DRAW-NEUTRALITY (docs/MULTIPLAYER.md R2). The prefix opens the frame that scopes the shaping
+            // above; the postfix takes the draw a Focus Fire order would otherwise have skipped, because
+            // AIComponent.PriorityTargets is drained BEFORE GetPreferredTarget is consulted and a hit there
+            // bypasses the tendency gate entirely (AIHelper.cs:516-551); the finalizer guarantees the frame
+            // is closed even if the game's own method throws.
+            Patch(harmony, typeof(AIHelper), "ForceAiDecision",
+                prefix: M(typeof(AiDrawNeutrality), nameof(AiDrawNeutrality.ForceAiDecision_Prefix)),
+                postfix: M(typeof(AiDrawNeutrality), nameof(AiDrawNeutrality.ForceAiDecision_Postfix)),
+                finalizer: M(typeof(AiDrawNeutrality), nameof(AiDrawNeutrality.ForceAiDecision_Finalizer)));
+
+            // PROOF. _performAiDecision is reached from the AI branch (CombatPhase.cs:1922) and never
+            // from the PLAYER branch (:1925), so a record written here cannot be produced by a
+            // human-driven turn. This is the log line and the state a test reads.
+            Patch(harmony, typeof(CombatPhase), "_performAiDecision",
+                prefix: M(typeof(TrainerPartnerAutonomy),
+                    nameof(TrainerPartnerAutonomy.PerformAiDecision_Prefix)));
+
+            // FAIL-SAFE. The decision is an ARGUMENT to _performAiDecision inside async void
+            // _engageActiveEntity, so a throw out of these two helpers stops the fight on that entity
+            // with nothing to catch it. For a tracked partner only, the finalizer substitutes
+            // InteractableHelper.SkipTurnDecision; every other entity gets its exception back unchanged.
+            Patch(harmony, typeof(AIHelper), "BehaviourAiDecision",
+                finalizer: M(typeof(TrainerPartnerAutonomy),
+                    nameof(TrainerPartnerAutonomy.AiDecision_Finalizer)));
+            Patch(harmony, typeof(AIHelper), "StandardAiDecision",
+                finalizer: M(typeof(TrainerPartnerAutonomy),
+                    nameof(TrainerPartnerAutonomy.AiDecision_Finalizer)));
+
+            // ---- Pokemon Trainer CHARM PROGRESSION (test-checklist L/L1/L2, see TrainerCharmProgression) ----
+            // Without these two the Trainer is a permanently ONE-PARTNER class: CF_ORIG_TRAINER.Things
+            // grants exactly ARM_ORIG_TRAINER_BALL_GRASS and all twelve ON_COMBAT_START summon recipes
+            // open with HAS_ITEM of their own charm, so possession IS the switch and two of the three
+            // authored lines are unreachable for the whole run.
+            //
+            // LEVEL-UP. ProgressionHelper.EntityGainXP (ProgressionHelper.cs:648) is the single overload
+            // that compares the level before (:654) and after (:703) and raises
+            // eAbilityResults.LEVELED_UP at :721 -- the only place in the engine a level-up is announced.
+            // EntitiesGainXP (:640) is a ForEach over it, so this one target catches both.
+            Patch(harmony, typeof(ProgressionHelper), "EntityGainXP",
+                postfix: M(typeof(TrainerCharmProgression),
+                    nameof(TrainerCharmProgression.EntityGainXP_Postfix)));
+
+            // CATCH-UP. The grant is a reconcile, not an edge, so it also runs at combat start -- which
+            // covers a save loaded at a level whose level-up event is long gone. Deliberately a PREFIX:
+            // CombatHookPatches.SetInitiative_Postfix is what dispatches ON_COMBAT_START and evaluates
+            // those twelve HAS_ITEM gates, and Harmony runs every prefix before the original and every
+            // postfix after, so the charm is guaranteed to be in the inventory before the gate reads it.
+            // void -- it can never skip the original.
+            Patch(harmony, typeof(CombatHelper), "SetInitiative",
+                prefix: M(typeof(TrainerCharmProgression),
+                    nameof(TrainerCharmProgression.SetInitiative_Prefix)));
 
             // M-LG3 — the loot-grant SafeMode latch's own session-start reset, on the SAME anchor
             // ParityBridge uses for its (unrelated, whole-engine) latch. A separate patch registration so
@@ -450,6 +729,29 @@ namespace ClassForge.Plugin
         }
 
         /// <summary>
+        /// Same as the type+name overload, for a target already resolved to a <see cref="MethodBase"/> —
+        /// used where the name cannot be written down, i.e. compiler-generated local functions whose
+        /// emitted names carry ordinals that drift between game builds. <paramref name="label"/> is what
+        /// the <c>Target found:</c>/<c>Target NOT found:</c> line reports, since <c>method.Name</c> for
+        /// such a target is unreadable.
+        /// </summary>
+        private static bool Patch(HarmonyLib.Harmony harmony, MethodBase target, string label,
+            HarmonyMethod prefix = null, HarmonyMethod postfix = null, HarmonyMethod finalizer = null)
+        {
+            try
+            {
+                harmony.Patch(target, prefix: prefix, postfix: postfix, finalizer: finalizer);
+                Log.LogInfo($"Target found: {label}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.LogError($"Target NOT found: {label} — patch installation threw, feature disabled (fail-safe): {ex}");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Cheap discovery-only pre-pass so a per-pack <c>[Packs] &lt;PackId&gt;.Enabled</c> BepInEx entry
         /// exists before the real merge runs (SPEC.md §5). Idempotent — safe to call from every
         /// LoadConfigs/ReloadConfigs postfix; newly-discovered pack ids get a knob, existing ones are left
@@ -465,15 +767,74 @@ namespace ClassForge.Plugin
                 foreach (var pack in discovered)
                 {
                     if (PackEnabledKnobs.ContainsKey(pack.Manifest.Id)) continue;
-                    PackEnabledKnobs[pack.Manifest.Id] = Instance.Config.Bind(
-                        "Packs", $"{pack.Manifest.Id}.Enabled", true,
-                        $"Enable/disable pack '{pack.Manifest.Id}' without deleting it.");
+                    // Gameplay: a pack switched off on ONE peer means that peer simulates from different
+                    // merged Configs. The pack ids in the payload already cover the enabled set; this makes
+                    // the DISABLED set explicit too, and names the exact knob in the mismatch banner.
+                    PackEnabledKnobs[pack.Manifest.Id] = CFConfig.Bind(
+                        Instance.Config, "Packs", $"{pack.Manifest.Id}.Enabled", true,
+                        $"Enable/disable pack '{pack.Manifest.Id}' without deleting it.",
+                        ParityClass.Gameplay);
                 }
             }
             catch (Exception ex)
             {
                 Log.LogWarning($"[ClassForge] Pre-scan for per-pack knobs failed (fail-safe — packs still respect their own manifest 'enabled' field): {ex}");
             }
+        }
+
+        /// <summary>
+        /// W1-H — what <c>[Packs] AdditionalRoots</c> reports to the parity handshake instead of its raw
+        /// value.
+        ///
+        /// <para><b>The bug it fixes.</b> The knob is a list of ABSOLUTE PATHS and was compared verbatim,
+        /// so two friends with byte-identical packs installed on <c>C:</c> and <c>D:</c> produced a
+        /// <c>FeaturesMismatch</c> — which defaults to <c>Block</c>, i.e. a refused join with every
+        /// ClassForge feature off. Nothing about a drive letter changes what executes. What DOES matter is
+        /// which packs the roots contributed, and that is emitted here as an ordinal-sorted, comma-joined
+        /// list of PACK IDS. Their CONTENT is separately covered by <c>DataHasher</c>'s <c>DataHash</c>,
+        /// and the enabled subset by <see cref="ParityRegistrationBuilder"/>'s own pack-id entries — so
+        /// this is the only remaining question ("did your extra roots contribute the same packs as mine?")
+        /// and it is now the only one asked.</para>
+        ///
+        /// <para>Ids rather than a digest, deliberately: the value is rendered straight into the mismatch
+        /// banner, and <c>"CF_PACK_MINE"</c> vs <c>"(none)"</c> tells a player what to do where sixteen hex
+        /// characters would not. The default (no additional roots) reports <c>"(none)"</c> on every
+        /// machine, which is the overwhelmingly common case.</para>
+        ///
+        /// <para>Failure is reported as <c>"(unscannable)"</c> rather than silently as <c>"(none)"</c>: an
+        /// unreadable root is a real difference between two peers and must not compare equal to a peer
+        /// that has none.</para>
+        /// </summary>
+        internal static string AdditionalRootsParityValue(string rawRoots)
+        {
+            var ids = new List<string>();
+            try
+            {
+                var fs = new ClassForge.Core.IO.FileSystemFileSource();
+                foreach (var part in (rawRoots ?? string.Empty).Split(','))
+                {
+                    var root = part.Trim();
+                    if (root.Length == 0) continue;
+                    // A configured-but-absent root is itself a divergence between two peers, so it is
+                    // reported rather than skipped.
+                    if (!fs.DirectoryExists(root)) { ids.Add("(missing)"); continue; }
+
+                    var findings = new List<ClassForge.Core.Finding>();
+                    foreach (var pack in ClassForge.Core.PackDiscovery.Discover(fs, new[] { root }, findings))
+                        ids.Add(pack.Manifest.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.LogWarning("[ClassForge] could not scan [Packs] AdditionalRoots for the parity payload: " + ex.Message);
+                return "(unscannable)";
+            }
+
+            if (ids.Count == 0) return "(none)";
+            ids.Sort(StringComparer.Ordinal);
+            // ';' not ',': ParityValue.Sanitize rewrites commas anyway, and the payload's own log lines
+            // join entries with commas.
+            return string.Join(";", ids.ToArray());
         }
 
         internal static List<string> GetRoots()

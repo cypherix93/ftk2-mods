@@ -1,0 +1,310 @@
+{
+  "schema": "crucible.scenario.v1",
+  "name": "baldurs",
+  "kind": "batch",
+  "checklist_item": "G. Classes / CF_PACK_BALDURS -- fail-safety sweep",
+  "description": "Fire every CF_PACK_BALDURS weapon ability and assert the governing criterion: classes playable, game does not break, everything fails safely. Magnitude is not the subject.",
+  "seed": 20260826,
+  "notes": [
+    "WHY THIS PACK GETS ITS OWN SCENARIO: docs/research/test-checklist.md records a live NRE crash in the Chaos Mage abilities and flags CF_PACK_BALDURS as 'probably broken' by the same bug class -- GetCharacterAbilityRecord is dereferenced UNGUARDED at CharacterVisualHelper.cs:2567 and ~18 further sites, so a pack-authored ability id that resolves onto a body is a hard NRE crash in combat. This scenario is the check.",
+    "The four Baldur's classes and their display names, read from CF_PACK_BALDURS/classes.json -> LocKey -> localization/en.json: CF_WARLOCK_HEXBLADE = 'Hexblade Warlock', CF_BATTLEMASTER = 'Battle Master', CF_NECROMANCER = 'Necromancer', CF_SKELETON_WARRIOR = 'Skeleton Warrior'.",
+    "CF_PACK_BALDURS has NO statuses.json and its abilities.json is literally {}. Every ability the pack's items grant is a VANILLA ability id, and its one status reference is the vanilla STATUS_CURSE_00 (SKILL_CF_CURSED_STRIKES, Trigger ON_CRIT). So this scenario asserts on vanilla ids by design, not by oversight.",
+    "BALDUR'S CLASSES ARE NOT OUR FIVE. The identity tell here names a Baldur's class, and the Shepherd/Thief/Corsair/Bladedancer blocklist still applies -- those four are vanilla and would mean the fixture was built with set_class.",
+    "The pass/fail split that matters: '[ClassForge] Recipe effect failed (skipped, rest of plan continues)' is a PASS for fail-safety and a FAIL for correctness. Any NullReferenceException / KeyNotFoundException is a FAIL for fail-safety, which is the criterion that actually governs."
+  ],
+  "fixture": {
+    "run_id": "TBD-baldurs",
+    "backup": "baldurs.ftk2",
+    "status": "not-built",
+    "notes": "BUILD RECIPE. New campaign -> CHARACTER CREATION for every slot. NEVER crucible_party_set_class: it rewrites ConfigName but not the display name, so the class is right in state and every screenshot shows a stale vanilla name -- that voided a whole verification run here. Save, copy the .ftk2 out of GameRuns\\ into %USERPROFILE%\\Backups\\ftk2-fixtures under this name, then set status to 'built'. Slots: 1 = Hexblade Warlock, 2 = Battle Master, 3 = Necromancer, 4 = Skeleton Warrior. Each must be carrying its class Thing (CF_ITEM_PACT_BLADE, CF_ITEM_COMMANDERS_LONGSWORD, CF_ITEM_NECROTIC_STAFF, CF_ITEM_BONE_CLAWS) or its abilities will not be on the bar."
+  },
+  "party": {
+    "expect_classes": [
+      "Hexblade Warlock",
+      "Battle Master",
+      "Necromancer",
+      "Skeleton Warrior"
+    ],
+    "min_size": 4,
+    "forbid_names": [
+      "Shepherd",
+      "Thief",
+      "Corsair",
+      "Bladedancer"
+    ]
+  },
+  "setup": [
+    {
+      "op": "godmode",
+      "value": "off",
+      "why": "godmode ON tops HP up every tick and masks every HP effect."
+    },
+    {
+      "op": "wipe_enemies"
+    }
+  ],
+  "enemies": [
+    {
+      "config": "WOLF_GRASS_08",
+      "count": 3,
+      "group": 1,
+      "role": "killable",
+      "why": "Grim Resurrection and Relentless are both ON_KILL, so the sweep needs something that dies"
+    }
+  ],
+  "steps": [
+    {
+      "id": "b1",
+      "label": "HEXBLADE WARLOCK -- Pact Blade dark bolt; Hexblade Bargain trades HP for power at ON_ABILITY_USED",
+      "actor": "class:CF_WARLOCK_HEXBLADE",
+      "ability": "MAGIC_DARK_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_HEXBLADE_BARGAIN"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException",
+          "Unhandled exception"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "b1_no_crash",
+          "kind": "count",
+          "selector": "ally:*",
+          "op": "gte",
+          "value": 4,
+          "why": "the party is still on the board -- combat did not abort"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_hexblade",
+          "kind": "identity",
+          "region": "party",
+          "expect": "a party HUD card reading \"Hexblade Warlock\"",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "b1_grid",
+          "kind": "effect",
+          "region": "board",
+          "expect": "the tile grid and the action menu are BOTH still drawn. One absent 3D model takes the whole combat venue down through _clearTileRenderState, and the symptom is a missing UI, not a missing creature"
+        }
+      ]
+    },
+    {
+      "id": "tb1",
+      "label": "advance",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 1
+      }
+    },
+    {
+      "id": "b2",
+      "label": "BATTLE MASTER -- Commander's Longsword push; Relentless is ON_KILL",
+      "actor": "class:CF_BATTLEMASTER",
+      "ability": "BLUNT_PUSH_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "proc"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException",
+          "Unhandled exception"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "b2_target_hurt",
+          "kind": "hp_delta",
+          "selector": "enemy:0",
+          "op": "lt",
+          "value": 0
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_battlemaster",
+          "kind": "identity",
+          "region": "party",
+          "expect": "a party HUD card reading \"Battle Master\"",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "b2_hp",
+          "kind": "effect",
+          "region": "enemy",
+          "expect": "the target's HP bar dropped and it may have been pushed to another tile"
+        }
+      ]
+    },
+    {
+      "id": "tb2",
+      "label": "advance",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 1
+      }
+    },
+    {
+      "id": "b3",
+      "label": "NECROMANCER -- Necrotic Staff summon; Grim Resurrection is ON_KILL and is the riskiest effect in the pack",
+      "actor": "class:CF_NECROMANCER",
+      "ability": "MAGIC_SUMMON_UNDEAD_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "proc"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException",
+          "Unhandled exception"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "b3_still_live",
+          "kind": "count",
+          "selector": "ally:*",
+          "op": "gte",
+          "value": 4
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_necromancer",
+          "kind": "identity",
+          "region": "party",
+          "expect": "a party HUD card reading \"Necromancer\"",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "b3_summon",
+          "kind": "effect",
+          "region": "board",
+          "expect": "if anything was summoned, a BODY on the board AND a card in the ally HUD. A summon that exists only in state is the invisible-mechanic FAIL"
+        }
+      ]
+    },
+    {
+      "id": "tb3",
+      "label": "advance",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 1
+      }
+    },
+    {
+      "id": "b4",
+      "label": "SKELETON WARRIOR -- Bone Claws basic attack",
+      "actor": "class:CF_SKELETON_WARRIOR",
+      "ability": "MELEE_BASIC_ATTACK",
+      "target": {
+        "select": "enemy:1"
+      },
+      "log": {
+        "proc": [
+          "proc"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException",
+          "Unhandled exception"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "b4_target_hurt",
+          "kind": "hp_delta",
+          "selector": "enemy:1",
+          "op": "lt",
+          "value": 0
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_skeleton",
+          "kind": "identity",
+          "region": "party",
+          "expect": "a party HUD card reading \"Skeleton Warrior\"",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "b4_hp",
+          "kind": "effect",
+          "region": "enemy",
+          "expect": "the target's HP bar dropped"
+        }
+      ]
+    }
+  ],
+  "tells": [
+    {
+      "id": "identity_all_baldurs",
+      "kind": "identity",
+      "region": "party",
+      "expect": "all four cards read Hexblade Warlock / Battle Master / Necromancer / Skeleton Warrior",
+      "invalidated_by": [
+        "Shepherd",
+        "Thief",
+        "Corsair",
+        "Bladedancer"
+      ]
+    },
+    {
+      "id": "combat_ui_intact",
+      "kind": "effect",
+      "region": "board",
+      "expect": "the tile grid, the timeline and the action menu are all still on screen after every pack ability has been fired. That is what fail-safety looks like"
+    }
+  ],
+  "asserts": [
+    {
+      "id": "party_intact",
+      "kind": "count",
+      "selector": "ally:*",
+      "op": "gte",
+      "value": 4
+    },
+    {
+      "id": "combat_still_readable",
+      "kind": "count",
+      "selector": "enemy:*",
+      "op": "gte",
+      "value": 0
+    }
+  ]
+}

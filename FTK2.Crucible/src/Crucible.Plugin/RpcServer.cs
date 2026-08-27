@@ -246,6 +246,26 @@ namespace Crucible.Plugin
                 return;
             }
 
+            // Refuse an under-supplied call BEFORE dispatch. The game's own dispatcher answers a
+            // shortfall by skipping the invoke and returning void, which used to surface here as
+            // ok=true with no result -- a command that silently never ran. See
+            // GameBridge.WouldSkipInvoke for the decompiled branch and the captured evidence.
+            string arityDetail;
+            object arityProbe; string arityPumpError;
+            bool arityProbed = MainThreadPump.Run(delegate
+            {
+                string inner;
+                return GameBridge.WouldSkipInvoke(command, args.Count, out inner)
+                    ? (object)inner : (object)false;
+            }, 3000, out arityProbe, out arityPumpError);
+            arityDetail = arityProbed ? arityProbe as string : null;
+            if (arityDetail != null)
+            {
+                WriteTrace("exec_failed", correlationId, command, args, arityDetail, 0);
+                Respond(ctx, 400, Error(arityDetail));
+                return;
+            }
+
             string[] argArray = args.ToArray();
             Stopwatch sw = Stopwatch.StartNew();
             object result; string pumpError; string reflectiveResult = null;
@@ -274,6 +294,7 @@ namespace Crucible.Plugin
                 OverworldCommands.LastResult = null;
                 RunCommands.LastResult = null;
                 RunEndCommands.LastResult = null;
+                RecipeCounterCommands.LastResult = null;
                 bool success = GameBridge.Exec(command, argArray, out inner);
                 // crucible_get/crucible_invoke/crucible_ui_*/crucible debug-verb commands stash their
                 // rendered output here rather than returning it through ExecuteCommand, which reports
@@ -284,7 +305,7 @@ namespace Crucible.Plugin
                     ?? DebugVerbCommands.LastResult ?? ChaosCommands.LastResult
                     ?? InputFocusGateCommands.LastResult ?? MouseCommands.LastResult
                     ?? GamepadCommands.LastResult ?? KeyboardCommands.LastResult
-                    ?? InputBackgroundCommands.LastResult ?? FixtureCommands.LastResult ?? AbilityCommands.LastResult ?? ConfigCommands.LastResult ?? CombatCommands.LastResult ?? DebugSpawnCommands.LastResult ?? CharacterCommands.LastResult ?? CombatDriveCommands.LastResult ?? OverworldCommands.LastResult ?? RunCommands.LastResult ?? RunEndCommands.LastResult;
+                    ?? InputBackgroundCommands.LastResult ?? FixtureCommands.LastResult ?? AbilityCommands.LastResult ?? ConfigCommands.LastResult ?? CombatCommands.LastResult ?? DebugSpawnCommands.LastResult ?? CharacterCommands.LastResult ?? CombatDriveCommands.LastResult ?? OverworldCommands.LastResult ?? RunCommands.LastResult ?? RunEndCommands.LastResult ?? RecipeCounterCommands.LastResult;
                 return success ? (object)true : (object)inner;
             }, 10000, out result, out pumpError);
             sw.Stop();
@@ -300,6 +321,9 @@ namespace Crucible.Plugin
             response["durationMs"] = (int)sw.ElapsedMilliseconds;
             response["correlationId"] = correlationId;
             if (ok && reflectiveResult != null) response["result"] = reflectiveResult;
+            // Lets a client tell "the command produced no output" from "the command did not run"
+            // without having to reason about whether the `result` key is absent or merely empty.
+            response["hasResult"] = reflectiveResult != null;
 
             WriteTrace(ok ? "exec" : "exec_failed", correlationId, command, args, execError, (int)sw.ElapsedMilliseconds, reflectiveResult);
             Respond(ctx, ok ? 200 : 400, response);

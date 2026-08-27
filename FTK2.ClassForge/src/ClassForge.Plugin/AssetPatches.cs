@@ -66,7 +66,7 @@ namespace ClassForge.Plugin
         {
             try
             {
-                if (!ClassForgePlugin.FeaturesActive) return true;
+                if (!ClassForgePlugin.PresentationActive) return true;
                 if (!ClassForgePlugin.EnableIconFallback.Value) return true;
                 if (pIconID == null) return true;
 
@@ -119,7 +119,7 @@ namespace ClassForge.Plugin
         {
             try
             {
-                if (!ClassForgePlugin.FeaturesActive) return true;
+                if (!ClassForgePlugin.PresentationActive) return true;
                 if (!ClassForgePlugin.EnableIconFallback.Value) return true;
                 if (string.IsNullOrEmpty(pKey)) return true;
 

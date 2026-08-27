@@ -272,6 +272,32 @@ const TOOLS = [
     inputSchema: { type: 'object', required: ['selector'], properties: {
       selector: { type: 'string', description: 'Substring matched against element name/text (same rules as crucible_ui_click)' },
       ...INSTANCE_ARG } } },
+  { name: 'ftk2_pick_nth',
+    description: 'Clicks ONE SPECIFIC element chosen by identity: the zero-based `index` among the on-screen ' +
+      'Buttons matching `selector`, optionally scoped to one owning UIDocument. Use this wherever several ' +
+      'elements share a name and carry no text and ftk2_pick would silently hit the first: the nine ' +
+      'adventure-art-holder carousel entries, or the empty-text next-btn difficulty stepper that sits on the ' +
+      'same screen as a CONFIRM button also named next-btn (scope by document/index to tell them apart). ' +
+      'SAFETY: the plugin runs the SAME forbidden-element check as crucible_ui_click on this path -- the ' +
+      'element actually selected is refused if it is continue-btn (outside a dialogue document) or load-btn, ' +
+      'even when it is the only match, and nothing is activated. An out-of-range index is a LOUD error, never ' +
+      'a silent fall back to index 0. The match report (name, document, index, total match count, text) is ' +
+      'emitted BEFORE anything is activated, so identity is verified rather than assumed. This server also ' +
+      'refuses up front if `selector` would reach continue-btn/load-btn at all.',
+    inputSchema: { type: 'object', required: ['selector', 'index'], properties: {
+      selector: { type: 'string', description: 'Substring matched against element name/text (same rule as crucible_ui_dump)' },
+      index: { type: 'number', description: 'Zero-based index among the matches, in walk order. List them first with ftk2_matches.' },
+      document: { type: 'string', description: 'Optional owning UIDocument name, matched EXACTLY (e.g. AdventureSelectionUIDocument). Omit for any.' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_matches',
+    description: 'READ-ONLY. Lists every on-screen Button matching `selector` (optionally scoped to one ' +
+      'UIDocument) with the zero-based index ftk2_pick_nth takes, plus each one\'s document, text and whether ' +
+      'it is forbidden. Shares the one matcher with ftk2_pick_nth, so the printed index IS the index to pass ' +
+      '-- unlike counting crucible_ui_dump lines by hand. Activates nothing.',
+    inputSchema: { type: 'object', required: ['selector'], properties: {
+      selector: { type: 'string', description: 'Substring matched against element name/text' },
+      document: { type: 'string', description: 'Optional owning UIDocument name, matched EXACTLY. Omit for any.' },
+      ...INSTANCE_ARG } } },
   { name: 'ftk2_wait_screen',
     description: 'Polls crucible_ui_dump (on the Node side, not in the game plugin, so it cannot block ' +
       'MainThreadPump and freeze the game) until a dump containing `expect` as a substring is seen, or ' +
@@ -397,10 +423,11 @@ const TOOLS = [
       'Lang.__translations. Use it to prove a pack authored names AND descriptions that players will ' +
       'actually see: a label looking right in a screenshot only proves the NAME resolved, while ' +
       'descriptions live behind hover tooltips and encyclopedia panels a harness cannot easily open. An ' +
-      'unresolved key renders as the raw id. A trailing * matches by prefix, so a whole pack can be ' +
-      'checked in one call (e.g. SKILL_CF_VAMPIRIC*).',
+      'unresolved key renders as the raw id. * is a wildcard matching any run of characters in ANY ' +
+      'position -- leading, infix or trailing -- so SKILL_CF_VAMPIRIC* checks a whole pack in one ' +
+      'call and *BALL* finds every key mentioning BALL.',
     inputSchema: { type: 'object', required: ['key'], properties: {
-      key: { type: 'string', description: 'Exact key, or a prefix ending in *' },
+      key: { type: 'string', description: 'Exact key, or a pattern using * as a wildcard anywhere (e.g. SKILL_CF_* , *BALL*, *_DESC)' },
       ...INSTANCE_ARG } } },
   { name: 'ftk2_summary_dismiss',
     description: 'Dismiss the ADVENTURE COMPLETE / adventure-summary screen by pressing its Continue button ' +
@@ -492,7 +519,116 @@ const TOOLS = [
       'the chaos observables -- chaosHistoryCount (no scalar "current chaos level" field exists on ' +
       'ChaosState, so this is the best available proxy), maxChaos, lastChaosRoundAdded, startedAtRound, ' +
       'and the current round count for correlation.',
-    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } }
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_chaos_advance',
+    description: 'DEBUG/CHEAT: force-promotes the chaos stage via the same code path ' +
+      'AdventureHelper.ModifyChaosLevel drives, which matters because quest promotion out of ' +
+      'FutureQuests is gated on chaos stage (e.g. the chapter 1-1 WIN quest needs stage 3), so this ' +
+      'is how the quest chain gets walked without playing every turn. An empty arg is refused before ' +
+      'it reaches the director -- ChaosState goes null on empty and the next chaos tick dereferences ' +
+      'it, a live NullReferenceException, not a no-op. The underlying call is not awaited; re-read ' +
+      'ftk2_chaos_state to confirm nothing downstream is still resolving.',
+    inputSchema: { type: 'object', required: ['chaosConfigName'], properties: {
+      chaosConfigName: { type: 'string', description: 'Chaos config id to advance to' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_combat_snapshot',
+    description: 'Every combatant in the current fight with its tile, health, actions and side, plus ' +
+      'the active entity guid and the tile grid. Tile coordinates are the whole point: targeting takes ' +
+      'a position, not an entity, so nothing else in the combat surface can aim without this first.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_list_abilities',
+    description: 'What a combatant can actually use: each ability\'s thingId/thingConfig, whether ' +
+      'CombatHelper.IsUsableAbility currently says yes, and whether its backing Thing resolves. An ' +
+      'ability with pa=0 in ftk2_combat_snapshot still lists here with usable=False -- that is the tell ' +
+      'that a trait test lost its action to an earlier auto-play, not that the trait never fired.',
+    inputSchema: { type: 'object', properties: {
+      entityGuid: { type: 'string', description: 'Combatant guid, or "-" for the active entity' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_list_targets',
+    description: 'Legal target tiles for a named ability against a combatant, using the same ' +
+      'enumeration the game\'s own AI decision code uses -- so anything returned is legal by ' +
+      'construction, not by assumption. Feed a tile straight into ftk2_use_ability.',
+    inputSchema: { type: 'object', required: ['abilityName'], properties: {
+      abilityName: { type: 'string' },
+      entityGuid: { type: 'string', description: 'Combatant guid, or "-" for the active entity' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_use_ability',
+    description: 'Fire a named ability at a tile through CombatPhase._performAiDecision, the same entry ' +
+      'point the game\'s own AI uses -- selection, tile highlight, look-at, slot roll and execution in ' +
+      'the correct order. The underlying Task is not awaited by the bridge, so re-read ' +
+      'ftk2_combat_snapshot a moment later rather than trusting an immediate read.',
+    inputSchema: { type: 'object', required: ['abilityName', 'x', 'y'], properties: {
+      abilityName: { type: 'string' },
+      x: { type: 'number' },
+      y: { type: 'number' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_use_ability_auto',
+    description: 'The zero-argument combat smoke test: picks a real, usable, non-FLEE/SKIP_TURN/reposition ' +
+      'ability off the active entity, ranked by CharacterHelper.GetMinAndMaxDamageOfAbilityForCharacter, ' +
+      'and fires it through the same targeting logic ftk2_use_ability uses. If this cannot fire, nothing ' +
+      'else in combat will, so it separates "my targeting is wrong" from "combat is not driveable at all".',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_win_combat',
+    description: 'Win the current fight, with loot, via the game\'s own EndPhase debug command, which ' +
+      'removes every living enemy from CombatState.Entities before ending combat so the victory test ' +
+      'passes. NOT the same as CombatState.EndCombatEarly, which stops the fight with enemies still ' +
+      'alive and therefore evaluates as a LOSS. The transition is asynchronous; re-read state after a ' +
+      'few seconds.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_combat_end_turn',
+    description: 'End the ACTIVE entity\'s turn the way the game itself ends it, so ON_TURN_END skill ' +
+      'procs actually fire -- unlike a direct call to _nextTurn (the old implementation), which jumps ' +
+      'straight to the consequence of a turn ending and skips the cause, silencing every ON_TURN_END ' +
+      'recipe. Do NOT call ftk2_combat_restore_actions immediately before this: restore_actions refills ' +
+      'the actions this verb must zero to make the turn register as over.',
+    inputSchema: { type: 'object', properties: { ...INSTANCE_ARG } } },
+  { name: 'ftk2_kill_target',
+    description: 'Land a REAL killing blow through the game\'s own damage pipeline (ApplyStatChange), so ' +
+      'kill-gated traits (SKILL_PLAYTHING, SKILL_DISCIPLINE) get a fair shot to fire -- unlike ' +
+      'ftk2_combat_wipe_enemies/ftk2_kill_all, which end a life by writing state directly and never reach ' +
+      'the proc check. Drops the target to 1 HP by direct write, then fires a real ability from the ' +
+      'killer at the target\'s tile. Because it forces 1 HP first, this can NEVER test damage mitigation -- ' +
+      'use a natural or directed enemy attack for that. killerGuid auto-picks a living opposing-group ' +
+      'combatant when omitted.',
+    inputSchema: { type: 'object', required: ['targetGuidOrIndex'], properties: {
+      targetGuidOrIndex: { type: 'string', description: 'Combatant guid, or a 0-based index into ftk2_combat_snapshot\'s list' },
+      killerGuid: { type: 'string', description: 'Optional; auto-picks a living opposing-group combatant' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_equip',
+    description: 'DEBUG/CHEAT: equip an item on a party member by config id via EquipmentHelper.Equip. ' +
+      'Abilities come from the EQUIPPED WEAPON, not the class -- a class swap alone leaves the previous ' +
+      'weapon\'s abilities in place, so a class fixture is not valid until the matching weapon is equipped.',
+    inputSchema: { type: 'object', required: ['slot', 'thingConfigName'], properties: {
+      slot: { type: 'number', description: 'Party slot index' },
+      thingConfigName: { type: 'string' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_give_item',
+    description: 'DEBUG/CHEAT: grants an item to a party member\'s inventory via InventoryHelper.GiveByName ' +
+      '(distinct from ftk2_give, which uses the shipped whole-party GetSpecificThing command). Verifies via ' +
+      'CharacterComponent.Things.Count on that slot read before and after.',
+    inputSchema: { type: 'object', required: ['slot', 'thingConfigName', 'quantity'], properties: {
+      slot: { type: 'number', description: 'Party slot index' },
+      thingConfigName: { type: 'string' },
+      quantity: { type: 'number' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_set_stat_value',
+    description: 'DEBUG/CHEAT: writes a stat via CharacterHelper.SetStat(Entity, String, Int32). Stat keys ' +
+      'are strings -- there is no eStats enum in the assembly. Verifies via CharacterHelper.GetStat read ' +
+      'before and after.',
+    inputSchema: { type: 'object', required: ['slot', 'stat', 'value'], properties: {
+      slot: { type: 'number', description: 'Party slot index' },
+      stat: { type: 'string' },
+      value: { type: 'number' },
+      ...INSTANCE_ARG } } },
+  { name: 'ftk2_thing_config',
+    description: 'Proves an item id resolves in the live Configs.Things map before anything tries to equip ' +
+      'or grant it -- an absent id makes EquipmentHelper.Equip throw a NullReferenceException, which reads ' +
+      'as a broken command rather than as missing content. A trailing * lists matching ids instead of ' +
+      'describing one (item ids are not guessable -- 2418 of them, no naming convention that survives ' +
+      'contact with the shipped data).',
+    inputSchema: { type: 'object', required: ['thingId'], properties: {
+      thingId: { type: 'string', description: 'Exact id, or a prefix ending in *' },
+      ...INSTANCE_ARG } } }
 ];
 
 // Elements this server will never allow a click to reach, directly or as an incidental substring
@@ -694,6 +830,61 @@ async function pickTool(inst, selector) {
     ok: !!clickRes.ok,
     selector,
     clickResult: clickRes.ok ? clickRes.result : clickRes.error,
+    documentsBefore,
+    documentsAfter,
+    appeared: diff.appeared,
+    disappeared: diff.disappeared,
+    onScreenAfter: after.ok ? after.elements : null
+  };
+}
+
+/**
+ * ftk2_pick_nth -> crucible_ui_click_nth. The plugin owns the real safety decision (it applies
+ * UiForbiddenElements to the element it ACTUALLY selected, before any activation strategy runs);
+ * this adds the same up-front selector guard ftk2_pick has, so a forbidden selector never even
+ * reaches the game, and returns the plugin's match report verbatim alongside a document diff.
+ */
+async function pickNthTool(inst, selector, index, document) {
+  if (!selector) throw new Error('missing selector');
+  if (index === undefined || index === null) throw new Error('missing index (zero-based; list them with ftk2_matches)');
+  if (!Number.isInteger(index) || index < 0) {
+    return { ok: false, error: 'index must be a non-negative integer; got ' + JSON.stringify(index) };
+  }
+
+  const before = await dumpElements(inst, '-', '-');
+  if (!before.ok) return { ok: false, error: before.error, phase: 'before-dump' };
+
+  if (selectorReachesForbiddenClick(before.elements, selector)) {
+    return {
+      ok: false,
+      blocked: true,
+      reason: 'refusing to click "' + selector + '": it is, or would match, continue-btn/load-btn, ' +
+        'which would resume/load the existing save. This tool will never do that.',
+      onScreenElements: before.elements
+    };
+  }
+
+  const res = await rpc(inst, 'POST', '/exec', {
+    command: 'crucible_ui_click_nth',
+    args: [selector, String(index), document || '-']
+  });
+  const after = await dumpElements(inst, '-', '-');
+
+  const documentsBefore = uniqueDocs(before.elements);
+  const documentsAfter = after.ok ? uniqueDocs(after.elements) : [];
+  const diff = diffDocs(documentsBefore, documentsAfter);
+  const report = res.ok ? (res.result || '') : (res.error || '');
+
+  return {
+    ok: !!res.ok,
+    selector,
+    index,
+    document: document || '(any)',
+    // The plugin's match report: what it matched, where, and how many alternatives existed --
+    // emitted before it activated anything. Read this to confirm identity.
+    matchReport: report,
+    refused: report.indexOf('REFUSED:') >= 0,
+    outOfRange: report.indexOf('is out of range') >= 0,
     documentsBefore,
     documentsAfter,
     appeared: diff.appeared,
@@ -1059,6 +1250,9 @@ async function callTool(name, args) {
     case 'ftk2_saves':         return textResult(await savesTool(inst));
     case 'ftk2_new_game':      return textResult(await newGameTool(inst, args.category, args.adventure));
     case 'ftk2_pick':          return textResult(await pickTool(inst, args.selector));
+    case 'ftk2_pick_nth':      return textResult(await pickNthTool(inst, args.selector, args.index, args.document));
+    case 'ftk2_matches':
+      return textResult(await execText(inst, 'crucible_ui_matches', [args.selector, args.document || '-']));
     case 'ftk2_wait_screen':   return textResult(await waitScreenTool(inst, args.expect, args.timeoutMs));
     case 'ftk2_read_trace':    return textResult(await rpc(inst, 'GET', '/trace?n=' + (args.n || 50)));
     case 'ftk2_kill_all':
@@ -1117,6 +1311,32 @@ async function callTool(name, args) {
       return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_chaos_freeze', args: [String(args.onOff)] }));
     case 'ftk2_chaos_state':
       return textResult(await rpc(inst, 'POST', '/exec', { command: 'crucible_chaos_state', args: [] }));
+    case 'ftk2_chaos_advance':
+      return textResult(await execText(inst, 'crucible_chaos_advance', [String(args.chaosConfigName)]));
+    case 'ftk2_combat_snapshot':
+      return textResult(await execText(inst, 'crucible_combat_snapshot', []));
+    case 'ftk2_list_abilities':
+      return textResult(await execText(inst, 'crucible_list_abilities', [args.entityGuid || '-']));
+    case 'ftk2_list_targets':
+      return textResult(await execText(inst, 'crucible_list_targets', [String(args.abilityName), args.entityGuid || '-']));
+    case 'ftk2_use_ability':
+      return textResult(await execText(inst, 'crucible_use_ability', [String(args.abilityName), String(args.x), String(args.y)]));
+    case 'ftk2_use_ability_auto':
+      return textResult(await execText(inst, 'crucible_use_ability_auto', []));
+    case 'ftk2_win_combat':
+      return textResult(await execText(inst, 'crucible_win_combat', []));
+    case 'ftk2_combat_end_turn':
+      return textResult(await execText(inst, 'crucible_combat_end_turn', []));
+    case 'ftk2_kill_target':
+      return textResult(await execText(inst, 'crucible_kill_target', [String(args.targetGuidOrIndex), args.killerGuid || '']));
+    case 'ftk2_equip':
+      return textResult(await execText(inst, 'crucible_equip', [String(args.slot), String(args.thingConfigName)]));
+    case 'ftk2_give_item':
+      return textResult(await execText(inst, 'crucible_give_item', [String(args.slot), String(args.thingConfigName), String(args.quantity)]));
+    case 'ftk2_set_stat_value':
+      return textResult(await execText(inst, 'crucible_set_stat_value', [String(args.slot), String(args.stat), String(args.value)]));
+    case 'ftk2_thing_config':
+      return textResult(await execText(inst, 'crucible_thing_config', [String(args.thingId)]));
     case 'ftk2_screenshot': {
       const res = await rpc(inst, 'POST', '/screenshot', { label: args.label || null });
       if (!res.ok) return textResult(res);

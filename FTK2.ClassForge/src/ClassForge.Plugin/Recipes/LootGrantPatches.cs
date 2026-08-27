@@ -89,11 +89,18 @@ namespace ClassForge.Plugin
                 string listDigest = LootGrantKey.ComputeListDigest(pending);
 
                 // ---- Step 2: derive the private grant stream (verb spec §4.2) ----
-                List<string> ownerGuids = GuidsOf(pParty);
-                List<string> enemyGuids = GuidsOf(pEnemies);
+                // PEER-STABLE keys, never Entity.Guid. Both derived values below are cross-peer contracts:
+                // grantKey rides the CF_SYNC_LOOT_GRANT_V1 audit payload AND seeds deterministic Thing.Id
+                // minting, and grantSeed IS the private grant stream's seed. Feeding Guid.NewGuid() strings
+                // into them (the shipped behaviour until 2026-08-26) made every peer derive a DIFFERENT
+                // stream from the same won combat -- i.e. different loot for each player, plus an audit
+                // that could never agree. The zero-shared-draw pattern is only correct when the derived
+                // seed is derived from REPLICATED inputs; see LootGrantKey's remarks.
+                List<string> ownerKeys = RosterKeysOf(pParty);
+                List<string> enemyKeys = RosterKeysOf(pEnemies);
                 int combatSeed = pGameRandom != null ? pGameRandom.Seed : 0; // field read -- zero draws
-                string grantKey = LootGrantKey.ComputeGrantKey(combatSeed, enemyGuids, listDigest, ownerGuids);
-                int grantSeed = LootGrantKey.ComputeGrantSeed(combatSeed, listDigest, enemyGuids);
+                string grantKey = LootGrantKey.ComputeGrantKey(combatSeed, enemyKeys, listDigest, ownerKeys);
+                int grantSeed = LootGrantKey.ComputeGrantSeed(combatSeed, listDigest, enemyKeys);
                 IRandomSource grantRandom = new GameRandomSource(new GameRandom(grantSeed, pIgnoreMultiplayerStaticSeed: true));
 
                 // ---- Step 3: compute the delta (pure; owns its own fixed iteration order, §4.3) ----
@@ -469,16 +476,39 @@ namespace ClassForge.Plugin
             return owners;
         }
 
-        private static List<string> GuidsOf(List<Entity> entities)
+        /// <summary>
+        /// The peer-stable key of each entity in a replicated per-combat list: its POSITION in that list,
+        /// rendered through <c>EntityKey.ToString()</c> ("E0", "E1", ...).
+        ///
+        /// <para><b>Why position and not the entity's own identity.</b> <c>Entity.Guid</c> is minted per
+        /// peer by <c>Guid.NewGuid()</c> (<c>Entity.cs:119-125</c>) and is therefore never legal as a seed
+        /// input or a cross-peer key -- the vendor's own desync hasher rewrites every guid to a positional
+        /// ordinal before hashing, for exactly this reason
+        /// (<c>NetworkDebuggingHelper._convertGuidsOfEntities</c>). Position in a replicated list is the
+        /// vendor's own cross-peer identity mechanism; see <c>ClassForge.Core.Rng.EntityKey</c>, which also
+        /// records why <c>ConfigName</c>, <c>GroupIndex</c> and grid position were each rejected.</para>
+        ///
+        /// <para><b>Why the ARGUMENT list and not <c>CombatState.Entities</c>.</b> This postfix runs on
+        /// <c>LootDropHelper.GetLootDropsFromEnemies</c>, i.e. after the fight; the combat roster may
+        /// already have been torn down, which would collapse every ordinal to
+        /// <c>PeerOrder.Unknown</c> and destroy the key's discriminating power. <c>pParty</c> and
+        /// <c>pEnemies</c> are themselves replicated lists supplied by the caller, in the same order on
+        /// every peer iff lockstep held -- which is the same premise the whole mirror+audit posture rests
+        /// on, and a violation of it is precisely what the OpsHash audit exists to report.</para>
+        ///
+        /// <para><b>Entropy note.</b> These keys are positional, so what they contribute to the digest is
+        /// the SHAPE of the fight (party size, enemy count) rather than which specific creatures were in
+        /// it. That is a deliberate, small loss: the per-combat entropy the derivation actually depends on
+        /// comes from <c>CombatSeed</c> and <c>ListDigest</c> (which fingerprints the pre-grant loot list by
+        /// <c>ConfigName|Stack</c>), both of which are already replicated and already unique per combat.</para>
+        /// </summary>
+        private static List<string> RosterKeysOf(List<Entity> entities)
         {
-            List<string> guids = new List<string>();
-            if (entities == null) return guids;
+            List<string> keys = new List<string>();
+            if (entities == null) return keys;
             for (int i = 0; i < entities.Count; i++)
-            {
-                try { guids.Add(entities[i] != null ? (entities[i].Guid ?? string.Empty) : string.Empty); }
-                catch { guids.Add(string.Empty); }
-            }
-            return guids;
+                keys.Add(ClassForge.Recipes.Abstractions.PeerOrder.KeyOf(i));
+            return keys;
         }
 
         private static List<LootOp> FilterAllowed(IReadOnlyList<LootOp> ops)
@@ -585,6 +615,41 @@ namespace ClassForge.Plugin
                     }
                 }
 
+                // ===== W1-D: why this per-player-SOUNDING call is peer-stable, decompile-verified =====
+                // The concern is real in shape: `sorted.Count` in LootDeltaComputer is indexed by a grant-
+                // stream draw, so two peers with different candidate POOLS pick a different item from the
+                // same seed -- a divergence with the same draw count, which no draw-count probe can see.
+                //
+                // It does not happen, and the reason is not "DLC is usually the same":
+                //   * GetEnabledExpansions() reads eStatType.GLOBAL (StatsHelper.cs:1086-1091, the default
+                //     pGetLocalStat:false).
+                //   * GetStat(..., GLOBAL) returns Env.User.LocalStats ONLY when HasMultiplayerStats is
+                //     false; in a multiplayer session it returns NetworkData.MultiplayerSyncedStats
+                //     (StatsHelper.cs:258-263, :294).
+                //   * Every peer is HANDED that dictionary by the host -- MultiplayerLobbyDirector.cs:1086
+                //     (join at party management) and NetworkHelper.LoadIntoSave:271 (join into a live run),
+                //     both from the host's syncData.Stats.
+                //   * The EXPANSION_<name> stats are amalgamated by MAX across peers, i.e. the UNION:
+                //     StatsHelper.Initialize (:108) adds every expansion's stat name to
+                //     MultiplayerMaxValueStats, and PartyManagementDirector.cs:4272 takes Math.Max on the
+                //     JIP_UPDATE_STATS merge.
+                //   * `_overriddenDisabledExpansionStats` (CoreHelper.cs:107) only ever affects the LOCAL
+                //     branch, never this one.
+                //
+                // And the load-bearing corroboration: the VENDOR's own loot filter reads exactly this
+                // property for exactly this purpose (LootDropHelper.cs:49, FilterLootNames). If it were
+                // per-peer, vanilla loot itself would diverge in every co-op session. Mirroring the vendor
+                // is therefore the CORRECT call, not merely the convenient one.
+                //
+                // Residual risk and why it is handled: if HasMultiplayerStats were somehow false mid-
+                // session, this would fall back to LocalStats and the pools could differ. That case is not
+                // silent -- the pick lands in LootOp.ConfigName, which is inside ComputeOpsHash, which the
+                // host's CF_SYNC_LOOT_GRANT_V1 payload is compared against on every peer: it surfaces as a
+                // LootReceiveResult.Mismatch, a loud banner and loot-grant SafeMode (see ReportMismatch).
+                // DO NOT "fix" this by folding the expansion set into LootGrantKey.ComputeGrantKey: that
+                // would give the two peers different GrantKeys, and PendingGrantStore then classifies the
+                // host's payload as Stale/HeldInInbox rather than Mismatch -- turning the one detector that
+                // covers this into a silent discard.
                 List<eExpansions> enabledExpansions = StatsHelper.GetEnabledExpansions();
 
                 foreach (KeyValuePair<string, ThingConfig> kv in configs.Things)

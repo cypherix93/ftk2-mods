@@ -30,9 +30,14 @@ namespace FTK2Mods.Crucible
             reason = null;
             if (string.IsNullOrEmpty(elementName)) return false;
 
-            if (string.Equals(elementName, "load-btn", StringComparison.OrdinalIgnoreCase))
+            // load-game-btn is listed alongside load-btn because the operator's standing constraint
+            // names THREE controls (continue-btn / load-btn / load-game-btn) while this guard
+            // originally covered two. A gap in a safety list is not a style issue: the whole point
+            // is that a caller never has to know which spelling a given screen uses.
+            if (string.Equals(elementName, "load-btn", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(elementName, "load-game-btn", StringComparison.OrdinalIgnoreCase))
             {
-                reason = "'load-btn' resumes the owner's live co-op campaign; refused unconditionally.";
+                reason = "'" + elementName + "' resumes the owner's live co-op campaign; refused unconditionally.";
                 return true;
             }
 

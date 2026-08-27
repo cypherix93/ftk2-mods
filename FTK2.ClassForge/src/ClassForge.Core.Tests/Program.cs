@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ClassForge.Core;
 using ClassForge.Core.IO;
 using ClassForge.Core.Json;
+using ClassForge.Core.Rng;
 using ClassForge.Core.Tests;
 
 int passed = 0, failed = 0;
@@ -352,37 +353,245 @@ Test("DataHasher: line-ending normalization is NOT applied to non-text (.png) ex
 });
 
 // ---------------------------------------------------------------------
-// 6. Parity-registration payload shape.
+// 6. Parity-registration payload shape (P0.5: opt-OUT knob coverage).
+//
+// The two tests that used to live here encoded the OLD contract: "the payload contains the three
+// hand-named bools". That contract is exactly the bug -- it asserted the presence of three knobs and
+// said nothing about the other twenty, so it stayed green while [Combat] VenueGridPreset (which changes
+// the arena tile count, and therefore AIHelper's ShuffleList draw count on the shared GameRandom stream)
+// was invisible to parity. The replacements below assert the MECHANISM instead: every Gameplay knob is
+// emitted, no Presentation knob is, the order is ordinal, the formatting is culture-invariant, and no
+// bind site anywhere in the Plugin can bypass the registry.
 // ---------------------------------------------------------------------
-Test("ParityRegistrationBuilder: payload includes pack ids + gameplay feature knobs (MP review B4)", () =>
-{
-    var result = baldursResult!;
-    var payload = ParityRegistrationBuilder.Build(result, "ftk2mods.classforge", "0.1.0",
-        enableRecipeEngine: true, enableTraitLoadoutInjection: false, enableStatModifiers: true);
 
-    AssertEqual("ftk2mods.classforge", payload.Guid, "guid");
-    AssertEqual("0.1.0", payload.Version, "version");
-    AssertEqual(result.DataHash, payload.DataHash, "dataHash");
-    Assert(payload.EnabledFeatures.SequenceEqual(new[]
+// The P0.5 classification of record. A knob added to the Plugin without a matching entry here fails
+// "CFConfig: every knob's classification matches the P0.5 audit" below, in BOTH directions.
+var expectedGameplay = new[]
+{
+    "Combat.RotateDioramas", "Combat.RotateDioramasInDungeons", "Combat.VenueGridPreset",
+    "General.Enabled",
+    // AiTargetingDrawNeutrality decides how many draws AIHelper.ForceAiDecision takes from the SHARED
+    // stream, so two peers disagreeing about it desync on the first AI turn. Gameplay, unambiguously.
+    "Multiplayer.AiTargetingDrawNeutrality",
+    "Multiplayer.OnParityMismatch", "Multiplayer.RequireParityService",
+    "Packs.AdditionalRoots",
+    "Skills.DebugEncounterModifierChance", "Skills.EnableLootGrants", "Skills.EnableRecipeEngine",
+    "Skills.EnableStatModifiers",
+    "Traits.EnableTraitLoadoutInjection",
+    // All 19 [Trainer] knobs.
+    "Trainer.CapPartnerMaxHp", "Trainer.CaptureRejectStunKits", "Trainer.CharmUnlockOrder",
+    "Trainer.DefaultPartnerNicknames", "Trainer.EnableCapture", "Trainer.EnableCharmProgression",
+    "Trainer.EnableFocusFireOrders", "Trainer.EnablePartnerAutonomy",
+    "Trainer.EnablePartnerCommandTendency", "Trainer.EnablePartnerNicknames",
+    "Trainer.EnablePartnerPanel", "Trainer.EnablePartnerPersistence", "Trainer.FocusFireRequireMarker",
+    "Trainer.PartnerMaxHpByStage", "Trainer.RevivePartnersInTown", "Trainer.SecondCharmLevel",
+    "Trainer.ShapePartnerTendency", "Trainer.StarterCharmLine", "Trainer.ThirdCharmLevel",
+};
+
+var expectedPresentation = new[]
+{
+    "Combat.ClearFoliageOverGrid", "Combat.VenueCameraRig", "Combat.VenueCameraZoomOut",
+    "Combat.VenueTileBorderOpacity",
+    "General.VerboseLogging",
+    "Skills.DebugLogCombatRandomDraws",
+    "UI.EnableClassSelectInjection", "UI.EnableIconFallback", "UI.EnableSkillDisplay",
+};
+
+Test("ParityRegistrationBuilder: EVERY Gameplay knob reaches the payload, no Presentation knob does (P0.5)", () =>
+{
+    ParityKnobRegistry.Reset();
+    foreach (var name in expectedGameplay)
     {
-        "CF_PACK_BALDURS",
-        "feature:EnableRecipeEngine=true",
-        "feature:EnableStatModifiers=true",
-        "feature:EnableTraitLoadoutInjection=false"
-    }), $"enabledFeatures should include the pack id and all three gameplay feature knobs, got [{string.Join(",", payload.EnabledFeatures)}]");
-    Assert(payload.EnabledFeatures.SequenceEqual(payload.EnabledFeatures.OrderBy(x => x, StringComparer.Ordinal)), "enabledFeatures must be sorted ordinally");
+        var dot = name.IndexOf('.');
+        ParityKnobRegistry.Declare(name.Substring(0, dot), name.Substring(dot + 1), ParityClass.Gameplay, () => "v");
+    }
+    foreach (var name in expectedPresentation)
+    {
+        var dot = name.IndexOf('.');
+        ParityKnobRegistry.Declare(name.Substring(0, dot), name.Substring(dot + 1), ParityClass.Presentation, () => "v");
+    }
+
+    var payload = ParityRegistrationBuilder.Build(baldursResult!, "ftk2mods.classforge", "0.1.0");
+
+    // Wire format is UNCHANGED -- still feature:<Name>=<value> -- so DevKit.ParityComparer needs no work.
+    foreach (var name in expectedGameplay)
+        Assert(payload.EnabledFeatures.Contains("feature:" + name + "=v"),
+            $"Gameplay knob '{name}' is missing from the parity payload -- a peer could differ on it and still compare as Match.");
+
+    foreach (var name in expectedPresentation)
+        Assert(!payload.EnabledFeatures.Any(f => f.StartsWith("feature:" + name + "=", StringComparison.Ordinal)),
+            $"Presentation knob '{name}' leaked into the parity payload -- a cosmetic preference must never refuse a join.");
+
+    Assert(payload.EnabledFeatures.Contains("CF_PACK_BALDURS"), "the enabled pack ids must still be in the payload");
+    AssertEqual(expectedGameplay.Length + 1, payload.EnabledFeatures.Length,
+        "payload should be exactly the pack id plus one entry per Gameplay knob");
+    AssertEqual(baldursResult!.DataHash, payload.DataHash, "dataHash");
+    ParityKnobRegistry.Reset();
 });
 
-Test("ParityRegistrationBuilder: feature knob values flip the encoded string (MP review B4)", () =>
+Test("ParityRegistrationBuilder: payload is ORDINAL-sorted, not culture-sorted (P0.5)", () =>
 {
-    var result = baldursResult!;
-    var payload = ParityRegistrationBuilder.Build(result, "ftk2mods.classforge", "0.1.0",
-        enableRecipeEngine: false, enableTraitLoadoutInjection: true);
+    ParityKnobRegistry.Reset();
+    // '_' (0x5F) sorts BEFORE 'a' (0x61) ordinally; most culture-aware comparers ignore or reorder
+    // leading punctuation, so a culture-sorted payload puts these the other way round. Two peers under
+    // different locales would then hand DevKit two differently-ordered arrays for identical settings.
+    ParityKnobRegistry.Declare("Z", "aKnob", ParityClass.Gameplay, () => "1");
+    ParityKnobRegistry.Declare("Z", "_Knob", ParityClass.Gameplay, () => "1");
+    ParityKnobRegistry.Declare("Z", "BKnob", ParityClass.Gameplay, () => "1");
 
-    Assert(payload.EnabledFeatures.Contains("feature:EnableRecipeEngine=false"), "Expected feature:EnableRecipeEngine=false in " + string.Join(",", payload.EnabledFeatures));
-    Assert(payload.EnabledFeatures.Contains("feature:EnableTraitLoadoutInjection=true"), "Expected feature:EnableTraitLoadoutInjection=true in " + string.Join(",", payload.EnabledFeatures));
-    Assert(!payload.EnabledFeatures.Any(f => f.Contains("EnableClassSelectInjection")), "EnableClassSelectInjection is presentation-only and must NOT appear in enabledFeatures.");
-    Assert(!payload.EnabledFeatures.Any(f => f.Contains("EnableIconFallback")), "EnableIconFallback is presentation-only and must NOT appear in enabledFeatures.");
+    var payload = ParityRegistrationBuilder.Build(baldursResult!, "g", "v");
+    var knobEntries = payload.EnabledFeatures.Where(f => f.StartsWith("feature:Z.", StringComparison.Ordinal)).ToArray();
+
+    Assert(knobEntries.SequenceEqual(new[] { "feature:Z.BKnob=1", "feature:Z._Knob=1", "feature:Z.aKnob=1" }),
+        "expected ordinal order [B, _, a], got [" + string.Join(", ", knobEntries) + "]");
+    Assert(payload.EnabledFeatures.SequenceEqual(payload.EnabledFeatures.OrderBy(x => x, StringComparer.Ordinal)),
+        "the whole payload must be ordinal-sorted");
+    ParityKnobRegistry.Reset();
+});
+
+Test("ParityValue: knob values are culture-INVARIANT (P0.5)", () =>
+{
+    var previous = System.Globalization.CultureInfo.CurrentCulture;
+    try
+    {
+        // de-DE renders a decimal point as a comma. A peer on this locale must still emit "0.5", or two
+        // identically-configured peers diverge on nothing but their operating-system language.
+        System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
+
+        AssertEqual("0.5", ParityValue.Format(0.5f), "float must be invariant + round-trippable");
+        AssertEqual("0.5", ParityValue.Format(0.5d), "double must be invariant");
+        AssertEqual("-1", ParityValue.Format(-1), "int must be invariant");
+        AssertEqual("true", ParityValue.Format(true), "bool must be lower-case 'true' (unchanged wire text)");
+        AssertEqual("false", ParityValue.Format(false), "bool must be lower-case 'false'");
+        AssertEqual("", ParityValue.Format(null), "null must be empty, never a crash");
+
+        // Commas would make the payload ambiguous when DevKit joins it for display; both peers apply the
+        // same substitution, so this can never manufacture or hide a divergence.
+        AssertEqual("C:/a;C:/b", ParityValue.Format("C:/a,C:/b"), "commas must be escaped deterministically");
+        AssertEqual("a b", ParityValue.Format("a\nb"), "newlines must be flattened deterministically");
+
+        // And the same value formatted under an invariant culture must be byte-identical.
+        System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+        AssertEqual("0.5", ParityValue.Format(0.5f), "the same float under InvariantCulture must match de-DE's output");
+    }
+    finally
+    {
+        System.Globalization.CultureInfo.CurrentCulture = previous;
+    }
+});
+
+Test("ParityRegistrationBuilder: a knob whose reader throws is emitted as <unreadable>, never dropped (P0.5)", () =>
+{
+    ParityKnobRegistry.Reset();
+    ParityKnobRegistry.Declare("Skills", "Broken", ParityClass.Gameplay, () => throw new InvalidOperationException("boom"));
+    var payload = ParityRegistrationBuilder.Build(baldursResult!, "g", "v");
+    // Silently dropping it would restore the exact "invisible knob" failure P0.5 exists to remove.
+    Assert(payload.EnabledFeatures.Contains("feature:Skills.Broken=<unreadable>"),
+        "a throwing value-reader must still occupy its slot in the payload, got [" + string.Join(", ", payload.EnabledFeatures) + "]");
+    ParityKnobRegistry.Reset();
+});
+
+// ---------------------------------------------------------------------
+// 6b. Source scan: no knob can bypass the registry.
+//
+// The wrapper only covers bind sites that call it, so a test -- not a convention -- is what keeps the
+// next knob from being added the way the first twenty were. Four TrainerPartner*.cs files are owned by
+// another workstream and still call config.Bind directly; they are classified declaratively in
+// CFConfig.ExternalClassifications, and that table is the ONLY sanctioned bypass.
+// ---------------------------------------------------------------------
+
+Test("CFConfig: no raw Config.Bind anywhere in the Plugin escapes the registry (P0.5)", () =>
+{
+    var plugin = FindPluginSrcDir();
+    var external = ReadExternalClassifications(plugin);
+    var offenders = new List<string>();
+
+    foreach (var file in Directory.GetFiles(plugin, "*.cs", SearchOption.AllDirectories))
+    {
+        if (Path.GetFileName(file) == "CFConfig.cs") continue;                 // the wrapper itself
+        if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")) continue;
+
+        var text = File.ReadAllText(file);
+        foreach (System.Text.RegularExpressions.Match m in
+                 System.Text.RegularExpressions.Regex.Matches(text,
+                     // The (?<!\w) look-behind excludes `CFConfig.Bind(` -- the wrapper -- while still
+                     // matching a qualified `Instance.Config.Bind(`, since '.' is not a word character.
+                     @"(?<!\w)[Cc]onfig\.Bind\(\s*""([^""]+)""\s*,\s*""([^""]+)"""))
+        {
+            var name = m.Groups[1].Value + "|" + m.Groups[2].Value;
+            if (!external.ContainsKey(name))
+                offenders.Add($"{Path.GetFileName(file)}: [{m.Groups[1].Value}] {m.Groups[2].Value}");
+        }
+    }
+
+    Assert(offenders.Count == 0,
+        "These bind sites bypass CFConfig AND are not in CFConfig.ExternalClassifications, so their knobs " +
+        "would be invisible to the parity handshake. Route them through CFConfig.Bind with an explicit " +
+        "ParityClass, or classify them in the table:\n  " + string.Join("\n  ", offenders));
+});
+
+Test("CFConfig: every knob's classification matches the P0.5 audit (P0.5)", () =>
+{
+    var plugin = FindPluginSrcDir();
+    var actual = ReadAllClassifications(plugin);
+
+    var expected = new Dictionary<string, string>(StringComparer.Ordinal);
+    foreach (var n in expectedGameplay) expected[n] = "Gameplay";
+    foreach (var n in expectedPresentation) expected[n] = "Presentation";
+
+    var problems = new List<string>();
+    foreach (var pair in actual)
+    {
+        if (!expected.TryGetValue(pair.Key, out var want))
+            problems.Add($"{pair.Key} is classified {pair.Value} in the Plugin but is not in the P0.5 audit list " +
+                         "(add it there, and decide deliberately -- over-inclusion costs a false refusal, " +
+                         "under-inclusion costs a desync)");
+        else if (want != pair.Value)
+            problems.Add($"{pair.Key}: audit says {want}, the Plugin says {pair.Value}");
+    }
+    foreach (var pair in expected)
+        if (!actual.ContainsKey(pair.Key))
+            problems.Add($"{pair.Key} is in the P0.5 audit ({pair.Value}) but no bind site or table entry declares it");
+
+    Assert(problems.Count == 0, string.Join("\n  ", problems));
+});
+
+Test("CFConfig: the desync-potent knobs the old three-bool payload missed are Gameplay (P0.5)", () =>
+{
+    var actual = ReadAllClassifications(FindPluginSrcDir());
+
+    // The headline case: VenueGridPreset substitutes the combat arena map (8/12/24 tiles a side). Tile
+    // count drives list.Count in AIHelper, which drives ShuffleList's draw count -- GameRandom.ShuffleList
+    // takes exactly _list.Count draws from the SHARED stream. A preset mismatch desyncs on the first AI
+    // turn, and the pre-P0.5 payload reported "Match".
+    AssertEqual("Gameplay", actual["Combat.VenueGridPreset"], "[Combat] VenueGridPreset");
+
+    // Same argument one step removed: the diorama selection decides WHICH arena is built, and
+    // VenueGridPatches' own measured note records that two of the three shipped defaults "came up 8 tiles
+    // a side" contrary to the asset inventory -- i.e. diorama choice and tile count are NOT independent.
+    AssertEqual("Gameplay", actual["Combat.RotateDioramas"], "[Combat] RotateDioramas");
+    AssertEqual("Gameplay", actual["Combat.RotateDioramasInDungeons"], "[Combat] RotateDioramasInDungeons");
+
+    // A peer loading an extra pack root has different content behind an identical DataHash over the
+    // standard roots.
+    AssertEqual("Gameplay", actual["Packs.AdditionalRoots"], "[Packs] AdditionalRoots");
+
+    // Fail-closed enforcement is itself parity-relevant: one peer shutting features off while the other
+    // does not IS the asymmetric execution parity exists to prevent.
+    AssertEqual("Gameplay", actual["Multiplayer.RequireParityService"], "[Multiplayer] RequireParityService");
+    AssertEqual("Gameplay", actual["Multiplayer.OnParityMismatch"], "[Multiplayer] OnParityMismatch");
+});
+
+Test("CFConfig: the per-pack [Packs] <id>.Enabled knob is registered as Gameplay (P0.5)", () =>
+{
+    var text = File.ReadAllText(Path.Combine(FindPluginSrcDir(), "ClassForgePlugin.cs"));
+    var i = text.IndexOf(".Enabled\", true,", StringComparison.Ordinal);
+    Assert(i > 0, "could not find the per-pack knob bind site in ClassForgePlugin.cs");
+    var window = text.Substring(Math.Max(0, i - 400), Math.Min(700, text.Length - Math.Max(0, i - 400)));
+    // Interpolated, so the source scan above cannot read its key -- assert its shape directly instead.
+    Assert(window.Contains("CFConfig.Bind("), "the per-pack knob must be bound through CFConfig");
+    Assert(window.Contains("ParityClass.Gameplay"),
+        "a pack switched off on ONE peer means that peer simulates from different merged Configs");
 });
 
 // ---------------------------------------------------------------------
@@ -800,6 +1009,91 @@ Test("SkillDisplay: real CF_PACK_EOR_CLASSES data — every class's custom passi
 });
 
 // ---------------------------------------------------------------------
+// 10b. The same rendered-row assertions for CF_PACK_ORIGINALS.
+//
+// The test above hardcoded CF_PACK_EOR_CLASSES, so CF_PACK_ORIGINALS never had its rendered rows
+// checked at all -- which is exactly why missing UI_ENCYCLOPEDIA_ copy survived there. These tests
+// are pack-id-agnostic in shape: every rendered row must have a title AND a description, and every
+// ARM_ item must have a description, or the pack ships content that renders blank in game.
+// ---------------------------------------------------------------------
+Test("CF_PACK_ORIGINALS: every rendered skill row has a UI_ENCYCLOPEDIA_ description key", () =>
+{
+    var fs = new FileSystemFileSource();
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { classPacksDir }, id => string.Equals(id, "CF_PACK_ORIGINALS", StringComparison.Ordinal));
+
+    var loc = result.MergePlan.Localization;
+    var missing = new List<string>();
+    int classesWithRows = 0;
+
+    foreach (var op in result.MergePlan.Characters)
+    {
+        var passivesNode = op.Value.Get("Passives");
+        if (passivesNode == null) continue;
+        var passives = passivesNode.AsArray.Select(n => n.AsString).ToList();
+        var rows = SkillDisplay.SelectCustomSkillRows(
+            passives, pp => !pp.StartsWith("SKILL_CF_", StringComparison.Ordinal), loc.ContainsKey);
+        if (rows.Count > 0) classesWithRows++;
+        foreach (var row in rows)
+            if (!loc.ContainsKey("UI_ENCYCLOPEDIA_" + row))
+                missing.Add(op.Id + " -> " + row);
+    }
+
+    Assert(classesWithRows > 0, "CF_PACK_ORIGINALS must render at least one custom skill row");
+    Assert(missing.Count == 0,
+        missing.Count + " rendered row(s) would show an empty tooltip/encyclopedia body -- add "
+        + "UI_ENCYCLOPEDIA_<SKILL> to the pack's localization for: "
+        + string.Join(" | ", missing.Distinct().OrderBy(x => x, StringComparer.Ordinal)));
+});
+
+Test("CF_PACK_ORIGINALS: the Trainer needs far more skill rows than the templates' vanilla-era budget", () =>
+{
+    var fs = new FileSystemFileSource();
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { classPacksDir }, id => string.Equals(id, "CF_PACK_ORIGINALS", StringComparison.Ordinal));
+
+    var loc = result.MergePlan.Localization;
+    var trainer = result.MergePlan.Characters.FirstOrDefault(op => op.Id == "CF_ORIG_TRAINER");
+    Assert(trainer != null, "CF_ORIG_TRAINER must be present in CF_PACK_ORIGINALS");
+
+    var passives = trainer!.Value.Get("Passives").AsArray.Select(n => n.AsString).ToList();
+    var rows = SkillDisplay.SelectCustomSkillRows(
+        passives, pp => !pp.StartsWith("SKILL_CF_", StringComparison.Ordinal), loc.ContainsKey);
+
+    // The regression this locks in: SkillDisplayPatches used to assume "our worst case is 4 rows",
+    // walk the spare rows and DROP everything past them with one generic warning. The Trainer alone
+    // needs far more, so any code that budgets a fixed number of rows is wrong by construction.
+    Assert(rows.Count > 4,
+        "CF_ORIG_TRAINER renders " + rows.Count + " custom skill rows; the display path must never "
+        + "assume a fixed row budget (see SkillDisplayPatches overflow handling)");
+});
+
+Test("CF_PACK_ORIGINALS: every ARM_ item has a <ITEM>_DESCRIPTION localization key", () =>
+{
+    var fs = new FileSystemFileSource();
+    var loader = new PackLoader();
+    var result = loader.Load(fs, new[] { classPacksDir }, id => string.Equals(id, "CF_PACK_ORIGINALS", StringComparison.Ordinal));
+
+    var loc = result.MergePlan.Localization;
+    var armIds = result.MergePlan.Things
+        .Select(op => op.Id)
+        .Where(id => id.StartsWith("ARM_", StringComparison.Ordinal))
+        .Distinct().OrderBy(x => x, StringComparer.Ordinal).ToList();
+
+    Assert(armIds.Count > 0, "CF_PACK_ORIGINALS must ship at least one ARM_ item");
+
+    var missingName = armIds.Where(id => !loc.ContainsKey(id)).ToList();
+    var missingDesc = armIds.Where(id => !loc.ContainsKey(id + "_DESCRIPTION")).ToList();
+
+    Assert(missingName.Count == 0,
+        missingName.Count + " ARM_ item(s) have no title key and would show a raw id on the item card: "
+        + string.Join(", ", missingName));
+    Assert(missingDesc.Count == 0,
+        missingDesc.Count + " of " + armIds.Count + " ARM_ item(s) have no <ITEM>_DESCRIPTION key and "
+        + "would show a blank item card body: " + string.Join(", ", missingDesc));
+});
+
+// ---------------------------------------------------------------------
 // 11. visualfallbacks.json — pack item id -> donor Thing id, the equipment-visual remap surface
 //     (task #8: pack items without dEquipmentPrefab records NRE CharacterVisualHelper.VisualReEquip).
 // ---------------------------------------------------------------------
@@ -910,6 +1204,421 @@ Test("CF_PACK_ARMORY_VISUALS: fallback-only pack covers the shipped Armory catal
 });
 
 // ---------------------------------------------------------------------
+
+const ulong CFRNG_KNOWN_ENTITYKEY_HASH        = 0xE56783A52FBCEDA5UL; // FNV-1a 64 of EntityKey(3) under domain tag "EntityKey/2"
+
+// =====================================================================
+// Cross-peer identity core (ClassForge.Core.Rng).
+//
+// This folder used to also hold a bespoke PRNG side-stream (CFRandom / CFSeedInputs / SplitMix64). It was
+// REMOVED 2026-08-26 and its tests with it: the engine already rolls from the replicated stream, so a
+// second generator was a mechanism this codebase does not use and must not grow. What survives is the part
+// that is still load-bearing -- EntityKey, the ordinal-based peer-stable identity that replaces Entity.Guid
+// everywhere a value is ordered, hashed or seeded. See EntityKey's own remarks.
+// =====================================================================
+
+// ---------------------------------------------------------------------
+// EntityKey -- the cross-peer stable identity.
+// ---------------------------------------------------------------------
+
+Test("EntityKey: StableValue of a known key is a hardcoded constant (guards against string.GetHashCode)", () =>
+{
+    // string.GetHashCode() is salted per process on .NET Core, so if it ever creeps into this path the
+    // constant below stops matching between two runs of this very test binary.
+    var key = new EntityKey(3);
+    AssertEqual(CFRNG_KNOWN_ENTITYKEY_HASH, key.StableValue, "EntityKey.StableValue drifted from its pinned constant");
+    AssertEqual("E3", key.ToString(), "EntityKey.ToString() shape changed");
+    AssertEqual(key.StableValue, EntityKey.FromCombatRosterIndex(3).StableValue, "FromCombatRosterIndex disagreed with the ctor");
+});
+
+Test("EntityKey: StableValue is identical across repeated construction in-process", () =>
+{
+    var a = new EntityKey(3);
+    var b = EntityKey.FromCombatRosterIndex(3);
+    AssertEqual(a.StableValue, b.StableValue, "Two equal keys built via different entry points hashed differently");
+    AssertEqual(a.GetHashCode(), b.GetHashCode(), "GetHashCode differed for equal keys");
+    Assert(a == b, "operator== said two equal keys differ");
+});
+
+Test("EntityKey: negative control -- keys differing only in Ordinal do not collide", () =>
+{
+    // Ordinal is now the WHOLE key, so this is the only negative control there is to run -- and it is the
+    // one that matters: two roster slots must never share a stream.
+    var a = new EntityKey(3);
+    var b = new EntityKey(4);
+    Assert(a.StableValue != b.StableValue, "Ordinals 3 and 4 collided in StableValue");
+    Assert(!a.Equals(b), "Ordinals 3 and 4 compared equal");
+    Assert(a.ToString() != b.ToString(), "Ordinals 3 and 4 produced the same ToString()");
+    Assert(a != b, "operator!= said two different keys are equal");
+});
+
+Test("EntityKey: every ordinal over a realistic roster range maps to a distinct StableValue", () =>
+{
+    // A venue roster is at most a few dozen characters plus up to 32 tiles; negatives are included because
+    // an unfound index (List.IndexOf -> -1) must not alias slot 0 or any other slot.
+    var seen = new Dictionary<ulong, int>();
+    for (int i = -8; i <= 128; i++)
+    {
+        ulong v = new EntityKey(i).StableValue;
+        Assert(!seen.ContainsKey(v), $"ordinals {seen.GetValueOrDefault(v)} and {i} collided in StableValue");
+        seen[v] = i;
+    }
+    // The domain tag must actually namespace the value: a bare FNV-1a of the ordinal bytes must not match.
+    Assert(new EntityKey(3).StableValue != StableHash.AbsorbInt32(StableHash.Fnv1aOffsetBasis, 3),
+        "EntityKey.StableValue is an untagged FNV of the ordinal -- the domain tag is not being absorbed");
+});
+
+// ---------------------------------------------------------------------
+// AI targeting draw counts -- the invariant that keeps a co-op session alive.
+//
+// FTK2 co-op is deterministic lockstep with AI recomputed on every peer, so what kills a session is two
+// peers taking a different NUMBER of draws from the shared CombatState.Random -- not different values.
+// AIHelper.cs:589's gate forks that count on the AI tendency, and AIHelper.cs:516-551 skips the gate
+// outright when AIComponent.PriorityTargets (what TrainerFocusFire writes into) already supplied a
+// position. ClassForge moves BOTH of those inputs, so it owes the game a constant.
+// ---------------------------------------------------------------------
+
+Test("AI draws: the UNPATCHED gate really does fork on tendency (the bug being fixed exists)", () =>
+{
+    // Guard against a vacuous suite: if this ever stops failing to be constant, the fix below is
+    // asserting nothing.
+    AssertEqual(0, AiTargetingDraws.VanillaGateDraws(true, false), "NONE must cost zero draws");
+    AssertEqual(0, AiTargetingDraws.VanillaGateDraws(false, true), "a strict tendency must cost zero draws");
+    AssertEqual(1, AiTargetingDraws.VanillaGateDraws(false, false), "an ordinary tendency must cost one draw");
+    Assert(AiTargetingDraws.VanillaGateDraws(true, false) != AiTargetingDraws.VanillaGateDraws(false, false),
+        "vanilla draw count does NOT depend on tendency -- then there is nothing to fix and the model is wrong");
+});
+
+Test("AI draws: a Focus Fire order really does skip the gate in the UNPATCHED game", () =>
+{
+    // PriorityTargets hit => GetPreferredTarget never called => the whole gate costs nothing.
+    AssertEqual(0, AiTargetingDraws.VanillaTargetingDraws(false, false, false),
+        "an ordered ally must cost zero draws before the fix");
+    AssertEqual(1, AiTargetingDraws.VanillaTargetingDraws(true, false, false),
+        "the same ally unordered must cost one -- that difference IS the desync");
+});
+
+Test("AI draws: NEUTRALISED targeting costs exactly one draw for EVERY input combination", () =>
+{
+    // Exhaustive over the whole input space: 2 x 2 x 2. This is the acceptance invariant --
+    // same operation, same draw count, regardless of tendency, of strictness, and of whether an
+    // order was issued.
+    foreach (bool reached in new[] { true, false })
+        foreach (bool isNone in new[] { true, false })
+            foreach (bool isStrict in new[] { true, false })
+                AssertEqual(1, AiTargetingDraws.NeutralisedTargetingDraws(reached, isNone, isStrict),
+                    $"reached={reached} none={isNone} strict={isStrict} did not cost exactly one draw");
+});
+
+Test("AI draws: the compensation is exactly the complement of vanilla, never a second draw", () =>
+{
+    // A compensation that fired on top of a gate that already drew would be just as fatal as one that
+    // never fired -- 2 draws is as wrong as 0.
+    foreach (bool isNone in new[] { true, false })
+        foreach (bool isStrict in new[] { true, false })
+        {
+            int vanilla = AiTargetingDraws.VanillaGateDraws(isNone, isStrict);
+            int comp = AiTargetingDraws.GateCompensationDraws(isNone, isStrict);
+            Assert(comp == 0 || comp == 1, $"compensation must be 0 or 1, saw {comp}");
+            AssertEqual(1, vanilla + comp, $"none={isNone} strict={isStrict}: vanilla+compensation must be 1");
+        }
+
+    AssertEqual(0, AiTargetingDraws.SkippedGateCompensationDraws(true),
+        "no compensation when the gate actually ran -- that would double-draw");
+    AssertEqual(1, AiTargetingDraws.SkippedGateCompensationDraws(false),
+        "one compensation when a PriorityTargets hit skipped the gate");
+});
+
+Test("AI draws: an ORDERED actor and an UNORDERED actor consume the same count, at every tendency", () =>
+{
+    // The Focus Fire acceptance case stated directly: issuing an order must be invisible to the stream.
+    foreach (bool isNone in new[] { true, false })
+        foreach (bool isStrict in new[] { true, false })
+            AssertEqual(
+                AiTargetingDraws.NeutralisedTargetingDraws(true, isNone, isStrict),
+                AiTargetingDraws.NeutralisedTargetingDraws(false, isNone, isStrict),
+                $"none={isNone} strict={isStrict}: ordering an ally changed its draw count");
+});
+
+
+// ---------------------------------------------------------------------
+// W1-A / W1-F: encounter identity must be a function of REPLICATED state and of nothing else.
+//
+// The bug: VenueGridPatches picked the battlefield with `names[_dioramaTurn++ % names.Count]`, a
+// process-lifetime static. It was never reset at run start, session start or join, and the overworld and
+// dungeon paths shared it. Two peers whose process-local fight counts differed -- anyone who played solo
+// first, rejoined after a crash, or joined mid-session -- loaded a DIFFERENT diorama, hence a different
+// VenueGrid, hence a different tile count, hence a different GetTargetableTiles().Count, hence a different
+// ShuffleList draw count off the SHARED stream on the first AI turn. RotateDioramas ships ON with three
+// venues, so this was live and default-on.
+// ---------------------------------------------------------------------
+
+Test("Encounter identity: the same replicated inputs give the same answer, however many times it is called", () =>
+{
+    // This is the whole difference from the counter it replaces, stated executably: no hidden state.
+    ulong first = EncounterIdentity.Hash("P", 12345, 7, "MAP_1", "FOREST", null);
+    for (int i = 0; i < 200; i++)
+        AssertEqual(first.ToString(), EncounterIdentity.Hash("P", 12345, 7, "MAP_1", "FOREST", null).ToString(),
+            $"call #{i} disagreed with call #0 -- something in the derivation is stateful");
+
+    string firstText = EncounterIdentity.Text(first);
+    for (int i = 0; i < 200; i++)
+        AssertEqual(firstText, EncounterIdentity.Text(EncounterIdentity.Hash("P", 12345, 7, "MAP_1", "FOREST", null)),
+            "the ENCOUNTER_GUID token text is not stable across repeated resolution");
+});
+
+Test("Encounter identity: two peers with DIFFERENT local fight histories pick the same battlefield", () =>
+{
+    // The reachable case, simulated. Peer A has fought 41 times in this process (solo session earlier,
+    // then a rejoin); peer B has just started and is at 0. Under the old counter they index a 3-name
+    // rotation at 41 % 3 = 2 and 0 % 3 = 0 -- two different arenas, two different tile counts.
+    string[] names = { "CASTLETHRONE", "HARAZUEL_ROOF", "OMUS_CASTLE_BOSS" };
+
+    int oldPeerA = 41 % names.Length;
+    int oldPeerB = 0 % names.Length;
+    Assert(oldPeerA != oldPeerB, "the counter model must actually diverge, or this test proves nothing");
+
+    // The replicated model: identical inputs (both peers are in the same encounter), so identical pick,
+    // whatever either process did before.
+    ulong h = EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 987654, 12, "MAP_1", "SWAMP", null);
+    int newPeerA = EncounterIdentity.IndexOf(h, names.Length, "GRASSLAND_A", -1);
+    int newPeerB = EncounterIdentity.IndexOf(h, names.Length, "GRASSLAND_A", -1);
+    AssertEqual(newPeerA, newPeerB, "two peers in the same encounter picked different battlefields");
+    Assert(newPeerA >= 0 && newPeerA < names.Length, $"index {newPeerA} is outside the rotation");
+});
+
+Test("Encounter identity: the pick does move -- across encounters, across rooms, and across purposes", () =>
+{
+    // A constant answer would also be peer-stable, and useless. Assert the discriminators are live.
+    const int count = 3;
+    ulong roundA = EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 11, 1, "MAP_1", "FOREST", null);
+    ulong roundB = EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 11, 2, "MAP_1", "FOREST", null);
+    Assert(roundA != roundB, "the overworld round count does not reach the hash");
+
+    Assert(EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 11, 1, "MAP_1", "FOREST", null)
+        != EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 12, 1, "MAP_1", "FOREST", null),
+        "MapGenSeed does not reach the hash");
+    Assert(EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 11, 1, "MAP_1", "FOREST", null)
+        != EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 11, 1, "MAP_2", "FOREST", null),
+        "ActiveMapID does not reach the hash");
+    Assert(EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 11, 1, "MAP_1", "FOREST", null)
+        != EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 11, 1, "MAP_1", "SWAMP", null),
+        "BiomeName does not reach the hash");
+    Assert(EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 11, 1, "MAP_1", "FOREST", null)
+        != EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 11, 1, "MAP_1", "FOREST", "CRYPT"),
+        "DungeonName does not reach the hash");
+
+    // Two rooms on one dungeon floor share every field above; the room's index in the SERIALIZED
+    // OngoingVenues list is what separates them, and it must actually do so.
+    var byRoom = new HashSet<int>();
+    for (int room = 0; room < 8; room++) byRoom.Add(EncounterIdentity.IndexOf(roundA, count, "DUNGEON_ROOM", room));
+    Assert(byRoom.Count > 1, "every room on a floor got the same battlefield -- roomIndex is not reaching the pick");
+
+    // Different purposes must not alias onto one another (the battlefield pick and the ENCOUNTER_GUID
+    // token read the same five fields).
+    Assert(EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 11, 1, "MAP_1", "FOREST", null)
+        != EncounterIdentity.Hash("CF_ENCOUNTER_IDENTITY_V1", 11, 1, "MAP_1", "FOREST", null),
+        "the purpose tag does not reach the hash");
+});
+
+Test("Encounter identity: the whole rotation is reachable, and no index is ever out of range", () =>
+{
+    for (int count = 1; count <= 5; count++)
+    {
+        var seen = new HashSet<int>();
+        for (int round = 0; round < 300; round++)
+        {
+            ulong h = EncounterIdentity.Hash("CF_BATTLEFIELD_ROTATION_V1", 4242, round, "MAP_1", "FOREST", null);
+            int i = EncounterIdentity.IndexOf(h, count, "GRASSLAND_A", -1);
+            Assert(i >= 0 && i < count, $"count={count} round={round}: index {i} is out of range");
+            seen.Add(i);
+        }
+        AssertEqual(count, seen.Count, $"count={count}: some configured battlefield can never be chosen");
+    }
+    AssertEqual(0, EncounterIdentity.IndexOf(1234UL, 0, "x", 0), "an empty choice list must yield 0, not throw");
+    AssertEqual(0, EncounterIdentity.IndexOf(1234UL, -3, "x", 0), "a negative count must yield 0, not throw");
+});
+
+Test("Encounter identity: string inputs are length-prefixed, so field boundaries cannot collide", () =>
+{
+    // ("AB","C") vs ("A","BC") absorbed without a length prefix produce the same accumulator, i.e. two
+    // different encounters sharing one battlefield pick. StableHash.AbsorbString prefixes; prove it holds
+    // through this composition too.
+    Assert(EncounterIdentity.Hash("P", 1, 1, "AB", "C", null) != EncounterIdentity.Hash("P", 1, 1, "A", "BC", null),
+        "adjacent string fields collide -- the length prefix is not being applied");
+    Assert(EncounterIdentity.Hash("P", 1, 1, null, "X", null) != EncounterIdentity.Hash("P", 1, 1, "", "X", null),
+        "a null field and an empty field must not hash alike");
+});
+
+// ---------------------------------------------------------------------
+// W1-B / W1-C: source-scan guards on AiDrawNeutrality's gate.
+//
+// These are source scans for the same reason the CFConfig knob audit above is: ClassForge.Plugin
+// references FTK2/BepInEx/Unity and cannot be instantiated in a test, but the property being guarded is
+// a one-line edit away from silently regressing, and it is a property of the SOURCE.
+// ---------------------------------------------------------------------
+
+Test("AI draws: the neutrality gate does not read a per-peer parity latch (W1-B)", () =>
+{
+    var text = File.ReadAllText(Path.Combine(FindPluginSrcDir(), "AiDrawNeutrality.cs"));
+    int open = text.IndexOf("private static bool Active", StringComparison.Ordinal);
+    Assert(open > 0, "could not find AiDrawNeutrality.Active");
+    int end = text.IndexOf("internal static bool PreferredTargetHookInstalled", open, StringComparison.Ordinal);
+    Assert(end > open, "could not delimit AiDrawNeutrality.Active");
+    var body = text.Substring(open, end - open);
+
+    Assert(!body.Contains("FeaturesActive"),
+        "AiDrawNeutrality.Active reads ClassForgePlugin.FeaturesActive again. That is " +
+        "Enabled && !ParityBridge.Blocked && !ParityBridge.SafeMode, and BOTH latches are decided from " +
+        "LOCAL evidence -- the reachable case is one peer alone lacking FTK2.DevKit, which SafeModes that " +
+        "peer only. Gating the compensating draw on a per-peer latch makes the DRAW COUNT a function of a " +
+        "per-peer latch, which is the exact failure this file exists to remove. Gate on the " +
+        "[Multiplayer] AiTargetingDrawNeutrality knob (ParityClass.Gameplay, so it is IN the parity " +
+        "payload and a divergence refuses the join) plus the master Enabled switch, and nothing else.");
+    Assert(body.Contains("_hardDisabled"),
+        "the hard-disable latch must gate Active, or a half-resolved feature keeps compensating");
+});
+
+Test("AI draws: every fallback path hard-disables instead of skipping one decision (W1-C)", () =>
+{
+    var text = File.ReadAllText(Path.Combine(FindPluginSrcDir(), "AiDrawNeutrality.cs"));
+
+    // One draw is all it takes: after it the two shared streams are permanently offset, every later roll
+    // in the session disagrees, and because CombatState is [JsonIgnore] on GameRunData nothing reports it.
+    // A per-decision silent revert is therefore the single worst available behaviour -- both wrong AND
+    // invisible. A consistent, announced local disable is strictly better.
+    foreach (var site in new[]
+    {
+        "AIHelper._strictTendencies could not be read",
+        "GetPreferredTarget prefix is not installed",
+        "the ForceAiDecision postfix threw",
+        "the GetPreferredTarget prefix threw",
+    })
+        Assert(text.Contains(site), $"the '{site}' fallback site is gone or reworded -- re-check it still latches");
+
+    int calls = 0;
+    for (int i = text.IndexOf("HardDisable(", StringComparison.Ordinal); i >= 0;
+         i = text.IndexOf("HardDisable(", i + 1, StringComparison.Ordinal)) calls++;
+    Assert(calls >= 5, $"expected the definition plus 4 fallback call sites of HardDisable, found {calls}");
+
+    Assert(text.Contains("ParityBridge.AnnounceUnilateralDegrade"),
+        "a hard disable in an ONLINE session must be announced in-game: it is a one-sided change to this " +
+        "peer's draw counts that no detector can see, so silence is the failure mode being fixed");
+});
+
+Test("Parity: a unilateral latch is announced as a divergence, not as graceful degradation (W1-B)", () =>
+{
+    var text = File.ReadAllText(Path.Combine(FindPluginSrcDir(), "ParityBridge.cs"));
+    int def = text.IndexOf("internal static void AnnounceUnilateralDegrade", StringComparison.Ordinal);
+    Assert(def > 0, "could not find AnnounceUnilateralDegrade");
+
+    int calls = 0;
+    for (int i = text.IndexOf("AnnounceUnilateralDegrade(", StringComparison.Ordinal); i >= 0;
+         i = text.IndexOf("AnnounceUnilateralDegrade(", i + 1, StringComparison.Ordinal)) calls++;
+    Assert(calls >= 3, $"expected the definition plus at least 2 latch call sites, found {calls}");
+
+    var body = text.Substring(def);
+    Assert(body.Contains("IsOnlineMultiplayer"),
+        "the announcement must be gated on the session actually being online -- offline, a latch really " +
+        "IS graceful degradation and must stay quiet");
+});
+
+// ---------------------------------------------------------------------
+// W1-A, second half: the battlefield picker itself must not have grown a counter back.
+// ---------------------------------------------------------------------
+
+Test("Battlefield rotation: the pick reads replicated identity, never a process-local counter (W1-A)", () =>
+{
+    var raw = File.ReadAllText(Path.Combine(FindPluginSrcDir(), "VenueGridPatches.cs"));
+    // Doc comments quote the OLD expression verbatim so the hazard stays on record; scan code only.
+    var text = string.Join("\n", raw.Split('\n').Where(l => !l.TrimStart().StartsWith("///")));
+
+    Assert(!text.Contains("names[_dioramaTurn"),
+        "the battlefield is being indexed by a process-lifetime counter again. Two peers whose local " +
+        "fight counts differ then load different dioramas -> different VenueGrid -> different tile count " +
+        "-> different ShuffleList draw count off the SHARED stream on the first AI turn. Resetting the " +
+        "counter is NOT a fix: a peer joining mid-session still starts at 0 while the host is at 7.");
+
+    Assert(text.Contains("ReplicatedEncounterKey.IndexOf"),
+        "the battlefield pick must come from ReplicatedEncounterKey");
+
+    // Both rotation paths -- overworld VenueDirector.Initialize and dungeon _loadNextDioramas -- must go
+    // through the one picker. They used to share the static counter, which is how a dungeon fight could
+    // shift the overworld rotation.
+    int picks = 0;
+    for (int i = text.IndexOf("ChooseBattlefield(", StringComparison.Ordinal); i >= 0;
+         i = text.IndexOf("ChooseBattlefield(", i + 1, StringComparison.Ordinal)) picks++;
+    Assert(picks >= 3, $"expected the definition plus the overworld and dungeon call sites, found {picks}");
+});
+
+Test("STATE_HASH_CHANCE: the ENCOUNTER_GUID token no longer resolves to a raw guid (W1-F)", () =>
+{
+    var text = File.ReadAllText(Path.Combine(FindPluginSrcDir(), "Recipes", "GameAdapters.cs"));
+    int prop = text.IndexOf("public string EncounterGuid", StringComparison.Ordinal);
+    Assert(prop > 0, "could not find CombatContextAdapter.EncounterGuid");
+    var body = text.Substring(prop, Math.Min(600, text.Length - prop));
+
+    Assert(!body.Contains("adv.EncounterGUID"),
+        "ENCOUNTER_GUID resolves to AdventureState.EncounterGUID again. That field holds an Entity.Guid, " +
+        "minted per peer by Guid.NewGuid() (the map is regenerated from a replicated SEED, not shipped " +
+        "entity-by-entity), so it differs on every peer for the same encounter. STATE_HASH_CHANCE takes " +
+        "ZERO draws, so the divergence never perturbs the shared stream and the vendor's " +
+        "GameRandomNextInt probe cannot see it; the vendor's desync MD5 rewrites guids to occurrence " +
+        "ordinals before hashing, so it cannot see it either. NO detector of any kind would catch this.");
+    Assert(body.Contains("ReplicatedEncounterKey.Text"),
+        "ENCOUNTER_GUID must resolve to the peer-stable encounter key, as the other three *_GUID tokens " +
+        "resolve to PeerOrder.KeyOf");
+});
+
+// ---------------------------------------------------------------------
+// Status icon donors: the table must never fall silently behind statuses.json.
+//
+// The freeze this guards against (live, 2026-08-26): StatusVisualPatches.Donors carried ONE entry
+// while CF_PACK_ORIGINALS/statuses.json had grown to five. The four unmapped ids resolved to null in
+// dObjectHelper.Index.dStatusEffect, and CombatTimelineViewHelper2._refreshPortraitVisuals
+// dereferences that record unguarded -- the NRE escaped the scheduled _progressRound callback, so the
+// round never finished progressing and it was retried every frame (~60 NREs/sec, Player.log +94 KB/s).
+// CombatVisualNullGuards.AddStatusIcon_Prefix now makes that merely iconless; this test is what makes
+// "merely iconless" a DELIBERATE choice rather than an unnoticed regression.
+// ---------------------------------------------------------------------
+Test("Status donors: every pack status has a donor or is recorded as intentionally iconless", () =>
+{
+    var (donors, iconless) = ReadStatusDonorTables(FindPluginSrcDir());
+    var declared = new HashSet<string>(donors.Keys, StringComparer.OrdinalIgnoreCase);
+    declared.UnionWith(iconless);
+
+    var authored = ReadAuthoredStatusIds(classPacksDir);
+    Assert(authored.Count > 0, "found no statuses.json ids at all -- the scan is broken, not the data");
+    Console.WriteLine($"  authored statuses={authored.Count} donors={donors.Count} iconless={iconless.Count}");
+
+    var undeclared = authored.Where(id => !declared.Contains(id)).OrderBy(x => x, StringComparer.Ordinal).ToList();
+    Assert(undeclared.Count == 0,
+        "pack statuses with neither a donor nor an intentionally-iconless record: " +
+        string.Join(", ", undeclared) + ". Add each to StatusVisualPatches.Donors (mapping onto a vanilla " +
+        "status of the same Type, which must resolve in dObjectHelper.Index.dStatusEffect -- being present " +
+        "in StatusEffects.json is NOT sufficient) or, if it is meant to render no icon, to " +
+        "StatusVisualPatches.IntentionallyIconless.");
+
+    // The reverse direction: a stale entry means the table is describing content that no longer exists,
+    // which is how it stops being a trustworthy record of what is covered.
+    var stale = declared.Where(id => !authored.Contains(id)).OrderBy(x => x, StringComparer.Ordinal).ToList();
+    Assert(stale.Count == 0,
+        "StatusVisualPatches names statuses that no statuses.json authors any more: " + string.Join(", ", stale));
+
+    // A status cannot be both mapped and deliberately invisible.
+    var both = donors.Keys.Where(iconless.Contains).OrderBy(x => x, StringComparer.Ordinal).ToList();
+    Assert(both.Count == 0, "status listed as BOTH donored and intentionally iconless: " + string.Join(", ", both));
+
+    // A donor that is empty, or that points at another pack status, cannot resolve to a vanilla asset.
+    foreach (var pair in donors)
+    {
+        Assert(pair.Value.Length > 0, $"empty donor for {pair.Key}");
+        Assert(!authored.Contains(pair.Value),
+            $"{pair.Key}'s donor '{pair.Value}' is itself a pack status, so it has no baked dStatusEffect " +
+            "asset either -- donors must be vanilla ids");
+    }
+});
+
 Console.WriteLine();
 Console.WriteLine($"{passed} passed, {failed} failed.");
 return failed == 0 ? 0 : 1;
@@ -932,6 +1641,48 @@ static DiscoveredPack MakeDiscovered(string id, int loadOrder = 0, string[]? dep
     return new DiscoveredPack(manifest, manifest.RootDir);
 }
 
+/// StatusVisualPatches.cs's two coverage tables, read from source. Source-scanning (rather than
+/// referencing the type) because ClassForge.Plugin targets net472 and links FTK2/Unity, which this
+/// net10 test host cannot load -- the same reason ReadExternalClassifications scrapes CFConfig.cs.
+static (Dictionary<string, string> Donors, HashSet<string> Iconless) ReadStatusDonorTables(string pluginSrcDir)
+{
+    var text = File.ReadAllText(Path.Combine(pluginSrcDir, "StatusVisualPatches.cs"));
+
+    static string Initializer(string source, string declaration)
+    {
+        int at = source.IndexOf(declaration, StringComparison.Ordinal);
+        if (at < 0) throw new Exception($"could not find '{declaration}' in StatusVisualPatches.cs");
+        int open = source.IndexOf('{', at);
+        int close = source.IndexOf("};", open, StringComparison.Ordinal);
+        if (open < 0 || close < 0) throw new Exception($"could not delimit the initializer for '{declaration}'");
+        return source.Substring(open, close - open);
+    }
+
+    var donors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(
+                 Initializer(text, "Dictionary<string, string> Donors"),
+                 "\\{\\s*\"([^\"]+)\"\\s*,\\s*\"([^\"]*)\"\\s*\\}"))
+        donors[m.Groups[1].Value] = m.Groups[2].Value;
+
+    var iconless = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(
+                 Initializer(text, "HashSet<string> IntentionallyIconless"), "\"([^\"]+)\""))
+        iconless.Add(m.Groups[1].Value);
+
+    return (donors, iconless);
+}
+
+/// Every status id authored by any pack on disk, from the statuses.json files themselves -- the data
+/// the donor table has to keep up with.
+static HashSet<string> ReadAuthoredStatusIds(string classPacksDir)
+{
+    var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var file in Directory.GetFiles(classPacksDir, "statuses.json", SearchOption.AllDirectories))
+        foreach (var member in JsonParser.Parse(File.ReadAllText(file)).AsObjectMembers)
+            ids.Add(member.Key);
+    return ids;
+}
+
 static string FindClassPacksDir()
 {
     var dir = AppContext.BaseDirectory;
@@ -945,3 +1696,66 @@ static string FindClassPacksDir()
     }
     throw new DirectoryNotFoundException($"Could not locate FTK2.ClassForge/data/ClassPacks by walking up from {AppContext.BaseDirectory}");
 }
+
+static string FindPluginSrcDir()
+{
+    var dir = AppContext.BaseDirectory;
+    for (int i = 0; i < 12; i++)
+    {
+        var candidate = Path.Combine(dir, "FTK2.ClassForge", "src", "ClassForge.Plugin");
+        if (Directory.Exists(candidate)) return candidate;
+        var parent = Directory.GetParent(dir);
+        if (parent == null) break;
+        dir = parent.FullName;
+    }
+    throw new DirectoryNotFoundException($"Could not locate FTK2.ClassForge/src/ClassForge.Plugin by walking up from {AppContext.BaseDirectory}");
+}
+
+/// The one sanctioned bypass: CFConfig.ExternalClassifications, as `{ "Section|Key", ParityClass.X }`.
+static Dictionary<string, string> ReadExternalClassifications(string pluginSrcDir)
+{
+    var text = File.ReadAllText(Path.Combine(pluginSrcDir, "CFConfig.cs"));
+    var map = new Dictionary<string, string>(StringComparer.Ordinal);
+    foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(
+                 text, @"\{\s*""([^""|]+)\|([^""]+)""\s*,\s*ParityClass\.(\w+)"))
+        map[m.Groups[1].Value + "|" + m.Groups[2].Value] = m.Groups[3].Value;
+    return map;
+}
+
+/// Every knob's classification, from both sources: CFConfig.Bind call sites (keyed "Section.Key") and
+/// the external table. Interpolated keys (the per-pack `$"{id}.Enabled"` knob) are skipped -- they have
+/// their own test.
+static Dictionary<string, string> ReadAllClassifications(string pluginSrcDir)
+{
+    var map = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    foreach (var pair in ReadExternalClassifications(pluginSrcDir))
+        map[pair.Key.Replace("|", ".")] = pair.Value;
+
+    foreach (var file in Directory.GetFiles(pluginSrcDir, "*.cs", SearchOption.AllDirectories))
+    {
+        if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")) continue;
+        var text = File.ReadAllText(file);
+        // Both wrapper shapes: Bind(...) and BindWithParityValue(...). The latter differs ONLY in what
+        // the knob reports to parity ([Packs] AdditionalRoots reports its discovered pack SET, not its
+        // filesystem paths -- W1-H); its ParityClass argument is still required and still positional, so
+        // it must be scanned exactly like Bind or the opt-OUT guarantee this test enforces has a hole.
+        var calls = System.Text.RegularExpressions.Regex.Matches(
+            text, @"CFConfig\.Bind(?:WithParityValue)?\(\s*\w+\s*,\s*""([^""{]+)""\s*,\s*""([^""{]+)""");
+        for (int i = 0; i < calls.Count; i++)
+        {
+            var m = calls[i];
+            // The ParityClass argument is last, so scan forward only as far as the NEXT CFConfig bind.
+            int from = m.Index + m.Length;
+            var after = System.Text.RegularExpressions.Regex.Match(
+                text.Substring(from), @"CFConfig\.Bind(?:WithParityValue)?\(");
+            var window = after.Success ? text.Substring(from, after.Index) : text.Substring(from);
+            var cls = System.Text.RegularExpressions.Regex.Match(window, @"ParityClass\.(\w+)");
+            if (!cls.Success) throw new Exception($"CFConfig bind for [{m.Groups[1].Value}] {m.Groups[2].Value} has no ParityClass argument");
+            map[m.Groups[1].Value + "." + m.Groups[2].Value] = cls.Groups[1].Value;
+        }
+    }
+    return map;
+}
+
+// --- ClassForge.Core.Rng test helpers -------------------------------------------------------------

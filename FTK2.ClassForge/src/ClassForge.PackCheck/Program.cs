@@ -36,10 +36,12 @@ namespace ClassForge.PackCheck
                 var baldurs = FindDefaultPack("CF_PACK_BALDURS");
                 var encounterModifiers = FindDefaultPack("CF_PACK_ENCOUNTER_MODIFIERS");
                 var armoryVisuals = FindDefaultPack("CF_PACK_ARMORY_VISUALS");
+                var originals = FindDefaultPack("CF_PACK_ORIGINALS");
                 if (eor != null) packDirs.Add(eor);
                 if (baldurs != null) packDirs.Add(baldurs);
                 if (encounterModifiers != null) packDirs.Add(encounterModifiers);
                 if (armoryVisuals != null) packDirs.Add(armoryVisuals);
+                if (originals != null) packDirs.Add(originals);
             }
 
             if (packDirs.Count == 0)
@@ -150,6 +152,48 @@ namespace ClassForge.PackCheck
                     Console.WriteLine("WARNING [CF_VISUALFALLBACK_KEY_FOREIGN] " + foreignKeys +
                         " visualfallbacks.json key(s) are not shipped by this pack — expected for fallback-only " +
                         "packs targeting live/Armory ids; validated for real at merge time against live Configs.Things.");
+                }
+            }
+
+            // --------------------------------------------------------------------------------
+            // CF_PACK_ABILITY_ON_EQUIPMENT -- the "no dAbility art record" crash family.
+            //
+            // dAbilityIndex.GetRecordByName(abilityId) returns null for any id the game did not ship,
+            // and the WEAPON_ABILITY combat-view path dereferences it unguarded
+            // (CombatViewHelper.cs:183 .AnimationIdentity, :320 .AnimationType,
+            //  CharacterVisualHelper.renderAbilityFX:2568, JoinAbilityHitEffectNode /
+            //  EnqueueReactionAnimations). The discriminator is eThingTypes, NOT what the ability
+            // targets: CombatHelper.cs:1398-1406 maps EQUIPMENT -> WEAPON_ABILITY and
+            // ITEM -> CONSUMABLE_ABILITY, and InventoryHelper.GetThingType (:748-770) calls a Thing
+            // with Equippable.Slots EQUIPMENT. The CONSUMABLE_ABILITY path never calls
+            // GetCharacterAbilityRecord at all (CombatViewHelper.cs:398-440), so the same
+            // pack-authored id on a TOOL/consumable Thing is safe.
+            //
+            // => a pack-authored ability id carried by a Thing with a non-empty Equippable.Slots
+            //    crashes the combat view on first cast. That is an ERROR, offline, forever.
+            // --------------------------------------------------------------------------------
+            {
+                var packAuthoredAbilities = new HashSet<string>(
+                    result.MergePlan.Abilities.Select(a => a.Id), StringComparer.Ordinal);
+
+                foreach (var thing in result.MergePlan.Things)
+                {
+                    // GetThingType order: Equippable.Slots wins first (InventoryHelper.cs:748-770).
+                    if (thing.Value.Get("Equippable").Get("Slots").AsArray.Count == 0) continue;
+
+                    var interactable = thing.Value.Get("Interactable");
+                    foreach (var abilityId in ReferencedAbilityIds(interactable))
+                    {
+                        if (!packAuthoredAbilities.Contains(abilityId)) continue;
+                        Console.WriteLine("ERROR [CF_PACK_ABILITY_ON_EQUIPMENT] Thing '" + thing.Id +
+                            "' has Equippable.Slots (eThingTypes.EQUIPMENT -> WEAPON_ABILITY render path) " +
+                            "but references pack-authored ability '" + abilityId + "'. That id has no dAbility " +
+                            "art record, so dAbilityIndex.GetRecordByName returns null and the combat view " +
+                            "dereferences it unguarded on first cast. Use a vanilla ability id of the same " +
+                            "shape, or move the ability onto a TOOL/consumable Thing (CONSUMABLE_ABILITY " +
+                            "never resolves an ability record).");
+                        packHasErrors = true;
+                    }
                 }
             }
 
@@ -281,6 +325,28 @@ namespace ClassForge.PackCheck
                 : "RESULT: " + expectedId + " -- OK (zero Errors)");
 
             return !packHasErrors;
+        }
+
+        /// <summary>
+        /// Every ability id an <c>Interactable</c> can hand to the combat view: the
+        /// <c>Abilities</c> map keys plus any <c>AbilityBag</c>/<c>AbilityFillBag</c> entry
+        /// (a bag id that is absent from the map still reaches the render path).
+        /// </summary>
+        private static IEnumerable<string> ReferencedAbilityIds(ClassForge.Core.Json.JsonValue interactable)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var member in interactable.Get("Abilities").AsObjectMembers)
+                if (!string.IsNullOrEmpty(member.Key) && seen.Add(member.Key)) yield return member.Key;
+
+            foreach (var bag in new[] { "AbilityBag", "AbilityFillBag" })
+            {
+                var arr = interactable.Get(bag).AsArray;
+                for (int i = 0; i < arr.Count; i++)
+                {
+                    var id = arr[i].AsString;
+                    if (!string.IsNullOrEmpty(id) && seen.Add(id)) yield return id;
+                }
+            }
         }
 
         /// <summary>Collects STAT_CF_-prefixed entries from a Core-JSON Passives array.</summary>

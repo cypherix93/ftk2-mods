@@ -38,7 +38,9 @@ namespace ClassForge.Recipes.Parsing
             "Type", "Conditions", "Target", "Rank", "Status", "FallbackStatus", "StatusOneOf", "Duration",
             "Stat", "StatChangeType", "FlatValue", "FlatPercent", "Blockable", "IsSilent",
             "SummonType", "CharacterConfig", "Count",
-            "Percent", "Flat", "MinDelta", "Scope", "Name", "Delta", "Value",
+            // capture spec (v1.5): SUMMON's dynamic config source + the CAPTURE verb's item store
+            "CharacterConfigFrom", "IntoItem", "IntoKey",
+            "Percent", "Flat", "MinDelta", "Scope", "Name", "Delta", "Value", "Persistent",
             "FlatValueFrom", "PercentFrom", "PerUnit", "Min", "Max",
             // loot-grant effects (ON_COMBAT_LOOT only, SchemaVersion 1.2, verb spec §6.2)
             "MinGold", "MaxGold", "Tag", "Rarity", "Stack", "ConfigName", "ChancePct", "Table",
@@ -485,7 +487,12 @@ namespace ClassForge.Recipes.Parsing
                 else e.SummonType = st;
             }
             e.CharacterConfig = Str(node, "CharacterConfig", null);
+            e.CharacterConfigFrom = Str(node, "CharacterConfigFrom", null);
             e.Count = Int(set, r, node, "Count", 1, path + ".Count");
+
+            // CAPTURE (v1.5). Shape only here; membership and mutual exclusion are the validator's job.
+            e.IntoItem = Str(node, "IntoItem", null);
+            e.IntoKey = Str(node, "IntoKey", null);
 
             e.Percent = OptInt(set, r, node, "Percent", path);
             e.Flat = OptInt(set, r, node, "Flat", path);
@@ -503,6 +510,7 @@ namespace ClassForge.Recipes.Parsing
             e.Name = Str(node, "Name", null);
             e.Delta = Int(set, r, node, "Delta", 0, path + ".Delta");
             e.Value = Int(set, r, node, "Value", 0, path + ".Value");
+            e.Persistent = Bool(set, r, node, "Persistent", false);
 
             e.FlatValueFrom = Str(node, "FlatValueFrom", null);
             e.PercentFrom = Str(node, "PercentFrom", null);

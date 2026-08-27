@@ -120,6 +120,24 @@ namespace ClassForge.Recipes.Model
         public string CharacterConfig;
         public int Count = 1;
 
+        /// <summary>v1.5 — SUMMON's DYNAMIC config source, mutually exclusive with
+        /// <see cref="CharacterConfig"/>. The only supported form is
+        /// <c>ITEM_CUSTOM_DATA:&lt;ThingConfigId&gt;:&lt;Key&gt;</c>
+        /// (<see cref="Vocabulary.SourceItemCustomDataPrefix"/>): resolve the summoned creature's config id
+        /// at EXECUTION time from the OWNER's carried Thing of that config id, key <paramref name="Key"/> of
+        /// its <c>Thing.CustomData</c>. Unresolvable ⇒ logged no-op, zero draws, no action emitted.</summary>
+        public string CharacterConfigFrom;
+
+        // CAPTURE (v1.5)
+        /// <summary>CAPTURE only — the ThingConfig id of the item in the OWNER's inventory whose
+        /// <c>Thing.CustomData</c> receives the captured config id. Possession, not equipment: a toolbelt
+        /// Thing can never be equipped (it has no <c>eEquipmentSlots</c> slot) yet is still in
+        /// <c>CharacterComponent.Things</c>.</summary>
+        public string IntoItem;
+
+        /// <summary>CAPTURE only — the <c>Thing.CustomData</c> key written on <see cref="IntoItem"/>.</summary>
+        public string IntoKey;
+
         // ROLL_STAT_BONUS / HEAL_MODIFIER
         public int? Percent;
         public int? Flat;
@@ -130,6 +148,13 @@ namespace ClassForge.Recipes.Model
         public string Name;
         public int Delta;
         public int Value;
+
+        /// <summary>COUNTER_ADD/COUNTER_SET only. When true, the counter's value is seeded from — and
+        /// written back to — the owner's persistent per-character store (<c>CharacterComponent.CustomData</c>,
+        /// via <c>CoreHelper.Get/SetCustomData</c>) instead of resetting to 0 with every fresh per-battle
+        /// <c>CombatRuntime</c> (SPEC-DELTA-v1.1 §6). Requires <see cref="SkillRecipe.Scope"/> OWNED — a
+        /// COMBAT-scoped recipe has no owner entity to persist against.</summary>
+        public bool Persistent;
 
         // Dynamic value sources (§4.1)
         public string FlatValueFrom;

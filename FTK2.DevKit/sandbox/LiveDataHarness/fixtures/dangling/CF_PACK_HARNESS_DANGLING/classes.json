@@ -1,0 +1,15 @@
+{
+  "CF_HARNESS_DANGLING_CLASS": {
+    "BaseType": "HUMAN",
+    "DefaultBodyType": "M",
+    "Expansion": "BASE",
+    "Level": -1,
+    "LocKey": "CF_HARNESS_DANGLING_CLASS",
+    "Passives": [ "SKILL_CF_HARNESS_DOES_NOT_EXIST", "STATUS_IMMUNITY_HARNESS_DOES_NOT_EXIST" ],
+    "Rarity": "COMMON",
+    "Stats": { "HP": 30 },
+    "Tags": [ "PLAYER", "CF_PACK_HARNESS_DANGLING", "CF_HARNESS_TAG_DOES_NOT_EXIST" ],
+    "Things": {},
+    "Threat": 0
+  }
+}

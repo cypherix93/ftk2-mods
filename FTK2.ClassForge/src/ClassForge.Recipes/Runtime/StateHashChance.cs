@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using ClassForge.Recipes.Abstractions;
 using ClassForge.Recipes.Model;
 
 namespace ClassForge.Recipes.Runtime
@@ -57,9 +58,18 @@ namespace ClassForge.Recipes.Runtime
             {
                 switch (token)
                 {
-                    case "SELF_GUID": return t.Owner != null ? (t.Owner.Guid ?? "") : "";
-                    case "TRIGGER_SOURCE_GUID": return t.TriggerSource != null ? (t.TriggerSource.Guid ?? "") : "";
-                    case "TRIGGER_TARGET_GUID": return t.TriggerTarget != null ? (t.TriggerTarget.Guid ?? "") : "";
+                    // The three *_GUID tokens resolve to the combatant's PEER-STABLE roster key
+                    // ("E<ordinal>"), NOT to Entity.Guid. The token names are kept for authored-recipe
+                    // compatibility; the value behind them changed on 2026-08-26 because the old one was a
+                    // silent co-op divergence. Entity.Guid is minted per peer by Guid.NewGuid(), so feeding
+                    // it to this hash gave every peer a different verdict for the same situation — and
+                    // because STATE_HASH_CHANCE takes ZERO draws by design, the divergence never perturbs
+                    // the shared stream and the vendor's GameRandomNextInt probe can never see it. It would
+                    // have surfaced only as one player's Shieldbearer mitigating a hit that the other
+                    // player's did not.
+                    case "SELF_GUID": return PeerOrder.KeyOf(t.Owner);
+                    case "TRIGGER_SOURCE_GUID": return PeerOrder.KeyOf(t.TriggerSource);
+                    case "TRIGGER_TARGET_GUID": return PeerOrder.KeyOf(t.TriggerTarget);
                     case "COMBAT_ROUND": return Int(t.Runtime != null ? t.Runtime.Round : 0);
                     case "COMBAT_SEED": return Int(t.Ctx != null ? t.Ctx.CombatSeed : 0);
                     case "SELF_HP": return Int(t.Owner != null ? t.Owner.GetStat("HP") : 0);

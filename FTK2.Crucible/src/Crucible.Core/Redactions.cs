@@ -25,7 +25,11 @@ namespace FTK2Mods.Crucible
             "combat.episode",                              // object-identity hash, local to a process
             "combat.activeId",                             // entity guid; 'phase' carries the meaning
             "combat.combatants.id",                        // entity guids
-            "combat.combatants.statuses.originEntityId"    // entity guids
+            "combat.combatants.statuses.originEntityId",   // entity guids
+            "combat.combatants.things.id",                 // Thing.Id is Guid.NewGuid() (InventoryHelper.cs:83)
+            "combat.combatants.customData.SUMMONED_BY",    // holds an entity guid, which is LOCAL
+            "combat.combatants.things.customData.SUMMONED_BY",
+            "combat.tiles.occupantId"                      // entity guid; occupantOrdinal carries the meaning
         };
 
         /// <summary>Defensive copy: callers must not be able to mutate the shared set.</summary>

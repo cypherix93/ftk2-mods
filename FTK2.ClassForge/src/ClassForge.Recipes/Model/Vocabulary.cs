@@ -81,7 +81,38 @@ namespace ClassForge.Recipes.Model
         /// <summary>state-hash-chance spec §2: a deterministic, draw-free chance gate — FNV-1a over
         /// <c>Salt|inputs…</c>, verdict <c>h % 100 &lt; Percent</c>. NOT a roll (SPEC-DELTA §5.2
         /// invariant-1 amendment); correlated across re-evaluation with identical inputs (spec §6).</summary>
-        STATE_HASH_CHANCE
+        STATE_HASH_CHANCE,
+        // --- added in v1.4, cover spec: board-adjacency reads ---
+        /// <summary>The tile DIRECTLY IN FRONT of the owner — same board row-line (<c>TileY</c>),
+        /// adjacent column (<c>|dx| == 1</c>), <c>FRONT</c> row, same group — holds a LIVING ALLY.
+        /// Mirrors the engine's own "adjacent tile in the other row" predicate (CombatHelper.cs:2414:
+        /// same <c>y</c>, <c>Math.Abs(dx) == 1</c>, target tile's <c>RowPositionsType</c> equals the
+        /// wanted row) rather than assuming a direction: <c>VenueHelper.getSlotRow</c>
+        /// (VenueHelper.cs:39) makes FRONT/BACK a per-tile property, and the stock board
+        /// <c>"|..Aa.bB..|"</c> puts group 0's FRONT at x+1 but group 1's FRONT at x-1. Pure read of
+        /// replicated state — ZERO random draws, so it composes with <c>ON_DAMAGE_PENDING</c>.</summary>
+        ALLY_IN_FRONT,
+        /// <summary>THIS character's own progression level (<c>ICombatEntity.Level</c>), compared with
+        /// the condition's <c>Comparator</c> against an integer <c>Value</c>. Distinct from
+        /// <c>PARTY_AVG_LEVEL</c>, which averages the whole party and therefore misfires in a mixed
+        /// party — the reason this token did not exist before. Reads SELF only (the <c>Of</c> selector
+        /// is not defined for it). Pure read of replicated state — zero random draws.
+        /// <para>An UNKNOWN level (<c>EntityReads.UnknownLevel</c>) makes the condition false
+        /// <b>before</b> <c>Negate</c> is applied: a level gate must never silently open.</para></summary>
+        SELF_LEVEL,
+        /// <summary>THIS character CARRIES the Thing named by the string <c>Value</c>
+        /// (<c>ICombatEntity.HasItem</c> — an ordinal scan of <c>CharacterComponent.Things</c>, the read
+        /// <c>InventoryHelper.HasItemByName</c> performs at InventoryHelper.cs:424). Inventory POSSESSION,
+        /// not equipment: toolbelt Things have no <c>eEquipmentSlots</c> slot and can never be equipped,
+        /// and an equipped Thing is still in <c>Things</c> anyway. Reads SELF only (the <c>Of</c> selector
+        /// is not defined for it). Pure read of replicated state — zero random draws.
+        /// <para>Distinct from <c>ITEM_CLASS</c>/<c>ITEM_CONSUMABLE</c>, which read the TRIGGERING
+        /// ability's Thing and are false under any trigger that carries no <c>pThing</c>; this one reads
+        /// the inventory and is answerable under every trigger, <c>ON_COMBAT_START</c> included.</para>
+        /// <para>An UNREADABLE inventory (<c>HasItem</c> returns <c>null</c>) makes the condition false
+        /// <b>before</b> <c>Negate</c> is applied: a possession gate must never silently open. A readable
+        /// inventory that simply lacks the item is an ordinary false, which <c>Negate</c> may invert.</para></summary>
+        HAS_ITEM
     }
 
     /// <summary>Effect tokens — SPEC-DELTA-v1.1 §4 (4 v1 + 4 v1.1 + 4 loot v1.2 + 2 encounter-modifiers v1.2 = 14 tokens).</summary>
@@ -108,7 +139,31 @@ namespace ClassForge.Recipes.Model
         /// retired): <c>delta = sign(Percent) * max(MinDelta, ceil(damage * |Percent| / 100))</c>,
         /// result floored at 0 — EOR 0.7.0.62's SHIELDBEARER arithmetic verbatim (L26733:
         /// <c>Max(2, CeilToInt(result * 0.25f))</c>). ON_DAMAGE_PENDING-only, validator-enforced.</summary>
-        DAMAGE_TAKEN_MULT
+        DAMAGE_TAKEN_MULT,
+        // --- added in v1.4.1 -> v1.5, capture spec: the monster-capture verb ---
+        /// <summary>Binds the resolved TARGET's <c>CharacterComponent.ConfigName</c> into an INVENTORY
+        /// ITEM's <c>Thing.CustomData</c> (the owner's <c>IntoItem</c> Thing, key <c>IntoKey</c>) and then
+        /// removes that target from the fight.
+        /// <para>The store is the game's own durable per-item mod-data idiom — <c>Thing.CustomData</c> is
+        /// <c>public Dictionary&lt;string,string&gt;</c> (Thing.cs:18) written through
+        /// <c>CoreHelper.SetCustomData</c> (CoreHelper.cs:1646), which is how the shipped honeybee stores its
+        /// cooldown (FollowerHelper.cs:338). It rides the existing save schema: no new save key, no new
+        /// ThingConfig, and the record lives exactly as long as the item does.</para>
+        /// <para><b>Removal is not a kill.</b> <c>CharacterHelper.KillCharacter</c> leaves a corpse on the
+        /// board; the engine's real removal (<c>CombatPhase._processCombatResults</c>' local
+        /// <c>removeFromCombat</c>, CombatPhase.cs:4362-4398) is a local function no mod code can call. The
+        /// ONE reachable route is pushing <c>(eAbilityResults.PLAYTHINGED, targetEntity)</c> into the
+        /// ability's results list, which <c>_processCombatResults</c> (CombatPhase.cs:4329-4338) turns into
+        /// <c>KillCharacter</c> + <c>removeFromCombat</c> + <c>_checkChargeRetargets()</c>. That last call is
+        /// why hand-rolling removal is forbidden: skipping it leaves charged abilities aimed at an entity
+        /// that is no longer on the board.</para>
+        /// <para><b>Eligibility is a Plugin-side gate, not an authoring convenience.</b> The same
+        /// <c>_processCombatResults</c> branch also does
+        /// <c>_additionalDrops.Add(InventoryHelper.CreateThing(SkillHelper.GetEnemyDoll(entity), 1))</c>, and
+        /// <c>GetEnemyDoll</c> returns <c>null</c> for any config without a <c>PLAYTHING_*</c> tag
+        /// (SkillHelper.cs:1513-1531) — <c>CreateThing(null)</c> then throws inside the game's own frame,
+        /// outside every mod try/catch. See the Plugin's capture-rules unit.</para>
+        CAPTURE
     }
 
     /// <summary>Recipe-level scope — Encounter Modifiers spec §4.2. <c>OWNED</c> is exactly today's v1.1
@@ -132,7 +187,23 @@ namespace ClassForge.Recipes.Model
         TRIGGER_SOURCE,    // v1.1
         ALLY_ALL_OTHERS,   // v1.1
         ENEMY_ALL,         // v1.1
-        ALLY_BY_RANK       // v1.1
+        ALLY_BY_RANK,      // v1.1
+        /// <summary>
+        /// v1.4 — a UNIFORMLY DRAWN PLAYABLE BOARD TILE. The first target token that resolves to something
+        /// other than a combatant, and the primitive that makes "drop a random status on a random tile"
+        /// expressible at all (previously written off as impossible: <c>StatusOneOf</c> gave a random
+        /// ELEMENT, but nothing gave a random TARGET).
+        /// <para>One <c>IRandomSource.NextInt(0, Tiles.Count)</c> draw off the shared combat stream — the
+        /// exact mechanism <c>StatusOneOf</c> already uses — indexing the (Y,X)-ordered
+        /// <c>ICombatContext.Tiles</c>. The ordering is a pure function of the static venue map, so the same
+        /// index is the same board square on every peer.</para>
+        /// <para>Legal on <c>ADD_STATUS</c> only (a tile is not a combatant: it has no stats to change, no
+        /// heal to modify and no rank), and never under the RNG-free <c>ON_DAMAGE_PENDING</c>, which admits
+        /// no <c>ADD_STATUS</c> at all.</para>
+        /// <para><b>Fail-safe:</b> an empty <c>Tiles</c> list is a logged no-op that takes ZERO draws.
+        /// A peer that cannot see the board must never advance the shared stream.</para>
+        /// </summary>
+        RANDOM_TILE
     }
 
     /// <summary>Universal <c>Of</c> selector — SPEC-DELTA-v1.1 §3.</summary>
@@ -227,6 +298,15 @@ namespace ClassForge.Recipes.Model
         /// <c>DAMAGE_TAKEN_MULT</c> (state-hash-chance spec). Additive over 1.2.</summary>
         public const string SchemaVersionStateHash = "1.3";
 
+        /// <summary>Schema version gating <c>ALLY_IN_FRONT</c> / <c>SELF_LEVEL</c> / <c>HAS_ITEM</c>
+        /// (cover spec). Additive over 1.3 —
+        /// everything 1.3 could author remains legal here, including <c>ON_DAMAGE_PENDING</c>.</summary>
+        public const string SchemaVersionCover = "1.4";
+
+        /// <summary>Schema version gating <c>CAPTURE</c> and <c>SUMMON.CharacterConfigFrom</c> (capture
+        /// spec). Additive over 1.4 — everything 1.4 could author remains legal here.</summary>
+        public const string SchemaVersionCapture = "1.5";
+
         /// <summary>Status token meaning "the status carried by the trigger" — SPEC-DELTA-v1.1 §4.1.</summary>
         public const string TriggerStatusToken = "TRIGGER_STATUS";
 
@@ -315,6 +395,84 @@ namespace ClassForge.Recipes.Model
         public static readonly IReadOnlyList<EffectKind> V13OnlyEffects = new[]
         {
             EffectKind.DAMAGE_TAKEN_MULT
+        };
+
+        /// <summary>Targets added in v1.4. A recipe declaring any earlier SchemaVersion may not use these.</summary>
+        public static readonly IReadOnlyList<TargetKind> V14OnlyTargets = new[]
+        {
+            TargetKind.RANDOM_TILE
+        };
+
+        /// <summary>Effects added in v1.5 (capture spec). A recipe declaring any earlier SchemaVersion may
+        /// not use these.</summary>
+        public static readonly IReadOnlyList<EffectKind> V15OnlyEffects = new[]
+        {
+            EffectKind.CAPTURE
+        };
+
+        /// <summary>
+        /// v1.5 <c>SUMMON.CharacterConfigFrom</c> token prefix: <c>ITEM_CUSTOM_DATA:&lt;ThingConfigId&gt;:&lt;Key&gt;</c>.
+        ///
+        /// <para><b>Why this token has to exist.</b> <c>SUMMON.CharacterConfig</c> is a STATIC authored
+        /// string: the parser reads it as a raw string (RecipeParser.cs) and the validator only checks it is
+        /// non-empty (RecipeValidator.cs), so a recipe can only ever summon a creature the AUTHOR named.
+        /// A captured monster is chosen by the PLAYER at runtime, so its id cannot be in the JSON at all.
+        /// This token resolves the id at EXECUTION time out of an item's <c>Thing.CustomData</c> — the same
+        /// store <c>CAPTURE</c> writes and the same one the Trainer partner persistence already uses.</para>
+        ///
+        /// <para><b>Fail-safe contract</b> (identical to <c>SELF_LEVEL</c>/<c>HAS_ITEM</c>/<c>RANDOM_TILE</c>):
+        /// every unresolvable case — no owner, no such item in the owner's <c>Things</c>, no such key, an
+        /// empty value, or a value that is not a live <c>Configs.Characters</c> key — is a LOGGED NO-OP that
+        /// emits no action and takes ZERO random draws. It never throws and never falls back to a default
+        /// creature. A missing config id is load-bearing, not cosmetic: <c>CharacterHelper</c>'s config reads
+        /// are raw indexers (<c>Env.Configs.Characters[name]</c>, CharacterHelper.cs:1913) that throw
+        /// <c>KeyNotFoundException</c> on a stale id, so the guarded lookup is the whole point.</para>
+        ///
+        /// <para>The value is a THING CONFIG id and a CustomData KEY — both data, neither compiled in — so a
+        /// second capture item needs no engine change (docs/CONVENTIONS.md: the engine hardcodes no
+        /// content).</para>
+        /// </summary>
+        public const string SourceItemCustomDataPrefix = "ITEM_CUSTOM_DATA:";
+
+        /// <summary>
+        /// <c>eStatusEffectTypes</c> members the game itself refuses to put on a TILE:
+        /// <c>InteractableHelper.CHARACTER_ONLY_STATUS</c> (InteractableHelper.cs:261-269) verbatim.
+        /// <c>ApplyStatus</c>'s <c>"CHAOS"</c> branch (InteractableHelper.cs:1229-1240) filters exactly this
+        /// set out of <c>CHAOS_STATUS_NAMES</c> when the target has a <c>VenueTileComponent</c>.
+        /// <para><b>This is why STUN can never ride RANDOM_TILE.</b> Ben's ban on STUN ("too broken") and
+        /// the game's own tile rule agree: <c>STUN</c> is the first member of this list. ClassForge never
+        /// draws from <c>CHAOS_STATUS_NAMES</c> — an author names every status explicitly — and both the
+        /// validator (statically, via <see cref="TileIllegalStatusPrefixes"/>) and the dispatcher (at plan
+        /// time, against the real <c>StatusEffectConfig.Type</c>) refuse these types on a tile.</para>
+        /// <para>Note the generic tail of <c>ApplyStatus</c> would happily attach STUN to a tile's
+        /// <c>StatusEffectComponent</c> if asked directly — nothing in the game stops it. The refusal has to
+        /// live here.</para>
+        /// </summary>
+        public static readonly IReadOnlyList<string> TileIllegalStatusTypes = new[]
+        {
+            "STUN", "DAZE", "GRAB", "BLEED", "DEATHMARK", "DEATHSAVE"
+        };
+
+        /// <summary>
+        /// The <see cref="TileIllegalStatusTypes"/> set rendered as authored-id prefixes, so the pure-C#
+        /// validator can reject a tile-illegal status at LOAD time without a game config lookup. Status
+        /// config ids follow <c>STATUS_&lt;TYPE&gt;_NN</c> — verified against
+        /// <c>CHAOS_STATUS_NAMES</c> (InteractableHelper.cs:302), every member of which is
+        /// <c>STATUS_</c> + its own <c>eStatusEffectTypes</c> name + <c>_00</c>.
+        /// <para>This is a NAMING heuristic and therefore the belt, not the braces: the authoritative check
+        /// is the dispatcher's plan-time read of the real <c>StatusEffectConfig.Type</c>. A status that
+        /// breaks the convention is still caught there.</para>
+        /// </summary>
+        public static readonly IReadOnlyList<string> TileIllegalStatusPrefixes = new[]
+        {
+            "STATUS_STUN_", "STATUS_DAZE_", "STATUS_GRAB_", "STATUS_BLEED_",
+            "STATUS_DEATHMARK_", "STATUS_DEATHSAVE_"
+        };
+
+        /// <summary>Conditions added in v1.4 (cover spec).</summary>
+        public static readonly IReadOnlyList<ConditionKind> V14OnlyConditions = new[]
+        {
+            ConditionKind.ALLY_IN_FRONT, ConditionKind.SELF_LEVEL, ConditionKind.HAS_ITEM
         };
 
         /// <summary>STATE_HASH_CHANCE's closed input-token set (spec §2.1). Adding a token is a spec

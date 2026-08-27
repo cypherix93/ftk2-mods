@@ -31,11 +31,23 @@ Every member name below was read out of the retail assembly and is recorded in
     "episode": "1a2b3c4d",
     "synthesized": ["turn", "phase"],
     "combatants": [
-      { "id": "<entity guid>", "name": "<runtime>", "classId": "CF_EOR_BARD", "isPlayer": true,
+      { "id": "<entity guid>", "name": "<runtime>", "classId": "CF_ORIG_TRAINER", "isPlayer": true,
         "hp": 34, "maxHp": 40, "alive": true,
+        "tile": { "x": 3, "y": 1 }, "groupIndex": 0, "ordinal": 17,
+        "isSummon": false, "isTile": false,
         "statuses": [ { "id": "STATUS_ATTACKUP_00", "duration": 2, "initialDuration": 2,
                         "tickDuration": 0, "originEntityId": "<entity guid>" } ],
-        "stats": { "STR": 4 } }
+        "stats": { "STR": 4 },
+        "customData": { "CF_COUNTER_RAGE": "3", "CF_TRAINER_STARTER": "GRASS" },
+        "things": [ { "id": "<thing guid>", "configName": "ARM_ORIG_TRAINER_BALL_GRASS",
+                      "customData": { "CF_POKE_HP": "8", "CF_POKE_MAXHP": "12",
+                                      "CF_POKE_DOWNED": "0", "CF_POKE_CONFIG": "...",
+                                      "CF_POKE_STAGE": "1", "CF_POKE_NICKNAME": "Sparky" } } ] }
+    ],
+    "tiles": [
+      { "x": 3, "y": 1, "groupIndex": 0, "rowPositionsType": "FRONT",
+        "auraStatuses": ["STATUS_FIRE_00"], "ordinal": 4,
+        "occupantId": "<entity guid>", "occupantOrdinal": 17 }
     ]
   },
   "console": false,
@@ -69,6 +81,18 @@ Every member name below was read out of the retail assembly and is recorded in
 | `.statuses[].id` | key of `StatusEffectComponent.Statuses` |
 | `.statuses[].duration` / `.initialDuration` / `.tickDuration` / `.originEntityId` | `StatusEffectInfo` fields of the same name |
 | `.stats{}` | `CharacterHelper.GetBaseStats(Entity)`, string-keyed |
+| `.tile.x` / `.tile.y` | `VenueComponent.TilePosition` (`VenueComponent.cs:5`, declared `(int x, int y)`). **`x` is the ROW/DEPTH axis, `y` is lateral** — `VenueHelper.cs:988/998` takes Min/Max of `.x` to find the front and back rows. Read reflectively as `Item1`/`Item2`; a ValueTuple's element names are compiler metadata, not members. `null` when the entity carries no `VenueComponent` (i.e. is not on the board) |
+| `.groupIndex` | `CharacterComponent.GroupIndex` — 0 = player side, 1 = enemy (`CharacterHelper.GetGroupIndex`, `CharacterHelper.cs:331-334`) |
+| `.ordinal` | index in `CombatState.Entities` — the **peer-stable identity** the determinism layer keys on (`ClassForge.Core/Rng/EntityKey.cs`). `null` when the entity was not located in the roster |
+| `.isSummon` | `eActorProperties.SUMMON` in `CharacterComponent.Properties`, which is exactly what `CharacterHelper.ActorHasProperty` does (`CharacterHelper.cs:2010-2017`). Set by `TryCreateSummon` for non-COMPANION summons (`CombatHelper.cs:626`) |
+| `.isTile` | the entity carries a `VenueTileComponent`. Tiles live in `CombatState.Entities` alongside actors, so they hold roster ordinals and appear in `combatants[]` too |
+| `.customData{}` | `CharacterComponent.CustomData`, **verbatim and unfiltered** — see "Custom state" below |
+| `.things[]` | `CharacterComponent.Things`, restricted to entries whose `Thing.CustomData` is non-empty |
+| `tiles[]` | entities in `CombatState.Entities` carrying a `VenueTileComponent` (`CombatHelper.cs:648`) |
+| `tiles[].x` / `.y` | the tile entity's own `VenueComponent.TilePosition`, same axis convention |
+| `tiles[].groupIndex` / `.rowPositionsType` | `VenueTileComponent.GroupIndex` / `.RowPositionsType` (`eTileRowPositions`, stringified) |
+| `tiles[].auraStatuses[]` | `VenueTileComponent.AuraStatuses` — **where tile effects live** |
+| `tiles[].occupantId` / `.occupantOrdinal` | the actor standing on the tile, matched by POSITION alone, which is what the game itself does (`CombatHelper.cs:901`). A large actor's `VenueComponent.OccupiedTiles` are all registered, so every covered tile names it |
 
 ## Known-absent run fields
 
@@ -85,6 +109,29 @@ sink wired in, so every `/state?schema=v2` call carries `member_missing: GameRun
 (the closest analogs found while probing are `GameRunData.MapGenSeed`, `.RoundCount`, and
 `.GameStageIndex` — none confirmed to mean the same thing) is future work, not part of S1.
 
+## Custom state (`customData` / `things[].customData`)
+
+Every ClassForge class feature stores its state in a `Dictionary<string,string> CustomData` — on
+`CharacterComponent` for per-character state and on `Thing` for per-item state. Both are emitted
+**verbatim, with no allow-list**, so a new feature's state becomes assertable without another
+harness change. Keys observed in the tree today (grep `FTK2.ClassForge/src` for `SetCustomData`):
+
+| Key | Owner | Source |
+|---|---|---|
+| `CF_POKE_CONFIG` / `CF_POKE_HP` / `CF_POKE_MAXHP` / `CF_POKE_DOWNED` / `CF_POKE_STAGE` | ball `Thing` | `TrainerPartnerPersistence.cs:49-68` |
+| `CF_POKE_NICKNAME` | ball `Thing` | `TrainerPartnerNicknames.cs:44` |
+| `CF_COUNTER_<name>` | `CharacterComponent` | `RecipeEngineHost.cs:164`, written at `RecipeActionExecutor.cs:216` |
+| `CF_TRAINER_STARTER` / `CF_TRAINER_LEVEL_SEEN` | `CharacterComponent` | `TrainerCharmProgression.cs:116/120` |
+| `SUMMONED_BY` | `CharacterComponent` | vanilla; holds an entity GUID |
+
+**There is no `CF_CHARM_*` key.** Charm progression stores its state under `CF_TRAINER_STARTER` and
+`CF_TRAINER_LEVEL_SEEN`; a `CF_CHARM_*` prefix appears nowhere in the tree. This is exactly why the
+emission is not allow-listed.
+
+`SUMMONED_BY` holds an `Entity.Guid`, which is **LOCAL** (`EntityKey.cs`) — two healthy peers
+disagree on it by construction — so it is redacted from the digest, as is `things[].id`
+(`Thing.Id` is `Guid.NewGuid()`, `InventoryHelper.cs:83`).
+
 ## Caveats an assertion must respect
 
 **`round` is NOT monotonic.** `CombatState.TotalRounds` initialises to `-1` and is reset to `-1`
@@ -100,8 +147,18 @@ derived from it. Assert on ids; count matching ids yourself if you need a tier c
 
 **`null` and `[]` mean different things.** `"statuses": []` is "this combatant has no statuses".
 `"statuses": null` is "Crucible could not read them" — always accompanied by an entry in `warnings`.
-The same holds for `combatants` and `stats`. An assertion that treats null as empty will pass while
-the oracle is blind.
+The same holds for `combatants`, `stats`, `tiles`, `customData`, `things` and
+`tiles[].auraStatuses`. An assertion that treats null as empty will pass while the oracle is blind.
+
+That distinction is load-bearing for `auraStatuses` in particular: `VenueTileComponent.AuraStatuses`
+is a `List<string>` the game leaves **null** until the first aura lands, so a null VALUE is a clean
+tile (`[]`) while an ABSENT member — a game update renaming the field — is `null` plus a
+`member_missing: VenueTileComponent.AuraStatuses` warning. The reader tells them apart by checking
+whether the member is *declared*, not by whether its value is null.
+
+**Tiles are also combatants.** Venue tile entities share `CombatState.Entities` with actors, so they
+appear in `combatants[]` with `"isTile": true`, a `tile` position, no `CharacterComponent`, and a
+`combatant has no CharacterComponent` warning. Filter on `isTile` when iterating actors.
 
 **Read `warnings` on every failure.** Every reflective read reports there. A member renamed by a
 game update shows up as `member_missing: <Type>.<Member>` in the very next snapshot. Expect (and
@@ -132,6 +189,16 @@ was asked of it.
 ## Digest
 
 `GET /state?schema=v2` returns a digest computed with `Redactions.V2`: `instance`, `warnings`,
-`console`, `network.isHost`, `combat.episode`, `combat.activeId`, `combat.combatants.id`, and
-`combat.combatants.statuses.originEntityId` are excluded. Everything else — hp, statuses, stats,
-turn, phase, round, wave — is in the hash. `ftk2_compare_state` still compares v1 digests.
+`console`, `network.isHost`, `combat.episode`, `combat.activeId`, `combat.combatants.id`,
+`combat.combatants.statuses.originEntityId`, `combat.combatants.things.id`,
+`combat.combatants.customData.SUMMONED_BY`, `combat.combatants.things.customData.SUMMONED_BY` and
+`combat.tiles.occupantId` are excluded. Everything else — hp, statuses, stats, turn, phase, round,
+wave, **and now position, group, roster ordinal, custom data and tile auras** — is in the hash.
+`ftk2_compare_state` still compares v1 digests.
+
+**v2 digests MOVED when the board fields landed.** Any recorded v2 baseline from before this change
+is stale and must be re-taken. Emission order is deterministic, so the two-run determinism check
+(`VERIFICATION-METHOD.md` §6) stays valid: MiniJson writes object keys ordinal-sorted, `tiles[]` is
+sorted by `(x, y, groupIndex)`, `auraStatuses[]` ordinally, `things[]` by
+`(configName, custom-data content, id)` with the local GUID as a last-resort tiebreak only, and
+`combatants[]` keeps `CombatState.Entities` order, which is the game's own replicated order.

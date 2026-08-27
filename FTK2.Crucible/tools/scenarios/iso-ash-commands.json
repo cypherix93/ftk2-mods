@@ -1,0 +1,319 @@
+{
+  "schema": "crucible.scenario.v1",
+  "name": "iso-ash-commands",
+  "kind": "isolation",
+  "checklist_item": "L. Pokemon Trainer -- command statuses applied to ALLY_ALL and CONSUMED by a partner",
+  "description": "Prove a Trainer command lands its status on EVERY ally (not just the caster) and that a surviving partner then CONSUMES it -- the partner-side recipe fires and the damage changes.",
+  "seed": 20260826,
+  "notes": [
+    "The four commands and the ability that fires each, from the Beast Whistle (ARM_ORIG_STARTER_TRAINER_BEAST_WHISTLE): ONLY_RESISTDOWN_ATTACK (AWR) -> FOCUS FIRE -> STATUS_CHARGE_CF_FOCUS_FIRE; ONLY_EVADEUP_SPLASH_ATTACK (SPD) -> SPREAD OUT -> STATUS_EVASIVE_CF_SPREAD_OUT; ONLY_RESISTDOWN_AOE_ATTACK (TAL) -> AFFLICT -> STATUS_PROWESS_CF_AFFLICT; ONLY_ATTACKUP_SPLASH_ATTACK (LCK) -> FINISH IT -> STATUS_CONCENTRATION_CF_FINISH_IT. All four are Target: ALLY_ALL, so they land on the Trainer too -- 'the icon on EVERY affected ally, not only the caster' is the tell that separates a real group buff from a self-buff.",
+    "FOCUS FIRE is the one chosen here because its partner-side consumer (SKILL_CF_PARTNER_CMD_FOCUS_FIRE) needs BOTH the charge status on the partner AND STATUS_ARMORDOWN_00 on the target -- and the Trainer's own FOCUS FIRE applies that ARMORDOWN in the same proc. So one command sets up its own consumption and the whole loop is observable in one fight.",
+    "PARTNER SURVIVAL is the hard part of this scenario. The partner arrives from SKILL_CF_TRAINER_GRASS_1 at ON_COMBAT_START (WOLF_GRASS_08, HP 16), gated on HAS_ITEM ARM_ORIG_TRAINER_BALL_GRASS and cf_bond in [0,3). It must live long enough to take a hostile action while holding the charge, which is why the enemy here is a single low-ATK jelly rather than anything real.",
+    "KNOWN BLOCKER, from docs/research/test-checklist.md:1021-1023: the ball's Send Out abilities (CF_TRAINER_SUMMON_GRASS_T1_ATTACK ...) report usable=False and never appear in the combat action menu, cause unknown. This scenario therefore relies on the ON_COMBAT_START summon path, not on a manual send-out. If the partner does not appear, that blocker -- not this scenario -- is what to chase.",
+    "cf_bond IS persistent (Persistent: true on SKILL_CF_TRAINER_GOTTA_TRAIN_EM), so it IS readable as CF_COUNTER_cf_bond in state customData. It is the ONLY counter in the pack that is.",
+    "MEASURED 2026-08-26, three manifest bugs this file used to carry. (1) The partner's attack is JELLY_ACID_ATTACK, not MELEE_BASIC_ATTACK -- crucible_list_abilities on the live partner reports JELLY_ACID_ATTACK / ONLY_ARMORUP_OTHER_ATTACK / SHIELD_TAUNT_ATTACK / BASIC_MOVE / SKIP_TURN and nothing else, so s2 fired an ability the partner does not have and the consumer could never proc. (2) CF_COUNTER_cf_bond is NOT written at combat start. RecipeActionExecutor.ExecPersistCounter is the only writer and it runs on a COUNTER_ADD/SET proc, i.e. when SKILL_CF_TRAINER_GOTTA_TRAIN_EM fires ON_KILL. A Trainer that has never landed a kill has NO such key -- confirmed live: keys were exactly ['CF_TRAINER_LEVEL_SEEN','CF_TRAINER_STARTER']. The old bond_readable assert was therefore asserting a key that cannot exist yet; it was the MANIFEST that was wrong, not the counter. (3) The `enemy` evidence region is the upper-right enemy nameplate, which only renders while an enemy is hovered/targeted; captured cold it returns bare scenery. Enemy-side debuff visibility is now its own step (s1b) so it cannot silently sink the group-command verdict, which is a different claim.",
+    "(4) MEASURED 2026-08-26: a body created by crucible_combat_spawn has NO StatusEffectComponent, so it can neither carry nor report a status. Proven by running this scenario both ways in the same session: against the encounter's OWN rats, FOCUS FIRE stamped STATUS_ARMORDOWN_00 + STATUS_RESISTANCEDOWN_00 and both asserts passed; after wipe_enemies + spawn WOLF_GRASS_08, the identical proc left the spawned jelly at statuses=[] and crucible_combat_snapshot printed '(no StatusEffectComponent)' for it. CombatReader.ReadStatuses reports an absent component as [] (a real 'no statuses'), not null, so this does NOT show up as UNREADABLE -- it silently reads as a status that failed to land. THIS SCENARIO THEREFORE USES THE ENCOUNTER'S OWN ENEMIES: no wipe_enemies, no spawn. Never point a status assert at a spawned body."
+  ],
+  "fixture": {
+    "run_id": "63d7d316-0134-4efa-b462-f3a24dc46922",
+    "backup": "batch-4class.ftk2",
+    "status": "built",
+    "notes": "REUSES THE batch-4class BED (built 2026-08-26 through real CHARACTER CREATION: Vampiric / Pacifist / Pokemon Trainer / Gary, confirmed on screen and by crucible_party_list). A dedicated bed was not built for this scenario: that party already satisfies this manifest's expect_classes and min_size, and README says extra party members do not invalidate an identity tell that names the subject. bench.py always loads a COPY, so sharing one backup across scenarios is safe as long as they run SERIALLY. Original build recipe for a dedicated bed is kept below.\n\nORIGINAL: BUILD RECIPE. New campaign -> CHARACTER CREATION for every slot. NEVER crucible_party_set_class: it rewrites ConfigName but not the display name, so the class is right in state and every screenshot shows a stale vanilla name -- that voided a whole verification run here. Save, copy the .ftk2 out of GameRuns\\ into %USERPROFILE%\\Backups\\ftk2-fixtures under this name, then set status to 'built'. Slot 1 = Pokemon Trainer, carrying both ARM_ORIG_STARTER_TRAINER_BEAST_WHISTLE (equipped) and ARM_ORIG_TRAINER_BALL_GRASS. Keep CF_COUNTER_cf_bond under 3 so the stage-1 partner line is the one that fires."
+  },
+  "party": {
+    "expect_classes": [
+      "Pokemon Trainer"
+    ],
+    "min_size": 1,
+    "forbid_names": [
+      "Shepherd",
+      "Thief",
+      "Corsair",
+      "Bladedancer"
+    ]
+  },
+  "setup": [
+    {
+      "op": "godmode",
+      "value": "off",
+      "why": "godmode ON tops HP up every tick and masks every HP effect."
+    },
+    {
+      "op": "wipe_enemies",
+      "group": 1,
+      "keep_alive": 1,
+      "why": "Thin the encounter to ONE real monster. It must be a REAL one -- a crucible_combat_spawn body has no StatusEffectComponent and can never carry ARMORDOWN (see note 4) -- but all four of the encounter's monsters killed the HP-16 partner before its turn in 2 runs out of 3, and a dead partner cannot consume the command."
+    }
+  ],
+  "enemies": [],
+  "steps": [
+    {
+      "id": "s0",
+      "label": "the partner arrived at ON_COMBAT_START and is on the board",
+      "player_facing": true,
+      "action": "observe",
+      "log_since": "combat_start",
+      "log": {
+        "proc": [
+          "SKILL_CF_TRAINER_GRASS_1"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "partner_present",
+          "kind": "count",
+          "selector": "summon:*",
+          "op": "gte",
+          "value": 1
+        },
+        {
+          "id": "trainer_customdata_readable",
+          "kind": "custom_data",
+          "selector": "class:CF_ORIG_TRAINER",
+          "key": "CF_TRAINER_STARTER",
+          "op": "ne",
+          "value": "",
+          "why": "cf_bond is written ONLY by ExecPersistCounter on a GOTTA_TRAIN_EM (ON_KILL) proc, so a Trainer with no kill yet legitimately has no CF_COUNTER_cf_bond key. What this step CAN assert is that the Trainer's customData channel itself is readable -- a null customData would make every custom-feature assert in the pack blind."
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_pokemon_trainer",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Pokemon Trainer\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "partner_body",
+          "kind": "effect",
+          "region": "board",
+          "expect": "a partner body on a PLAYER-side tile. Note the nickname feature: a partner called Sparky / Bubbles / Blaze is TrainerNicknamePatches working as designed, not a bug"
+        },
+        {
+          "id": "partner_card",
+          "kind": "effect",
+          "region": "portraits",
+          "expect": "a card for the partner in the ally/minion HUD"
+        }
+      ]
+    },
+    {
+      "id": "s1",
+      "label": "Trainer fires FOCUS FIRE -- charge on EVERY ally, ARMORDOWN on the enemy",
+      "actor": "class:CF_ORIG_TRAINER",
+      "ability": "ONLY_RESISTDOWN_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_TRAINER_CMD_FOCUS_FIRE"
+        ],
+        "forbid": [
+          "Recipe effect failed",
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "charge_on_trainer",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_TRAINER",
+          "status": "STATUS_CHARGE_CF_FOCUS_FIRE"
+        },
+        {
+          "id": "charge_on_partner",
+          "kind": "status_present",
+          "selector": "summon:0",
+          "status": "STATUS_CHARGE_CF_FOCUS_FIRE",
+          "why": "ALLY_ALL means the PARTNER too -- this assert is what separates a real group command from a self-buff"
+        },
+        {
+          "id": "enemy_armordown",
+          "kind": "status_present",
+          "selector": "enemy:0",
+          "status": "STATUS_ARMORDOWN_00"
+        },
+        {
+          "id": "enemy_resistdown",
+          "kind": "status_present",
+          "selector": "enemy:0",
+          "status": "STATUS_RESISTANCEDOWN_00"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_pokemon_trainer_1",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Pokemon Trainer\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "charge_on_every_ally",
+          "kind": "effect",
+          "region": "party",
+          "expect": "the Focus Fire marker icon above EVERY ONE of the four party cards (Vampiric, Pacifist, Pokemon Trainer, Gary) -- the same crop taken at s0 has no icons at all, so the icons are the proc. On the caster only is a FAIL for a group command"
+        },
+        {
+          "id": "charge_on_partner_card",
+          "kind": "effect",
+          "region": "portraits",
+          "expect": "the same Focus Fire marker icon on the PARTNER's ally-minion card (Sparky) -- absent from the s0 capture of the same card, so the partner really was included in ALLY_ALL"
+        }
+      ]
+    },
+    {
+      "id": "s1b",
+      "label": "the enemy the Trainer marked shows its debuffs to the player",
+      "player_facing": true,
+      "action": "observe",
+      "log_since": "combat_start",
+      "log": {
+        "proc": [
+          "SKILL_CF_TRAINER_CMD_FOCUS_FIRE"
+        ],
+        "forbid": [
+          "Recipe effect failed",
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "enemy_still_debuffed",
+          "kind": "status_present",
+          "selector": "enemy:0",
+          "status": "STATUS_ARMORDOWN_00"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_pokemon_trainer_1b",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Pokemon Trainer\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "enemy_debuffs",
+          "kind": "effect",
+          "region": "board",
+          "expect": "Armour Down / Resistance Down markers on the enemy the Trainer pointed at, on the board. NOTE the upper-right `enemy` nameplate region only renders while an enemy is hovered, so it is not usable for a cold capture"
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "label": "hand the turn to the partner",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 1
+      }
+    },
+    {
+      "id": "s2",
+      "label": "the PARTNER attacks while charged -- SKILL_CF_PARTNER_CMD_FOCUS_FIRE consumes the command for +6 damage",
+      "actor": "summon:0",
+      "ability": "JELLY_ACID_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_PARTNER_CMD_FOCUS_FIRE"
+        ],
+        "forbid": [
+          "Recipe effect failed",
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "enemy_took_bonus",
+          "kind": "hp_delta",
+          "selector": "enemy:0",
+          "op": "lte",
+          "value": -6,
+          "why": "the consumer adds a flat 6 on top of the partner's own hit, so the drop must be at least 6"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_pokemon_trainer_2",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Pokemon Trainer\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "enemy_hp_drop",
+          "kind": "effect",
+          "region": "board",
+          "expect": "the enemy the partner hit shows an HP drop clearly bigger than a plain partner hit -- its floating hp pill on the board"
+        }
+      ],
+      "_ability_note": "the partner's real hostile ability; MELEE_BASIC_ATTACK is not on its kit. SKILL_CF_PARTNER_CMD_FOCUS_FIRE gates on HOSTILE_ACTION=true plus ARMORDOWN on the trigger target, not on a particular ability id."
+    }
+  ],
+  "tells": [
+    {
+      "id": "identity_pokemon_trainer_final",
+      "kind": "identity",
+      "region": "party",
+      "expect": "the party HUD card reads \"Pokemon Trainer\" -- our class, not a vanilla one",
+      "invalidated_by": [
+        "Shepherd",
+        "Thief",
+        "Corsair",
+        "Bladedancer"
+      ]
+    },
+    {
+      "id": "final_allies",
+      "kind": "effect",
+      "region": "portraits",
+      "expect": "the Trainer and the partner are both still in the ally HUD"
+    }
+  ],
+  "asserts": [
+    {
+      "id": "trainer_alive",
+      "kind": "alive",
+      "selector": "class:CF_ORIG_TRAINER",
+      "op": "eq",
+      "value": true
+    },
+    {
+      "id": "partner_survived",
+      "kind": "count",
+      "selector": "summon:*",
+      "op": "gte",
+      "value": 1
+    }
+  ]
+}

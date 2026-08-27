@@ -1,0 +1,457 @@
+{
+  "schema": "crucible.scenario.v1",
+  "name": "batch-4class",
+  "kind": "batch",
+  "checklist_item": "G. Classes / CF_PACK_ORIGINALS -- four classes exercised in ONE fight",
+  "description": "The default shape: four of our five classes acting in a single fight, four times the coverage per boot. Vampiric, Pacifist, Pokemon Trainer and Gary each take one action with its own paired evidence.",
+  "seed": 20260826,
+  "notes": [
+    "Five classes do not fit one party, which is why the battery is two batches: this one plus batch-chaos. Chaos Mage is in the other because its headline feature (the hazard tile) needs the whole board clean to be readable.",
+    "The capturable target is BAT_CAVE_00 -- the ONLY capture empirically proven in this repo (docs/research/test-checklist.md:315 captured it, :340 sent it out the next fight at 16 HP, :562-566 the ball still held cfg=BAT_CAVE_00). The pack's own JELLY_* configs are overridden WITHOUT a PLAYTHING_* tag and would be refused.",
+    "The capture is gated on ROLL_TIER EQ PERFECT, so the capture STEP here is expected to read NO-FIRE on an unlucky seed. That is not a failure of the class -- it is why iso-gary-refusal exists in seed-search form. Do not re-run this hoping for the roll.",
+    "Every step names its actor, and bench.py refuses to fire a step whose actor is not the ACTIVE entity -- crucible_use_ability has no entity parameter and would otherwise fire as whoever happened to be up, producing a screenshot of the wrong class.",
+    "Enemy combatants report name=(null) in state (the display name lives only on the on-screen nameplate, e.g. \"Cave Bat\"), so a `name:` selector can NEVER resolve an enemy. Target enemies by `class:` -- measured 2026-08-26, when `name:Bat` reported SETUP-FAILED for the capture step while the bat was plainly on the board."
+  ],
+  "fixture": {
+    "run_id": "63d7d316-0134-4efa-b462-f3a24dc46922",
+    "backup": "batch-4class.ftk2",
+    "status": "built",
+    "notes": "BUILD RECIPE. New campaign -> CHARACTER CREATION for every slot. NEVER crucible_party_set_class: it rewrites ConfigName but not the display name, so the class is right in state and every screenshot shows a stale vanilla name -- that voided a whole verification run here. Save, copy the .ftk2 out of GameRuns\\ into %USERPROFILE%\\Backups\\ftk2-fixtures under this name, then set status to 'built'. Slots: 1 = Vampiric, 2 = Pacifist, 3 = Pokemon Trainer, 4 = Gary. Confirm all four DISPLAY names with crucible_party_list after loading -- fixture_health only checks file SIZE and has certified a content-corrupted save healthy for a whole session.",
+    "built": {
+      "when": "2026-08-26T10:40:04",
+      "how": "CHARACTER CREATION on the live party screen (never crucible_party_set_class); slot class set via the Customization-screen selection lever",
+      "class_ids": [
+        "CF_ORIG_VAMPIRIC",
+        "CF_ORIG_PACIFIST",
+        "CF_ORIG_TRAINER",
+        "CF_ORIG_GARY"
+      ],
+      "party_proof_screenshot": "20260826_143732_p1_4_party-4class-confirmed.png"
+    }
+  },
+  "party": {
+    "expect_classes": [
+      "Vampiric",
+      "Pacifist",
+      "Pokemon Trainer",
+      "Gary"
+    ],
+    "min_size": 4,
+    "forbid_names": [
+      "Shepherd",
+      "Thief",
+      "Corsair",
+      "Bladedancer"
+    ]
+  },
+  "setup": [
+    {
+      "op": "godmode",
+      "value": "off",
+      "why": "godmode ON tops HP up every tick and masks every HP effect."
+    },
+    {
+      "op": "wipe_enemies",
+      "group": 1,
+      "keep_alive": 2,
+      "why": "Thin the encounter to TWO real monsters rather than clearing it. A body made by crucible_combat_spawn has NO StatusEffectComponent, so it can neither carry nor report a status -- measured 2026-08-26 in iso-ash-commands, where the identical FOCUS FIRE proc stamped ARMORDOWN on an encounter rat and left a spawned jelly at statuses=[] (which reads as a status that failed to land, not as UNREADABLE). a_enemy_armordown therefore has to point at a REAL monster; keeping two leaves enemy:0 and enemy:1 both real, since spawns are appended after them."
+    }
+  ],
+  "enemies": [
+    {
+      "config": "WOLF_GRASS_08",
+      "count": 2,
+      "group": 1,
+      "role": "killable",
+      "why": "HP 16 / ATK 10 -- feeds Vampiric's Engorged and Gary's ON_KILL without threatening the party"
+    },
+    {
+      "config": "BAT_CAVE_00",
+      "count": 1,
+      "group": 1,
+      "role": "capturable",
+      "why": "the only target with a proven successful capture in this repo"
+    },
+    {
+      "config": "BEE_WORKER_01",
+      "count": 1,
+      "group": 1,
+      "role": "filler",
+      "why": "the documented fast-test-bed enemy (test-checklist.md:1160)"
+    }
+  ],
+  "steps": [
+    {
+      "id": "v1",
+      "label": "VAMPIRIC attacks -- Blood Price, Crimson Drain and Engorged",
+      "actor": "class:CF_ORIG_VAMPIRIC",
+      "ability": "BLADE_BASIC_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_VAMPIRIC_ENGORGED",
+          "SKILL_CF_VAMPIRIC_BLOOD_PRICE"
+        ],
+        "forbid": [
+          "Recipe effect failed",
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "v_engorged",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "status": "STATUS_VIGOR_CF_ENGORGED"
+        },
+        {
+          "id": "v_target_hurt",
+          "kind": "hp_delta",
+          "selector": "enemy:0",
+          "op": "lt",
+          "value": 0
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_vampiric",
+          "kind": "identity",
+          "region": "actionmenu",
+          "expect": "the ACTION MENU header names Vampiric and lists that class's own abilities. Taken before the fire, so the actor still holds the turn. Any of Shepherd / Thief / Corsair / Bladedancer voids the run.",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ],
+          "when": "before"
+        },
+        {
+          "id": "identity_v1_banner",
+          "kind": "identity",
+          "region": "party",
+          "when": "before",
+          "expect": "the active-character banner and the highlighted party card BOTH read \"Vampiric\" -- captured before the fire, so this is the character that actually acts",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "v_engorged_icon",
+          "kind": "effect",
+          "region": "party",
+          "expect": "an Engorged icon on the Vampiric portrait, duration 3 -- status icons render in the small icon strip directly ABOVE each party card, which is in the `party` region; `portraits` is the ally-MINION card and shows the Trainer's partner, not a party status."
+        },
+        {
+          "id": "v_preview_has_damage",
+          "kind": "preview",
+          "region": "preview",
+          "when": "before",
+          "expect": "the preview panel for the Vampiric's selected attack DOES carry a damage line (e.g. \"N-M Physical Damage\"). This is the CONTROL for the Pacifist's p_preview_no_damage tell in the same run and the same panel: without it, 'no damage line' could just mean the panel never shows one"
+        }
+      ]
+    },
+    {
+      "id": "t1",
+      "label": "advance to the Pacifist",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 1
+      }
+    },
+    {
+      "id": "p1",
+      "label": "PACIFIST plays Here's a Shield on the Vampiric -- no damage",
+      "actor": "class:CF_ORIG_PACIFIST",
+      "ability": "ONLY_ARMORUP_OTHER_ATTACK",
+      "target": {
+        "select": "class:CF_ORIG_VAMPIRIC"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_PACIFIST"
+        ],
+        "forbid": [
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "p_armorup",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "status": "STATUS_ARMORUP_00"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_pacifist_p1",
+          "kind": "identity",
+          "region": "actionmenu",
+          "expect": "the ACTION MENU header names Pacifist and lists that class's own abilities. Taken before the fire, so the actor still holds the turn. Any of Shepherd / Thief / Corsair / Bladedancer voids the run.",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ],
+          "when": "before"
+        },
+        {
+          "id": "identity_p1_banner",
+          "kind": "identity",
+          "region": "party",
+          "when": "before",
+          "expect": "the active-character banner and the highlighted party card BOTH read \"Pacifist\" -- captured before the fire, so this is the character that actually acts",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "p_shield_icon",
+          "kind": "effect",
+          "region": "party",
+          "expect": "an Armour Up icon on the VAMPIRIC portrait (the target), not on the Pacifist -- status icons render in the small icon strip directly ABOVE each party card, which is in the `party` region; `portraits` is the ally-MINION card and shows the Trainer's partner, not a party status."
+        },
+        {
+          "id": "p_preview_no_damage",
+          "kind": "preview",
+          "region": "preview",
+          "when": "before",
+          "expect": "the ability preview panel for \"Here's a Shield\" carries NO damage line. A normal ability shows one there (e.g. \"0-9 Magic Damage\"); its ABSENCE is the whole thesis of the Pacifist class -- it buffs without dealing damage. Capture is `when: before`, while the ability is still selected and the panel is populated"
+        }
+      ]
+    },
+    {
+      "id": "t2",
+      "label": "advance to the Trainer",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 1
+      }
+    },
+    {
+      "id": "a1",
+      "label": "POKEMON TRAINER fires FOCUS FIRE -- the charge lands on ALL allies",
+      "actor": "class:CF_ORIG_TRAINER",
+      "ability": "ONLY_RESISTDOWN_ATTACK",
+      "target": {
+        "select": "enemy:1"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_TRAINER_CMD_FOCUS_FIRE"
+        ],
+        "forbid": [
+          "Recipe effect failed",
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "a_charge_self",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_TRAINER",
+          "status": "STATUS_CHARGE_CF_FOCUS_FIRE"
+        },
+        {
+          "id": "a_charge_vampiric",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "status": "STATUS_CHARGE_CF_FOCUS_FIRE",
+          "why": "Target: ALLY_ALL -- a command that only buffs its caster is not a command"
+        },
+        {
+          "id": "a_charge_gary",
+          "kind": "status_present",
+          "selector": "class:CF_ORIG_GARY",
+          "status": "STATUS_CHARGE_CF_FOCUS_FIRE"
+        },
+        {
+          "id": "a_enemy_armordown",
+          "kind": "status_present",
+          "selector": "enemy:1",
+          "status": "STATUS_ARMORDOWN_00"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_pokemon_trainer_a1",
+          "kind": "identity",
+          "region": "actionmenu",
+          "expect": "the ACTION MENU header names Pokemon Trainer and lists that class's own abilities. Taken before the fire, so the actor still holds the turn. Any of Shepherd / Thief / Corsair / Bladedancer voids the run.",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ],
+          "when": "before"
+        },
+        {
+          "id": "identity_a1_banner",
+          "kind": "identity",
+          "region": "party",
+          "when": "before",
+          "expect": "the active-character banner and the highlighted party card BOTH read \"Pokemon Trainer\" -- captured before the fire, so this is the character that actually acts",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "a_charge_everyone",
+          "kind": "effect",
+          "region": "party",
+          "expect": "a \"Focus Fire\" icon on EVERY party card, not only the Trainer's -- that is the group-buff tell"
+        }
+      ]
+    },
+    {
+      "id": "t3",
+      "label": "advance to Gary",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 1
+      }
+    },
+    {
+      "id": "g1",
+      "label": "GARY throws the Capture Ball at the bat (PERFECT-gated)",
+      "actor": "class:CF_ORIG_GARY",
+      "ability": "ONLY_RESISTDOWN_ATTACK",
+      "target": {
+        "select": "class:BAT_CAVE_00"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_TRAINER_CAPTURE_CATCH"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "g_ball_holds_bat",
+          "kind": "thing_custom_data",
+          "selector": "class:CF_ORIG_GARY",
+          "thing_config": "ARM_ORIG_TRAINER_BALL_CAPTURE",
+          "key": "CF_POKE_CONFIG",
+          "op": "eq",
+          "value": "BAT_CAVE_00"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_gary_g1",
+          "kind": "identity",
+          "region": "actionmenu",
+          "expect": "the ACTION MENU header names Gary and lists that class's own abilities. Taken before the fire, so the actor still holds the turn. Any of Shepherd / Thief / Corsair / Bladedancer voids the run.",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ],
+          "when": "before"
+        },
+        {
+          "id": "identity_g1_banner",
+          "kind": "identity",
+          "region": "party",
+          "when": "before",
+          "expect": "the active-character banner and the highlighted party card BOTH read \"Gary\" -- captured before the fire, so this is the character that actually acts",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "g_bat_gone",
+          "kind": "effect",
+          "region": "enemy",
+          "expect": "on a PERFECT roll the bat is GONE from the enemy side; on any other roll the refusal text \"CAN’T BE CAUGHT!\" is on screen and the bat is still there. Record which"
+        }
+      ]
+    }
+  ],
+  "tells": [
+    {
+      "id": "identity_all_four",
+      "kind": "identity",
+      "region": "party",
+      "expect": "all four party cards read Vampiric, Pacifist, Pokemon Trainer and Gary. Any of Shepherd / Thief / Corsair / Bladedancer means the fixture was built with set_class and NOTHING in this run is evidence",
+      "invalidated_by": [
+        "Shepherd",
+        "Thief",
+        "Corsair",
+        "Bladedancer"
+      ]
+    },
+    {
+      "id": "final_board",
+      "kind": "effect",
+      "region": "board",
+      "expect": "four player bodies on the player side and the surviving enemies on theirs"
+    }
+  ],
+  "asserts": [
+    {
+      "id": "all_four_alive",
+      "kind": "count",
+      "selector": "ally:*",
+      "op": "gte",
+      "value": 4
+    },
+    {
+      "id": "vampiric_alive",
+      "kind": "alive",
+      "selector": "class:CF_ORIG_VAMPIRIC",
+      "op": "eq",
+      "value": true
+    },
+    {
+      "id": "pacifist_alive",
+      "kind": "alive",
+      "selector": "class:CF_ORIG_PACIFIST",
+      "op": "eq",
+      "value": true
+    },
+    {
+      "id": "trainer_alive",
+      "kind": "alive",
+      "selector": "class:CF_ORIG_TRAINER",
+      "op": "eq",
+      "value": true
+    },
+    {
+      "id": "gary_alive",
+      "kind": "alive",
+      "selector": "class:CF_ORIG_GARY",
+      "op": "eq",
+      "value": true
+    }
+  ],
+  "seed_search": {
+    "success_assert": "p_armorup",
+    "candidates": {
+      "start": 20260826,
+      "count": 12
+    },
+    "found_note": "the seed on which the Pacifist's Here's a Shield rolls PERFECT and its ADD_STATUS actually lands. The ability preview reads 83% per slot / 77% perfect, so a miss is ordinary luck, not a broken skill -- and with the pin genuinely replacing the generator the SAME seed misses every time (verified: seeds 20260826 twice, identical p_armorup FAIL and identical v_target_hurt -6), which is exactly why this has to be seed-searched rather than re-run."
+  }
+}

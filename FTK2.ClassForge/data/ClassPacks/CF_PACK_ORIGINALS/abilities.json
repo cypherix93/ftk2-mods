@@ -1,86 +1,86 @@
 {
-  "CF_TRAINER_SUMMON_CHAOS_ATTACK": {
-    "Inherits": "DEFAULT_ABILITY",
-    "TargetArea": "SINGLE",
-    "Target": "ALLY_ALL",
-    "TileOccupancy": "EMPTY",
-    "OriginRowPosition": "ANY",
-    "TargetRowPosition": "ANY",
-    "DamageAgainstRow": "NONE",
-    "IsMajorAction": true,
-    "RequiresSkillRoll": true,
-    "RequiresFocus": 0,
-    "IsFocusable": true,
-    "IsRanged": true,
-    "Kamikaze": false,
-    "Ammo": 0,
-    "Chargeable": false,
-    "AnimationIdentity": "STANDARD",
-    "Tendency": "NONE",
+  "CF_TRAINER_SUMMON_GRASS_T1_ATTACK": {
     "Actions": [
       {
         "Item1": "ADD_CHARACTER",
         "Item2": {
-          "Type": "RANDOM",
-          "Value": "WOLF_FOREST"
+          "Type": "SPECIFIC",
+          "Value": "WOLF_GRASS_08"
         }
       }
-    ]
+    ],
+    "AnimationIdentity": "STANDARD",
+    "Ammo": 0,
+    "Chargeable": false,
+    "DamageAgainstRow": "NONE",
+    "Inherits": "DEFAULT_ABILITY",
+    "IsFocusable": true,
+    "IsMajorAction": true,
+    "IsRanged": true,
+    "Kamikaze": false,
+    "OriginRowPosition": "ANY",
+    "RequiresFocus": 0,
+    "RequiresSkillRoll": true,
+    "Target": "ALLY_ALL",
+    "TargetArea": "SINGLE",
+    "TargetRowPosition": "ANY",
+    "Tendency": "NONE",
+    "TileOccupancy": "EMPTY"
   },
-  "CF_TRAINER_SUMMON_EMBER_ATTACK": {
-    "Inherits": "DEFAULT_ABILITY",
-    "TargetArea": "SINGLE",
-    "Target": "ALLY_ALL",
-    "TileOccupancy": "EMPTY",
-    "OriginRowPosition": "ANY",
-    "TargetRowPosition": "ANY",
-    "DamageAgainstRow": "NONE",
-    "IsMajorAction": true,
-    "RequiresSkillRoll": true,
-    "RequiresFocus": 0,
-    "IsFocusable": true,
-    "IsRanged": true,
-    "Kamikaze": false,
-    "Ammo": 0,
-    "Chargeable": false,
-    "AnimationIdentity": "STANDARD",
-    "Tendency": "NONE",
+  "CF_TRAINER_SUMMON_GRASS_T2_ATTACK": {
     "Actions": [
       {
         "Item1": "ADD_CHARACTER",
         "Item2": {
-          "Type": "RANDOM",
-          "Value": "ELEMENTAL_FIRE"
+          "Type": "SPECIFIC",
+          "Value": "WOLF_HELLHOUND_09"
         }
       }
-    ]
+    ],
+    "AnimationIdentity": "STANDARD",
+    "Ammo": 0,
+    "Chargeable": false,
+    "DamageAgainstRow": "NONE",
+    "Inherits": "DEFAULT_ABILITY",
+    "IsFocusable": true,
+    "IsMajorAction": true,
+    "IsRanged": true,
+    "Kamikaze": false,
+    "OriginRowPosition": "ANY",
+    "RequiresFocus": 1,
+    "RequiresSkillRoll": true,
+    "Target": "ALLY_ALL",
+    "TargetArea": "SINGLE",
+    "TargetRowPosition": "ANY",
+    "Tendency": "NONE",
+    "TileOccupancy": "EMPTY"
   },
-  "CF_TRAINER_SUMMON_RIME_ATTACK": {
-    "Inherits": "DEFAULT_ABILITY",
-    "TargetArea": "SINGLE",
-    "Target": "ALLY_ALL",
-    "TileOccupancy": "EMPTY",
-    "OriginRowPosition": "ANY",
-    "TargetRowPosition": "ANY",
-    "DamageAgainstRow": "NONE",
-    "IsMajorAction": true,
-    "RequiresSkillRoll": true,
-    "RequiresFocus": 0,
-    "IsFocusable": true,
-    "IsRanged": true,
-    "Kamikaze": false,
-    "Ammo": 0,
-    "Chargeable": false,
-    "AnimationIdentity": "STANDARD",
-    "Tendency": "NONE",
+  "CF_TRAINER_SUMMON_GRASS_T3_ATTACK": {
     "Actions": [
       {
         "Item1": "ADD_CHARACTER",
         "Item2": {
-          "Type": "RANDOM",
-          "Value": "GOLEM_ROCK"
+          "Type": "SPECIFIC",
+          "Value": "WOLF_CHAOSHOUND_10"
         }
       }
-    ]
+    ],
+    "AnimationIdentity": "STANDARD",
+    "Ammo": 0,
+    "Chargeable": false,
+    "DamageAgainstRow": "NONE",
+    "Inherits": "DEFAULT_ABILITY",
+    "IsFocusable": true,
+    "IsMajorAction": true,
+    "IsRanged": true,
+    "Kamikaze": false,
+    "OriginRowPosition": "ANY",
+    "RequiresFocus": 2,
+    "RequiresSkillRoll": true,
+    "Target": "ALLY_ALL",
+    "TargetArea": "SINGLE",
+    "TargetRowPosition": "ANY",
+    "Tendency": "NONE",
+    "TileOccupancy": "EMPTY"
   }
 }

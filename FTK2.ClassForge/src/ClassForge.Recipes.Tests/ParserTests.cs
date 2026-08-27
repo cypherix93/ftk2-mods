@@ -293,6 +293,28 @@ namespace ClassForge.Recipes.Tests
                     "E_COUNTER_NAME", "counter_set without name");
             });
 
+            t.Case("Persistent (§6 run-persistence escape hatch) parses on OWNED COUNTER_ADD/COUNTER_SET " +
+                   "and is rejected everywhere else", () =>
+            {
+                var ok = RecipeParser.Parse(J.Effect("ON_KILL",
+                    "{\"Type\":\"COUNTER_ADD\",\"Name\":\"cf_bond\",\"Delta\":1,\"Persistent\":true}"));
+                Check.NoErrors(ok, "Persistent COUNTER_ADD on a default-OWNED recipe is well-formed");
+                var r = ok.Find("SKILL_T");
+                Check.True(r != null && r.IsLive, "recipe is live");
+                Check.True(r.Effects[0].Persistent, "Persistent parsed true on the effect");
+
+                Check.HasFinding(RecipeParser.Parse(J.Effect("ON_KILL",
+                    "{\"Type\":\"ADD_STATUS\",\"Target\":\"SELF\",\"Status\":\"S\",\"Persistent\":true}")),
+                    "E_PERSISTENT_SCOPE", "Persistent on a non-counter effect is rejected");
+
+                string combatScoped =
+                    "{\"SKILL_T\":{\"SchemaVersion\":\"1.2\",\"Scope\":\"COMBAT\",\"Trigger\":\"ON_COMBAT_START\"," +
+                    "\"Effects\":[{\"Type\":\"COUNTER_ADD\",\"Name\":\"cf_bond\",\"Delta\":1,\"Persistent\":true}]," +
+                    "\"ProcChance\":100}}";
+                Check.HasFinding(RecipeParser.Parse(combatScoped),
+                    "E_PERSISTENT_SCOPE", "Persistent on a COMBAT-scoped recipe is rejected (no owner to persist against)");
+            });
+
             t.Case("warnings: unknown fields, ignored Of, non-standard eDamageType", () =>
             {
                 Check.HasFinding(RecipeParser.Parse(J.One("ON_KILL", "", J.SelfStatusEffect, ",\"Wibble\":3")),

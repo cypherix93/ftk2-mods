@@ -1,0 +1,238 @@
+{
+  "schema": "crucible.scenario.v1",
+  "name": "iso-pacifist-fieldmedic",
+  "kind": "isolation",
+  "checklist_item": "G. Classes / CF_PACK_ORIGINALS / Pacifist -- Field Medic, Crouching Tiger, thorns",
+  "description": "Prove Field Medic heals the lowest-HP%% ally at ON_TURN_END, and that the Olive Branch does NO damage -- the class's defining property.",
+  "seed": 20260826,
+  "notes": [
+    "Field Medic is Target: ALLY_BY_RANK {Order: LOWEST, Stat: HP_PCT, ExcludeSelf: false} -- the Pacifist is ELIGIBLE TO HEAL ITSELF. The damaged ally must be lower in HP PERCENT than the Pacifist or the heal lands on the caster and the test measures the wrong thing.",
+    "'An enemy that cannot act' is NOT buildable from CF_PACK_ORIGINALS. Nothing in the pack applies STATUS_STUN_00 or STATUS_DAZE_00, and stun is banned pack-wide by two independent guards (Vocabulary.TileIllegalStatusTypes, TrainerCaptureRules.BannedStatusPrefixes). The substitute here is ONLY_ATTACKDOWN_ATTACK ('Nerf Gun, Literally'), which makes an enemy nearly harmless rather than unable to act. A genuine unable-to-act state needs CF_PACK_EOR_CLASSES, whose skillrecipes.json does apply STATUS_DAZE_00 -- a separate scenario, not this one. Reported as a scoping limit, not quietly substituted.",
+    "The pack's own encyclopedia string for the Olive Branch claims 'Every one of its techniques stuns, weakens or shields'. Nothing on the weapon stuns. That string is wrong; do not let it become the expected tell.",
+    "The spawned enemy was DROPPED 2026-08-26 in favour of the encounter's own monster (setup wipe_enemies keep_alive 1). Same reason as iso-ash-commands note 4: a spawned body cannot carry a status, which silently voids every status assert pointed at it."
+  ],
+  "fixture": {
+    "run_id": "63d7d316-0134-4efa-b462-f3a24dc46922",
+    "backup": "batch-4class.ftk2",
+    "status": "built",
+    "notes": "REUSES THE batch-4class BED (built 2026-08-26 through real CHARACTER CREATION: Vampiric / Pacifist / Pokemon Trainer / Gary, confirmed on screen and by crucible_party_list). A dedicated bed was not built for this scenario: that party already satisfies this manifest's expect_classes and min_size, and README says extra party members do not invalidate an identity tell that names the subject. bench.py always loads a COPY, so sharing one backup across scenarios is safe as long as they run SERIALLY. Original build recipe for a dedicated bed is kept below.\n\nORIGINAL: BUILD RECIPE. New campaign -> CHARACTER CREATION for every slot. NEVER crucible_party_set_class: it rewrites ConfigName but not the display name, so the class is right in state and every screenshot shows a stale vanilla name -- that voided a whole verification run here. Save, copy the .ftk2 out of GameRuns\\ into %USERPROFILE%\\Backups\\ftk2-fixtures under this name, then set status to 'built'. Slot 1 = Pacifist, slot 2 = a second character to be the damaged ally. The ally slot may be vanilla -- it is the PATIENT, not the subject -- but the identity tell must name the Pacifist, never the ally."
+  },
+  "party": {
+    "expect_classes": [
+      "Pacifist"
+    ],
+    "min_size": 2,
+    "forbid_names": []
+  },
+  "setup": [
+    {
+      "op": "godmode",
+      "value": "off",
+      "why": "godmode ON tops HP up every tick and masks every HP effect."
+    },
+    {
+      "op": "wipe_enemies",
+      "group": 1,
+      "keep_alive": 1,
+      "why": "Keep ONE real encounter monster instead of clearing the board. jelly_attackdown must point at a status-capable body: a crucible_combat_spawn body has NO StatusEffectComponent, so ADD_STATUS can never land on it and the assert reads statuses=[] -- which looks identical to a skill that failed. Measured 2026-08-26: this scenario's jelly_attackdown FAILED against the spawned jelly while the same class's ARMORUP landed fine on a real party member in the very next step."
+    },
+    {
+      "op": "end_turn",
+      "times": 5,
+      "why": "Let the enemy act a few times BEFORE the Pacifist does. Field Medic heals the lowest-HP% ally, so against a full-HP party it procs and correctly heals nothing -- measured 2026-08-26: SKILL_CF_PACIFIST_FIELD_MEDIC appeared in the log and ally_healed read hp 35 -> 35. A heal assert is only meaningful once somebody is hurt."
+    }
+  ],
+  "enemies": [],
+  "steps": [
+    {
+      "id": "s1",
+      "label": "Nerf Gun, Literally -- ATTACK DOWN on the jelly, and NO damage",
+      "actor": "class:CF_ORIG_PACIFIST",
+      "ability": "ONLY_ATTACKDOWN_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_PACIFIST"
+        ],
+        "forbid": [
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "jelly_attackdown",
+          "kind": "status_present",
+          "selector": "enemy:0",
+          "status": "STATUS_ATTACKDOWN_00"
+        },
+        {
+          "id": "jelly_undamaged",
+          "kind": "hp_delta",
+          "selector": "enemy:0",
+          "op": "eq",
+          "value": 0
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_pacifist",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Pacifist\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "preview_no_damage",
+          "kind": "preview",
+          "region": "panel",
+          "expect": "the ability preview names \"Nerf Gun, Literally\" and shows NO damage line, where a normal ability shows e.g. \"0-9 Magic Damage\""
+        },
+        {
+          "id": "attackdown_icon",
+          "kind": "effect",
+          "region": "board",
+          "expect": "an Attack Down icon on the jelly, and its HP bar UNCHANGED"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "label": "Here's a Shield -- ARMOUR UP on the ally, still no damage",
+      "actor": "class:CF_ORIG_PACIFIST",
+      "ability": "ONLY_ARMORUP_OTHER_ATTACK",
+      "target": {
+        "select": "ally:1"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_PACIFIST"
+        ],
+        "forbid": [
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "ally_armorup",
+          "kind": "status_present",
+          "selector": "ally:1",
+          "status": "STATUS_ARMORUP_00"
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_pacifist_2",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Pacifist\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "ally_armour_icon",
+          "kind": "effect",
+          "region": "portraits",
+          "expect": "an Armour Up icon on the ALLY's portrait -- on the ally, not on the caster"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "label": "End the Pacifist's turn -- Field Medic heals the lowest-HP% ally",
+      "actor": "class:CF_ORIG_PACIFIST",
+      "action": "end_turn",
+      "log": {
+        "proc": [
+          "SKILL_CF_PACIFIST_FIELD_MEDIC",
+          "SKILL_CF_PACIFIST_CROUCHING_TIGER"
+        ],
+        "forbid": [
+          "Recipe effect failed",
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "ally_healed",
+          "kind": "hp_delta",
+          "selector": "ally:1",
+          "op": "gt",
+          "value": 0
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_pacifist_3",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Pacifist\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "ally_hp_rose",
+          "kind": "effect",
+          "region": "party",
+          "expect": "the damaged ally's HP bar AND its hp/maxHp number are HIGHER than in the previous frame -- roughly +4"
+        },
+        {
+          "id": "reflect_icon",
+          "kind": "effect",
+          "region": "portraits",
+          "expect": "a Reflect icon on the Pacifist -- Crouching Tiger also fires at ON_TURN_END"
+        }
+      ]
+    }
+  ],
+  "tells": [
+    {
+      "id": "identity_pacifist_final",
+      "kind": "identity",
+      "region": "party",
+      "expect": "the party HUD card reads \"Pacifist\" -- our class, not a vanilla one",
+      "invalidated_by": [
+        "Shepherd",
+        "Thief",
+        "Corsair",
+        "Bladedancer"
+      ]
+    },
+    {
+      "id": "final_party",
+      "kind": "effect",
+      "region": "party",
+      "expect": "the ally's HP is above where it started and nothing is downed"
+    }
+  ],
+  "asserts": [
+    {
+      "id": "pacifist_reflect",
+      "kind": "status_present",
+      "selector": "class:CF_ORIG_PACIFIST",
+      "status": "STATUS_REFLECT_00"
+    },
+    {
+      "id": "jelly_still_alive",
+      "kind": "alive",
+      "selector": "enemy:0",
+      "op": "eq",
+      "value": true,
+      "why": "a Pacifist that killed something did not stay a Pacifist"
+    }
+  ]
+}

@@ -12,4 +12,13 @@
          All arithmetic is int/decimal for cross-peer determinism (docs/MULTIPLAYER.md R2). -->
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Cross-peer identity only (ClassForge.Core.Rng.EntityKey / StableHash). ClassForge.Core is
+         netstandard2.0 and game-agnostic, so this keeps the "no game refs" rule above intact. It is
+         referenced because Entity.Guid is LOCAL to a peer and must never be ordered, hashed or seeded
+         on; EntityKey is the ordinal-based replacement, and there must be exactly ONE definition of
+         its text form across the whole mod. -->
+    <ProjectReference Include="..\ClassForge.Core\ClassForge.Core.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,203 @@
+{
+  "schema": "crucible.scenario.v1",
+  "name": "batch-chaos",
+  "kind": "batch",
+  "checklist_item": "F. Chaos / map effects + G. Classes / CF_PACK_ORIGINALS / Chaos Mage",
+  "description": "The fifth class. Entropy (PERFECT-gated status), Backlash (CRIT_FAIL-gated self-status) and Wild Magic Surge -- the 15% hazard TILE, which state-v2's new combat.tiles[].auraStatuses makes assertable for the first time.",
+  "seed": null,
+  "seed_search": {
+    "candidates": {
+      "start": 1,
+      "count": 600
+    },
+    "success_assert": "hazard_tile_landed",
+    "found_note": "the seed on which Wild Magic Surge's 15% roll lands a hazard"
+  },
+  "notes": [
+    "Five classes need two batches. This is the second, and it is deliberately NOT four classes deep: the hazard tile is read by scanning every tile's auraStatuses, so a board crowded with other classes' tile effects would make the assert ambiguous.",
+    "Wild Magic Surge: Trigger ON_TURN_START, ProcChance 15 / AiProcChance 15, Budget ONCE_PER_ROUND, no conditions, Target: RANDOM_TILE, Duration 5, StatusOneOf [STATUS_FIRE_00, STATUS_WATER_00, STATUS_SHOCK_00, STATUS_ACID_00]. 15% is exactly the kind of gate that must be seed-searched once and pinned, never waited for.",
+    "RANDOM_TILE means no coordinate is knowable in advance, which is why the assert uses tile: \"any\". The screenshot tell is what pins the decal to a specific tile -- state says a hazard exists, only the picture says the player can see it.",
+    "This assert was IMPOSSIBLE before state-v2 carried combat.tiles[]. VenueTileComponent.AuraStatuses was unreadable, so a tile feature was screenshot-only. Note the null rule: the game leaves AuraStatuses null until the first aura lands, so a null VALUE is a clean tile ([]) while an absent MEMBER is null plus member_missing -- bench.py reports the second as UNREADABLE, never as a clean board.",
+    "Entropy needs ROLL_TIER EQ PERFECT and Backlash needs ROLL_TIER EQ CRIT_FAIL. Both are recorded as steps so the pinned seed can be searched against either; on a seed that produces neither they read NO-FIRE, which is honest, not a failure."
+  ],
+  "fixture": {
+    "run_id": "TBD-batch-chaos",
+    "backup": "batch-chaos.ftk2",
+    "status": "not-built",
+    "notes": "STATUS 2026-08-26: NOT BUILT, DEFERRED BY THE OPERATOR. The bed is still genuinely required -- a live inventory of every pristine fixture (each one LOADED and read with crucible_party_list, since a .ftk2 is opaque on disk and fixture_health only checks SIZE) found NO Chaos Mage anywhere:\n  batch-4class.ftk2  Vampiric / Pacifist / Pokemon Trainer / Gary   -- real display names, GOOD BED\n  c750d05b-....ftk2  Vampiric / Pacifist / Pokemon Trainer / Gary   -- a duplicate of the above\n  bdb1596d-....ftk2  CF_ORIG_* + CF_EOR_RUNEMAGE but named Thief / Shepherd / Corsair /\n                     Bladedancer -- built with set_class, so USELESS for any identity screenshot\n  gary-captured-bat.ftk2  same vanilla-named party; carries a captured bat but not a usable\n                     identity tell. NOTE it shares run id 63d7d316 with batch-4class.ftk2, so\n                     copying it in overwrites the good bed's slot.\n  DIRTY-2026-08-26-gary-midcombat.ftk2  known corrupt, never load.\nSo Chaos Mage cannot be exercised at all until this bed exists.\n\nmake-fixture.ps1 got three real bugs fixed on the way to this conclusion, and it now reaches the party screen and sets slots reliably; the next attempt should start from a clean boot and just run:\n  .\\make-fixture.ps1 -PartyClassIds CF_ORIG_CHAOSMAGE,CF_ORIG_VAMPIRIC,CF_ORIG_GARY,CF_ORIG_TRAINER -FixtureName batch-chaos\n  (1) the first-death advisory modal on PromptUIDocument blocks the party screen and ate the add-character press -- now dismissed by exact name `ok-btn`.\n  (2) focus('add-character-btn') + key(enter) added TWO characters per press, which also left the class stepper bound to the wrong slot -- now a single crucible_ui_click_nth on index 0.\n  (3) Get-ClassSelectorTexts did `return @(...)`, and PowerShell UNROLLS a one-element array on return, so with one slot filled it handed back a bare string and `[0]` indexed a CHARACTER: the loop reported \"never reached 'CF_ORIG_CHAOSMAGE' after 150 steps; last seen 'C'\" while the slot was already correct. Fixed with `return ,$texts`. MaxClassCycles also went 40 -> 150.\n\nORIGINAL RECIPE: New campaign -> CHARACTER CREATION for every slot. NEVER crucible_party_set_class: it rewrites ConfigName but not the display name, so the class is right in state and every screenshot shows a stale vanilla name -- that is exactly what makes bdb1596d and gary-captured-bat unusable above. Save, copy the .ftk2 out of GameRuns\\ into %USERPROFILE%\\Backups\ftk2-fixtures under this name, then set status to 'built'."
+  },
+  "party": {
+    "expect_classes": [
+      "Chaos Mage",
+      "Vampiric"
+    ],
+    "min_size": 2,
+    "forbid_names": [
+      "Shepherd",
+      "Thief",
+      "Corsair",
+      "Bladedancer"
+    ]
+  },
+  "setup": [
+    {
+      "op": "godmode",
+      "value": "off",
+      "why": "godmode ON tops HP up every tick and masks every HP effect."
+    },
+    {
+      "op": "wipe_enemies"
+    }
+  ],
+  "enemies": [
+    {
+      "config": "WOLF_GRASS_08",
+      "count": 2,
+      "group": 1,
+      "role": "killable"
+    }
+  ],
+  "steps": [
+    {
+      "id": "c1",
+      "label": "CHAOS MAGE casts Dark Bolt -- Entropy on a PERFECT roll",
+      "actor": "class:CF_ORIG_CHAOSMAGE",
+      "ability": "MAGIC_DARK_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_CHAOSMAGE"
+        ],
+        "forbid": [
+          "Recipe effect failed",
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "c_target_hurt",
+          "kind": "hp_delta",
+          "selector": "enemy:0",
+          "op": "lt",
+          "value": 0
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_chaos_mage",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Chaos Mage\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "c_bolt_effect",
+          "kind": "effect",
+          "region": "enemy",
+          "expect": "the target's HP bar drops; on a PERFECT roll one of Poison / Fire / Shock / Water / Bleed / Acid / Ice / Confuse is also on its portrait (Entropy). The ability bar reads the VANILLA name \"Dark Bolt\" -- that is deliberate, not a missing string"
+        }
+      ]
+    },
+    {
+      "id": "t1",
+      "label": "advance a full round so ON_TURN_START rolls the 15% surge",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 6
+      }
+    },
+    {
+      "id": "c2",
+      "label": "WILD MAGIC SURGE -- a hazard tile appears on the board",
+      "actor": "class:CF_ORIG_CHAOSMAGE",
+      "action": "observe",
+      "log": {
+        "proc": [
+          "SKILL_CF_CHAOSMAGE_WILD_MAGIC_SURGE"
+        ],
+        "forbid": [
+          "Recipe effect failed",
+          "NullReferenceException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "hazard_tile_landed",
+          "kind": "tile_aura",
+          "tile": "any",
+          "status": [
+            "STATUS_FIRE_00",
+            "STATUS_WATER_00",
+            "STATUS_SHOCK_00",
+            "STATUS_ACID_00"
+          ],
+          "op": "contains",
+          "why": "Wild Magic Surge draws ONE of these four per proc (StatusOneOf), so naming a single id would fail three good surges out of four. The claim is that a hazard landed, not which element it was. The report prints which id actually landed on which tile."
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_chaos_mage_c2",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Chaos Mage\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "hazard_decal",
+          "kind": "effect",
+          "region": "board",
+          "expect": "a hazard DECAL on one specific tile of the grid. State saying auraStatuses is non-empty while no decal is drawn is the invisible-mechanic FAIL -- this is precisely the case the paired rule exists for"
+        }
+      ]
+    }
+  ],
+  "tells": [
+    {
+      "id": "identity_chaos_mage_final",
+      "kind": "identity",
+      "region": "party",
+      "expect": "the party HUD card reads \"Chaos Mage\" -- our class, not a vanilla one",
+      "invalidated_by": [
+        "Shepherd",
+        "Thief",
+        "Corsair",
+        "Bladedancer"
+      ]
+    },
+    {
+      "id": "final_grid",
+      "kind": "effect",
+      "region": "board",
+      "expect": "the hazard decal is still on its tile and the grid is intact"
+    }
+  ],
+  "asserts": [
+    {
+      "id": "chaosmage_alive",
+      "kind": "alive",
+      "selector": "class:CF_ORIG_CHAOSMAGE",
+      "op": "eq",
+      "value": true
+    },
+    {
+      "id": "board_readable",
+      "kind": "count",
+      "selector": "ally:*",
+      "op": "gte",
+      "value": 2
+    }
+  ]
+}

@@ -1,0 +1,183 @@
+{
+  "schema": "crucible.scenario.v1",
+  "name": "defeat",
+  "kind": "isolation",
+  "checklist_item": "B. Harness -- run lifecycle: a DEFEAT resolves cleanly instead of wedging",
+  "description": "The fail-safety end of the lifecycle. Drive the party to a wipe and prove the game resolves the defeat -- summary screen, no unhandled exception, no wedge.",
+  "seed": 20260826,
+  "notes": [
+    "SAFETY. A run that ENDS -- win OR lose -- rewrites and can DELETE its own save (SaveGameHelper.DeleteSave). Two fixtures were destroyed that way in one session. bench.py always copies the pristine backup over GameRuns\\<run_id>.ftk2 before loading, so this scenario consumes a disposable copy and the backup survives. That is not a nice-to-have here -- it is the only reason this scenario is safe to run.",
+    "crucible_kill_all is NOT used and must not be. It kills BOTH sides, which would wipe the enemies too and score a VICTORY, and it can write a DEFEAT into whatever run happens to be loaded. The defeat is produced by letting a strong enemy act.",
+    "CombatState.EndCombatEarly = true is the OPPOSITE of crucible_win_combat: it ends the fight with enemies alive and evaluates as a LOSS. Do not confuse the two.",
+    "The acceptance criterion here is fail-safety, not correctness of any number: zero unhandled exceptions, combat resolving, the session still alive afterwards. A '[ClassForge] Recipe effect failed (skipped, rest of plan continues)' line is a PASS for fail-safety and a FAIL for correctness, and bench.py reports the two separately."
+  ],
+  "fixture": {
+    "run_id": "63d7d316-0134-4efa-b462-f3a24dc46922",
+    "backup": "batch-4class.ftk2",
+    "status": "built",
+    "notes": "REUSES THE batch-4class BED (built 2026-08-26 through real CHARACTER CREATION: Vampiric / Pacifist / Pokemon Trainer / Gary, confirmed on screen and by crucible_party_list). A dedicated bed was not built for this scenario: that party already satisfies this manifest's expect_classes and min_size, and README says extra party members do not invalidate an identity tell that names the subject. bench.py always loads a COPY, so sharing one backup across scenarios is safe as long as they run SERIALLY. Original build recipe for a dedicated bed is kept below.\n\nORIGINAL: BUILD RECIPE. New campaign -> CHARACTER CREATION for every slot. NEVER crucible_party_set_class: it rewrites ConfigName but not the display name, so the class is right in state and every screenshot shows a stale vanilla name -- that voided a whole verification run here. Save, copy the .ftk2 out of GameRuns\\ into %USERPROFILE%\\Backups\\ftk2-fixtures under this name, then set status to 'built'. A DISPOSABLE one-character bed -- slot 1 = Vampiric, low level, no revival items. Never point this scenario at a fixture any other scenario uses."
+  },
+  "party": {
+    "expect_classes": [
+      "Vampiric"
+    ],
+    "min_size": 1,
+    "forbid_names": [
+      "Shepherd",
+      "Thief",
+      "Corsair",
+      "Bladedancer"
+    ]
+  },
+  "setup": [
+    {
+      "op": "godmode",
+      "value": "off",
+      "why": "godmode ON tops HP up every tick and masks every HP effect."
+    },
+    {
+      "op": "wipe_enemies"
+    }
+  ],
+  "enemies": [
+    {
+      "config": "BOSS_WOLF_00",
+      "count": 2,
+      "group": 1,
+      "role": "lethal",
+      "why": "Level 8, HP 48, ATK 64 -- the hardest config enumerable from this repo. Two of them against one low-level character reliably wipes the party."
+    }
+  ],
+  "steps": [
+    {
+      "id": "d1",
+      "label": "the Vampiric acts once, then the demons are allowed to kill it",
+      "actor": "class:CF_ORIG_VAMPIRIC",
+      "ability": "BLADE_BASIC_ATTACK",
+      "target": {
+        "select": "enemy:0"
+      },
+      "log": {
+        "proc": [
+          "SKILL_CF_VAMPIRIC_BLOOD_PRICE"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException",
+          "Unhandled exception"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "d1_acted",
+          "kind": "hp_delta",
+          "selector": "enemy:0",
+          "op": "lte",
+          "value": 0
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_vampiric",
+          "kind": "identity",
+          "region": "party",
+          "expect": "the party HUD card reads \"Vampiric\" -- our class, not a vanilla one",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "d1_demons",
+          "kind": "effect",
+          "region": "enemy",
+          "expect": "two demon bodies on the enemy side"
+        }
+      ]
+    },
+    {
+      "id": "d2",
+      "label": "hand the fight to the enemies until the party is down",
+      "player_facing": false,
+      "advance": {
+        "end_turn": 24
+      }
+    },
+    {
+      "id": "d3",
+      "label": "the defeat RESOLVES -- summary, no wedge, no exception",
+      "action": "observe",
+      "log": {
+        "proc": [
+          "proc"
+        ],
+        "forbid": [
+          "NullReferenceException",
+          "KeyNotFoundException",
+          "Unhandled exception",
+          "IndexOutOfRangeException"
+        ]
+      },
+      "asserts": [
+        {
+          "id": "party_down",
+          "kind": "alive",
+          "selector": "class:CF_ORIG_VAMPIRIC",
+          "op": "eq",
+          "value": false
+        }
+      ],
+      "tells": [
+        {
+          "id": "identity_defeat_screen",
+          "kind": "identity",
+          "region": "panel",
+          "expect": "the defeat / adventure-summary panel naming the Vampiric character -- it must still be OUR class on the summary, not a vanilla name",
+          "invalidated_by": [
+            "Shepherd",
+            "Thief",
+            "Corsair",
+            "Bladedancer"
+          ]
+        },
+        {
+          "id": "grave_portrait",
+          "kind": "effect",
+          "region": "party",
+          "expect": "a grave/cross portrait, which means genuinely downed. Note godmode restores HP WITHOUT clearing the downed flag, so a full HP bar under a grave icon is not a rendering bug"
+        }
+      ]
+    }
+  ],
+  "tells": [
+    {
+      "id": "identity_summary",
+      "kind": "identity",
+      "region": "panel",
+      "expect": "the summary screen names the Vampiric character",
+      "invalidated_by": [
+        "Shepherd",
+        "Thief",
+        "Corsair",
+        "Bladedancer"
+      ]
+    },
+    {
+      "id": "no_black_frame",
+      "kind": "effect",
+      "region": "full",
+      "expect": "an actual rendered screen. A pure-black frame here is the post-combat modal blocker dimming the venue -- it wedged a soak for 45 minutes presenting as a crash. Do not file it as evidence of anything"
+    }
+  ],
+  "asserts": [
+    {
+      "id": "vampiric_down",
+      "kind": "alive",
+      "selector": "class:CF_ORIG_VAMPIRIC",
+      "op": "eq",
+      "value": false
+    }
+  ]
+}

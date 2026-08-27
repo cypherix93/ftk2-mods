@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -45,6 +45,8 @@ namespace Crucible.Plugin
 
         private static readonly MethodInfo DumpHandler = typeof(UiCommands).GetMethod("CrucibleUiDump", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo ClickHandler = typeof(UiCommands).GetMethod("CrucibleUiClick", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo ClickNthHandler = typeof(UiCommands).GetMethod("CrucibleUiClickNth", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo MatchesHandler = typeof(UiCommands).GetMethod("CrucibleUiMatches", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo FocusHandler = typeof(UiCommands).GetMethod("CrucibleUiFocus", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo NavHandler = typeof(UiCommands).GetMethod("CrucibleUiNav", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo SubmitHandler = typeof(UiCommands).GetMethod("CrucibleUiSubmit", BindingFlags.Public | BindingFlags.Static);
@@ -56,6 +58,8 @@ namespace Crucible.Plugin
 
         private static bool _dumpRegistered;
         private static bool _clickRegistered;
+        private static bool _clickNthRegistered;
+        private static bool _matchesRegistered;
         private static bool _focusRegistered;
         private static bool _navRegistered;
         private static bool _submitRegistered;
@@ -74,11 +78,13 @@ namespace Crucible.Plugin
         /// <summary>Called every tick from MainThreadPump.OnTick until every command is registered.</summary>
         internal static void TryRegister()
         {
-            if (_dumpRegistered && _clickRegistered && _focusRegistered && _navRegistered && _submitRegistered && _cancelRegistered
+            if (_dumpRegistered && _clickRegistered && _clickNthRegistered && _matchesRegistered && _focusRegistered && _navRegistered && _submitRegistered && _cancelRegistered
                 && _pressRegistered && _whereRegistered && _dialogueAdvanceRegistered && _dialogueChooseRegistered) return;
 
             if (!_dumpRegistered) _dumpRegistered = GameBridge.RegisterCommand("crucible_ui_dump", DumpHandler, new List<string> { "filter", "kinds" });
             if (!_clickRegistered) _clickRegistered = GameBridge.RegisterCommand("crucible_ui_click", ClickHandler, new List<string> { "selector" });
+            if (!_clickNthRegistered) _clickNthRegistered = GameBridge.RegisterCommand("crucible_ui_click_nth", ClickNthHandler, new List<string> { "selector", "index", "document" });
+            if (!_matchesRegistered) _matchesRegistered = GameBridge.RegisterCommand("crucible_ui_matches", MatchesHandler, new List<string> { "selector", "document" });
             if (!_focusRegistered) _focusRegistered = GameBridge.RegisterCommand("crucible_ui_focus", FocusHandler, new List<string> { "selector" });
             if (!_navRegistered) _navRegistered = GameBridge.RegisterCommand("crucible_ui_nav", NavHandler, new List<string> { "direction" });
             if (!_submitRegistered) _submitRegistered = GameBridge.RegisterCommand("crucible_ui_submit", SubmitHandler, new List<string> { "_unused" });
@@ -88,10 +94,10 @@ namespace Crucible.Plugin
             if (!_dialogueAdvanceRegistered) _dialogueAdvanceRegistered = GameBridge.RegisterCommand("crucible_dialogue_advance", DialogueAdvanceHandler, new List<string> { "maxPresses" });
             if (!_dialogueChooseRegistered) _dialogueChooseRegistered = GameBridge.RegisterCommand("crucible_dialogue_choose", DialogueChooseHandler, new List<string> { "selector" });
 
-            if (_dumpRegistered && _clickRegistered && _focusRegistered && _navRegistered && _submitRegistered && _cancelRegistered
+            if (_dumpRegistered && _clickRegistered && _clickNthRegistered && _matchesRegistered && _focusRegistered && _navRegistered && _submitRegistered && _cancelRegistered
                 && _pressRegistered && _whereRegistered && _dialogueAdvanceRegistered && _dialogueChooseRegistered)
             {
-                if (_log != null) _log.LogInfo("UiCommands registered (crucible_ui_dump/click/focus/nav/submit/cancel/press/where, crucible_dialogue_advance/choose).");
+                if (_log != null) _log.LogInfo("UiCommands registered (crucible_ui_dump/click/click_nth/matches/focus/nav/submit/cancel/press/where, crucible_dialogue_advance/choose).");
             }
             else if (!_loggedWaiting)
             {
@@ -240,51 +246,7 @@ namespace Crucible.Plugin
                         result.Append("\n  - ").Append(UiTreeRenderer.FormatLine(o));
                 }
 
-                // Strategy ladder: try each in order, stop at the first success, but report every
-                // attempt made (up to and including the one that succeeded) so a failed click is
-                // fully diagnosable from this one call.
-                //
-                // Order matters, and it is deliberate: the first two strategies report whether the
-                // element ACTED, while the last two only report that an event was DISPATCHED.
-                // Synthesising a NavigationSubmitEvent "succeeds" whether or not any handler is
-                // listening, so running it earlier masked a real failure -- a story dialogue
-                // reported invoked=True through focus+submit and did not advance, which stalled
-                // quest resolution and stopped the adventure from ever ending.
-                bool succeeded = false;
-                string succeededVia = null;
-
-                string s1Error;
-                bool s1 = InvokeButtonClick(targetButton, out s1Error);
-                result.Append("\nstrategy1[clickable.clicked]: ").Append(s1 ? "SUCCEEDED" : ("failed: " + s1Error));
-                if (s1) { succeeded = true; succeededVia = "clickable.clicked/clickedWithEventInfo"; }
-
-                if (!succeeded)
-                {
-                    string s4Detail;
-                    bool s4 = TryGameSubmit(targetButton, out s4Detail);
-                    result.Append("\nstrategy2[UIToolkitHelper.Submit]: ").Append(s4Detail);
-                    if (s4) { succeeded = true; succeededVia = "UIToolkitHelper.Submit"; }
-                }
-
-                if (!succeeded)
-                {
-                    string s2Detail;
-                    bool s2 = TryFocusThenSubmit(targetButton, out s2Detail);
-                    result.Append("\nstrategy3[focus+submit]: ").Append(s2Detail);
-                    if (s2) { succeeded = true; succeededVia = "Focus()+NavigationSubmitEvent"; }
-                }
-
-                if (!succeeded)
-                {
-                    string s3Detail;
-                    bool s3 = TryPointerSequence(targetButton, out s3Detail);
-                    result.Append("\nstrategy4[pointer]: ").Append(s3Detail);
-                    if (s3) { succeeded = true; succeededVia = "PointerDownEvent+PointerUpEvent+ClickEvent"; }
-                }
-
-                result.Append("\ninvoked=").Append(succeeded);
-                if (succeeded) result.Append(" via=").Append(succeededVia);
-                else result.Append(" (all strategies failed; see detail above)");
+                RunActivationStrategyLadder(targetButton, result);
 
                 LastResult = result.ToString();
             }
@@ -293,6 +255,60 @@ namespace Crucible.Plugin
                 LastResult = "error: crucible_ui_click threw: " + ex.Message;
                 if (_log != null) _log.LogWarning("crucible_ui_click failed: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// The shared activation ladder behind crucible_ui_click and crucible_ui_click_nth: try each
+        /// strategy in order, stop at the first success, but report every attempt made (up to and
+        /// including the one that succeeded) so a failed click is fully diagnosable from this one
+        /// call. Appends its report to <paramref name="result"/>.
+        ///
+        /// Order matters, and it is deliberate: the first two strategies report whether the element
+        /// ACTED, while the last two only report that an event was DISPATCHED. Synthesising a
+        /// NavigationSubmitEvent "succeeds" whether or not any handler is listening, so running it
+        /// earlier masked a real failure -- a story dialogue reported invoked=True through
+        /// focus+submit and did not advance, which stalled quest resolution and stopped the adventure
+        /// from ever ending.
+        /// </summary>
+        private static bool RunActivationStrategyLadder(object targetButton, StringBuilder result)
+        {
+            bool succeeded = false;
+            string succeededVia = null;
+
+            string s1Error;
+            bool s1 = InvokeButtonClick(targetButton, out s1Error);
+            result.Append("\nstrategy1[clickable.clicked]: ").Append(s1 ? "SUCCEEDED" : ("failed: " + s1Error));
+            if (s1) { succeeded = true; succeededVia = "clickable.clicked/clickedWithEventInfo"; }
+
+            if (!succeeded)
+            {
+                string s4Detail;
+                bool s4 = TryGameSubmit(targetButton, out s4Detail);
+                result.Append("\nstrategy2[UIToolkitHelper.Submit]: ").Append(s4Detail);
+                if (s4) { succeeded = true; succeededVia = "UIToolkitHelper.Submit"; }
+            }
+
+            if (!succeeded)
+            {
+                string s2Detail;
+                bool s2 = TryFocusThenSubmit(targetButton, out s2Detail);
+                result.Append("\nstrategy3[focus+submit]: ").Append(s2Detail);
+                if (s2) { succeeded = true; succeededVia = "Focus()+NavigationSubmitEvent"; }
+            }
+
+            if (!succeeded)
+            {
+                string s3Detail;
+                bool s3 = TryPointerSequence(targetButton, out s3Detail);
+                result.Append("\nstrategy4[pointer]: ").Append(s3Detail);
+                if (s3) { succeeded = true; succeededVia = "PointerDownEvent+PointerUpEvent+ClickEvent"; }
+            }
+
+            result.Append("\ninvoked=").Append(succeeded);
+            if (succeeded) result.Append(" via=").Append(succeededVia);
+            else result.Append(" (all strategies failed; see detail above)");
+
+            return succeeded;
         }
 
         /// <summary>
@@ -343,6 +359,227 @@ namespace Crucible.Plugin
                 detail = "failed: " + ex.Message;
                 return false;
             }
+        }
+
+        // ============================================================== crucible_ui_click_nth
+
+        /// <summary>
+        /// crucible_ui_click_nth &lt;selector&gt; &lt;index&gt; &lt;document&gt; - clicks the element at
+        /// the given ZERO-BASED index among the on-screen Buttons matching selector, optionally
+        /// scoped to one owning UIDocument ("-" for any).
+        ///
+        /// Exists because <c>crucible_ui_click</c> is first-match-wins, which cannot address one of
+        /// several same-named, text-less elements: the nine <c>adventure-art-holder</c> Buttons on
+        /// the adventure-selection carousel, and the empty-text <c>next-btn</c> difficulty stepper
+        /// that shares a screen with a CONFIRM button also named <c>next-btn</c>.
+        ///
+        /// SAFETY: runs the SAME <see cref="UiForbiddenElements"/> check as
+        /// <c>crucible_ui_click</c>/<c>crucible_ui_press</c>, before any activation strategy runs
+        /// (see <see cref="UiIndexedMatcher"/>). An out-of-range index is a loud refusal and NEVER
+        /// falls back to index 0. The match report - name, document, index, total match count and
+        /// text - is emitted BEFORE anything is activated, so a caller verifies identity instead of
+        /// hoping.
+        /// </summary>
+        public static void CrucibleUiClickNth(string selector, string index, string document)
+        {
+            LastResult = null;
+            try
+            {
+                if (string.IsNullOrEmpty(selector))
+                {
+                    LastResult = "error: usage: crucible_ui_click_nth <selector> <index> <document|->";
+                    return;
+                }
+
+                int parsedIndex;
+                string parseError;
+                if (!UiIndexedMatcher.TryParseIndex(index, out parsedIndex, out parseError))
+                {
+                    LastResult = "error: " + parseError;
+                    return;
+                }
+
+                List<UiElementInfo> buttonInfos;
+                List<object> buttonRefs;
+                string error;
+                if (!WalkButtons(out buttonInfos, out buttonRefs, out error))
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                UiIndexedMatcher.Result match = UiIndexedMatcher.Find(buttonInfos, selector, document, parsedIndex, out error);
+                if (error != null)
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                StringBuilder result = new StringBuilder();
+
+                if (!match.Found)
+                {
+                    if (match.OutOfRange)
+                    {
+                        // Loud. A silent fallback to index 0 here would click the wrong element while
+                        // reporting success - the exact silent-success trap this verb exists to close.
+                        result.Append("error: index ").Append(parsedIndex)
+                            .Append(" is out of range: '").Append(selector).Append("' matches ")
+                            .Append(match.MatchCount).Append(" on-screen button(s)")
+                            .Append(DescribeDocumentScope(document))
+                            .Append(", valid indices 0..").Append(match.MatchCount - 1)
+                            .Append(". Nothing was activated (no fallback to index 0).");
+                        AppendMatchList(result, match.Matches);
+                    }
+                    else
+                    {
+                        result.Append("no on-screen button matches '").Append(selector).Append("'")
+                            .Append(DescribeDocumentScope(document)).Append(". On-screen buttons in scope:");
+                        if (match.AllVisible.Count == 0)
+                        {
+                            result.Append(" (none)");
+                        }
+                        else
+                        {
+                            foreach (UiElementInfo b in match.AllVisible)
+                                result.Append("\n  - ").Append(UiTreeRenderer.FormatLine(b));
+                        }
+                    }
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                // Report exactly what was matched BEFORE acting.
+                AppendMatchReport(result, match, selector, document);
+
+                if (match.Forbidden)
+                {
+                    result.Append("\nREFUSED: ").Append(match.ForbiddenReason).Append("\nNothing was activated.");
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                int walkIndex = buttonInfos.IndexOf(match.Match);
+                object targetButton = (walkIndex >= 0 && walkIndex < buttonRefs.Count) ? buttonRefs[walkIndex] : null;
+                if (targetButton == null)
+                {
+                    result.Append("\nerror: internal: matched element had no live reference");
+                    LastResult = result.ToString();
+                    return;
+                }
+
+                RunActivationStrategyLadder(targetButton, result);
+
+                LastResult = result.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_ui_click_nth threw: " + ex.Message;
+                if (_log != null) _log.LogWarning("crucible_ui_click_nth failed: " + ex.Message);
+            }
+        }
+
+        // ============================================================== crucible_ui_matches
+
+        /// <summary>
+        /// crucible_ui_matches &lt;selector&gt; &lt;document&gt; - READ-ONLY. Lists every on-screen
+        /// Button matching selector with the zero-based index <c>crucible_ui_click_nth</c> takes,
+        /// its owning document and its text, plus whether each one is forbidden. Activates nothing.
+        ///
+        /// <c>crucible_ui_dump</c> shows the same elements but numbers nothing, so a caller had to
+        /// count lines by hand and hope the index space matched; this shares the one matcher with
+        /// the click verb, so the printed index IS the index to pass.
+        /// </summary>
+        public static void CrucibleUiMatches(string selector, string document)
+        {
+            LastResult = null;
+            try
+            {
+                if (string.IsNullOrEmpty(selector))
+                {
+                    LastResult = "error: usage: crucible_ui_matches <selector> <document|->";
+                    return;
+                }
+
+                List<UiElementInfo> buttonInfos;
+                List<object> buttonRefsUnused;
+                string error;
+                if (!WalkButtons(out buttonInfos, out buttonRefsUnused, out error))
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                // index 0 only satisfies Find's contract; nothing is activated and Found is not read.
+                UiIndexedMatcher.Result match = UiIndexedMatcher.Find(buttonInfos, selector, document, 0, out error);
+                if (error != null)
+                {
+                    LastResult = "error: " + error;
+                    return;
+                }
+
+                StringBuilder result = new StringBuilder();
+                result.Append("selector='").Append(selector).Append("'")
+                    .Append(DescribeDocumentScope(document))
+                    .Append(" count=").Append(match.MatchCount);
+                if (match.MatchCount == 0)
+                {
+                    result.Append("\n(no on-screen button matches). On-screen buttons in scope:");
+                    if (match.AllVisible.Count == 0) result.Append(" (none)");
+                    foreach (UiElementInfo b in match.AllVisible)
+                        result.Append("\n  - ").Append(UiTreeRenderer.FormatLine(b));
+                }
+                else
+                {
+                    AppendMatchList(result, match.Matches);
+                }
+                LastResult = result.ToString();
+            }
+            catch (Exception ex)
+            {
+                LastResult = "error: crucible_ui_matches threw: " + ex.Message;
+                if (_log != null) _log.LogWarning("crucible_ui_matches failed: " + ex.Message);
+            }
+        }
+
+        /// <summary>The identity report emitted BEFORE any activation: what was matched, where, and how many alternatives existed.</summary>
+        private static void AppendMatchReport(StringBuilder result, UiIndexedMatcher.Result match, string selector, string document)
+        {
+            result.Append("matched: ").Append(UiTreeRenderer.FormatLine(match.Match));
+            result.Append("\nselector='").Append(selector).Append("'")
+                .Append(DescribeDocumentScope(document))
+                .Append(" index=").Append(match.Index)
+                .Append(" count=").Append(match.MatchCount)
+                .Append(" name=").Append(match.Match.Name == null ? "(null)" : "'" + match.Match.Name + "'")
+                .Append(" doc=").Append(match.Match.DocumentName == null ? "(null)" : "'" + match.Match.DocumentName + "'")
+                .Append(" text=").Append(match.Match.Text == null ? "(null)" : "'" + match.Match.Text + "'");
+            AppendMatchList(result, match.Matches);
+        }
+
+        /// <summary>Numbered listing of every match, so the index space is visible in the same result that used it.</summary>
+        private static void AppendMatchList(StringBuilder result, List<UiElementInfo> matches)
+        {
+            result.Append("\nmatches:");
+            if (matches == null || matches.Count == 0)
+            {
+                result.Append(" (none)");
+                return;
+            }
+            for (int i = 0; i < matches.Count; i++)
+            {
+                UiElementInfo e = matches[i];
+                result.Append("\n  [").Append(i).Append("] ").Append(UiTreeRenderer.FormatLine(e));
+                string forbiddenReason;
+                if (UiForbiddenElements.IsForbidden(e.Name, e.DocumentName, out forbiddenReason))
+                    result.Append("  <-- FORBIDDEN: ").Append(forbiddenReason);
+            }
+        }
+
+        /// <summary>Renders the document scope for a report; "(any)" when unscoped.</summary>
+        private static string DescribeDocumentScope(string document)
+        {
+            if (string.IsNullOrEmpty(document) || document == UiIndexedMatcher.AnyDocument) return " doc=(any)";
+            return " doc='" + document + "'";
         }
 
         // ============================================================== crucible_ui_focus

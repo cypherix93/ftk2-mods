@@ -25,6 +25,7 @@ namespace FTK2Mods.Crucible.Tests
             MemberAccessTests.RunAll();
             UiCommandTests.RunAll();
             UiPressTests.RunAll();
+            UiIndexedMatcherTests.RunAll();
             PadCommandTests.RunAll();
             KeyboardKeyNameTests.RunAll();
             HoldFramesTests.RunAll();
@@ -36,6 +37,7 @@ namespace FTK2Mods.Crucible.Tests
             ScreenPointParserTests.RunAll();
             TurnTrackerTests.RunAll();
             SnapshotShapeTests.RunAll();
+            CombatPositionTests.RunAll();
             DebugVerbArgsTests.RunAll();
             LoadRunTests.RunAll();
             FixtureManifestTests.RunAll();

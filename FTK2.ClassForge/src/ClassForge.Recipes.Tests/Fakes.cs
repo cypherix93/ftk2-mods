@@ -11,12 +11,30 @@ namespace ClassForge.Recipes.Tests
     public sealed class FakeEntity : ICombatEntity
     {
         public string Guid { get; set; }
+
+        /// <summary>
+        /// Cross-peer identity - see <see cref="ICombatEntity.RosterOrdinal"/>. Left at the unresolved
+        /// sentinel by the constructor and stamped with this entity's position by
+        /// <see cref="FakeContext.Entities"/>, which is exactly what the real adapter does with
+        /// <c>CombatState.Entities</c>. An entity that is never put on a context roster therefore keeps
+        /// the sentinel, which is the honest answer for it.
+        /// </summary>
+        public int RosterOrdinalValue = PeerOrder.Unknown;
+        public int RosterOrdinal { get { return RosterOrdinalValue; } }
+
         public int Team;
         public bool Alive = true;
         public bool Ai;
         public readonly Dictionary<string, int> Stats = new Dictionary<string, int>(StringComparer.Ordinal);
         public readonly List<string> StatusList = new List<string>();
         public EntityRow RowValue = EntityRow.FRONT;
+        /// <summary>Board position (VenueComponent.TilePosition). Defaults to the unresolvable
+        /// sentinel so every pre-existing test keeps a position-free entity.</summary>
+        public int TileXValue = int.MinValue;
+        public int TileYValue = int.MinValue;
+        /// <summary>Per-entity progression level. Defaults to the UNKNOWN sentinel so every pre-existing
+        /// test keeps a level-free entity and SELF_LEVEL fails safe unless a test opts in.</summary>
+        public int LevelValue = EntityReads.UnknownLevel;
         public string Weapon = "BLADE";
         public string CharType = "PLAYER";
         public string Base = "HUMAN";
@@ -25,6 +43,12 @@ namespace ClassForge.Recipes.Tests
         public string ConfigNameValue = "";
         /// <summary>GATE D: defaults to the team-1 convention every test Rig already uses for "foe".</summary>
         public bool EnemyFlag;
+
+        /// <summary>Carried Thing ConfigNames (CharacterComponent.Things). <c>null</c> — the default —
+        /// means the inventory is UNREADABLE, so <c>HasItem</c> returns its unknown (<c>null</c>) and
+        /// HAS_ITEM fails safe unless a test opts in. An EMPTY list is a readable inventory that simply
+        /// holds nothing, which is an ordinary negatable false.</summary>
+        public List<string> ItemList;
 
         /// <summary>STATE_HASH_CHANCE spec §3.3 negative control: a systematically-throwing stat resolver.</summary>
         public bool ThrowOnGetStat;
@@ -52,18 +76,61 @@ namespace ClassForge.Recipes.Tests
 
         public IReadOnlyList<string> Statuses { get { return StatusList; } }
         public EntityRow Row { get { return RowValue; } }
+        public int TileX { get { return TileXValue; } }
+        public int TileY { get { return TileYValue; } }
+        public int Level { get { if (ThrowOnGetStat) throw new InvalidOperationException("test resolver throw"); return LevelValue; } }
         public string WeaponClass { get { return Weapon; } }
         public string CharacterType { get { return CharType; } }
         public string BaseType { get { return Base; } }
         public IReadOnlyList<string> Passives { get { return PassiveList; } }
         public bool IsEnemy { get { return EnemyFlag; } }
         public bool HasTag(string tagName) { return tagName != null && TagList.Contains(tagName); }
+
+        /// <summary>Ordinal, case-sensitive possession check over <see cref="ItemList"/>. Shares the
+        /// <see cref="ThrowOnGetStat"/> switch with <see cref="Level"/>: one knob for "this entity's
+        /// reads throw".</summary>
+        public bool? HasItem(string thingConfigName)
+        {
+            if (ThrowOnGetStat) throw new InvalidOperationException("test inventory read throw");
+            if (ItemList == null) return null;
+            return ItemList.Contains(thingConfigName ?? "");
+        }
         public string ConfigName { get { return ConfigNameValue; } }
 
         public FakeEntity With(string stat, int value) { Stats[stat] = value; return this; }
         public FakeEntity WithStatus(string id) { StatusList.Add(id); return this; }
         public FakeEntity WithPassive(string id) { PassiveList.Add(id); return this; }
         public FakeEntity WithTag(string tag) { TagList.Add(tag); return this; }
+        public FakeEntity At(int x, int y) { TileXValue = x; TileYValue = y; return this; }
+        public FakeEntity AtLevel(int level) { LevelValue = level; return this; }
+        /// <summary>Makes the inventory readable and puts one Thing in it.</summary>
+        public FakeEntity Carrying(string thingConfigName) { WithEmptyInventory(); ItemList.Add(thingConfigName); return this; }
+        /// <summary>Makes the inventory readable but empty — a genuine "does not have it", not "unknown".</summary>
+        public FakeEntity WithEmptyInventory() { if (ItemList == null) ItemList = new List<string>(); return this; }
+    }
+
+    /// <summary>
+    /// Test double for a board tile. <see cref="LocalGuid"/> is deliberately a made-up local string: the
+    /// engine must never render it into a plan (a tile is logged as <c>tile(x,y)</c>), so a test that sees
+    /// a guid leak into <c>Describe()</c> has caught a real replication bug.
+    /// </summary>
+    public sealed class FakeTile : ICombatTile
+    {
+        public int XValue;
+        public int YValue;
+        public string LocalGuidValue;
+
+        public FakeTile(int x, int y)
+        {
+            XValue = x;
+            YValue = y;
+            LocalGuidValue = "TILE_LOCAL_" + x.ToString(CultureInfo.InvariantCulture) + "_" +
+                             y.ToString(CultureInfo.InvariantCulture);
+        }
+
+        public int X { get { return XValue; } }
+        public int Y { get { return YValue; } }
+        public string LocalGuid { get { return LocalGuidValue; } }
     }
 
     public sealed class FakeAbility : IAbilityInfo
@@ -114,6 +181,10 @@ namespace ClassForge.Recipes.Tests
         public readonly Dictionary<string, IItemInfo> Items = new Dictionary<string, IItemInfo>(StringComparer.Ordinal);
         public readonly List<EngineAction> Emitted = new List<EngineAction>();
 
+        /// <summary>v1.4 RANDOM_TILE. Empty by default, so every pre-existing test keeps a board-less
+        /// combat and RANDOM_TILE fails safe unless a test opts in.</summary>
+        public readonly List<ICombatTile> TileList = new List<ICombatTile>();
+
         /// <summary>Encounter Modifiers spec §5 test knobs — plain settable fields, no game refs.</summary>
         public int PartyAverageLevelValue = 1;
         public bool IsDungeonValue;
@@ -127,7 +198,24 @@ namespace ClassForge.Recipes.Tests
 
         public string CombatIdentity { get { return Identity; } }
         public int Round { get { return RoundValue; } }
-        public IReadOnlyList<ICombatEntity> Entities { get { return EntityList; } }
+        /// <summary>
+        /// The roster, in roster order - and, like the real adapter, the place each entity learns its own
+        /// ordinal. Stamping here (rather than making tests set it by hand) keeps the fake's contract
+        /// identical to <c>CombatContextAdapter</c>'s: ordinal i IS position i in this list.
+        /// </summary>
+        public IReadOnlyList<ICombatEntity> Entities
+        {
+            get
+            {
+                for (int i = 0; i < EntityList.Count; i++)
+                {
+                    var fe = EntityList[i] as FakeEntity;
+                    if (fe != null) fe.RosterOrdinalValue = i;
+                }
+                return EntityList;
+            }
+        }
+        public IReadOnlyList<ICombatTile> Tiles { get { return TileList; } }
         public int PartyAverageLevel { get { return PartyAverageLevelValue; } }
         public bool IsDungeon { get { return IsDungeonValue; } }
         public bool IsBossFight { get { return IsBossFightValue; } }
@@ -165,6 +253,9 @@ namespace ClassForge.Recipes.Tests
         public void EmitAction(EngineAction action) { Emitted.Add(action); }
 
         public FakeContext AddEntity(FakeEntity e) { EntityList.Add(e); return this; }
+        /// <summary>Appends one tile. Callers add them in (Y,X) ascending order, which is the ordering the
+        /// real adapter guarantees and the ordering the draw index is defined against.</summary>
+        public FakeContext AddTile(int x, int y) { TileList.Add(new FakeTile(x, y)); return this; }
         public FakeContext AddAbility(FakeAbility a) { Abilities[a.IdValue] = a; return this; }
         public FakeContext AddStatus(string id, string type) { StatusConfigs[id] = new FakeStatus(id, type); return this; }
         public FakeContext AddItem(string name, string cls, bool consumable) { Items[name] = new FakeItem(name, cls, consumable); return this; }

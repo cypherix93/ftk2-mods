@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
+using ClassForge.Recipes.Abstractions;
 
 namespace ClassForge.Plugin
 {
@@ -64,13 +65,23 @@ namespace ClassForge.Plugin
                 var canvas3D = FindField(phase.GetType(), "_canvas3D")?.GetValue(phase) as GameObject;
                 if (canvas3D == null) return false;   // genuinely not up yet; the retry will catch it
 
-                var actor = CharacterVisualHelper.CreateActorGameObject(
-                    entity, canvas3D.transform, new GameRandom(), pUseOverworldOverrides: false);
-                if (actor == null) return false;
-                maps.FromCharacter[entity] = actor;
-
-                // Place it with the GAME'S OWN placement call rather than computing a world
-                // position by hand.
+                // Let LoadCharacterEntitiesToVenueGrid CREATE the actor as well as place it.
+                //
+                // Creating it here first and registering it in FromCharacter is what made a summon
+                // alive-but-invisible. That helper's bookkeeping loop skips any entity which
+                // ALREADY has a FromCharacter entry AND already has a VenueComponent -- it reads
+                // that pair as "already fully loaded", frees the tile it stands on and `continue`s,
+                // so the entity never reaches the list the placement loop iterates. An
+                // ADD_CHARACTER summon has its VenueComponent by the time this runs (that is the
+                // tile it reports in a snapshot), so pre-registering the actor supplied the second
+                // half of that pair and bought the skip. The actor was then left at its spawn
+                // transform under the canvas -- a real, mapped, health-tooltip-having combatant
+                // with no world position, drawn nowhere the camera looks.
+                //
+                // The shortcut is correct for the game's own use: the ally and enemy bulk passes
+                // run once per side BEFORE any actor exists, so the pair is never both true.
+                //
+                // Place it with the GAME'S OWN call rather than computing a world position by hand.
                 //
                 // The hand-rolled version -- GetAveragePositionOfTiles + the diorama's PlayerOffset
                 // -- put the model on the grass BELOW the board instead of on its tile. Measured
@@ -81,18 +92,71 @@ namespace ClassForge.Plugin
                 // CHANGE_VENUE_GRID path where it re-places existing characters after a resize. It
                 // is handed ONLY this one character plus the tile list, which is the safe shape: an
                 // earlier attempt passed the full roster and re-laid-out the whole venue.
+                //
+                // That "safe shape" has a hole: LoadCharacterEntitiesToVenueGrid only excludes a
+                // tile from its `vacantTiles` pool when the OCCUPANT is in the `pCharacters` list it
+                // was handed (VenueViewHelper.cs ~L479-490). Handing it only `{ entity }` means the
+                // pool it randomizes over is every tile on BOTH sides of the board, occupied or not
+                // -- the trainer, vampiric etc. it is standing next to never get a say. Measured
+                // live: a wolf summoned this way landed on the SAME tile as an already-seated ally
+                // and rendered inside that ally's model. FindFreeTileForGroup already picked a
+                // genuinely free ally-group tile for ADD_CHARACTER (RecipeActionExecutor.cs), so the
+                // fix here is to hand this call ONLY tiles that are still free of any living
+                // combatant and belong to the summon's own side -- never the raw `FromTile.Keys`.
+                //
+                // pLoadRule is EXISTING_POSITIONS, not the PREFERRED default (VenueViewHelper.cs:456).
+                // Under PREFERRED the helper strips the VenueComponent off every character it is loading
+                // (:524) and then re-places it out of its own SHUFFLED vacant-tile pool via
+                // _setTilePositionOfCharacter (:654) -- discarding the tile FindFreeTileForGroup already
+                // chose for this summon and spending the placement on a coin flip. Under
+                // EXISTING_POSITIONS the strip loop is skipped (it is guarded on the same local rule
+                // variable, which is only downgraded to PREFERRED for a character that has NO
+                // VenueComponent, :542/:547), :533-540 confirms the tile is non-(0,0) and jumps past the
+                // removal, and _setTilePositionOfCharacter opens with `case EXISTING_POSITIONS: return;`
+                // (:409-410). The creature keeps the square the executor picked, on both peers.
+                //
+                // The (0,0) guard at :533-540 cannot misfire on us: VenueHelper.CreateVenueTileEntities
+                // walks the map string as `CreateVenueTileEntity((column, row), ...)` (:75/:79) and every
+                // venue map's row 0 is the "+---------+" border, whose cells get GroupIndex -1 and are
+                // never candidates. No PLAYABLE tile has position (0,0).
+                //
+                // ORDERED was the rejected alternative: it indexes a fixed ORDERED_PLAYER_TILES table by
+                // pAllCharacters.IndexOf(entity) (:398), which is the wrong tool for one loose summon.
                 try
                 {
-                    var tileList = new List<Entity>(maps.FromTile.Keys);
+                    var tileList = FreeTilesForEntityGroup(entity, maps);
                     VenueViewHelper.LoadCharacterEntitiesToVenueGrid(
                         canvas3D.transform, new List<Entity> { entity }, maps, tileList,
-                        DioramaOf(phase), new GameRandom());
+                        DioramaOf(phase), new GameRandom(),
+                        eLoadVenueGridRules.EXISTING_POSITIONS);
+                    // The `new GameRandom()` is NOT a violation of the "never roll from a freshly
+                    // constructed GameRandom" rule (GameAdapters.cs:948-950, AGENT-BRIEF §8), and it is not
+                    // a draw-count fork either. Two independent reasons, both decompile-checked:
+                    //   1. It is a private System.Random built in the constructor from its own Seed
+                    //      (GameRandom.cs:31-42) -- a SEPARATE stream. Whatever this helper draws from it
+                    //      comes out of that instance, never out of CombatState.Random, so the shared
+                    //      stream advances zero steps here whatever happens inside.
+                    //   2. Under EXISTING_POSITIONS the placement is not rolled at all --
+                    //      _setTilePositionOfCharacter opens `case EXISTING_POSITIONS: return;`
+                    //      (VenueViewHelper.cs:409-410) and the tile FindFreeTileForGroup already chose is
+                    //      kept, on both peers.
+                    // This whole file is presentation: it builds the model for a combatant the gameplay
+                    // path has already created and placed.
                 }
                 catch (Exception ex)
                 {
                     ClassForgePlugin.Log.LogWarning(
                         "[ClassForge] a summon was drawn but could not be placed on its tile: "
                         + ex.Message);
+                }
+
+                ActorGameObjectBase actor;
+                if (!maps.FromCharacter.TryGetValue(entity, out actor) || actor == null)
+                {
+                    ClassForgePlugin.Log.LogWarning(
+                        "[ClassForge] a combatant was handed to the venue loader but no model came "
+                        + "back for it.");
+                    return false;
                 }
 
                 // A freshly built actor has NO animation running and keeps its spawn rotation, so
@@ -164,6 +228,73 @@ namespace ClassForge.Plugin
         }
 
 
+        /// <summary>
+        /// Tiles belonging to <paramref name="entity"/>'s own group that no LIVING combatant is
+        /// currently standing on -- what <see cref="TryBuildActor"/> hands to
+        /// <c>LoadCharacterEntitiesToVenueGrid</c> so it cannot re-randomize the summon onto an
+        /// already-seated ally's tile. Excludes <paramref name="entity"/>'s own current tile too;
+        /// harmless, since the placement call reassigns it a tile out of this exact list anyway.
+        /// Falls back to every tile of the entity's group (still no cross-side leak) if the entity
+        /// or live roster cannot be read, rather than the fully-unfiltered board.
+        ///
+        /// <para><b>The result is always canonically ordered</b> — ascending <c>(Y, X)</c> via the shared
+        /// <see cref="VenueTileOrder"/>/<c>TileOrder</c> comparator — and that is not cosmetic. The list
+        /// starts life as <c>new List&lt;Entity&gt;(maps.FromTile.Keys)</c>, i.e. a
+        /// <c>Dictionary&lt;Entity, GameObject&gt;</c> enumeration; <c>Entity</c> does not override
+        /// <c>GetHashCode</c>, so that order is reference-hash order and differs between processes.
+        /// <c>LoadCharacterEntitiesToVenueGrid</c> then copies the list and shuffles the copy with a SEEDED
+        /// stream (<c>VenueViewHelper.cs:460-461</c>) — the same permutation applied to two different input
+        /// orders, which is the entire bug. Sorting the input first makes the shuffle's output a pure
+        /// function of the venue map, which is compiled in and identical on every peer.</para>
+        /// </summary>
+        private static List<Entity> FreeTilesForEntityGroup(Entity entity, VenueGameObjectMaps maps)
+        {
+            var ordered = FreeTilesForEntityGroupUnordered(entity, maps);
+            VenueTileOrder.Sort(ordered);
+            return ordered;
+        }
+
+        private static List<Entity> FreeTilesForEntityGroupUnordered(Entity entity, VenueGameObjectMaps maps)
+        {
+            var allTiles = new List<Entity>(maps.FromTile.Keys);
+            try
+            {
+                CharacterComponent cc;
+                if (!entity.TryGet<CharacterComponent>(out cc) || cc == null) return allTiles;
+                int wantedGroup = cc.GroupIndex;
+
+                var occupied = new HashSet<(int, int)>();
+                var entities = RouterHelper.Env?.GameRun?.CombatState?.Entities;
+                if (entities != null)
+                {
+                    foreach (var e in entities)
+                    {
+                        if (e == null || e == entity || !e.Has<CharacterComponent>()) continue;
+                        if (CharacterHelper.IsDead(e)) continue;
+                        VenueComponent venue;
+                        if (!e.TryGet<VenueComponent>(out venue)) continue;
+                        occupied.Add(venue.TilePosition);
+                    }
+                }
+
+                var free = new List<Entity>();
+                foreach (var tile in allTiles)
+                {
+                    VenueTileComponent tc;
+                    if (!tile.TryGet<VenueTileComponent>(out tc) || tc.GroupIndex != wantedGroup) continue;
+                    VenueComponent tv;
+                    if (!tile.TryGet<VenueComponent>(out tv) || occupied.Contains(tv.TilePosition)) continue;
+                    free.Add(tile);
+                }
+                return free.Count > 0 ? free : allTiles.FindAll(t =>
+                    t.TryGet<VenueTileComponent>(out var tc2) && tc2.GroupIndex == wantedGroup);
+            }
+            catch (Exception)
+            {
+                return allTiles;
+            }
+        }
+
         /// <summary>The phase's diorama, needed by the game's own placement call.</summary>
         private static Diorama DioramaOf(object phase)
         {
@@ -213,6 +344,60 @@ namespace ClassForge.Plugin
                 return offset is Vector3 ? (Vector3)offset : Vector3.zero;
             }
             catch (Exception) { return Vector3.zero; }
+        }
+    }
+
+    /// <summary>
+    /// The plugin-side face of <see cref="TileOrder"/>: turns a venue TILE ENTITY into the four
+    /// game-agnostic ordering keys, so <c>SummonVisuals</c> and <c>RecipeActionExecutor</c> order tiles
+    /// through ONE comparator instead of two hand-rolled ones.
+    ///
+    /// <para>Coordinates come off <c>VenueComponent</c>, not <c>VenueTileComponent</c>:
+    /// <c>VenueTileComponent</c> carries only <c>GroupIndex</c>, <c>RowPositionsType</c> and
+    /// <c>AuraStatuses</c> (decompile <c>VenueTileComponent.cs</c>), which is also why the <c>Name</c> key
+    /// is always null here — a tile entity has no ConfigName to tiebreak on.</para>
+    /// </summary>
+    internal static class VenueTileOrder
+    {
+        /// <summary><c>(int)eTileRowPositions.FRONT</c>, the value <see cref="TileOrder.SelectPlacement"/>
+        /// prefers. Read off the enum rather than hard-coded so a future enum edit cannot silently
+        /// re-point it.</summary>
+        internal static readonly int FrontRow = (int)eTileRowPositions.FRONT;
+
+        /// <summary>Ordering keys for one tile entity. All-zero keys for anything unreadable, which keeps
+        /// the sort total (and therefore deterministic) even for a degenerate entity.</summary>
+        internal static TileKey KeyOf(Entity tile)
+        {
+            int y = 0, x = 0, row = 0;
+            try
+            {
+                VenueComponent vc;
+                if (tile != null && tile.TryGet<VenueComponent>(out vc) && vc != null)
+                {
+                    x = vc.TilePosition.x;
+                    y = vc.TilePosition.y;
+                }
+                VenueTileComponent tc;
+                if (tile != null && tile.TryGet<VenueTileComponent>(out tc) && tc != null)
+                {
+                    row = (int)tc.RowPositionsType;
+                }
+            }
+            catch (Exception) { }
+            return new TileKey(y, x, row, null);
+        }
+
+        /// <summary>Sorts tile ENTITIES into the canonical <c>(Y, X)</c> order in place.</summary>
+        internal static void Sort(List<Entity> tiles)
+        {
+            if (tiles == null || tiles.Count < 2) return;
+            try { tiles.Sort(delegate(Entity a, Entity b) { return TileOrder.Compare(KeyOf(a), KeyOf(b)); }); }
+            catch (Exception ex)
+            {
+                ClassForgePlugin.Log.LogWarning(
+                    "[ClassForge] the venue tile list could not be ordered; placement falls back to the "
+                    + "collection order for this call: " + ex.Message);
+            }
         }
     }
 }

@@ -232,30 +232,95 @@ namespace Crucible.Plugin
                     return;
                 }
 
+                bool hookEnded = _endedVictory.HasValue;
+                bool summaryVictory;
+                string summaryDetail;
+                bool summaryEnded = TrySummaryOutcome(out summaryVictory, out summaryDetail);
+
                 StringBuilder sb = new StringBuilder();
                 sb.Append("installed=").Append(_watchInstalled)
                   .Append(" autoSnapshot=").Append(_autoSnapshot)
                   .Append(" cameraFaultsSuppressed=").Append(CameraFaultsSuppressed);
                 if (LastCameraFault != null) sb.Append(" (first: ").Append(LastCameraFault).Append(")");
-                sb.Append("\nended=").Append(_endedVictory.HasValue);
-                if (_endedVictory.HasValue)
+
+                bool ended = hookEnded || summaryEnded;
+                sb.Append("\nended=").Append(ended);
+                if (ended)
                 {
-                    sb.Append(" victory=").Append(_endedVictory.Value);
-                    sb.Append("\ndetail=").Append(_endedDetail);
-                    if (_endedSnapshotRunId != null)
-                        sb.Append("\nsnapshotRunId=").Append(_endedSnapshotRunId)
-                          .Append("  (load it with crucible_invoke AdventureSelectionDirector _loadGameRun)");
+                    bool victory = hookEnded ? _endedVictory.Value : summaryVictory;
+                    string source = hookEnded && summaryEnded ? "hook+summary" : hookEnded ? "hook" : "summary";
+                    if (hookEnded && summaryEnded && _endedVictory.Value != summaryVictory)
+                        source += " DISAGREE(hook=" + _endedVictory.Value + " summary=" + summaryVictory + ")";
+                    sb.Append(" victory=").Append(victory).Append(" source=").Append(source);
+                    if (hookEnded)
+                    {
+                        sb.Append("\ndetail=").Append(_endedDetail);
+                        if (_endedSnapshotRunId != null)
+                            sb.Append("\nsnapshotRunId=").Append(_endedSnapshotRunId)
+                              .Append("  (load it with crucible_invoke AdventureSelectionDirector _loadGameRun)");
+                    }
+                    if (summaryEnded) sb.Append("\nsummaryDetail=").Append(summaryDetail);
                 }
-                else if (!_watchInstalled)
+                else
                 {
-                    sb.Append("\nNOTE: the patch is NOT installed, so 'ended=False' is the absence of a");
-                    sb.Append("\n      measurement, not evidence that the run is still going.");
+                    if (summaryDetail != null) sb.Append("\nsummaryNote=").Append(summaryDetail);
+                    if (!_watchInstalled)
+                    {
+                        sb.Append("\nNOTE: the patch is NOT installed, so 'ended=False' is the absence of a");
+                        sb.Append("\n      measurement, not evidence that the run is still going.");
+                    }
                 }
                 LastResult = sb.ToString();
             }
             catch (Exception ex)
             {
                 LastResult = "error: crucible_endadventure_watch threw: " + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Fallback outcome source, independent of the Harmony hook: reads the adventure summary
+        /// screen itself. <c>AdventureSummaryViewHelper._renderAdventureSummary</c> always sets text
+        /// on BOTH "mission-complete-label" and "mission-failed-label" (the outcome only toggles a
+        /// "FAIL" CSS class on the container) -- so a dump of every UI Toolkit element, INCLUDING
+        /// text, would find both labels regardless of the real outcome. What actually distinguishes
+        /// them is which one is on screen: <c>crucible_ui_dump</c>'s renderer already drops any
+        /// element that is not <c>OnScreen</c> (display:none / hidden ancestor / zero size), which is
+        /// exactly the CSS-class-driven visibility this outcome rides on. So a dump filtered to kind
+        /// Label reports whichever of the two labels is actually showing, and it is unambiguous.
+        ///
+        /// Returns false (no summary on screen, or an inconclusive dump) rather than guessing.
+        /// </summary>
+        private static bool TrySummaryOutcome(out bool victory, out string detail)
+        {
+            victory = false;
+            detail = null;
+            try
+            {
+                UiCommands.CrucibleUiDump("-", "Label");
+                string dump = UiCommands.LastResult ?? "";
+                UiCommands.LastResult = null;
+
+                if (!dump.Contains("AdventureSummaryUIDocument")) return false;
+
+                bool failed = dump.Contains("mission-failed-label");
+                bool complete = dump.Contains("mission-complete-label");
+                if (failed == complete)
+                {
+                    detail = "AdventureSummaryUIDocument on screen but outcome label ambiguous"
+                        + " (mission-failed-label visible=" + failed + " mission-complete-label visible=" + complete + ")";
+                    return false;
+                }
+
+                victory = complete;
+                detail = "AdventureSummaryUIDocument on screen, visible label="
+                    + (victory ? "mission-complete-label" : "mission-failed-label");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                detail = "summary check threw: " + ex.Message;
+                return false;
             }
         }
 

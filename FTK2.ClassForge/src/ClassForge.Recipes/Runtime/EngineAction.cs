@@ -59,17 +59,47 @@ namespace ClassForge.Recipes.Runtime
     /// </summary>
     public sealed class AddStatusAction : EngineAction
     {
+        /// <summary>The entity this status lands on. For a <c>RANDOM_TILE</c> action this is the LOCAL guid
+        /// of the drawn tile entity (<see cref="TargetIsTile"/>), which the executor feeds straight to
+        /// <c>NativeByGuid</c> exactly as it does for a character — tile entities live in
+        /// <c>CombatState.Entities</c> alongside characters (CombatPhase.cs:314), so no new resolution path
+        /// is needed. It is a local identity and is deliberately NOT rendered by <see cref="Describe"/>.</summary>
         public string TargetGuid;
         public string StatusId;
         public string FallbackStatusId;
         public int? Duration;
 
+        /// <summary>True when this action targets a BOARD TILE rather than a combatant (v1.4
+        /// <c>RANDOM_TILE</c>). Switches <see cref="Describe"/> onto the peer-identical
+        /// <c>(TargetTileX, TargetTileY)</c> board coordinate.</summary>
+        public bool TargetIsTile;
+
+        /// <summary>Board column of the targeted tile — meaningful only when <see cref="TargetIsTile"/>.</summary>
+        public int TargetTileX;
+
+        /// <summary>Board row-line of the targeted tile — meaningful only when <see cref="TargetIsTile"/>.</summary>
+        public int TargetTileY;
+
         public override string Kind { get { return "AddStatus"; } }
 
+        /// <summary>
+        /// Tile targets render as <c>tile(x,y)</c>, NEVER as the tile entity's guid. The determinism suite's
+        /// contract is that two peers replaying the same event stream produce byte-identical
+        /// <c>Describe</c> sequences; a tile entity's Guid is local object identity and would break that
+        /// even when both peers correctly chose the SAME board square. The coordinate is the peer-identical
+        /// name for the square, so it is the one that goes in the log.
+        /// </summary>
         public override string Describe()
         {
-            return "AddStatus{recipe=" + S(RecipeId) + ",owner=" + S(OwnerGuid) + ",target=" + S(TargetGuid) +
+            return "AddStatus{recipe=" + S(RecipeId) + ",owner=" + S(OwnerGuid) + ",target=" + DescribeTarget() +
                    ",status=" + S(StatusId) + ",fallback=" + S(FallbackStatusId) + ",duration=" + N(Duration) + "}";
+        }
+
+        private string DescribeTarget()
+        {
+            if (!TargetIsTile) return S(TargetGuid);
+            return "tile(" + TargetTileX.ToString(CultureInfo.InvariantCulture) + "," +
+                   TargetTileY.ToString(CultureInfo.InvariantCulture) + ")";
         }
     }
 
@@ -141,13 +171,56 @@ namespace ClassForge.Recipes.Runtime
         public string CharacterConfig;
         public int Index;
 
+        /// <summary>v1.5 — the authored <c>ITEM_CUSTOM_DATA:&lt;ThingConfigId&gt;:&lt;Key&gt;</c> token when the
+        /// config is resolved at execution time instead of being authored. Null for every static summon,
+        /// which is every summon that existed before v1.5.
+        /// <para>The engine deliberately does NOT resolve it: reading an item's <c>Thing.CustomData</c>
+        /// requires the game <c>Entity</c>, which the pure-C# core never sees. The Plugin resolves it, and a
+        /// failure to resolve is a logged no-op there.</para></summary>
+        public string CharacterConfigFrom;
+
         public override string Kind { get { return "Summon"; } }
 
         public override string Describe()
         {
             return "Summon{recipe=" + S(RecipeId) + ",owner=" + S(OwnerGuid) + ",target=" + S(TargetGuid) +
                    ",pos=" + (UseTargetPosition ? "1" : "0") + ",type=" + SummonType + ",config=" +
-                   S(CharacterConfig) + ",i=" + Index.ToString(CultureInfo.InvariantCulture) + "}";
+                   S(CharacterConfig) +
+                   // Appended ONLY when a dynamic source is authored, so every plan string that existed
+                   // before v1.5 stays byte-identical -- Describe() is the parity/determinism rendering.
+                   (string.IsNullOrEmpty(CharacterConfigFrom) ? "" : ",from=" + S(CharacterConfigFrom)) +
+                   ",i=" + Index.ToString(CultureInfo.InvariantCulture) + "}";
+        }
+    }
+
+    /// <summary>
+    /// <c>CAPTURE</c> (v1.5) — store the target's character config on an inventory item, then take the
+    /// target off the board.
+    /// <para><b>Plugin call:</b> (1) resolve the OWNER's <see cref="IntoItem"/> Thing out of
+    /// <c>CharacterComponent.Things</c>; (2) run the eligibility gate; (3)
+    /// <c>CoreHelper.SetCustomData(thing, IntoKey, targetConfigName)</c>; (4) push
+    /// <c>(eAbilityResults.PLAYTHINGED, targetEntity)</c> into the ability's results list, the only route to
+    /// <c>CombatPhase</c>'s local <c>removeFromCombat</c> + <c>_checkChargeRetargets()</c>
+    /// (CombatPhase.cs:4329-4338).</para>
+    /// <para><b>Zero random draws.</b> Nothing on this path rolls: the PERFECT gate is an authored
+    /// <c>ROLL_TIER</c> condition read off the hook's own <c>pRollData</c>, and every eligibility test is a
+    /// pure read of replicated config data.</para>
+    /// </summary>
+    public sealed class CaptureAction : EngineAction
+    {
+        /// <summary>The combatant being captured.</summary>
+        public string TargetGuid;
+        /// <summary>ThingConfig id of the owner's carried item that receives the record.</summary>
+        public string IntoItem;
+        /// <summary><c>Thing.CustomData</c> key written on that item.</summary>
+        public string IntoKey;
+
+        public override string Kind { get { return "Capture"; } }
+
+        public override string Describe()
+        {
+            return "Capture{recipe=" + S(RecipeId) + ",owner=" + S(OwnerGuid) + ",target=" + S(TargetGuid) +
+                   ",item=" + S(IntoItem) + ",key=" + S(IntoKey) + "}";
         }
     }
 
@@ -249,13 +322,19 @@ namespace ClassForge.Recipes.Runtime
         public int Delta;
         public int NewValue;
 
+        /// <summary>True when the authored effect carried <c>Persistent: true</c> — the executor writes
+        /// <see cref="NewValue"/> through to the owner's per-character store in addition to the (already
+        /// applied) in-memory write (§6 run-persistence escape hatch).</summary>
+        public bool Persistent;
+
         public override string Kind { get { return "CounterAdd"; } }
 
         public override string Describe()
         {
             return "CounterAdd{recipe=" + S(RecipeId) + ",owner=" + S(OwnerGuid) + ",name=" + S(CounterName) +
                    ",delta=" + Delta.ToString(CultureInfo.InvariantCulture) +
-                   ",value=" + NewValue.ToString(CultureInfo.InvariantCulture) + "}";
+                   ",value=" + NewValue.ToString(CultureInfo.InvariantCulture) +
+                   ",persistent=" + Persistent.ToString(CultureInfo.InvariantCulture) + "}";
         }
     }
 
@@ -268,12 +347,16 @@ namespace ClassForge.Recipes.Runtime
         public string CounterName;
         public int NewValue;
 
+        /// <summary>Same posture as <see cref="CounterAddAction.Persistent"/>.</summary>
+        public bool Persistent;
+
         public override string Kind { get { return "CounterSet"; } }
 
         public override string Describe()
         {
             return "CounterSet{recipe=" + S(RecipeId) + ",owner=" + S(OwnerGuid) + ",name=" + S(CounterName) +
-                   ",value=" + NewValue.ToString(CultureInfo.InvariantCulture) + "}";
+                   ",value=" + NewValue.ToString(CultureInfo.InvariantCulture) +
+                   ",persistent=" + Persistent.ToString(CultureInfo.InvariantCulture) + "}";
         }
     }
 

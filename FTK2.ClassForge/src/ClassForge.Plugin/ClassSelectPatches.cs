@@ -48,7 +48,7 @@ namespace ClassForge.Plugin
         // between game updates (they did on 7/31/2026: pOnChangeClass gained a fifth bool).
         public static void RenderClassList_Prefix(Entity pEntity, List<string> pPlayableCharacters)
         {
-            if (!ClassForgePlugin.FeaturesActive) return;
+            if (!ClassForgePlugin.PresentationActive) return;
             if (!ClassForgePlugin.EnableClassSelectInjection.Value) return;
             if (pPlayableCharacters == null) return;
 

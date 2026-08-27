@@ -13,13 +13,13 @@
     "Equippable": { "Slots": ["MAIN_HAND"], "Stats": { "ATK": 2, "STR": 1 }, "Passives": [], "MaxCharges": 0 },
     "Interactable": {
       "Abilities": {
-        "CF_ABL_ELDRITCH_BLAST": { "MinValue": 4, "MaxValue": 8, "ACC": 70, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
-        "CF_ABL_HEX": { "MinValue": 0, "MaxValue": 0, "ACC": 80, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
-        "CF_ABL_HELLISH_REBUKE": { "MinValue": 6, "MaxValue": 10, "ACC": 65, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
-        "CF_ABL_ELDRITCH_BARGAIN": { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "INT", "Rolls": 1, "Ammo": 0 }
+        "MAGIC_DARK_ATTACK": { "MinValue": 4, "MaxValue": 8, "ACC": 70, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
+        "MAGIC_CURSE_ATTACK": { "MinValue": 0, "MaxValue": 0, "ACC": 80, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
+        "MAGIC_FIRE_ATTACK": { "MinValue": 6, "MaxValue": 10, "ACC": 65, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
+        "MAGIC_FOCUS_ADD_ATTACK_00": { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "TAL", "Rolls": 1, "Ammo": 0 }
       },
-      "AbilityBag": ["CF_ABL_ELDRITCH_BLAST", "CF_ABL_ELDRITCH_BLAST", "CF_ABL_HEX", "CF_ABL_HELLISH_REBUKE", "CF_ABL_ELDRITCH_BARGAIN"],
-      "AbilityFillBag": ["CF_ABL_ELDRITCH_BLAST"],
+      "AbilityBag": ["MAGIC_DARK_ATTACK", "MAGIC_DARK_ATTACK", "MAGIC_CURSE_ATTACK", "MAGIC_FIRE_ATTACK", "MAGIC_FOCUS_ADD_ATTACK_00"],
+      "AbilityFillBag": ["MAGIC_DARK_ATTACK"],
       "ShuffleAbilityBag": true
     },
     "Tags": ["DROPPABLE", "MELEE", "MAGICAL", "CF_PACK_BALDURS"],
@@ -39,13 +39,13 @@
     "Equippable": { "Slots": ["MAIN_HAND"], "Stats": { "ATK": 3, "STR": 1 }, "Passives": [], "MaxCharges": 0 },
     "Interactable": {
       "Abilities": {
-        "CF_ABL_TRIP_ATTACK": { "MinValue": 4, "MaxValue": 7, "ACC": 75, "Stat": "STR", "Rolls": 1, "Ammo": 0 },
-        "CF_ABL_GOADING_STRIKE": { "MinValue": 3, "MaxValue": 6, "ACC": 80, "Stat": "STR", "Rolls": 1, "Ammo": 0 },
-        "CF_ABL_MENACING_STRIKE": { "MinValue": 3, "MaxValue": 6, "ACC": 80, "Stat": "STR", "Rolls": 1, "Ammo": 0 },
-        "CF_ABL_COMMANDERS_STRIKE": { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "STR", "Rolls": 1, "Ammo": 0 }
+        "BLUNT_PUSH_ATTACK": { "MinValue": 4, "MaxValue": 7, "ACC": 75, "Stat": "STR", "Rolls": 1, "Ammo": 0 },
+        "LANCE_TAUNT_ATTACK": { "MinValue": 3, "MaxValue": 6, "ACC": 80, "Stat": "STR", "Rolls": 1, "Ammo": 0 },
+        "DEMON_ATTACKDOWN_ATTACK": { "MinValue": 3, "MaxValue": 6, "ACC": 80, "Stat": "STR", "Rolls": 1, "Ammo": 0 },
+        "ONLY_ATTACKUP_OTHER_ATTACK": { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "STR", "Rolls": 1, "Ammo": 0 }
       },
-      "AbilityBag": ["CF_ABL_TRIP_ATTACK", "CF_ABL_GOADING_STRIKE", "CF_ABL_MENACING_STRIKE", "CF_ABL_COMMANDERS_STRIKE"],
-      "AbilityFillBag": ["CF_ABL_TRIP_ATTACK"],
+      "AbilityBag": ["BLUNT_PUSH_ATTACK", "LANCE_TAUNT_ATTACK", "DEMON_ATTACKDOWN_ATTACK", "ONLY_ATTACKUP_OTHER_ATTACK"],
+      "AbilityFillBag": ["BLUNT_PUSH_ATTACK"],
       "ShuffleAbilityBag": true
     },
     "Tags": ["DROPPABLE", "MELEE", "PHYSICAL", "CF_PACK_BALDURS"],
@@ -65,13 +65,13 @@
     "Equippable": { "Slots": ["MAIN_HAND"], "Stats": { "INT": 2, "TAL": 1 }, "Passives": [], "MaxCharges": 0 },
     "Interactable": {
       "Abilities": {
-        "CF_ABL_RAISE_SKELETON": { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
-        "CF_ABL_BONE_ARMOR": { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
-        "CF_ABL_DRAIN_LIFE": { "MinValue": 3, "MaxValue": 7, "ACC": 70, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
-        "CF_ABL_DEATH_MARK": { "MinValue": 0, "MaxValue": 0, "ACC": 75, "Stat": "INT", "Rolls": 1, "Ammo": 0 }
+        "MAGIC_SUMMON_UNDEAD_ATTACK": { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
+        "ONLY_ARMORUP_FULL_ATTACK": { "MinValue": 0, "MaxValue": 0, "ACC": 100, "Stat": "INT", "Rolls": 1, "Ammo": 0 },
+        "MAGIC_DARK_ATTACK": { "MinValue": 3, "MaxValue": 7, "ACC": 70, "Stat": "TAL", "Rolls": 1, "Ammo": 0 },
+        "HANGMAN_01_ATTACK": { "MinValue": 0, "MaxValue": 0, "ACC": 75, "Stat": "INT", "Rolls": 1, "Ammo": 0 }
       },
-      "AbilityBag": ["CF_ABL_RAISE_SKELETON", "CF_ABL_BONE_ARMOR", "CF_ABL_DRAIN_LIFE", "CF_ABL_DRAIN_LIFE", "CF_ABL_DEATH_MARK"],
-      "AbilityFillBag": ["CF_ABL_DRAIN_LIFE"],
+      "AbilityBag": ["MAGIC_SUMMON_UNDEAD_ATTACK", "ONLY_ARMORUP_FULL_ATTACK", "MAGIC_DARK_ATTACK", "MAGIC_DARK_ATTACK", "HANGMAN_01_ATTACK"],
+      "AbilityFillBag": ["MAGIC_DARK_ATTACK"],
       "ShuffleAbilityBag": true
     },
     "Tags": ["DROPPABLE", "MAGICAL", "CF_PACK_BALDURS"],
@@ -91,10 +91,10 @@
     "Equippable": { "Slots": ["MAIN_HAND"], "Stats": { "ATK": 1 }, "Passives": [], "MaxCharges": 0 },
     "Interactable": {
       "Abilities": {
-        "CF_ABL_BONE_STRIKE": { "MinValue": 2, "MaxValue": 4, "ACC": 70, "Stat": "STR", "Rolls": 1, "Ammo": 0 }
+        "MELEE_BASIC_ATTACK": { "MinValue": 2, "MaxValue": 4, "ACC": 70, "Stat": "STR", "Rolls": 1, "Ammo": 0 }
       },
-      "AbilityBag": ["CF_ABL_BONE_STRIKE"],
-      "AbilityFillBag": ["CF_ABL_BONE_STRIKE"],
+      "AbilityBag": ["MELEE_BASIC_ATTACK"],
+      "AbilityFillBag": ["MELEE_BASIC_ATTACK"],
       "ShuffleAbilityBag": false
     },
     "Tags": ["MELEE", "PHYSICAL", "CF_PACK_BALDURS", "CF_SUMMON"],

@@ -178,6 +178,71 @@ namespace ClassForge.Recipes.Tests
             }
 
             // ================================================================================
+            t.Section("cover spec: ALLY_IN_FRONT requires SchemaVersion 1.4 (v1.4-only condition)");
+
+            string[] belowV14 = { "1.0", "1.1", "1.2", "1.3" };
+            for (int i = 0; i < belowV14.Length; i++)
+            {
+                string ver = belowV14[i];
+                t.Case("ALLY_IN_FRONT on SchemaVersion " + ver + " is rejected", () =>
+                {
+                    string json = "{\"SKILL_T\":{\"SchemaVersion\":\"" + ver + "\",\"Trigger\":\"ON_TURN_START\"," +
+                        "\"Conditions\":[{\"Type\":\"ALLY_IN_FRONT\",\"Value\":true}]," +
+                        "\"Effects\":[{\"Type\":\"COUNTER_ADD\",\"Name\":\"N\",\"Delta\":1}]}}";
+                    var set = RecipeParser.Parse(json);
+                    Check.HasFinding(set, "E_SCHEMA_GATE", "ALLY_IN_FRONT requires 1.4");
+                });
+            }
+
+            t.Case("ALLY_IN_FRONT on SchemaVersion 1.4 is accepted", () =>
+            {
+                string json = "{\"SKILL_T\":{\"SchemaVersion\":\"1.4\",\"Trigger\":\"ON_TURN_START\"," +
+                    "\"Conditions\":[{\"Type\":\"ALLY_IN_FRONT\",\"Value\":true}]," +
+                    "\"Effects\":[{\"Type\":\"COUNTER_ADD\",\"Name\":\"N\",\"Delta\":1}]}}";
+                var set = RecipeParser.Parse(json);
+                Check.NoErrors(set, "1.4 clears the gate");
+                Check.True(set.Find("SKILL_T").IsLive, "recipe is live");
+            });
+
+            t.Case("SchemaVersion 1.4 is a supported engine version (not E_SCHEMA_UNSUPPORTED)", () =>
+            {
+                string json = "{\"SKILL_T\":{\"SchemaVersion\":\"1.4\",\"Trigger\":\"ON_TURN_START\"," +
+                    "\"Effects\":[{\"Type\":\"COUNTER_ADD\",\"Name\":\"N\",\"Delta\":1}]}}";
+                Check.NoErrors(RecipeParser.Parse(json), "1.4 accepted");
+
+                // 1.5 landed with the capture spec, so the "one past the top" probe moved up to 1.6.
+                string bad = "{\"SKILL_T\":{\"SchemaVersion\":\"1.6\",\"Trigger\":\"ON_TURN_START\"," +
+                    "\"Effects\":[{\"Type\":\"COUNTER_ADD\",\"Name\":\"N\",\"Delta\":1}]}}";
+                Check.HasFinding(RecipeParser.Parse(bad), "E_SCHEMA_UNSUPPORTED", "1.6 still unknown");
+            });
+
+            t.Case("ALLY_IN_FRONT requires a boolean Value", () =>
+            {
+                string json = "{\"SKILL_T\":{\"SchemaVersion\":\"1.4\",\"Trigger\":\"ON_TURN_START\"," +
+                    "\"Conditions\":[{\"Type\":\"ALLY_IN_FRONT\"}]," +
+                    "\"Effects\":[{\"Type\":\"COUNTER_ADD\",\"Name\":\"N\",\"Delta\":1}]}}";
+                Check.HasFinding(RecipeParser.Parse(json), "E_VALUE_MISSING", "no Value = E_VALUE_MISSING");
+            });
+
+            t.Case("the Pokemon-Trainer cover trait validates end-to-end with zero errors", () =>
+            {
+                // The exact authored shape: 1.4 + the RNG-free ON_DAMAGE_PENDING path + ALLY_IN_FRONT +
+                // DAMAGE_TAKEN_MULT. ON_DAMAGE_PENDING is v1.3-gated (1.4 is additive over it), rejects
+                // chance-gating (E_DMGPEND_RNG) and restricts its effect set (E_DMGPEND_EFFECT) — this
+                // proves this shape clears all three.
+                string json =
+                    "{\"SKILL_CF_TRAIT_TRAINER_COVER\":{\"SchemaVersion\":\"1.4\"," +
+                    "\"DisplayName\":\"Take Cover\",\"Trigger\":\"ON_DAMAGE_PENDING\"," +
+                    "\"Conditions\":[{\"Type\":\"ALLY_IN_FRONT\",\"Value\":true}]," +
+                    "\"Effects\":[{\"Type\":\"DAMAGE_TAKEN_MULT\",\"Target\":\"SELF\",\"Percent\":-35,\"MinDelta\":2}]}}";
+                var set = RecipeParser.Parse(json);
+                Check.NoErrors(set, "cover trait validates clean");
+                var r = set.Find("SKILL_CF_TRAIT_TRAINER_COVER");
+                Check.True(r != null && r.IsLive, "recipe is live");
+                Check.True(r.Trigger == TriggerKind.ON_DAMAGE_PENDING, "ON_DAMAGE_PENDING legal at 1.4");
+            });
+
+            // ================================================================================
             t.Section("encounter modifiers: new condition evaluation (§5)");
 
             t.Case("PARTY_AVG_LEVEL compares ICombatContext.PartyAverageLevel", () =>
@@ -535,14 +600,18 @@ namespace ClassForge.Recipes.Tests
                 Check.True(runtime.IsBudgetAvailable(BudgetScope.ONCE_PER_COMBAT, "SELECT_KEY", "", ""), "selection budget still open");
             });
 
-            t.Case("reconstruction picks the first hit in ascending ordinal Guid order when multiple modifiers are present", () =>
+            t.Case("reconstruction picks the first hit in ROSTER ORDER when multiple modifiers are present", () =>
             {
                 // Deliberately malformed/synthetic mid-combat state (should not occur in practice -- two
                 // different modifier statuses on different enemies) to prove the scan order is deterministic.
                 var ctx = Scenario.Standard();
                 var foeZ = new FakeEntity("Z_FOE", 1).WithStatus("STATUS_CF_ENCMOD_SWIFT");
                 var foeA = new FakeEntity("A_FOE", 1).WithStatus("STATUS_CF_ENCMOD_ARMORED");
-                ctx.AddEntity(foeZ).AddEntity(foeA); // insertion order deliberately NOT ordinal
+                // Roster order is [.. , foeZ, foeA] while ordinal-GUID order would be [foeA, foeZ] -- the
+                // two disagree on purpose, so this test pins WHICH one the scan follows. It follows roster
+                // order, because that is the ordering every peer computes identically; Entity.Guid is
+                // minted locally by Guid.NewGuid() and used to give each peer a different scan order.
+                ctx.AddEntity(foeZ).AddEntity(foeA);
                 var runtime = new CombatRuntime("K1");
                 var registry = new List<ModifierReconstruction.ModifierRegistryEntry>
                 {
@@ -551,7 +620,8 @@ namespace ClassForge.Recipes.Tests
                 };
                 ModifierReconstruction.Reconstruct(ctx, runtime, registry, "CF_ENCMOD",
                     BudgetScope.ONCE_PER_COMBAT, "SELECT_KEY", BudgetScope.ONCE_PER_TARGET_PER_COMBAT, "APPLY_KEY");
-                Check.Eq("ARMORED", runtime.GetSelection("CF_ENCMOD"), "A_FOE (ordinal-first) wins over Z_FOE");
+                Check.Eq("SWIFT", runtime.GetSelection("CF_ENCMOD"),
+                    "foeZ (roster-first) wins over foeA; ARMORED here would mean guid order leaked back in");
             });
 
             t.Case("CombatKey change drops the runtime -- reconstruction re-runs on the fresh one", () =>
