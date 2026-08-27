@@ -26,3 +26,10 @@ __pycache__/
 .playwright-mcp/
 .temp/
 .decompile-scratch/
+
+# Game saves. FTK2 save state embeds the Steam64 id of every player who was in the
+# room, so a captured co-op save is other people's PII. Keep them outside the repo
+# (see SECURITY.md); local tooling reads them from FTK2_FIXTURE_DIR.
+*.ftk2
+*.sav
+FTK2.Crucible/data/Fixtures/

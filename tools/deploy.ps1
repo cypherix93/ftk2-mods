@@ -138,9 +138,10 @@ $ModDefs = [ordered]@{
 $BepInExCoreItems = @('winhttp.dll', 'doorstop_config.ini', '.doorstop_version', 'BepInEx\core')
 
 # ---------------------------------------------------------------- staging (repo mode)
-function Copy-Tree([string]$From, [string]$To) {
+function Copy-Tree([string]$From, [string]$To, [string[]]$ExcludeDirs = @()) {
     New-Item -ItemType Directory -Force $To | Out-Null
-    Copy-Item -Path (Join-Path $From '*') -Destination $To -Recurse -Force
+    Get-ChildItem -Path $From -Force | Where-Object { $ExcludeDirs -notcontains $_.Name } |
+        ForEach-Object { Copy-Item -Path $_.FullName -Destination $To -Recurse -Force }
 }
 
 function Stage-Payload {
@@ -231,7 +232,11 @@ function Stage-Payload {
     $d = Join-Path $PayloadDir $ModDefs.crucible.payloadSub
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item (Join-Path $RepoRoot 'FTK2.Crucible\src\Crucible.Plugin\bin\Release\net472\*.dll') $d
-    Copy-Tree (Join-Path $RepoRoot 'FTK2.Crucible\data') (Join-Path $d 'data')
+    # Fixtures are REAL game saves captured from live co-op sessions, and FTK2 save state embeds
+    # the Steam64 id of every player who was in the room. They are test inputs for local tooling
+    # (FTK2.Crucible\tools\class_sweep.py), never something a tester needs -- and this payload is
+    # zipped and handed to other people. Never stage them. See SECURITY.md.
+    Copy-Tree (Join-Path $RepoRoot 'FTK2.Crucible\data') (Join-Path $d 'data') -ExcludeDirs 'Fixtures'
     Copy-Tree (Join-Path $RepoRoot 'FTK2.Crucible\mcp')  (Join-Path $d 'mcp')
 
     # armory: data-only json packs
@@ -501,6 +506,15 @@ if (-not $PayloadMode) {
         $commit = & git -C $RepoRoot rev-parse --short HEAD 2>$null
         $zip = Join-Path $RepoRoot "tools\out\deploy\ftk2mods-$stamp-$commit.zip"
         if (Test-Path $zip) { Remove-Item $zip }
+
+        # Tripwire. This zip goes to other people, and a game save carries the Steam64 id of every
+        # player who shared the room. One staging path already shipped one; refuse to package rather
+        # than trust that every current and future Copy-* call remembered to exclude them.
+        $leaked = @(Get-ChildItem -Path $PayloadDir -Recurse -File -Include '*.ftk2','*.sav' -Force)
+        if ($leaked.Count -gt 0) {
+            $names = ($leaked | ForEach-Object { $_.FullName.Substring($PayloadDir.Length).TrimStart('\') }) -join ', '
+            throw "Refusing to package: payload contains $($leaked.Count) game save file(s) -- these embed real players' Steam64 ids and must never ship: $names"
+        }
         Log "== Zipping package -> $zip"
         Compress-Archive -Path (Join-Path $PayloadDir '*') -DestinationPath $zip
         Log "== Package ready: $zip  ($([math]::Round((Get-Item $zip).Length / 1MB, 1)) MB)"

@@ -43,8 +43,13 @@ CLASS_PACKS_DIR = os.path.join(REPO_ROOT, "FTK2.ClassForge", "data", "ClassPacks
 DEFAULT_PACK = "CF_PACK_EOR_CLASSES"
 PACK = os.path.join(CLASS_PACKS_DIR, DEFAULT_PACK)
 STARTER_MAP = os.path.join(REPO_ROOT, "FTK2.Crucible", "data", "class-starter-weapons.json")
-TEMPLATE_FILE = os.path.join(
-    REPO_ROOT, "FTK2.Crucible", "data", "Fixtures", "overworld-four-classes", "run.ftk2")
+# Lives OUTSIDE the repo on purpose. This is a real co-op save, and FTK2 save state embeds the
+# Steam64 id of every player who was in the room -- committing one publishes other people's ids.
+# Override with FTK2_FIXTURE_DIR if you keep your fixtures somewhere else.
+FIXTURE_DIR = os.environ.get(
+    "FTK2_FIXTURE_DIR",
+    os.path.expandvars(r"%USERPROFILE%\Backups\ftk2-fixtures"))
+TEMPLATE_FILE = os.path.join(FIXTURE_DIR, "overworld-four-classes", "run.ftk2")
 GAME_RUNS = os.path.expandvars(
     r"%USERPROFILE%\AppData\LocalLow\IronOak Games\For The King II\GameRuns")
 
